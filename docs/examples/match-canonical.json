@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "matchId": "7b7d6f7a-5a9d-4c4e-9c1f-2c7a7e0b1234",
+  "status": "live",
+  "createdAt": "2026-09-03T18:00:00.000Z",
+  "updatedAt": "2026-09-03T18:10:42.000Z",
+  "competition": "Liga I",
+  "venue": "Stadionul Central",
+  "date": "2026-09-03",
+  "teams": {
+    "home": {
+      "teamId": "team-home-001",
+      "name": "FC Home"
+    },
+    "away": {
+      "teamId": "team-away-001",
+      "name": "FC Away"
+    }
+  },
+  "crew": {
+    "referee": { "name": "Ion Popescu" },
+    "assistant1": { "name": "Andrei Ionescu" },
+    "assistant2": { "name": "Mihai Georgescu" },
+    "fourthOfficial": null
+  },
+  "settings": {
+    "halfDurationSeconds": 2700,
+    "extraTimeEnabled": false,
+    "extraTimeHalfDurationSeconds": 900
+  },
+  "squads": {
+    "home": {
+      "players": [
+        {
+          "playerId": "player-home-9",
+          "shirtNumber": 9,
+          "name": "Player Nine",
+          "role": "starter"
+        }
+      ]
+    },
+    "away": {
+      "players": [
+        {
+          "playerId": "player-away-4",
+          "shirtNumber": 4,
+          "name": "Player Four",
+          "role": "starter"
+        }
+      ]
+    }
+  },
+  "periods": [
+    {
+      "id": "1h",
+      "status": "active",
+      "startedAt": "2026-09-03T18:00:00.000Z",
+      "endedAt": null,
+      "addedTimeSeconds": 0
+    },
+    {
+      "id": "2h",
+      "status": "pending",
+      "startedAt": null,
+      "endedAt": null,
+      "addedTimeSeconds": 0
+    },
+    {
+      "id": "et1",
+      "status": "pending",
+      "startedAt": null,
+      "endedAt": null,
+      "addedTimeSeconds": 0
+    },
+    {
+      "id": "et2",
+      "status": "pending",
+      "startedAt": null,
+      "endedAt": null,
+      "addedTimeSeconds": 0
+    },
+    {
+      "id": "pens",
+      "status": "pending",
+      "startedAt": null,
+      "endedAt": null,
+      "addedTimeSeconds": 0
+    }
+  ],
+  "currentState": {
+    "periodId": "1h",
+    "clockRunning": true,
+    "elapsedSeconds": 642,
+    "runningSince": "2026-09-03T18:10:00.000Z",
+    "addedTimeSeconds": 0
+  },
+  "score": {
+    "home": 1,
+    "away": 0
+  },
+  "events": [
+    {
+      "eventId": "event-goal-001",
+      "matchId": "7b7d6f7a-5a9d-4c4e-9c1f-2c7a7e0b1234",
+      "type": "goal",
+      "status": "complete",
+      "periodId": "1h",
+      "matchTime": 421,
+      "createdAt": "2026-09-03T18:07:01.000Z",
+      "updatedAt": "2026-09-03T18:07:01.000Z",
+      "data": {
+        "teamId": "team-home-001",
+        "player": {
+          "playerId": "player-home-9",
+          "shirtNumber": 9,
+          "name": "Player Nine",
+          "isUnknown": false
+        },
+        "isOwnGoal": false,
+        "note": null,
+        "reason": null
+      }
+    },
+    {
+      "eventId": "event-yellow-001",
+      "matchId": "7b7d6f7a-5a9d-4c4e-9c1f-2c7a7e0b1234",
+      "type": "yellow_card",
+      "status": "incomplete",
+      "periodId": "1h",
+      "matchTime": 512,
+      "createdAt": "2026-09-03T18:08:32.000Z",
+      "updatedAt": "2026-09-03T18:08:32.000Z",
+      "data": {
+        "teamId": "team-away-001",
+        "player": {
+          "playerId": null,
+          "shirtNumber": null,
+          "name": null,
+          "isUnknown": true
+        },
+        "note": null,
+        "reason": null
+      }
+    },
+    {
+      "eventId": "event-sub-001",
+      "matchId": "7b7d6f7a-5a9d-4c4e-9c1f-2c7a7e0b1234",
+      "type": "substitution",
+      "status": "complete",
+      "periodId": "1h",
+      "matchTime": 603,
+      "createdAt": "2026-09-03T18:10:03.000Z",
+      "updatedAt": "2026-09-03T18:10:03.000Z",
+      "data": {
+        "teamId": "team-home-001",
+        "out": {
+          "playerId": "player-home-9",
+          "shirtNumber": 9,
+          "name": "Player Nine",
+          "isUnknown": false
+        },
+        "in": {
+          "playerId": null,
+          "shirtNumber": 18,
+          "name": null,
+          "isUnknown": true
+        },
+        "note": null,
+        "reason": null
+      }
+    }
+  ],
+  "history": [],
+  "sync": {
+    "syncState": "local_only",
+    "lastSyncedAt": null
+  }
+}

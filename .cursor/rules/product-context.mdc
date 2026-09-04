@@ -1,0 +1,19 @@
+---
+description: Ref App identity, phone-first, offline-first. Apply in every session.
+alwaysApply: true
+---
+
+# Product context
+
+Ref App is a football referee match app. The phone is the product; the watch is an upgrade. A referee with a cheap phone and no watch must complete a full match.
+
+- **Build order:** phone → native Wear OS → watchOS → Garmin Connect IQ → Zepp OS last.
+- **Offline-first:** save locally on the recording device; cloud when connected. A Bluetooth drop must not lose the match.
+- **Phone stack:** Flutter. `packages/match_core` (no Material). Drift + SQLite. Not React Native. Flutter is not a watch target.
+- **i18n:** RO + EN; English fallback; no hardcoded UI strings.
+- **Watch clients:** native only (Kotlin + Wear Compose, SwiftUI).
+- **Cloud:** Firebase Auth (email, Google, Apple) + Firestore. Signed-out matches. Last-local-wins. Free beta; no billing in match_core.
+
+MVP UX: Kick-off from READY. Full time ≠ Finish. Schema: `docs/data-model.md`. Example: `docs/examples/match-canonical.json`.
+
+Canonical docs: `AGENTS.md`, `docs/product.md`, `docs/mvp-scope.md`, `docs/architecture.md`. Open: visual design, Firebase project IDs. ChatGPT/Gemini is not canonical.

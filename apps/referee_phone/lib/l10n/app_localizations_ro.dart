@@ -1,0 +1,240 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for Romanian Moldavian Moldovan (`ro`).
+class AppLocalizationsRo extends AppLocalizations {
+  AppLocalizationsRo([String locale = 'ro']) : super(locale);
+
+  @override
+  String get appTitle => 'Ref App';
+
+  @override
+  String get matchesTitle => 'Meciuri';
+
+  @override
+  String get newMatch => 'Meci nou';
+
+  @override
+  String get emptyMatches => 'Niciun meci';
+
+  @override
+  String get settings => 'Setări';
+
+  @override
+  String get today => 'Azi';
+
+  @override
+  String get yesterday => 'Ieri';
+
+  @override
+  String get older => 'Mai vechi';
+
+  @override
+  String get statusSetup => 'Pregătire';
+
+  @override
+  String get statusReady => 'Gata';
+
+  @override
+  String get statusLive => 'Live';
+
+  @override
+  String get statusPaused => 'Pauză';
+
+  @override
+  String get statusHalfTime => 'Pauză de jumătate';
+
+  @override
+  String get statusExtraTime => 'Prelungiri';
+
+  @override
+  String get statusFullTime => 'Final';
+
+  @override
+  String get statusCompleted => 'Încheiat';
+
+  @override
+  String get homeFallback => 'ACASĂ';
+
+  @override
+  String get awayFallback => 'DEPLASARE';
+
+  @override
+  String get setupTitle => 'Pregătire meci';
+
+  @override
+  String get homeTeam => 'Echipa gazdă';
+
+  @override
+  String get awayTeam => 'Echipa oaspete';
+
+  @override
+  String get date => 'Dată';
+
+  @override
+  String get competition => 'Competiție';
+
+  @override
+  String get venue => 'Stadion';
+
+  @override
+  String get halfLength => 'Durata reprizei (minute)';
+
+  @override
+  String get crewReferee => 'Arbitru';
+
+  @override
+  String get crewAr1 => 'Asistent 1';
+
+  @override
+  String get crewAr2 => 'Asistent 2';
+
+  @override
+  String get crewFourth => 'Al 4-lea oficial';
+
+  @override
+  String get squadHome => 'Lot gazde';
+
+  @override
+  String get squadAway => 'Lot oaspeți';
+
+  @override
+  String get addPlayer => 'Adaugă jucător';
+
+  @override
+  String get playerNumber => 'Număr';
+
+  @override
+  String get playerName => 'Nume';
+
+  @override
+  String get liveMatch => 'Meci live';
+
+  @override
+  String get kickOff => 'Start';
+
+  @override
+  String get pause => 'Pauză';
+
+  @override
+  String get resume => 'Reluare';
+
+  @override
+  String get halfTime => 'Pauză de jumătate';
+
+  @override
+  String get startSecondHalf => 'Start repriza 2';
+
+  @override
+  String get extraTime => 'Prelungiri';
+
+  @override
+  String get fullTime => 'Final';
+
+  @override
+  String get summary => 'Sumar';
+
+  @override
+  String get undo => 'Anulează';
+
+  @override
+  String get goal => 'Gol';
+
+  @override
+  String get yellow => 'Galben';
+
+  @override
+  String get red => 'Roșu';
+
+  @override
+  String get sub => 'Schimbare';
+
+  @override
+  String get injury => 'Accidentare';
+
+  @override
+  String get unknown => 'Necunoscut';
+
+  @override
+  String get freeNumber => 'Număr tricou';
+
+  @override
+  String get playerOut => 'Iese';
+
+  @override
+  String get playerIn => 'Intră';
+
+  @override
+  String get back => 'Înapoi';
+
+  @override
+  String get addedTime => 'Timp adițional';
+
+  @override
+  String get finishMatch => 'Închide meciul';
+
+  @override
+  String get finishAnyway => 'Închide oricum';
+
+  @override
+  String get reviewEvents => 'Vezi evenimentele';
+
+  @override
+  String get addEvent => 'Adaugă eveniment';
+
+  @override
+  String get backToMatch => 'Înapoi la meci';
+
+  @override
+  String get incomplete => 'Incomplet';
+
+  @override
+  String get language => 'Limbă';
+
+  @override
+  String get english => 'Engleză';
+
+  @override
+  String get romanian => 'Română';
+
+  @override
+  String get period1h => '1R';
+
+  @override
+  String get period2h => '2R';
+
+  @override
+  String get periodEt1 => 'PR1';
+
+  @override
+  String get periodEt2 => 'PR2';
+
+  @override
+  String get editEvent => 'Editează';
+
+  @override
+  String get nudgeMinus => '−30 s';
+
+  @override
+  String get nudgePlus => '+30 s';
+
+  @override
+  String get ownGoal => 'Autogol';
+
+  @override
+  String get finishIncompleteBody =>
+      'Există evenimente incomplete. Închizi oricum?';
+
+  @override
+  String scoreLine(String home, int homeScore, int awayScore, String away) {
+    return '$home $homeScore — $awayScore $away';
+  }
+
+  @override
+  String clockWithAdded(String clock, int minutes) {
+    return '$clock +$minutes';
+  }
+}

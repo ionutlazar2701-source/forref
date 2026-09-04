@@ -1,0 +1,13 @@
+name: match_core
+description: Pure Dart match engine. No Flutter, no Firebase. See docs/data-model.md.
+publish_to: none
+version: 0.0.1
+
+environment:
+  sdk: ^3.6.0
+
+resolution: workspace
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.0

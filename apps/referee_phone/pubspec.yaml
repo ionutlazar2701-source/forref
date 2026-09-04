@@ -1,0 +1,33 @@
+name: referee_phone
+description: Flutter phone shell. UI features are empty placeholders. See docs/.
+publish_to: none
+version: 0.0.1
+
+environment:
+  sdk: ^3.6.0
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+  match_core:
+    path: ../../packages/match_core
+  drift: ^2.34.2
+  drift_flutter: ^0.3.1
+  path_provider: ^2.1.6
+  uuid: ^4.5.1
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+  flutter_test:
+    sdk: flutter
+  drift_dev: ^2.34.5
+  build_runner: ^2.4.0
+
+flutter:
+  generate: true
+  uses-material-design: true

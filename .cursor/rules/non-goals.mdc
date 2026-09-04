@@ -1,0 +1,22 @@
+---
+description: Rejected approaches. Do not implement unless the user reopens the decision.
+alwaysApply: true
+---
+
+# Non-goals (v1)
+
+Do not implement unless the user explicitly reopens the decision:
+
+- Zepp OS or Garmin as the first platform; watch-only app with no phone match
+- Flutter as a watch client
+- Custom score/timer UI on Xiaomi Band, Huawei Band, or CMF (notification + vibration only)
+- Automatic pause from motion; second yellow auto-red; combined Goal+Card flow
+- Extra Pre-Match / Ready / Review **screens** as gates (READY and FULL TIME are states, not extra routes)
+- React Native for the MVP phone app; Hive/JSON files as primary match DB; Auth/network gating Kick-off
+- CRDT / live crew merge; Anonymous Auth as the offline architecture
+- IAP/paywalls inside `match_core`; `review` match status; activating `pens` in MVP
+- Live watch-to-watch Bluetooth sync
+- On-watch speech-to-text during the match
+- Treating informal ChatGPT/Gemini notes as source of truth (canonical: `AGENTS.md` and `docs/`)
+
+Full lists: `docs/mvp-scope.md`, `docs/platforms.md`.
