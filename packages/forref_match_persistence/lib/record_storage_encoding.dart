@@ -14,6 +14,7 @@ const _temporalTransitionType = 'v1-temporal-transition';
 const _temporalCorrectionType = 'v1-temporal-correction';
 const _correctionType = 'v1-correction';
 const _legalSupersessionType = 'v1-legal-supersession';
+const _goalType = 'v1-goal';
 
 const _rootKeys = {
   'storageEncoding',
@@ -148,6 +149,12 @@ Map<String, Object?> _encodePayload(MatchRecordPayload payload) {
       'semanticType': payload.semanticType.wireValue,
       if (payload is TemporalTransitionPayload && payload.period != null)
         'periodIndex': payload.period!.index,
+      if (payload is GoalPayload) ...{
+        'scoringSide': payload.scoringSide.wireValue,
+        'periodIndex': payload.period.index,
+        if (payload.playerId != null) 'playerId': payload.playerId,
+        if (payload.playerNumber != null) 'playerNumber': payload.playerNumber,
+      },
       if (payload.domainContractVersion != null)
         'domainContractVersion': payload.domainContractVersion!.value,
       if (payload.competitionRulesContext != null)
@@ -167,6 +174,7 @@ String _v1PayloadType(V1SemanticPayload payload) {
     TemporalCorrectionPayload() => _temporalCorrectionType,
     CorrectionPayload() => _correctionType,
     LegalSupersessionPayload() => _legalSupersessionType,
+    GoalPayload() => _goalType,
   };
 }
 
@@ -188,7 +196,8 @@ MatchRecordPayload _decodePayload(
   if (type == _temporalTransitionType ||
       type == _temporalCorrectionType ||
       type == _correctionType ||
-      type == _legalSupersessionType) {
+      type == _legalSupersessionType ||
+      type == _goalType) {
     if (storageEncoding != adapterLocalStorageEncoding) {
       throw FormatException(
         'Typed payload is missing adapter storage encoding',
@@ -207,6 +216,9 @@ MatchRecordPayload _decodePayload(
         'periodIndex',
         'domainContractVersion',
         'competitionRulesContext',
+        'scoringSide',
+        'playerId',
+        'playerNumber',
       },
       'typed payload',
     );
@@ -258,6 +270,7 @@ V1SemanticPayload _decodeV1Payload(
           competitionRulesContext: rules,
         ),
       ),
+    _goalType => _goal(payload, code, domain, rules),
     _ => throw FormatException('Unsupported stored payload type: $type'),
   };
 }
@@ -277,6 +290,7 @@ TemporalTransitionPayload _temporalTransition(
     V1SemanticTypeCode.matchAbandoned ||
     V1SemanticTypeCode.matchEnded =>
       true,
+    V1SemanticTypeCode.goal ||
     V1SemanticTypeCode.temporalCorrection ||
     V1SemanticTypeCode.correction ||
     V1SemanticTypeCode.legalSupersession =>
@@ -287,6 +301,13 @@ TemporalTransitionPayload _temporalTransition(
       'Payload type $_temporalTransitionType cannot carry ${code.wireValue}',
     );
   }
+  if (payload['scoringSide'] != null ||
+      payload['playerId'] != null ||
+      payload['playerNumber'] != null) {
+    throw FormatException(
+      'Payload type $_temporalTransitionType cannot carry goal fields',
+    );
+  }
   final period = _periodIdentity(payload['periodIndex'], code);
   return TemporalTransitionPayload(
     semanticType: code,
@@ -294,6 +315,49 @@ TemporalTransitionPayload _temporalTransition(
     domainContractVersion: domain,
     competitionRulesContext: rules,
   );
+}
+
+GoalPayload _goal(
+  Map<String, Object?> payload,
+  V1SemanticTypeCode code,
+  DomainContractVersion? domain,
+  CompetitionRulesContext? rules,
+) {
+  if (code != V1SemanticTypeCode.goal) {
+    throw FormatException(
+      'Payload type $_goalType cannot carry ${code.wireValue}',
+    );
+  }
+  final side = payload['scoringSide'];
+  if (side is! String) {
+    throw FormatException('GOAL requires scoringSide');
+  }
+  final scoringSide = GoalScoringSideWire.parseWire(side);
+  if (scoringSide == null) {
+    throw FormatException('GOAL scoringSide is invalid');
+  }
+  final periodIndex = payload['periodIndex'];
+  if (periodIndex is! int || periodIndex < 1) {
+    throw FormatException('GOAL requires periodIndex');
+  }
+  final playerId = _optionalText(payload['playerId'], 'playerId');
+  final playerNumber = _optionalText(payload['playerNumber'], 'playerNumber');
+  return GoalPayload(
+    scoringSide: scoringSide,
+    period: PeriodIdentity(index: periodIndex),
+    playerId: playerId,
+    playerNumber: playerNumber,
+    domainContractVersion: domain,
+    competitionRulesContext: rules,
+  );
+}
+
+String? _optionalText(Object? value, String label) {
+  if (value == null) return null;
+  if (value is! String || value.isEmpty) {
+    throw FormatException('Stored $label is invalid');
+  }
+  return value;
 }
 
 PeriodIdentity? _periodIdentity(Object? value, V1SemanticTypeCode code) {

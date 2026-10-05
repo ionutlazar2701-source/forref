@@ -155,6 +155,7 @@ final class TemporalTransitionPayload extends V1SemanticPayload {
       V1SemanticTypeCode.matchAbandoned ||
       V1SemanticTypeCode.matchEnded =>
         true,
+      V1SemanticTypeCode.goal ||
       V1SemanticTypeCode.temporalCorrection ||
       V1SemanticTypeCode.correction ||
       V1SemanticTypeCode.legalSupersession =>
@@ -194,4 +195,70 @@ final class LegalSupersessionPayload extends V1SemanticPayload {
 
   @override
   V1SemanticTypeCode get semanticType => V1SemanticTypeCode.legalSupersession;
+}
+
+/// Which fixture side scored. This is the scoring identity, not a stored score.
+enum GoalScoringSide {
+  home,
+  away,
+}
+
+extension GoalScoringSideWire on GoalScoringSide {
+  String get wireValue => switch (this) {
+        GoalScoringSide.home => 'HOME',
+        GoalScoringSide.away => 'AWAY',
+      };
+
+  static GoalScoringSide? parseWire(String value) => switch (value) {
+        'HOME' => GoalScoringSide.home,
+        'AWAY' => GoalScoringSide.away,
+        _ => null,
+      };
+}
+
+/// Authoritative goal. Elapsed match time is not stored here.
+///
+/// [period] names the playing period the goal belongs to. The record's
+/// temporal evidence, together with that period's anchor, is what a later
+/// projection uses to reconstruct match time. [playerId] and [playerNumber]
+/// are optional and never required for the commit.
+final class GoalPayload extends V1SemanticPayload {
+  GoalPayload({
+    required this.scoringSide,
+    required this.period,
+    this.playerId,
+    this.playerNumber,
+    super.domainContractVersion,
+    super.competitionRulesContext,
+  }) : assert(playerId == null || playerId.isNotEmpty),
+       assert(playerNumber == null || playerNumber.isNotEmpty);
+
+  @override
+  V1SemanticTypeCode get semanticType => V1SemanticTypeCode.goal;
+
+  final GoalScoringSide scoringSide;
+  final PeriodIdentity period;
+  final String? playerId;
+  final String? playerNumber;
+
+  @override
+  bool operator ==(Object other) {
+    return other is GoalPayload &&
+        scoringSide == other.scoringSide &&
+        period == other.period &&
+        playerId == other.playerId &&
+        playerNumber == other.playerNumber &&
+        domainContractVersion == other.domainContractVersion &&
+        competitionRulesContext == other.competitionRulesContext;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        scoringSide,
+        period,
+        playerId,
+        playerNumber,
+        domainContractVersion,
+        competitionRulesContext,
+      );
 }

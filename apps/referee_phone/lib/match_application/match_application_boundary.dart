@@ -549,6 +549,64 @@ final class MatchApplicationBoundary
     );
   }
 
+  /// Authoritative goal for the active playing period.
+  ///
+  /// Binds the record to that period and to [temporalContext]. Does not read
+  /// a legacy clock, does not store elapsed time, and does not write a legacy
+  /// match event or score. Fails closed inside the durable transaction.
+  Future<DurableCommitResult> commitGoal(
+    CaptureContext context, {
+    required GoalScoringSide scoringSide,
+    required TemporalContext temporalContext,
+    String? playerId,
+    String? playerNumber,
+  }) async {
+    final prepared = assessGoalAdmission(
+      records: await _store.readCommittedForMatch(context.matchId),
+      context: context,
+    );
+    if (prepared is GoalRejected) {
+      return DurableCommitFailure(
+        recordId: 'goal-not-committed',
+        reason: prepared.reason,
+      );
+    }
+    final admitted = (prepared as GoalAdmitted).period;
+    final request = _recordBuilder.build(
+      context: context,
+      recordKind: RecordKind.action,
+      payload: GoalPayload(
+        scoringSide: scoringSide,
+        period: admitted.period,
+        playerId: _optionalGoalIdentity(playerId),
+        playerNumber: _optionalGoalIdentity(playerNumber),
+        domainContractVersion: context.domainContractVersion,
+        competitionRulesContext: context.competitionRulesContext,
+      ),
+      integrity: const IntegrityMetadata(),
+      relationships: [
+        CausalDependency(targetRecordId: admitted.periodStart.recordId),
+      ],
+      temporalContext: temporalContext,
+    );
+    return _store.commitAtNextOriginSequence(
+      request,
+      rejectCommitted: (records) {
+        final admission = assessGoalAdmission(
+          records: records,
+          context: context,
+        );
+        if (admission is GoalRejected) return admission.reason;
+        final period = (admission as GoalAdmitted).period;
+        if (period.periodStart.recordId != admitted.periodStart.recordId ||
+            period.period.index != admitted.period.index) {
+          return 'GOAL does not match the active period';
+        }
+        return null;
+      },
+    );
+  }
+
   /// Constructs an authoritative record, allocates the next origin sequence
   /// atomically, and durable-commits. UI must not choose originSequence.
   Future<DurableCommitResult> captureAndCommit(
@@ -722,4 +780,10 @@ int _resumptionCount(List<MatchRecord> records, MatchRecord suspensionStart) {
     if (closesStart) count++;
   }
   return count;
+}
+
+/// Blank player text is omitted. It is not a player identity.
+String? _optionalGoalIdentity(String? value) {
+  if (value == null || value.isEmpty) return null;
+  return value;
 }
