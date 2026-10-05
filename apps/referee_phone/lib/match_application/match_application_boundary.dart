@@ -549,11 +549,13 @@ final class MatchApplicationBoundary
     );
   }
 
-  /// Authoritative goal for the active playing period.
+  /// GOAL: the main referee has determined that a valid goal stands for one side.
   ///
-  /// Binds the record to that period and to [temporalContext]. Does not read
-  /// a legacy clock, does not store elapsed time, and does not write a legacy
-  /// match event or score. Fails closed inside the durable transaction.
+  /// The record kind is [RecordKind.humanDetermination]. [period] and
+  /// [temporalContext] are placement context and must agree with the active
+  /// `PERIOD_STARTED`. Does not read a legacy clock, does not store elapsed
+  /// time, and does not write a legacy match event or score. Fails closed
+  /// inside the durable transaction.
   Future<DurableCommitResult> commitGoal(
     CaptureContext context, {
     required GoalScoringSide scoringSide,
@@ -574,7 +576,7 @@ final class MatchApplicationBoundary
     final admitted = (prepared as GoalAdmitted).period;
     final request = _recordBuilder.build(
       context: context,
-      recordKind: RecordKind.action,
+      recordKind: RecordKind.humanDetermination,
       payload: GoalPayload(
         scoringSide: scoringSide,
         period: admitted.period,

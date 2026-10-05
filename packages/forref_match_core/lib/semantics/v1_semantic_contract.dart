@@ -124,9 +124,16 @@ final class V1SemanticContract {
       isDurableMatchState: false,
       requiresCausalDependencyOnFinalPeriodEnd: true,
     ),
+    // GOAL means the main referee has determined that a valid goal stands
+    // for one side. The required sporting content is the credited side.
+    // Period and temporal evidence are placement context. An own goal is
+    // this same determination for the credited side.
+    //
+    // CORRECTION amends the stored account while the determination stands.
+    // LEGAL_SUPERSESSION withdraws the scoring effect. The GOAL record remains.
     V1SemanticTypeCode.goal: V1SemanticContract(
       code: V1SemanticTypeCode.goal,
-      requiredRecordKind: RecordKind.action,
+      requiredRecordKind: RecordKind.humanDetermination,
       schemaVersion: schemaContractVersion,
       category: SemanticTypeCategory.event,
       projectionFacets: [ProjectionFacet.score],

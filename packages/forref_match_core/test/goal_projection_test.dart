@@ -5,14 +5,15 @@ import 'package:test/test.dart';
 void main() {
   const period = PeriodIdentity(index: 1);
 
-  test('GOAL is the v1 sporting action on RecordKind.action', () {
+  test('GOAL is the v1 referee determination', () {
     final contract = V1SemanticContract.byCode[V1SemanticTypeCode.goal]!;
 
     expect(V1SemanticTypeCode.goal.wireValue, 'GOAL');
     expect(V1SemanticTypeCodeWire.parseWire('GOAL'), V1SemanticTypeCode.goal);
     expect(V1SemanticTypeCodeWire.parseWire('GOAL_SCORED'), isNull);
+    expect(V1SemanticTypeCodeWire.parseWire('OWN_GOAL'), isNull);
     expect(V1SemanticTypeCode.goal.category, SemanticTypeCategory.event);
-    expect(contract.requiredRecordKind, RecordKind.action);
+    expect(contract.requiredRecordKind, RecordKind.humanDetermination);
     expect(contract.schemaVersion, 1);
     expect(contract.effect, SemanticEffect.sportingEvent);
     expect(contract.createsSportingState, isTrue);
@@ -35,6 +36,9 @@ void main() {
     expect(projection.history.single.scoringSide, GoalScoringSide.home);
     expect(projection.history.single.period, period);
     expect(projection.history.single.originSequence, 3);
+    expect(projection.history.single.scoringEffectStands, isTrue);
+    expect(projection.history.single.playerId, isNull);
+    expect(projection.history.single.playerNumber, isNull);
   });
 
   test('an away goal projects away score +1', () {
@@ -228,6 +232,113 @@ void main() {
     expect(reading.elapsedLowerBound, const Duration(seconds: 10));
     expect(reading.elapsedUpperBound, const Duration(seconds: 13));
     expect(reading.temporallyUncertain, isTrue);
+  });
+
+  test('an own goal is an ordinary GOAL for the credited side', () {
+    final projection = deriveGoalMatchProjection(
+      records: [
+        ..._activePeriod(),
+        _goal('own-1', 3, GoalScoringSide.away),
+      ],
+      recordedEvidence: const [],
+    );
+
+    expect(projection.history.single.scoringSide, GoalScoringSide.away);
+    expect(projection.history.single.scoringEffectStands, isTrue);
+    expect(projection.homeScore, 0);
+    expect(projection.awayScore, 1);
+  });
+
+  test('RecordKind.action with a GOAL payload does not score', () {
+    final projection = deriveGoalMatchProjection(
+      records: [
+        ..._activePeriod(),
+        _goal('action-goal', 3, GoalScoringSide.home, kind: RecordKind.action),
+      ],
+      recordedEvidence: const [],
+    );
+
+    expect(projection, GoalMatchProjection.empty);
+  });
+
+  test('a payload period that disagrees with the causal period does not score', () {
+    final records = [
+      ..._activePeriod(),
+      _transition(
+        'end',
+        V1SemanticTypeCode.periodEnded,
+        originSequence: 3,
+        period: period,
+        relationships: [CausalDependency(targetRecordId: 'period')],
+      ),
+      _transition(
+        'period-2',
+        V1SemanticTypeCode.periodStarted,
+        originSequence: 4,
+        period: const PeriodIdentity(index: 2),
+        relationships: [CausalDependency(targetRecordId: 'end')],
+      ),
+      _goal(
+        'mismatched',
+        5,
+        GoalScoringSide.home,
+        period: const PeriodIdentity(index: 2),
+        periodStartId: 'period',
+      ),
+    ];
+
+    final projection = deriveGoalMatchProjection(
+      records: records,
+      recordedEvidence: const [],
+    );
+
+    expect(projection.history.single.recordId, 'mismatched');
+    expect(projection.history.single.scoringEffectStands, isFalse);
+    expect(projection.homeScore, 0);
+    expect(projection.awayScore, 0);
+  });
+
+  test('legal supersession removes the scoring effect and keeps the goal', () {
+    final records = [
+      ..._activePeriod(),
+      _goal('home-1', 3, GoalScoringSide.home),
+      _goal('away-1', 4, GoalScoringSide.away),
+      _supersession('super-home', 5, 'home-1'),
+      _supersession('super-other', 6, 'start'),
+    ];
+    final forward = deriveGoalMatchProjection(
+      records: records,
+      recordedEvidence: const [],
+    );
+    final shuffled = deriveGoalMatchProjection(
+      records: [...records.reversed],
+      recordedEvidence: const [],
+    );
+
+    expect(shuffled, forward);
+    expect(forward.history.map((goal) => goal.recordId), ['home-1', 'away-1']);
+    expect(forward.history.first.scoringEffectStands, isFalse);
+    expect(forward.history.last.scoringEffectStands, isTrue);
+    expect(forward.homeScore, 0);
+    expect(forward.awayScore, 1);
+    expect(records[2].recordId, 'home-1');
+    expect(records[2].payload, isA<GoalPayload>());
+  });
+
+  test('a correction leaves the standing goal in the score', () {
+    final projection = deriveGoalMatchProjection(
+      records: [
+        ..._activePeriod(),
+        _goal('home-1', 3, GoalScoringSide.home, playerNumber: '9'),
+        _correction('corr-1', 4, 'home-1'),
+      ],
+      recordedEvidence: const [],
+    );
+
+    expect(projection.history.single.recordId, 'home-1');
+    expect(projection.history.single.scoringEffectStands, isTrue);
+    expect(projection.history.single.playerNumber, '9');
+    expect(projection.homeScore, 1);
   });
 
   test('a goal that is not bound to the period start does not increment score', () {
@@ -522,23 +633,26 @@ MatchRecord _goal(
   List<String> evidenceIds = const [],
   bool bound = true,
   String? playerNumber,
+  PeriodIdentity period = const PeriodIdentity(index: 1),
+  String periodStartId = 'period',
+  RecordKind kind = RecordKind.humanDetermination,
 }) {
   return MatchRecord(
     recordId: recordId,
     matchId: 'match-1',
-    recordKind: RecordKind.action,
+    recordKind: kind,
     schemaVersion: 1,
     recordedAt: recordedAt ?? DateTime.utc(2026, 10, 5, 12, originSequence),
     originDeviceId: 'dev-a',
     originSequence: originSequence,
     payload: GoalPayload(
       scoringSide: side,
-      period: const PeriodIdentity(index: 1),
+      period: period,
       playerNumber: playerNumber,
     ),
     integrity: const IntegrityMetadata(),
     relationships: bound
-        ? [CausalDependency(targetRecordId: 'period')]
+        ? [CausalDependency(targetRecordId: periodStartId)]
         : const [],
     temporalContext: TemporalContext(evidenceIds: evidenceIds),
     authorityContext: _authority(),
@@ -550,6 +664,46 @@ AuthorityContext _authority() {
     scope: MainRefereeScope(),
     principal: AuthorityPrincipal(principalId: 'ref-1'),
     generation: AuthorityGeneration(value: 1),
+  );
+}
+
+MatchRecord _supersession(
+  String recordId,
+  int originSequence,
+  String targetId,
+) {
+  return MatchRecord(
+    recordId: recordId,
+    matchId: 'match-1',
+    recordKind: RecordKind.legalSupersession,
+    schemaVersion: 1,
+    recordedAt: DateTime.utc(2026, 10, 5, 12, originSequence),
+    originDeviceId: 'dev-a',
+    originSequence: originSequence,
+    payload: const LegalSupersessionPayload(),
+    integrity: const IntegrityMetadata(),
+    relationships: [LegalSupersessionTarget(targetRecordId: targetId)],
+    authorityContext: _authority(),
+  );
+}
+
+MatchRecord _correction(
+  String recordId,
+  int originSequence,
+  String targetId,
+) {
+  return MatchRecord(
+    recordId: recordId,
+    matchId: 'match-1',
+    recordKind: RecordKind.correction,
+    schemaVersion: 1,
+    recordedAt: DateTime.utc(2026, 10, 5, 12, originSequence),
+    originDeviceId: 'dev-a',
+    originSequence: originSequence,
+    payload: const CorrectionPayload(),
+    integrity: const IntegrityMetadata(),
+    relationships: [CorrectionTarget(targetRecordId: targetId)],
+    authorityContext: _authority(),
   );
 }
 

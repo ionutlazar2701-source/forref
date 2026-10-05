@@ -197,7 +197,9 @@ final class LegalSupersessionPayload extends V1SemanticPayload {
   V1SemanticTypeCode get semanticType => V1SemanticTypeCode.legalSupersession;
 }
 
-/// Which fixture side scored. This is the scoring identity, not a stored score.
+/// Side credited with the goal. This is the scoring identity, not a stored score.
+///
+/// An own goal uses the side that is credited. It is not a separate semantic.
 enum GoalScoringSide {
   home,
   away,
@@ -216,12 +218,15 @@ extension GoalScoringSideWire on GoalScoringSide {
       };
 }
 
-/// Authoritative goal. Elapsed match time is not stored here.
+/// GOAL means the main referee has determined that a valid goal stands for one side.
 ///
-/// [period] names the playing period the goal belongs to. The record's
-/// temporal evidence, together with that period's anchor, is what a later
-/// projection uses to reconstruct match time. [playerId] and [playerNumber]
-/// are optional and never required for the commit.
+/// [scoringSide] is the required sporting content: the side credited with the
+/// goal, including when that goal is an own goal. [playerId] and [playerNumber]
+/// are optional enrichment and are never required for the commit.
+///
+/// [period] is placement context. It must match the causally targeted
+/// `PERIOD_STARTED`. Elapsed match time is not stored here; temporal evidence
+/// on the record is what a later projection uses to reconstruct match time.
 final class GoalPayload extends V1SemanticPayload {
   GoalPayload({
     required this.scoringSide,

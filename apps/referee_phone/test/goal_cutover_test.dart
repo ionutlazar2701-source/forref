@@ -34,7 +34,7 @@ void main() {
     final records = await _records(opened.composition);
     expect(records, hasLength(3));
     final goal = records.last;
-    expect(goal.recordKind, RecordKind.action);
+    expect(goal.recordKind, RecordKind.humanDetermination);
     expect(goal.originSequence, 3);
     expect(goal.originDeviceId, identity.originDeviceId);
     expect((goal.payload as GoalPayload).scoringSide, GoalScoringSide.home);
@@ -138,8 +138,8 @@ void main() {
     expect(first, isA<DurableCommitSuccess>());
     expect(second, isA<DurableCommitSuccess>());
     expect(records.map((record) => record.originSequence), [1, 2, 3, 4]);
-    expect(records[2].recordKind, RecordKind.action);
-    expect(records[3].recordKind, RecordKind.action);
+    expect(records[2].recordKind, RecordKind.humanDetermination);
+    expect(records[3].recordKind, RecordKind.humanDetermination);
   });
 
   test('invalid capture authority fails closed and consumes no sequence', () async {
@@ -365,6 +365,60 @@ void main() {
     expect(records.where(_isGoal), hasLength(1));
   });
 
+  test('legal supersession keeps the goal and drops its current score', () async {
+    final opened = await _open(temp);
+    await _kickOff(opened);
+    final home = await _commitGoal(opened, GoalScoringSide.home);
+    final homeId = (home as DurableCommitSuccess).committedRecordId;
+    expect(
+      await _commitGoal(opened, GoalScoringSide.away),
+      isA<DurableCommitSuccess>(),
+    );
+    expect(
+      await opened.composition.boundary.captureAndCommit(
+        AuthoritativeCaptureCommand(
+          context: await _context(opened),
+          recordKind: RecordKind.legalSupersession,
+          payload: const LegalSupersessionPayload(),
+          integrity: const IntegrityMetadata(),
+          relationships: [
+            LegalSupersessionTarget(targetRecordId: homeId),
+          ],
+        ),
+      ),
+      isA<DurableCommitSuccess>(),
+    );
+    final beforeRecords = await _records(opened.composition);
+    final before = deriveGoalMatchProjection(
+      records: beforeRecords,
+      recordedEvidence: const [],
+    );
+    final determined = before.history.singleWhere(
+      (goal) => goal.recordId == homeId,
+    );
+
+    expect(before.history.map((goal) => goal.recordId), contains(homeId));
+    expect(determined.scoringEffectStands, isFalse);
+    expect(before.homeScore, 0);
+    expect(before.awayScore, 1);
+    final storedHome = beforeRecords.singleWhere(
+      (record) => record.recordId == homeId,
+    );
+    expect(storedHome.recordKind, RecordKind.humanDetermination);
+    expect((storedHome.payload as GoalPayload).scoringSide, GoalScoringSide.home);
+
+    await opened.composition.close();
+    opened.closed = true;
+    final reopened = await MatchApplicationComposition.open(storageRoot: temp);
+    addTearDown(reopened.close);
+    final after = deriveGoalMatchProjection(
+      records: await _records(reopened),
+      recordedEvidence: const [],
+    );
+
+    expect(after, before);
+  });
+
   test('commitGoal does not write legacy match authority', () {
     final boundary = File(
       'lib/match_application/match_application_boundary.dart',
@@ -378,6 +432,8 @@ void main() {
 
     expect(command, contains('assessGoalAdmission'));
     expect(command, contains('commitAtNextOriginSequence'));
+    expect(command, contains('RecordKind.humanDetermination'));
+    expect(command, isNot(contains('RecordKind.action')));
     expect(command, isNot(contains('captureAndCommit')));
     expect(command, isNot(contains('package:match_core')));
     expect(command, isNot(contains('scoreHome')));

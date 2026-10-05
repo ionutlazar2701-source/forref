@@ -79,7 +79,7 @@ void main() {
       _typed(
         recordId: 'goal-1',
         originSequence: 7,
-        recordKind: RecordKind.action,
+        recordKind: RecordKind.humanDetermination,
         payload: GoalPayload(
           scoringSide: GoalScoringSide.home,
           period: const PeriodIdentity(index: 1),

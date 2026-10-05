@@ -5,6 +5,7 @@ import '../projection/projection_context.dart';
 import '../projection/temporal_match_projection.dart';
 import '../record_kind.dart';
 import '../relationships.dart';
+import '../semantics/match_record_semantic_type.dart';
 import '../semantics/production_semantics_resolver.dart';
 import '../semantics/v1_semantic_payload.dart';
 import '../temporal.dart';
@@ -56,6 +57,9 @@ final class GoalTemporalReading {
 }
 
 /// One goal rebuilt from Match Memory. Order is origin order, not recordedAt.
+///
+/// The record stays in history after legal supersession.
+/// [scoringEffectStands] is the current legal scoring effect.
 final class ProjectedGoal {
   const ProjectedGoal({
     required this.recordId,
@@ -63,6 +67,7 @@ final class ProjectedGoal {
     required this.period,
     required this.temporal,
     required this.originSequence,
+    required this.scoringEffectStands,
     this.playerId,
     this.playerNumber,
   });
@@ -75,6 +80,9 @@ final class ProjectedGoal {
   final GoalTemporalReading temporal;
   final int originSequence;
 
+  /// True while this determination still contributes to the current score.
+  final bool scoringEffectStands;
+
   @override
   bool operator ==(Object other) {
     return other is ProjectedGoal &&
@@ -84,7 +92,8 @@ final class ProjectedGoal {
         playerId == other.playerId &&
         playerNumber == other.playerNumber &&
         temporal == other.temporal &&
-        originSequence == other.originSequence;
+        originSequence == other.originSequence &&
+        scoringEffectStands == other.scoringEffectStands;
   }
 
   @override
@@ -96,6 +105,7 @@ final class ProjectedGoal {
         playerNumber,
         temporal,
         originSequence,
+        scoringEffectStands,
       );
 }
 
@@ -129,10 +139,13 @@ final class GoalMatchProjection {
   int get hashCode => Object.hash(homeScore, awayScore, Object.hashAll(history));
 }
 
-/// Rebuilds goal history and score from committed goal records.
+/// Rebuilds goal history and the current score from Match Memory.
 ///
-/// [recordedEvidence] resolves temporal evidence ids. It is not authority.
-/// A later [MatchRecord.recordedAt] does not reorder history or replace score.
+/// The score counts GOAL determinations whose legal scoring effect still
+/// stands. A valid [LegalSupersessionPayload] that targets a goal removes
+/// that effect and leaves the goal in history. [recordedEvidence] resolves
+/// temporal evidence ids. It is not authority. A later [MatchRecord.recordedAt]
+/// does not reorder history or replace score.
 GoalMatchProjection deriveGoalMatchProjection({
   required List<MatchRecord> records,
   required List<TemporalEvidence> recordedEvidence,
@@ -143,30 +156,21 @@ GoalMatchProjection deriveGoalMatchProjection({
       if (_isGoal(record)) record,
   ]..sort(deterministicRecordOrder);
 
+  final withdrawn = _withdrawnGoalIds(records);
   final history = <ProjectedGoal>[];
   var home = 0;
   var away = 0;
   for (final goal in goals) {
     final payload = goal.payload as GoalPayload;
-    if (!_boundToPeriodStart(goal, records)) {
-      history.add(
-        ProjectedGoal(
-          recordId: goal.recordId,
-          scoringSide: payload.scoringSide,
-          period: payload.period,
-          playerId: payload.playerId,
-          playerNumber: payload.playerNumber,
-          temporal: GoalTemporalReading.uncertain,
-          originSequence: goal.originSequence,
-        ),
-      );
-      continue;
-    }
-    switch (payload.scoringSide) {
-      case GoalScoringSide.home:
-        home++;
-      case GoalScoringSide.away:
-        away++;
+    final placed = _placementAgrees(goal, records);
+    final stands = placed && !withdrawn.contains(goal.recordId);
+    if (stands) {
+      switch (payload.scoringSide) {
+        case GoalScoringSide.home:
+          home++;
+        case GoalScoringSide.away:
+          away++;
+      }
     }
     history.add(
       ProjectedGoal(
@@ -175,13 +179,16 @@ GoalMatchProjection deriveGoalMatchProjection({
         period: payload.period,
         playerId: payload.playerId,
         playerNumber: payload.playerNumber,
-        temporal: _reading(
-          records: records,
-          goal: goal,
-          evidence: recordedEvidence,
-          evaluatedAuthorityGeneration: evaluatedAuthorityGeneration,
-        ),
+        temporal: placed
+            ? _reading(
+                records: records,
+                goal: goal,
+                evidence: recordedEvidence,
+                evaluatedAuthorityGeneration: evaluatedAuthorityGeneration,
+              )
+            : GoalTemporalReading.uncertain,
         originSequence: goal.originSequence,
+        scoringEffectStands: stands,
       ),
     );
   }
@@ -194,18 +201,52 @@ GoalMatchProjection deriveGoalMatchProjection({
 }
 
 bool _isGoal(MatchRecord record) {
-  return record.recordKind == RecordKind.action && record.payload is GoalPayload;
+  return record.recordKind == RecordKind.humanDetermination &&
+      record.payload is GoalPayload;
 }
 
-bool _boundToPeriodStart(MatchRecord goal, List<MatchRecord> records) {
+/// Payload period matches the one causally targeted PERIOD_STARTED in lineage.
+bool _placementAgrees(MatchRecord goal, List<MatchRecord> records) {
   final payload = goal.payload;
   if (payload is! GoalPayload) return false;
-  final periodStart = anchoredPeriodStart(records, payload.period);
-  if (periodStart == null) return false;
-  return goal.relationships.any(
-    (link) =>
-        link is CausalDependency && link.targetRecordId == periodStart.recordId,
-  );
+  final targets = [
+    for (final link in goal.relationships)
+      if (link is CausalDependency) link.targetRecordId,
+  ];
+  if (targets.length != 1) return false;
+  MatchRecord? target;
+  for (final record in records) {
+    if (record.recordId == targets.single) {
+      target = record;
+      break;
+    }
+  }
+  if (target == null) return false;
+  final targetPayload = target.payload;
+  if (target.recordKind != RecordKind.temporalFact ||
+      targetPayload is! TemporalTransitionPayload ||
+      targetPayload.semanticType != V1SemanticTypeCode.periodStarted ||
+      targetPayload.period != payload.period) {
+    return false;
+  }
+  return anchoredPeriodStart(records, payload.period)?.recordId ==
+      target.recordId;
+}
+
+/// V1 legal supersession withdraws the targeted record's current legal effect.
+Set<String> _withdrawnGoalIds(List<MatchRecord> records) {
+  final ids = <String>{};
+  for (final record in records) {
+    if (record.schemaVersion != 1 ||
+        record.recordKind != RecordKind.legalSupersession ||
+        record.payload is! LegalSupersessionPayload) {
+      continue;
+    }
+    for (final link in record.relationships) {
+      if (link is LegalSupersessionTarget) ids.add(link.targetRecordId);
+    }
+  }
+  return ids;
 }
 
 GoalTemporalReading _reading({
