@@ -1,10 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:match_core/match_core.dart';
 import 'package:referee_phone/app_scope.dart';
 import 'package:referee_phone/features/live_match/capture_overlay.dart';
+import 'package:referee_phone/features/live_match/live_match_terminal_ui.dart';
+import 'package:referee_phone/infrastructure/competition_rules/phone_match_capture_context.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
 import 'package:referee_phone/l10n/match_labels.dart';
+import 'package:forref_match_core/forref_match_core.dart';
 import 'package:referee_phone/match/match_session.dart';
+import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
+import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_store.dart';
+import 'package:referee_phone/match_application/kick_off_authority.dart';
+import 'package:referee_phone/match_application/match_started_read_model.dart';
 import 'package:referee_phone/match/new_match.dart';
 import 'package:referee_phone/routing/app_router.dart';
 
@@ -19,6 +28,28 @@ class LiveMatchPage extends StatefulWidget {
 
 class _LiveMatchPageState extends State<LiveMatchPage> {
   MatchSession? _session;
+  bool _kickOffPending = false;
+  bool _suspensionPending = false;
+  bool _resumePending = false;
+  bool _periodEndPending = false;
+  bool _nextPeriodPending = false;
+  bool _matchEndPending = false;
+  bool _matchStarted = false;
+  NormalMatchEndEligibility? _terminalEligibility;
+  PeriodIdentity? _activePeriod;
+  PeriodIdentity? _endedPeriod;
+  bool _intervalActive = false;
+  bool _temporallyIncomplete = false;
+  ActivePeriodElapsedProjection _elapsed =
+      ActivePeriodElapsedProjection.unavailable;
+  TemporalMatchProjection _temporal = TemporalMatchProjection.empty;
+  MatchProjectionState? _projection;
+  List<MatchRecord> _records = const [];
+  TemporalEvidence? _anchor;
+  TemporalEvidence? _suspensionBoundary;
+  TemporalEvidence? _resumptionAnchor;
+  List<TemporalEvidence> _recordedEvidence = const [];
+  Timer? _clockTicker;
   EventType? _captureType;
   DateTime? _lastActionAt;
   EventType? _lastActionType;
@@ -42,12 +73,468 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
       if (mounted) setState(() {});
     });
     setState(() => _session = session);
+    await _refreshTemporal();
+  }
+
+  Future<CaptureContext?> _captureContext(AppScope scope) async {
+    final matchCapture = scope.matchCaptureContext;
+    if (matchCapture != null) {
+      return matchCapture.captureContextFor(widget.matchId);
+    }
+    final identity = scope.captureIdentity;
+    if (identity == null) return null;
+    return identity.contextFor(widget.matchId);
+  }
+
+  Future<void> _refreshTemporal() async {
+    final scope = AppScope.of(context);
+    final boundary = scope.matchApplication;
+    final identity = scope.captureIdentity;
+    if (boundary == null || identity == null) return;
+    final projection = await boundary.project(
+      widget.matchId,
+      evaluatedAuthorityGeneration:
+          identity.contextFor(widget.matchId).projectionAuthorityGeneration,
+    );
+    final records = await boundary.durableStore.readCommittedForMatch(
+      widget.matchId,
+    );
+    final started = MatchStartedReadModel.from(
+      projection: projection,
+      records: records,
+    );
+    final temporal = TemporalMatchProjection.derive(
+      projection: projection,
+      records: records,
+    );
+    final evidence = scope.temporalEvidence;
+    final anchorId = _periodAnchorId(records, temporal.activePeriod);
+    final anchor = evidence == null || anchorId == null
+        ? null
+        : await evidence.resolve(anchorId);
+    final suspensionId = _suspensionEvidenceId(records, temporal.activePeriod);
+    final suspensionBoundary = evidence == null || suspensionId == null
+        ? null
+        : await evidence.resolve(suspensionId);
+    final resumptionId = _resumptionEvidenceId(records, temporal.activePeriod);
+    final resumptionAnchor = evidence == null || resumptionId == null
+        ? null
+        : await evidence.resolve(resumptionId);
+    final recordedEvidence = await _resolveRecordedEvidence(evidence, records);
+    final current = evidence?.currentObservation();
+    final elapsed = deriveActivePeriodElapsed(
+      temporal: temporal,
+      projection: projection,
+      records: records,
+      anchor: anchor,
+      current: current,
+      suspensionBoundary: suspensionBoundary,
+      resumptionAnchor: resumptionAnchor,
+      recordedEvidence: recordedEvidence,
+    );
+    NormalMatchEndEligibility? terminalEligibility;
+    final matchCapture = scope.matchCaptureContext;
+    if (matchCapture != null && started.authoritativelyStarted) {
+      terminalEligibility = await assessStoredNormalMatchEndEligibility(
+        capture: matchCapture,
+        matchId: widget.matchId,
+        records: records,
+      );
+    }
+    if (!mounted) return;
+    setState(() {
+      _matchStarted = started.authoritativelyStarted;
+      _activePeriod = started.activePeriod;
+      _endedPeriod = temporal.endedPeriod;
+      _intervalActive = temporal.intervalActive;
+      _temporallyIncomplete = started.temporallyIncomplete;
+      _elapsed = elapsed;
+      _temporal = temporal;
+      _projection = projection;
+      _records = records;
+      _anchor = anchor;
+      _suspensionBoundary = suspensionBoundary;
+      _resumptionAnchor = resumptionAnchor;
+      _recordedEvidence = recordedEvidence;
+      _terminalEligibility = terminalEligibility;
+    });
+    _syncClockTicker();
+  }
+
+  void _syncClockTicker() {
+    final ticking = _activePeriod != null &&
+        _elapsed.precisionSafeToShow &&
+        !_elapsed.formalSuspensionActive;
+    if (ticking && _clockTicker == null) {
+      _clockTicker = Timer.periodic(const Duration(seconds: 1), (_) {
+        _onClockTick();
+      });
+    } else if (!ticking && _clockTicker != null) {
+      _clockTicker!.cancel();
+      _clockTicker = null;
+    }
+  }
+
+  /// Recomputes the display from cached authority and the live sample.
+  ///
+  /// Does not commit a Match Record and does not persist elapsed seconds.
+  void _onClockTick() {
+    final evidence = AppScope.of(context).temporalEvidence;
+    final projection = _projection;
+    if (!mounted || evidence == null || projection == null) return;
+    setState(() {
+      _elapsed = deriveActivePeriodElapsed(
+        temporal: _temporal,
+        projection: projection,
+        records: _records,
+        anchor: _anchor,
+        current: evidence.currentObservation(),
+        suspensionBoundary: _suspensionBoundary,
+        resumptionAnchor: _resumptionAnchor,
+        recordedEvidence: _recordedEvidence,
+      );
+    });
+  }
+
+  Future<void> _resumeMatch() async {
+    final scope = AppScope.of(context);
+    final l10n = AppLocalizations.of(context);
+    final boundary = scope.matchApplication;
+    final evidence = scope.temporalEvidence;
+    final captureContext = await _captureContext(scope);
+    if (!mounted) return;
+    final period = _activePeriod;
+    if (boundary == null ||
+        captureContext == null ||
+        evidence == null ||
+        period == null ||
+        _resumePending ||
+        !_elapsed.formalSuspensionActive) {
+      return;
+    }
+    final suspensionStartedRecordId = findFormalSuspensionStart(
+      records: _records,
+      activePeriod: period,
+    ).record?.recordId;
+    if (suspensionStartedRecordId == null) return;
+    setState(() => _resumePending = true);
+    final DurableCommitResult result;
+    try {
+      final captured = await evidence.captureAnchor();
+      result = await boundary.commitTemporarySuspensionEnded(
+        captureContext,
+        period: period,
+        suspensionStartedRecordId: suspensionStartedRecordId,
+        temporalContext: TemporalContext(
+          evidenceIds: [captured.evidenceId],
+          domainClockPolicyVersion:
+              PhoneCaptureIdentity.domainClockContract.value,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _resumePending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.resumeNotSaved)),
+      );
+      return;
+    }
+    if (!mounted) return;
+    if (result is! DurableCommitSuccess) {
+      setState(() => _resumePending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.resumeNotSaved)),
+      );
+      return;
+    }
+    await _refreshTemporal();
+    if (!mounted) return;
+    setState(() => _resumePending = false);
+  }
+
+  Future<void> _endPeriod() async {
+    final scope = AppScope.of(context);
+    final l10n = AppLocalizations.of(context);
+    final boundary = scope.matchApplication;
+    final evidence = scope.temporalEvidence;
+    final captureContext = await _captureContext(scope);
+    if (!mounted) return;
+    final period = _activePeriod;
+    if (boundary == null ||
+        captureContext == null ||
+        evidence == null ||
+        period == null ||
+        _periodEndPending ||
+        _elapsed.formalSuspensionActive) {
+      return;
+    }
+    final periodStartedRecordId = _periodStartRecordId(_records, period);
+    if (periodStartedRecordId == null) return;
+    setState(() => _periodEndPending = true);
+    final DurableCommitResult result;
+    try {
+      final captured = await evidence.captureAnchor();
+      result = await boundary.commitPeriodEnded(
+        captureContext,
+        period: period,
+        periodStartedRecordId: periodStartedRecordId,
+        temporalContext: TemporalContext(
+          evidenceIds: [captured.evidenceId],
+          domainClockPolicyVersion:
+              PhoneCaptureIdentity.domainClockContract.value,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _periodEndPending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.periodEndNotSaved)),
+      );
+      return;
+    }
+    if (!mounted) return;
+    if (result is! DurableCommitSuccess) {
+      setState(() => _periodEndPending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.periodEndNotSaved)),
+      );
+      return;
+    }
+    await _refreshTemporal();
+    if (!mounted) return;
+    setState(() => _periodEndPending = false);
+  }
+
+  Future<void> _startPeriod2() async {
+    final scope = AppScope.of(context);
+    final l10n = AppLocalizations.of(context);
+    final boundary = scope.matchApplication;
+    final evidence = scope.temporalEvidence;
+    final captureContext = await _captureContext(scope);
+    if (!mounted) return;
+    if (boundary == null ||
+        captureContext == null ||
+        evidence == null ||
+        _nextPeriodPending ||
+        !_intervalActive ||
+        _activePeriod != null) {
+      return;
+    }
+    final periodEndedRecordId = findPeriodEnd(
+      records: _records,
+      period: const PeriodIdentity(index: 1),
+    ).record?.recordId;
+    if (periodEndedRecordId == null) return;
+    setState(() => _nextPeriodPending = true);
+    final DurableCommitResult result;
+    try {
+      final captured = await evidence.captureAnchor();
+      result = await boundary.commitNextPeriodStarted(
+        captureContext,
+        period: const PeriodIdentity(index: 2),
+        periodEndedRecordId: periodEndedRecordId,
+        temporalContext: TemporalContext(
+          evidenceIds: [captured.evidenceId],
+          domainClockPolicyVersion:
+              PhoneCaptureIdentity.domainClockContract.value,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _nextPeriodPending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.periodStartNotSaved)),
+      );
+      return;
+    }
+    if (!mounted) return;
+    if (result is! DurableCommitSuccess) {
+      setState(() => _nextPeriodPending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.periodStartNotSaved)),
+      );
+      return;
+    }
+    await _refreshTemporal();
+    if (!mounted) return;
+    setState(() => _nextPeriodPending = false);
+  }
+
+  Future<void> _suspendMatch() async {
+    final scope = AppScope.of(context);
+    final l10n = AppLocalizations.of(context);
+    final boundary = scope.matchApplication;
+    final evidence = scope.temporalEvidence;
+    final captureContext = await _captureContext(scope);
+    if (!mounted) return;
+    final period = _activePeriod;
+    if (boundary == null ||
+        captureContext == null ||
+        evidence == null ||
+        period == null ||
+        _suspensionPending ||
+        _elapsed.formalSuspensionActive) {
+      return;
+    }
+    final periodStartedRecordId = _periodStartRecordId(_records, period);
+    if (periodStartedRecordId == null) return;
+    setState(() => _suspensionPending = true);
+    final DurableCommitResult result;
+    try {
+      final captured = await evidence.captureAnchor();
+      result = await boundary.commitTemporarySuspensionStarted(
+        captureContext,
+        period: period,
+        periodStartedRecordId: periodStartedRecordId,
+        temporalContext: TemporalContext(
+          evidenceIds: [captured.evidenceId],
+          domainClockPolicyVersion:
+              PhoneCaptureIdentity.domainClockContract.value,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _suspensionPending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.suspensionNotSaved)),
+      );
+      return;
+    }
+    if (!mounted) return;
+    if (result is! DurableCommitSuccess) {
+      setState(() => _suspensionPending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.suspensionNotSaved)),
+      );
+      return;
+    }
+    await _refreshTemporal();
+    if (!mounted) return;
+    setState(() => _suspensionPending = false);
+  }
+
+  Future<void> _endMatch() async {
+    final scope = AppScope.of(context);
+    final l10n = AppLocalizations.of(context);
+    final boundary = scope.matchApplication;
+    final captureContext = await _captureContext(scope);
+    if (!mounted) return;
+    if (boundary == null ||
+        captureContext == null ||
+        _matchEndPending ||
+        _temporal.matchNormallyEnded ||
+        _terminalEligibility != NormalMatchEndEligibility.eligible) {
+      return;
+    }
+    final finalEnd = finalCompletedPeriodEnd(records: _records);
+    if (finalEnd == null) return;
+    setState(() => _matchEndPending = true);
+    try {
+      final result = await boundary.commitMatchEnded(
+        captureContext,
+        periodEndedRecordId: finalEnd.recordId,
+      );
+      if (!mounted) return;
+      if (result is! DurableCommitSuccess) {
+        setState(() => _matchEndPending = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.matchEndNotSaved)),
+        );
+        return;
+      }
+      await _refreshTemporal();
+      if (!mounted) return;
+      setState(() => _matchEndPending = false);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _matchEndPending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.matchEndNotSaved)),
+      );
+    }
+  }
+
+  Future<void> _kickOff() async {
+    final scope = AppScope.of(context);
+    final l10n = AppLocalizations.of(context);
+    final boundary = scope.matchApplication;
+    final captureContext = await _captureContext(scope);
+    if (!mounted) return;
+    if (boundary == null ||
+        captureContext == null ||
+        _kickOffPending ||
+        _activePeriod != null) {
+      return;
+    }
+    setState(() => _kickOffPending = true);
+    try {
+      final evidence = scope.temporalEvidence;
+      final result = await boundary.commitKickOff(
+        captureContext,
+        period: const PeriodIdentity(index: 1),
+        periodAnchor: evidence == null
+            ? null
+            : () async {
+                final captured = await evidence.captureAnchor();
+                return TemporalContext(
+                  evidenceIds: [captured.evidenceId],
+                  domainClockPolicyVersion:
+                      PhoneCaptureIdentity.domainClockContract.value,
+                );
+              },
+      );
+      if (!mounted) return;
+      if (result is KickOffAuthorityRejected) {
+        setState(() => _kickOffPending = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.kickOffNotSaved)),
+        );
+        return;
+      }
+      await _refreshTemporal();
+      if (!mounted) return;
+      setState(() => _kickOffPending = false);
+      if (result is KickOffMatchStartedIncomplete) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.periodStartNotSaved)),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _kickOffPending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.kickOffNotSaved)),
+      );
+    }
   }
 
   @override
   void dispose() {
+    _clockTicker?.cancel();
     _session?.dispose();
     super.dispose();
+  }
+
+  String _cutOverClockLabel(AppLocalizations l10n) {
+    final elapsed = _elapsed;
+    if (elapsed.precisionSafeToShow && elapsed.exactElapsed != null) {
+      return formatMatchClock(elapsed.exactElapsed!.inSeconds);
+    }
+    if (elapsed.continuity == TemporalContinuityStatus.boundedContinuity &&
+        elapsed.elapsedLowerBound != null &&
+        elapsed.elapsedUpperBound != null) {
+      return '${formatMatchClock(elapsed.elapsedLowerBound!.inSeconds)}–'
+          '${formatMatchClock(elapsed.elapsedUpperBound!.inSeconds)}';
+    }
+    return l10n.elapsedUnavailable;
+  }
+
+  String _continuityLabel(AppLocalizations l10n) {
+    return switch (_elapsed.continuity) {
+      TemporalContinuityStatus.exactContinuity => l10n.continuityExact,
+      TemporalContinuityStatus.boundedContinuity => l10n.continuityBounded,
+      TemporalContinuityStatus.continuityUnresolved => l10n.elapsedUnavailable,
+    };
   }
 
   void _startCapture(EventType type) {
@@ -80,7 +567,31 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
     }
     final match = session.match;
     final addedMinutes = match.currentState.addedTimeSeconds ~/ 60;
-    final clock = formatMatchClock(session.displayedElapsed());
+    final cutOverClock = _activePeriod != null || _endedPeriod != null;
+    final clock = cutOverClock
+        ? _cutOverClockLabel(l10n)
+        : formatMatchClock(session.displayedElapsed());
+    final temporalLabel = _temporal.matchNormallyEnded
+        ? l10n.matchEndedTerminal
+        : _activePeriod != null
+            ? l10n.activePeriodIndex(_activePeriod!.index)
+            : _intervalActive
+                ? l10n.interval
+                : _endedPeriod != null
+                    ? l10n.periodEnded(_endedPeriod!.index)
+                    : _temporallyIncomplete
+                        ? l10n.periodStartIncomplete
+                        : '${periodLabel(match.currentState.periodId, l10n)}  ${matchStatusLabel(match, l10n)}';
+    final terminalBlockedMessage = showTerminalBlockedReason(
+          eligibility: _terminalEligibility,
+          matchNormallyEnded: _temporal.matchNormallyEnded,
+          matchStarted: _matchStarted,
+        )
+        ? terminalEligibilityMessage(l10n, _terminalEligibility!)
+        : null;
+    final legacyHalfTimeVisible = !_intervalActive &&
+        _endedPeriod == null &&
+        _activePeriod == null;
     final recent = match.events.reversed.take(7).toList();
 
     return Scaffold(
@@ -102,20 +613,84 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
             padding: const EdgeInsets.all(16),
             children: [
               Text(
-                '$clock  ${periodLabel(match.currentState.periodId, l10n)}  ${matchStatusLabel(match, l10n)}',
+                '$clock  $temporalLabel',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
-              if (addedMinutes > 0)
+              if (_intervalActive && _endedPeriod != null) ...[
+                Text(l10n.periodEndedInterval(_endedPeriod!.index)),
+                Text(l10n.noActivePlayingPeriod),
+              ],
+              if (_temporal.matchNormallyEnded) ...[
+                Text(
+                  l10n.matchEndedTerminal,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Text(l10n.noActivePlayingPeriod),
+              ] else if (_temporal.bothOrdinaryPeriodsEnded)
+                Text(l10n.noActivePlayingPeriod),
+              if (terminalBlockedMessage != null)
+                Text(terminalBlockedMessage),
+              if (cutOverClock &&
+                  !_intervalActive &&
+                  _elapsed.continuity !=
+                      TemporalContinuityStatus.continuityUnresolved)
+                Text(_continuityLabel(l10n)),
+              if (_elapsed.formalSuspensionActive) ...[
+                Text(l10n.matchSuspended),
+                if (_elapsed.suspensionDurationOpen)
+                  Text(l10n.suspensionOngoing),
+              ],
+              if (_activePeriod == null &&
+                  _endedPeriod == null &&
+                  addedMinutes > 0)
                 Text(l10n.clockWithAdded(clock, addedMinutes)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  if (match.status == MatchStatus.ready)
+                  if (match.status == MatchStatus.ready &&
+                      !_matchStarted &&
+                      !_temporallyIncomplete)
                     FilledButton(
-                      onPressed: () => _onState(session.kickOff),
+                      onPressed: _kickOffPending ? null : _kickOff,
                       child: Text(l10n.kickOff),
+                    ),
+                  if (_temporallyIncomplete)
+                    FilledButton(
+                      onPressed: _kickOffPending ? null : _kickOff,
+                      child: Text(l10n.completePeriodStart),
+                    ),
+                  if (_matchStarted) Text(l10n.matchStarted),
+                  if (_intervalActive)
+                    FilledButton(
+                      onPressed: _nextPeriodPending ? null : _startPeriod2,
+                      child: Text(l10n.startPeriod2),
+                    ),
+                  if (_activePeriod != null &&
+                      !_elapsed.formalSuspensionActive) ...[
+                    FilledButton(
+                      onPressed: _suspensionPending ? null : _suspendMatch,
+                      child: Text(l10n.suspendMatch),
+                    ),
+                    FilledButton(
+                      onPressed: _periodEndPending ? null : _endPeriod,
+                      child: Text(l10n.endPeriod),
+                    ),
+                  ],
+                  if (_elapsed.formalSuspensionActive)
+                    FilledButton(
+                      onPressed: _resumePending ? null : _resumeMatch,
+                      child: Text(l10n.resumeMatch),
+                    ),
+                  if (showEndMatchAction(
+                    eligibility: _terminalEligibility,
+                    matchNormallyEnded: _temporal.matchNormallyEnded,
+                    matchEndPending: _matchEndPending,
+                  ))
+                    FilledButton(
+                      onPressed: _matchEndPending ? null : _endMatch,
+                      child: Text(l10n.endMatch),
                     ),
                   if (match.status == MatchStatus.live)
                     FilledButton(
@@ -127,7 +702,8 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                       onPressed: () => _onState(session.resume),
                       child: Text(l10n.resume),
                     ),
-                  if ((match.status == MatchStatus.live ||
+                  if (legacyHalfTimeVisible &&
+                      (match.status == MatchStatus.live ||
                           match.status == MatchStatus.paused) &&
                       (match.currentState.periodId == PeriodId.firstHalf ||
                           match.currentState.periodId == PeriodId.extraTime1))
@@ -135,12 +711,14 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                       onPressed: () => _onState(session.halfTime),
                       child: Text(l10n.halfTime),
                     ),
-                  if (match.status == MatchStatus.halfTime)
+                  if (legacyHalfTimeVisible &&
+                      match.status == MatchStatus.halfTime)
                     FilledButton(
                       onPressed: () => _onState(session.startSecondHalf),
                       child: Text(l10n.startSecondHalf),
                     ),
-                  if ((match.status == MatchStatus.live ||
+                  if (legacyHalfTimeVisible &&
+                      (match.status == MatchStatus.live ||
                           match.status == MatchStatus.paused) &&
                       match.currentState.periodId == PeriodId.secondHalf)
                     FilledButton.tonal(
@@ -164,22 +742,23 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                     ),
                 ],
               ),
-              Row(
-                children: [
-                  Text(l10n.addedTime),
-                  IconButton(
-                    onPressed: () =>
-                        session.setAddedMinutes(addedMinutes - 1),
-                    icon: const Icon(Icons.remove),
-                  ),
-                  Text('$addedMinutes'),
-                  IconButton(
-                    onPressed: () =>
-                        session.setAddedMinutes(addedMinutes + 1),
-                    icon: const Icon(Icons.add),
-                  ),
-                ],
-              ),
+              if (_activePeriod == null && _endedPeriod == null)
+                Row(
+                  children: [
+                    Text(l10n.addedTime),
+                    IconButton(
+                      onPressed: () =>
+                          session.setAddedMinutes(addedMinutes - 1),
+                      icon: const Icon(Icons.remove),
+                    ),
+                    Text('$addedMinutes'),
+                    IconButton(
+                      onPressed: () =>
+                          session.setAddedMinutes(addedMinutes + 1),
+                      icon: const Icon(Icons.add),
+                    ),
+                  ],
+                ),
               Text(
                 l10n.scoreLine(
                   homeLabel(match, l10n),
@@ -249,6 +828,65 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
         ],
       ),
     );
+  }
+
+  Future<List<TemporalEvidence>> _resolveRecordedEvidence(
+    PhoneTemporalEvidenceStore? evidence,
+    List<MatchRecord> records,
+  ) async {
+    if (evidence == null) return const [];
+    final ids = <String>{};
+    for (final record in records) {
+      ids.addAll(record.temporalContext?.evidenceIds ?? const <String>[]);
+    }
+    final resolved = <TemporalEvidence>[];
+    for (final id in ids) {
+      final item = await evidence.resolve(id);
+      if (item != null) resolved.add(item);
+    }
+    return resolved;
+  }
+
+  String? _periodStartRecordId(
+    List<MatchRecord> records,
+    PeriodIdentity period,
+  ) {
+    return anchoredPeriodStart(records, period)?.recordId;
+  }
+
+  String? _resumptionEvidenceId(
+    List<MatchRecord> records,
+    PeriodIdentity? period,
+  ) {
+    final ids = findFormalSuspensionStart(
+          records: records,
+          activePeriod: period,
+        ).end?.temporalContext?.evidenceIds ??
+        const <String>[];
+    if (ids.isEmpty) return null;
+    return ids.first;
+  }
+
+  String? _suspensionEvidenceId(
+    List<MatchRecord> records,
+    PeriodIdentity? period,
+  ) {
+    final ids = findFormalSuspensionStart(
+          records: records,
+          activePeriod: period,
+        ).record?.temporalContext?.evidenceIds ??
+        const <String>[];
+    if (ids.isEmpty) return null;
+    return ids.first;
+  }
+
+  String? _periodAnchorId(List<MatchRecord> records, PeriodIdentity? period) {
+    if (period == null) return null;
+    final ids =
+        anchoredPeriodStart(records, period)?.temporalContext?.evidenceIds ??
+            const <String>[];
+    if (ids.isEmpty) return null;
+    return ids.first;
   }
 
   Future<void> _edit(MatchEvent event) async {

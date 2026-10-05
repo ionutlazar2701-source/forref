@@ -4,6 +4,7 @@ import 'package:referee_phone/app_scope.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
 import 'package:referee_phone/match/client_ids.dart';
 import 'package:referee_phone/match/match_session.dart';
+import 'package:referee_phone/infrastructure/competition_rules/phone_competition_format_choice.dart';
 import 'package:referee_phone/routing/app_router.dart';
 
 class MatchSetupPage extends StatefulWidget {
@@ -26,6 +27,9 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
   late final TextEditingController _ar1;
   late final TextEditingController _ar2;
   late final TextEditingController _fourth;
+  PhoneCompetitionFormatChoice _formatChoice =
+      PhoneCompetitionFormatChoice.additionalPlayingPhaseMayApply;
+  bool _penaltyShootOutAfterMatchEnd = false;
 
   @override
   void initState() {
@@ -62,6 +66,16 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
         match: match,
       );
     });
+    final rulesStore = AppScope.of(context).matchCaptureContext?.rulesStore;
+    if (rulesStore != null) {
+      await rulesStore.ensureForMatch(widget.matchId);
+      final rules = await rulesStore.loadForMatch(widget.matchId);
+      if (!mounted) return;
+      setState(() {
+        _formatChoice = PhoneCompetitionFormatChoiceMapping.fromRules(rules);
+        _penaltyShootOutAfterMatchEnd = rules.penaltyShootOutAfterMatchEnd;
+      });
+    }
   }
 
   @override
@@ -109,6 +123,17 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
           assistant2: _member(_ar2.text),
           fourthOfficial: _member(_fourth.text),
         ),
+      ),
+    );
+  }
+
+  Future<void> _persistCompetitionRules() async {
+    final rulesStore = AppScope.of(context).matchCaptureContext?.rulesStore;
+    if (rulesStore == null) return;
+    await rulesStore.saveForMatch(
+      widget.matchId,
+      _formatChoice.toRulesContext(
+        penaltyShootOutAfterMatchEnd: _penaltyShootOutAfterMatchEnd,
       ),
     );
   }
@@ -227,6 +252,47 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
             controller: _half,
             keyboardType: TextInputType.number,
             decoration: InputDecoration(labelText: l10n.halfLength),
+          ),
+          const SizedBox(height: 16),
+          Text(l10n.competitionFormatTitle),
+          ListTile(
+            title: Text(l10n.competitionFormatNoExtraTime),
+            trailing:
+                _formatChoice ==
+                    PhoneCompetitionFormatChoice.noAdditionalPlayingPeriods
+                ? const Icon(Icons.check)
+                : null,
+            onTap: () async {
+              setState(
+                () => _formatChoice =
+                    PhoneCompetitionFormatChoice.noAdditionalPlayingPeriods,
+              );
+              await _persistCompetitionRules();
+            },
+          ),
+          ListTile(
+            title: Text(l10n.competitionFormatExtraTimeMayApply),
+            trailing:
+                _formatChoice ==
+                    PhoneCompetitionFormatChoice.additionalPlayingPhaseMayApply
+                ? const Icon(Icons.check)
+                : null,
+            onTap: () async {
+              setState(
+                () => _formatChoice =
+                    PhoneCompetitionFormatChoice.additionalPlayingPhaseMayApply,
+              );
+              await _persistCompetitionRules();
+            },
+          ),
+          CheckboxListTile(
+            title: Text(l10n.penaltyShootOutAfterMatchEnd),
+            value: _penaltyShootOutAfterMatchEnd,
+            onChanged: (value) async {
+              setState(() => _penaltyShootOutAfterMatchEnd = value ?? false);
+              await _persistCompetitionRules();
+            },
+            controlAffinity: ListTileControlAffinity.leading,
           ),
           TextField(
             controller: _referee,

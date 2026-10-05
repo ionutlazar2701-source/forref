@@ -84,6 +84,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get halfLength => 'Half length (minutes)';
 
   @override
+  String get competitionFormatTitle => 'Competition format';
+
+  @override
+  String get competitionFormatNoExtraTime =>
+      'Standard — no additional playing periods';
+
+  @override
+  String get competitionFormatExtraTimeMayApply =>
+      'Extra time or cup format may apply';
+
+  @override
+  String get penaltyShootOutAfterMatchEnd =>
+      'Penalty shoot-out after match end (if required)';
+
+  @override
   String get crewReferee => 'Referee';
 
   @override
@@ -115,6 +130,114 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get kickOff => 'Kick-off';
+
+  @override
+  String get matchStarted => 'Match started';
+
+  @override
+  String get kickOffNotSaved => 'Kick-off was not saved';
+
+  @override
+  String get periodStartIncomplete => 'Period start incomplete';
+
+  @override
+  String get completePeriodStart => 'Complete period start';
+
+  @override
+  String get periodStartNotSaved => 'Period start was not saved';
+
+  @override
+  String get continuityExact => 'Continuity exact';
+
+  @override
+  String get continuityBounded => 'Continuity bounded';
+
+  @override
+  String get elapsedUnavailable => 'Elapsed unavailable';
+
+  @override
+  String get suspendMatch => 'Suspend match';
+
+  @override
+  String get matchSuspended => 'Match suspended';
+
+  @override
+  String get suspensionOngoing => 'Suspension ongoing';
+
+  @override
+  String get suspensionNotSaved => 'Suspension was not saved';
+
+  @override
+  String get resumeMatch => 'Resume match';
+
+  @override
+  String get resumeNotSaved => 'Resume was not saved';
+
+  @override
+  String get endPeriod => 'End period';
+
+  @override
+  String get endMatch => 'End match';
+
+  @override
+  String get matchEndedTerminal => 'Match ended';
+
+  @override
+  String get matchEndNotSaved => 'Match end was not saved';
+
+  @override
+  String get terminalBlockedAdditionalPlayingPhase =>
+      'An additional playing period is required before the match can end';
+
+  @override
+  String get terminalBlockedPhaseDispositionUnresolved =>
+      'Competition format is unresolved — normal match end is not available';
+
+  @override
+  String get terminalBlockedActivePeriod => 'A playing period is still active';
+
+  @override
+  String get terminalBlockedOpenSuspension => 'Formal suspension is still open';
+
+  @override
+  String get terminalBlockedAbandoned => 'The match was abandoned';
+
+  @override
+  String get terminalBlockedAlreadyEnded => 'The match has already ended';
+
+  @override
+  String get terminalBlockedAmbiguousLineage => 'Period lineage is ambiguous';
+
+  @override
+  String get terminalBlockedNoCompletedPlayingPhase =>
+      'No playing period has been completed';
+
+  @override
+  String periodEnded(int index) {
+    return 'Period $index ended';
+  }
+
+  @override
+  String get periodEndNotSaved => 'Period end was not saved';
+
+  @override
+  String get interval => 'Interval';
+
+  @override
+  String periodEndedInterval(int index) {
+    return 'Period $index — ended';
+  }
+
+  @override
+  String get noActivePlayingPeriod => 'No active playing period';
+
+  @override
+  String get startPeriod2 => 'Start Period 2';
+
+  @override
+  String activePeriodIndex(int index) {
+    return 'Period $index';
+  }
 
   @override
   String get pause => 'Pause';

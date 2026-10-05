@@ -34,7 +34,8 @@ class _MatchesPageState extends State<MatchesPage> {
   }
 
   Future<void> _newMatch() async {
-    final db = AppScope.of(context).database;
+    final scope = AppScope.of(context);
+    final db = scope.database;
     final match = newLocalMatch(DateTime.now());
     await db.upsertMatch(match);
     if (!mounted) return;

@@ -84,6 +84,21 @@ class AppLocalizationsRo extends AppLocalizations {
   String get halfLength => 'Durata reprizei (minute)';
 
   @override
+  String get competitionFormatTitle => 'Format competiție';
+
+  @override
+  String get competitionFormatNoExtraTime =>
+      'Standard — fără perioade suplimentare de joc';
+
+  @override
+  String get competitionFormatExtraTimeMayApply =>
+      'Prelungiri sau format cupe — posibil';
+
+  @override
+  String get penaltyShootOutAfterMatchEnd =>
+      'Lovituri de departajare după final (dacă e cazul)';
+
+  @override
   String get crewReferee => 'Arbitru';
 
   @override
@@ -115,6 +130,117 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get kickOff => 'Start';
+
+  @override
+  String get matchStarted => 'Meci început';
+
+  @override
+  String get kickOffNotSaved => 'Startul nu a fost salvat';
+
+  @override
+  String get periodStartIncomplete => 'Startul reprizei este incomplet';
+
+  @override
+  String get completePeriodStart => 'Finalizează startul reprizei';
+
+  @override
+  String get periodStartNotSaved => 'Startul reprizei nu a fost salvat';
+
+  @override
+  String get continuityExact => 'Continuitate exactă';
+
+  @override
+  String get continuityBounded => 'Continuitate mărginită';
+
+  @override
+  String get elapsedUnavailable => 'Timpul nu este disponibil';
+
+  @override
+  String get suspendMatch => 'Suspendă meciul';
+
+  @override
+  String get matchSuspended => 'Meci suspendat';
+
+  @override
+  String get suspensionOngoing => 'Suspendare în curs';
+
+  @override
+  String get suspensionNotSaved => 'Suspendarea nu a fost salvată';
+
+  @override
+  String get resumeMatch => 'Reia meciul';
+
+  @override
+  String get resumeNotSaved => 'Reluarea nu a fost salvată';
+
+  @override
+  String get endPeriod => 'Încheie repriza';
+
+  @override
+  String get endMatch => 'Încheie meciul';
+
+  @override
+  String get matchEndedTerminal => 'Meci încheiat';
+
+  @override
+  String get matchEndNotSaved => 'Încheierea meciului nu a fost salvată';
+
+  @override
+  String get terminalBlockedAdditionalPlayingPhase =>
+      'Este necesară o perioadă suplimentară de joc înainte de încheiere';
+
+  @override
+  String get terminalBlockedPhaseDispositionUnresolved =>
+      'Formatul competiției este nerezolvat — încheierea normală nu este disponibilă';
+
+  @override
+  String get terminalBlockedActivePeriod =>
+      'O perioadă de joc este încă activă';
+
+  @override
+  String get terminalBlockedOpenSuspension =>
+      'Suspendarea formală este încă deschisă';
+
+  @override
+  String get terminalBlockedAbandoned => 'Meciul a fost abandonat';
+
+  @override
+  String get terminalBlockedAlreadyEnded => 'Meciul s-a încheiat deja';
+
+  @override
+  String get terminalBlockedAmbiguousLineage =>
+      'Linia temporală a reprizelor este ambiguă';
+
+  @override
+  String get terminalBlockedNoCompletedPlayingPhase =>
+      'Nicio perioadă de joc nu a fost încheiată';
+
+  @override
+  String periodEnded(int index) {
+    return 'Repriza $index — încheiată';
+  }
+
+  @override
+  String get periodEndNotSaved => 'Încheierea reprizei nu a fost salvată';
+
+  @override
+  String get interval => 'Pauză';
+
+  @override
+  String periodEndedInterval(int index) {
+    return 'Repriza $index — încheiată';
+  }
+
+  @override
+  String get noActivePlayingPeriod => 'Nicio perioadă activă de joc';
+
+  @override
+  String get startPeriod2 => 'Începe repriza 2';
+
+  @override
+  String activePeriodIndex(int index) {
+    return 'Repriza $index';
+  }
 
   @override
   String get pause => 'Pauză';

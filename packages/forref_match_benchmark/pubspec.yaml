@@ -1,0 +1,22 @@
+name: forref_match_benchmark
+description: >-
+  PERF-MEASURE-001 benchmark suite for FORREF Phone Match Core.
+  Measurement-only; not invoked in production paths.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.6.0
+
+resolution: workspace
+
+dependencies:
+  forref_match_core:
+    path: ../forref_match_core
+  forref_match_persistence:
+    path: ../forref_match_persistence
+  sqlite3: ^3.5.2
+  uuid: ^4.5.1
+
+dev_dependencies:
+  lints: ^5.0.0

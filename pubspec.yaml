@@ -5,6 +5,9 @@ environment:
 
 workspace:
   - packages/match_core
+  - packages/forref_match_core
+  - packages/forref_match_persistence
+  - packages/forref_match_benchmark
   - apps/referee_phone
 
 dev_dependencies:

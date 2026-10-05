@@ -248,6 +248,30 @@ abstract class AppLocalizations {
   /// **'Half length (minutes)'**
   String get halfLength;
 
+  /// No description provided for @competitionFormatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Competition format'**
+  String get competitionFormatTitle;
+
+  /// No description provided for @competitionFormatNoExtraTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard — no additional playing periods'**
+  String get competitionFormatNoExtraTime;
+
+  /// No description provided for @competitionFormatExtraTimeMayApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra time or cup format may apply'**
+  String get competitionFormatExtraTimeMayApply;
+
+  /// No description provided for @penaltyShootOutAfterMatchEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Penalty shoot-out after match end (if required)'**
+  String get penaltyShootOutAfterMatchEnd;
+
   /// No description provided for @crewReferee.
   ///
   /// In en, this message translates to:
@@ -313,6 +337,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Kick-off'**
   String get kickOff;
+
+  /// No description provided for @matchStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Match started'**
+  String get matchStarted;
+
+  /// No description provided for @kickOffNotSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Kick-off was not saved'**
+  String get kickOffNotSaved;
+
+  /// No description provided for @periodStartIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Period start incomplete'**
+  String get periodStartIncomplete;
+
+  /// No description provided for @completePeriodStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete period start'**
+  String get completePeriodStart;
+
+  /// No description provided for @periodStartNotSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Period start was not saved'**
+  String get periodStartNotSaved;
+
+  /// No description provided for @continuityExact.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuity exact'**
+  String get continuityExact;
+
+  /// No description provided for @continuityBounded.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuity bounded'**
+  String get continuityBounded;
+
+  /// No description provided for @elapsedUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Elapsed unavailable'**
+  String get elapsedUnavailable;
+
+  /// No description provided for @suspendMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Suspend match'**
+  String get suspendMatch;
+
+  /// No description provided for @matchSuspended.
+  ///
+  /// In en, this message translates to:
+  /// **'Match suspended'**
+  String get matchSuspended;
+
+  /// No description provided for @suspensionOngoing.
+  ///
+  /// In en, this message translates to:
+  /// **'Suspension ongoing'**
+  String get suspensionOngoing;
+
+  /// No description provided for @suspensionNotSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Suspension was not saved'**
+  String get suspensionNotSaved;
+
+  /// No description provided for @resumeMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume match'**
+  String get resumeMatch;
+
+  /// No description provided for @resumeNotSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume was not saved'**
+  String get resumeNotSaved;
+
+  /// No description provided for @endPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'End period'**
+  String get endPeriod;
+
+  /// No description provided for @endMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'End match'**
+  String get endMatch;
+
+  /// No description provided for @matchEndedTerminal.
+  ///
+  /// In en, this message translates to:
+  /// **'Match ended'**
+  String get matchEndedTerminal;
+
+  /// No description provided for @matchEndNotSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Match end was not saved'**
+  String get matchEndNotSaved;
+
+  /// No description provided for @terminalBlockedAdditionalPlayingPhase.
+  ///
+  /// In en, this message translates to:
+  /// **'An additional playing period is required before the match can end'**
+  String get terminalBlockedAdditionalPlayingPhase;
+
+  /// No description provided for @terminalBlockedPhaseDispositionUnresolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Competition format is unresolved — normal match end is not available'**
+  String get terminalBlockedPhaseDispositionUnresolved;
+
+  /// No description provided for @terminalBlockedActivePeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'A playing period is still active'**
+  String get terminalBlockedActivePeriod;
+
+  /// No description provided for @terminalBlockedOpenSuspension.
+  ///
+  /// In en, this message translates to:
+  /// **'Formal suspension is still open'**
+  String get terminalBlockedOpenSuspension;
+
+  /// No description provided for @terminalBlockedAbandoned.
+  ///
+  /// In en, this message translates to:
+  /// **'The match was abandoned'**
+  String get terminalBlockedAbandoned;
+
+  /// No description provided for @terminalBlockedAlreadyEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'The match has already ended'**
+  String get terminalBlockedAlreadyEnded;
+
+  /// No description provided for @terminalBlockedAmbiguousLineage.
+  ///
+  /// In en, this message translates to:
+  /// **'Period lineage is ambiguous'**
+  String get terminalBlockedAmbiguousLineage;
+
+  /// No description provided for @terminalBlockedNoCompletedPlayingPhase.
+  ///
+  /// In en, this message translates to:
+  /// **'No playing period has been completed'**
+  String get terminalBlockedNoCompletedPlayingPhase;
+
+  /// No description provided for @periodEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Period {index} ended'**
+  String periodEnded(int index);
+
+  /// No description provided for @periodEndNotSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Period end was not saved'**
+  String get periodEndNotSaved;
+
+  /// No description provided for @interval.
+  ///
+  /// In en, this message translates to:
+  /// **'Interval'**
+  String get interval;
+
+  /// No description provided for @periodEndedInterval.
+  ///
+  /// In en, this message translates to:
+  /// **'Period {index} — ended'**
+  String periodEndedInterval(int index);
+
+  /// No description provided for @noActivePlayingPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'No active playing period'**
+  String get noActivePlayingPeriod;
+
+  /// No description provided for @startPeriod2.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Period 2'**
+  String get startPeriod2;
+
+  /// No description provided for @activePeriodIndex.
+  ///
+  /// In en, this message translates to:
+  /// **'Period {index}'**
+  String activePeriodIndex(int index);
 
   /// No description provided for @pause.
   ///

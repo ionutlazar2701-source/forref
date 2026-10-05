@@ -1,0 +1,20 @@
+name: forref_match_persistence
+description: >-
+  Phone-local SQLite persistence adapter for FORREF Match Records.
+  File-backed only. Not the legacy match_core database.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.6.0
+
+resolution: workspace
+
+dependencies:
+  forref_match_core:
+    path: ../forref_match_core
+  sqlite3: ^3.5.2
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.0

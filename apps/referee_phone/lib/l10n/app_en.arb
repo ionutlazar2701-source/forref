@@ -25,6 +25,10 @@
   "competition": "Competition",
   "venue": "Venue",
   "halfLength": "Half length (minutes)",
+  "competitionFormatTitle": "Competition format",
+  "competitionFormatNoExtraTime": "Standard — no additional playing periods",
+  "competitionFormatExtraTimeMayApply": "Extra time or cup format may apply",
+  "penaltyShootOutAfterMatchEnd": "Penalty shoot-out after match end (if required)",
   "crewReferee": "Referee",
   "crewAr1": "Assistant 1",
   "crewAr2": "Assistant 2",
@@ -36,6 +40,54 @@
   "playerName": "Name",
   "liveMatch": "Live Match",
   "kickOff": "Kick-off",
+  "matchStarted": "Match started",
+  "kickOffNotSaved": "Kick-off was not saved",
+  "periodStartIncomplete": "Period start incomplete",
+  "completePeriodStart": "Complete period start",
+  "periodStartNotSaved": "Period start was not saved",
+  "continuityExact": "Continuity exact",
+  "continuityBounded": "Continuity bounded",
+  "elapsedUnavailable": "Elapsed unavailable",
+  "suspendMatch": "Suspend match",
+  "matchSuspended": "Match suspended",
+  "suspensionOngoing": "Suspension ongoing",
+  "suspensionNotSaved": "Suspension was not saved",
+  "resumeMatch": "Resume match",
+  "resumeNotSaved": "Resume was not saved",
+  "endPeriod": "End period",
+  "endMatch": "End match",
+  "matchEndedTerminal": "Match ended",
+  "matchEndNotSaved": "Match end was not saved",
+  "terminalBlockedAdditionalPlayingPhase": "An additional playing period is required before the match can end",
+  "terminalBlockedPhaseDispositionUnresolved": "Competition format is unresolved — normal match end is not available",
+  "terminalBlockedActivePeriod": "A playing period is still active",
+  "terminalBlockedOpenSuspension": "Formal suspension is still open",
+  "terminalBlockedAbandoned": "The match was abandoned",
+  "terminalBlockedAlreadyEnded": "The match has already ended",
+  "terminalBlockedAmbiguousLineage": "Period lineage is ambiguous",
+  "terminalBlockedNoCompletedPlayingPhase": "No playing period has been completed",
+  "periodEnded": "Period {index} ended",
+  "@periodEnded": {
+    "placeholders": {
+      "index": {"type": "int"}
+    }
+  },
+  "periodEndNotSaved": "Period end was not saved",
+  "interval": "Interval",
+  "periodEndedInterval": "Period {index} — ended",
+  "@periodEndedInterval": {
+    "placeholders": {
+      "index": {"type": "int"}
+    }
+  },
+  "noActivePlayingPeriod": "No active playing period",
+  "startPeriod2": "Start Period 2",
+  "activePeriodIndex": "Period {index}",
+  "@activePeriodIndex": {
+    "placeholders": {
+      "index": {"type": "int"}
+    }
+  },
   "pause": "Pause",
   "resume": "Resume",
   "halfTime": "Half-time",

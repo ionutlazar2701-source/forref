@@ -1,5 +1,13 @@
 # Data model
 
+> **HISTORICAL / LEGACY — NOT AUTHORITATIVE FOR NEW MATCH CORE**
+>
+> This document defines the **mutable Match aggregate** (`events[]` + in-place edits + `currentState` checkpoint + **last-local-wins** sync). That model is **legacy** and conflicts with frozen Match Memory (immutable records, supersession, projection rebuild).
+>
+> **Authoritative for new core:** [AGENTS.md](../AGENTS.md), [architecture-authority.md](architecture-authority.md).
+>
+> **Legacy fixture only:** [examples/match-canonical.json](examples/match-canonical.json) — describes current code shape, not FORREF record envelopes.
+
 Canonical local-first **Match** aggregate. Example: [examples/match-canonical.json](examples/match-canonical.json).
 
 `events` + period/clock transitions are authoritative. `score` and `currentState` are **derived caches** persisted for recovery. Do not keep a competing score or clock.
@@ -113,5 +121,7 @@ One **transaction**: event + history + derived `score` / `currentState`. Store: 
 Firestore: `users/{userId}/matches/{matchId}` with `events/{eventId}` and `history/{historyId}` subcollections. Match doc holds metadata, teams, crew, squads, periods, `currentState`, `score`, `sync`. Preserve client IDs. **Last-local-wins** via `updatedAt`. No CRDT.
 
 Not synced: PDFs, analytics, GPS, HR, watch, UI drafts, billing.
+
+Not on the Match document: `referee_level`, subscription plan, entitlements, or store price IDs. Those belong on the user account at paid launch — [pricing.md](pricing.md).
 
 Sync only if signed in **and** online **and** unsynced changes (connectivity, sign-in, resume, local save). Kick-off never waits.

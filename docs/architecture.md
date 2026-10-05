@@ -1,5 +1,13 @@
 # Architecture
 
+> **HISTORICAL / LEGACY — NOT AUTHORITATIVE FOR NEW MATCH CORE**
+>
+> This document describes the **pre-FORREF mutable `Match` aggregate** and a **Last-local-wins Firestore replica** plan. Both are **superseded** for new Match Core work.
+>
+> **Authoritative for new core:** [AGENTS.md](../AGENTS.md), [architecture-authority.md](architecture-authority.md).
+>
+> **Implementation truth (legacy):** `packages/match_core`, `apps/referee_phone/lib/match/match_session.dart`, Drift tables in `local_match_database.dart`.
+
 Phone-first, offline-first, one match core. Clock: [ux-live-match.md](ux-live-match.md). Aggregate: [data-model.md](data-model.md). Remaining opens: [open-decisions.md](open-decisions.md).
 
 ## Phone stack (frozen)
@@ -57,7 +65,7 @@ Local persistence: Drift + SQLite in `apps/referee_phone/lib/infrastructure/data
 
 Phone app (mechanical UI, no visual design): match list, optional setup, Live Match control center (kick-off / pause / capture / undo), summary + finish. Offline-only; Firebase waits on project IDs.
 
-Not yet: Firebase, visual design, PDF, watch.
+Not yet: Firebase, visual design, PDF, watch, billing (paid launch: [pricing.md](pricing.md)).
 
 ## Offline-first
 
@@ -76,7 +84,7 @@ Firebase: **Auth + Firestore**. Storage (PDFs) and Analytics later. AWS waits.
 - Firestore: `users/{userId}/matches/{matchId}/events/{eventId}` and `…/history/{historyId}`. Client UUIDs kept. **Last-local-wins**.
 - Sync when signed in + online + unsynced changes (resume, sign-in, connectivity, save while online). Kick-off never waits.
 - Do not sync PDFs, analytics, GPS, HR, watch, UI drafts, billing.
-- **Billing:** not in MVP; **free during beta**. No IAP, paywalls, or entitlements in `match_core`.
+- **Billing:** not in MVP; **free during beta**. No IAP, paywalls, or entitlements in `match_core`. Paid-launch plans and regional prices: [pricing.md](pricing.md) (account/profile + store, not the Match aggregate).
 
 ## Watch clients
 

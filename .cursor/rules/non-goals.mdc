@@ -15,6 +15,7 @@ Do not implement unless the user explicitly reopens the decision:
 - React Native for the MVP phone app; Hive/JSON files as primary match DB; Auth/network gating Kick-off
 - CRDT / live crew merge; Anonymous Auth as the offline architecture
 - IAP/paywalls inside `match_core`; `review` match status; activating `pens` in MVP
+- Pricing by referee income, GPS, or `referee_level`; mixing geography / level / plan — `docs/pricing.md`
 - Live watch-to-watch Bluetooth sync
 - On-watch speech-to-text during the match
 - Treating informal ChatGPT/Gemini notes as source of truth (canonical: `AGENTS.md` and `docs/`)

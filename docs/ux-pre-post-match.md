@@ -123,7 +123,7 @@ Timestamp is not “now”: set **match time** (type or pick) and/or **±30 s**,
 
 ### PDF
 
-One template, offline, OS share sheet. Regenerable after edits. Allowed with incomplete events and empty timeline.
+One template, offline, OS share sheet. Regenerable after edits. Allowed with incomplete events and empty timeline. During beta this is unlimited. Paid-launch caps (Free 3 / Plus 10 / Pro unlimited per month): [pricing.md](pricing.md). Do not implement those caps in MVP.
 
 ## Edge cases
 

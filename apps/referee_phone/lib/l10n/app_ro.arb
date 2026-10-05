@@ -25,6 +25,10 @@
   "competition": "Competiție",
   "venue": "Stadion",
   "halfLength": "Durata reprizei (minute)",
+  "competitionFormatTitle": "Format competiție",
+  "competitionFormatNoExtraTime": "Standard — fără perioade suplimentare de joc",
+  "competitionFormatExtraTimeMayApply": "Prelungiri sau format cupe — posibil",
+  "penaltyShootOutAfterMatchEnd": "Lovituri de departajare după final (dacă e cazul)",
   "crewReferee": "Arbitru",
   "crewAr1": "Asistent 1",
   "crewAr2": "Asistent 2",
@@ -36,6 +40,54 @@
   "playerName": "Nume",
   "liveMatch": "Meci live",
   "kickOff": "Start",
+  "matchStarted": "Meci început",
+  "kickOffNotSaved": "Startul nu a fost salvat",
+  "periodStartIncomplete": "Startul reprizei este incomplet",
+  "completePeriodStart": "Finalizează startul reprizei",
+  "periodStartNotSaved": "Startul reprizei nu a fost salvat",
+  "continuityExact": "Continuitate exactă",
+  "continuityBounded": "Continuitate mărginită",
+  "elapsedUnavailable": "Timpul nu este disponibil",
+  "suspendMatch": "Suspendă meciul",
+  "matchSuspended": "Meci suspendat",
+  "suspensionOngoing": "Suspendare în curs",
+  "suspensionNotSaved": "Suspendarea nu a fost salvată",
+  "resumeMatch": "Reia meciul",
+  "resumeNotSaved": "Reluarea nu a fost salvată",
+  "endPeriod": "Încheie repriza",
+  "endMatch": "Încheie meciul",
+  "matchEndedTerminal": "Meci încheiat",
+  "matchEndNotSaved": "Încheierea meciului nu a fost salvată",
+  "terminalBlockedAdditionalPlayingPhase": "Este necesară o perioadă suplimentară de joc înainte de încheiere",
+  "terminalBlockedPhaseDispositionUnresolved": "Formatul competiției este nerezolvat — încheierea normală nu este disponibilă",
+  "terminalBlockedActivePeriod": "O perioadă de joc este încă activă",
+  "terminalBlockedOpenSuspension": "Suspendarea formală este încă deschisă",
+  "terminalBlockedAbandoned": "Meciul a fost abandonat",
+  "terminalBlockedAlreadyEnded": "Meciul s-a încheiat deja",
+  "terminalBlockedAmbiguousLineage": "Linia temporală a reprizelor este ambiguă",
+  "terminalBlockedNoCompletedPlayingPhase": "Nicio perioadă de joc nu a fost încheiată",
+  "periodEnded": "Repriza {index} — încheiată",
+  "@periodEnded": {
+    "placeholders": {
+      "index": {"type": "int"}
+    }
+  },
+  "periodEndNotSaved": "Încheierea reprizei nu a fost salvată",
+  "interval": "Pauză",
+  "periodEndedInterval": "Repriza {index} — încheiată",
+  "@periodEndedInterval": {
+    "placeholders": {
+      "index": {"type": "int"}
+    }
+  },
+  "noActivePlayingPeriod": "Nicio perioadă activă de joc",
+  "startPeriod2": "Începe repriza 2",
+  "activePeriodIndex": "Repriza {index}",
+  "@activePeriodIndex": {
+    "placeholders": {
+      "index": {"type": "int"}
+    }
+  },
   "pause": "Pauză",
   "resume": "Reluare",
   "halfTime": "Pauză de jumătate",

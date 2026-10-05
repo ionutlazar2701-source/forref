@@ -15,7 +15,7 @@ A match must be refereeable on the phone, with no watch:
 - Match timeline (5–7 recent rows), tap to edit, **Undo 5 s** after save
 - Offline save (Drift) and later Firestore sync (signed-in only)
 - Match summary + PDF export — one template, not every federation; PDF not stored in Firestore in MVP
-- Basic match history; **free during beta** (no billing in the match engine)
+- Basic match history; **free during beta** (no billing in the match engine). Paid launch: [pricing.md](pricing.md)
 - Localizable UI **RO + EN** from day one (English fallback; no hardcoded widget strings) — [architecture.md](architecture.md)
 
 ## After 10–20 real matches
@@ -32,6 +32,10 @@ Ship these only after referees have used the MVP on the pitch:
 - Kicks from the penalty mark (post-match)
 - Persistent teams, player database, **competition management**
 - Extra EU languages beyond RO + EN
+
+## Paid launch (after beta)
+
+Not MVP and not automatic after the 10–20-match list. Beta stays free. When asked to implement billing: [pricing.md](pricing.md). Entitlements and IAP stay **outside** `match_core`. Geography sets price; `referee_level` sets recommendations; plan sets access.
 
 ## Never for v1
 

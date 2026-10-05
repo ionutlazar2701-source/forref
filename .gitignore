@@ -19,5 +19,20 @@ build/
 
 # Misc
 .DS_Store
+Thumbs.db
 *.log
 coverage/
+
+# Local environment / secrets
+.env
+.env.*
+!.env.example
+
+# Benchmark artifacts (machine-local paths and SQLite outputs)
+tool/perf_measure_001/artifacts/
+
+# FVM SDK checkout (pin is in .fvm/fvm_config.json)
+.fvm/flutter_sdk
+.fvm/version
+.fvm/release_version
+.fvm/versions
