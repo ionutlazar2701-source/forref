@@ -13,7 +13,7 @@ apps/referee_phone/     Flutter shell (empty feature pages)
 packages/match_core/    Pure Dart match engine (models + unimplemented APIs)
 ```
 
-Needs **Flutter 3.47.2** and **Dart 3.13.2** (pinned in `.fvm/fvm_config.json`; use [FVM](https://fvm.app/) locally with `fvm install && fvm use`). On a fresh Linux cloud workspace, run `./tool/cloud_bootstrap.sh` then `./tool/verify_cloud.sh`. Then:
+Needs **Flutter 3.47.2** and **Dart 3.13.2** (pinned in `.fvm/fvm_config.json`; use [FVM](https://fvm.app/) locally with `fvm install && fvm use`). On a fresh Linux cloud workspace, `./tool/cloud_bootstrap.sh` installs that pinned SDK when it is not already on PATH, then `./tool/verify_cloud.sh` runs the cloud-capable checks. Then:
 
 ```bash
 dart pub get

@@ -1,3 +1,4 @@
 {
-  "install": "./tool/cloud_bootstrap.sh"
+  "name": "Ref App",
+  "install": "bash ./tool/cloud_bootstrap.sh"
 }
