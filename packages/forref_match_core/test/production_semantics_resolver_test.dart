@@ -84,6 +84,50 @@ void main() {
       expect(contribution.isSupported, isFalse);
     });
 
+    test('typed GOAL supports the score facet', () {
+      final contribution = resolver.resolve(
+        MatchRecord(
+          recordId: 'goal-1',
+          matchId: 'match-1',
+          recordKind: RecordKind.humanDetermination,
+          schemaVersion: 1,
+          recordedAt: DateTime.utc(2026, 10, 5),
+          originDeviceId: 'dev-a',
+          originSequence: 1,
+          payload: GoalPayload(
+            scoringSide: GoalScoringSide.home,
+            period: const PeriodIdentity(index: 1),
+          ),
+          integrity: const IntegrityMetadata(),
+        ),
+      );
+
+      expect(contribution.status, SemanticSupportStatus.supported);
+      expect(contribution.supportedFacets, [ProjectionFacet.score]);
+    });
+
+    test('GOAL on RecordKind.action is unsupported', () {
+      final contribution = resolver.resolve(
+        MatchRecord(
+          recordId: 'goal-action',
+          matchId: 'match-1',
+          recordKind: RecordKind.action,
+          schemaVersion: 1,
+          recordedAt: DateTime.utc(2026, 10, 5),
+          originDeviceId: 'dev-a',
+          originSequence: 1,
+          payload: GoalPayload(
+            scoringSide: GoalScoringSide.home,
+            period: const PeriodIdentity(index: 1),
+          ),
+          integrity: const IntegrityMetadata(),
+        ),
+      );
+
+      expect(contribution.status, SemanticSupportStatus.unsupported);
+      expect(contribution.isSupported, isFalse);
+    });
+
     test('unknown schema version returns unsupported', () {
       final contribution = resolver.resolve(
         _record(

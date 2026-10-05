@@ -76,6 +76,17 @@ void main() {
         payload: const LegalSupersessionPayload(),
         relationships: [LegalSupersessionTarget(targetRecordId: 'start-1')],
       ),
+      _typed(
+        recordId: 'goal-1',
+        originSequence: 7,
+        recordKind: RecordKind.humanDetermination,
+        payload: GoalPayload(
+          scoringSide: GoalScoringSide.home,
+          period: const PeriodIdentity(index: 1),
+          playerNumber: '9',
+        ),
+        relationships: [CausalDependency(targetRecordId: 'period-1')],
+      ),
     ];
 
     final store = SqliteDurableMatchStore.open(file);
@@ -95,6 +106,16 @@ void main() {
     expect(byId['tcorr-1']!.payload, isA<TemporalCorrectionPayload>());
     expect(byId['corr-1']!.payload, isA<CorrectionPayload>());
     expect(byId['super-1']!.payload, isA<LegalSupersessionPayload>());
+    final goal = byId['goal-1']!.payload as GoalPayload;
+    expect(goal.scoringSide, GoalScoringSide.home);
+    expect(goal.period, const PeriodIdentity(index: 1));
+    expect(goal.playerNumber, '9');
+    expect(goal.playerId, isNull);
+    final storedGoal = encodeMatchRecordForStorage(byId['goal-1']!);
+    final storedText = jsonEncode(storedGoal);
+    expect(storedText, isNot(contains('elapsedSeconds')));
+    expect(storedText, isNot(contains('scoreHome')));
+    expect(storedText, isNot(contains('scoreAway')));
 
     expect(
       (byId['start-1']!.payload as TemporalTransitionPayload).semanticType,

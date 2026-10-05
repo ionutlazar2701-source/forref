@@ -32,7 +32,7 @@ final class V1SemanticContract {
   final bool requiresTargetRelationship;
   final SemanticEffect effect;
 
-  /// Score, disciplinary, and other sporting event state are out of this vocabulary.
+  /// True only for a sporting event whose effect is rebuilt from Match Memory.
   final bool createsSportingState;
 
   /// Resumption and other transitions are events, not durable match states.
@@ -123,6 +123,24 @@ final class V1SemanticContract {
       createsSportingState: false,
       isDurableMatchState: false,
       requiresCausalDependencyOnFinalPeriodEnd: true,
+    ),
+    // GOAL means the main referee has determined that a valid goal stands
+    // for one side. The required sporting content is the credited side.
+    // Period and temporal evidence are placement context. An own goal is
+    // this same determination for the credited side.
+    //
+    // CORRECTION amends the stored account while the determination stands.
+    // LEGAL_SUPERSESSION withdraws the scoring effect. The GOAL record remains.
+    V1SemanticTypeCode.goal: V1SemanticContract(
+      code: V1SemanticTypeCode.goal,
+      requiredRecordKind: RecordKind.humanDetermination,
+      schemaVersion: schemaContractVersion,
+      category: SemanticTypeCategory.event,
+      projectionFacets: [ProjectionFacet.score],
+      requiresTargetRelationship: false,
+      effect: SemanticEffect.sportingEvent,
+      createsSportingState: true,
+      isDurableMatchState: false,
     ),
     V1SemanticTypeCode.temporalCorrection: V1SemanticContract(
       code: V1SemanticTypeCode.temporalCorrection,

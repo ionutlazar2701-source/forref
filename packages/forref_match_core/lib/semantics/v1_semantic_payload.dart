@@ -155,6 +155,7 @@ final class TemporalTransitionPayload extends V1SemanticPayload {
       V1SemanticTypeCode.matchAbandoned ||
       V1SemanticTypeCode.matchEnded =>
         true,
+      V1SemanticTypeCode.goal ||
       V1SemanticTypeCode.temporalCorrection ||
       V1SemanticTypeCode.correction ||
       V1SemanticTypeCode.legalSupersession =>
@@ -194,4 +195,75 @@ final class LegalSupersessionPayload extends V1SemanticPayload {
 
   @override
   V1SemanticTypeCode get semanticType => V1SemanticTypeCode.legalSupersession;
+}
+
+/// Side credited with the goal. This is the scoring identity, not a stored score.
+///
+/// An own goal uses the side that is credited. It is not a separate semantic.
+enum GoalScoringSide {
+  home,
+  away,
+}
+
+extension GoalScoringSideWire on GoalScoringSide {
+  String get wireValue => switch (this) {
+        GoalScoringSide.home => 'HOME',
+        GoalScoringSide.away => 'AWAY',
+      };
+
+  static GoalScoringSide? parseWire(String value) => switch (value) {
+        'HOME' => GoalScoringSide.home,
+        'AWAY' => GoalScoringSide.away,
+        _ => null,
+      };
+}
+
+/// GOAL means the main referee has determined that a valid goal stands for one side.
+///
+/// [scoringSide] is the required sporting content: the side credited with the
+/// goal, including when that goal is an own goal. [playerId] and [playerNumber]
+/// are optional enrichment and are never required for the commit.
+///
+/// [period] is placement context. It must match the causally targeted
+/// `PERIOD_STARTED`. Elapsed match time is not stored here; temporal evidence
+/// on the record is what a later projection uses to reconstruct match time.
+final class GoalPayload extends V1SemanticPayload {
+  GoalPayload({
+    required this.scoringSide,
+    required this.period,
+    this.playerId,
+    this.playerNumber,
+    super.domainContractVersion,
+    super.competitionRulesContext,
+  }) : assert(playerId == null || playerId.isNotEmpty),
+       assert(playerNumber == null || playerNumber.isNotEmpty);
+
+  @override
+  V1SemanticTypeCode get semanticType => V1SemanticTypeCode.goal;
+
+  final GoalScoringSide scoringSide;
+  final PeriodIdentity period;
+  final String? playerId;
+  final String? playerNumber;
+
+  @override
+  bool operator ==(Object other) {
+    return other is GoalPayload &&
+        scoringSide == other.scoringSide &&
+        period == other.period &&
+        playerId == other.playerId &&
+        playerNumber == other.playerNumber &&
+        domainContractVersion == other.domainContractVersion &&
+        competitionRulesContext == other.competitionRulesContext;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        scoringSide,
+        period,
+        playerId,
+        playerNumber,
+        domainContractVersion,
+        competitionRulesContext,
+      );
 }

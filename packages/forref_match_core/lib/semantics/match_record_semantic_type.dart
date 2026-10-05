@@ -8,13 +8,17 @@ enum SemanticTypeCategory {
 
 /// How a supported semantic affects projection.
 ///
-/// None of the v1 vocabulary computes elapsed time or sporting event state.
+/// Temporal codes do not compute elapsed time. A sporting event declares a
+/// facet; it does not store a mutable score.
 enum SemanticEffect {
   /// Authoritative temporal transition. Not a durable match state.
   temporalTransitionAuthority,
 
   /// New record that changes how prior history is interpreted.
   historicalInterpretation,
+
+  /// Authoritative sporting event. Projection rebuilds its effect.
+  sportingEvent,
 }
 
 /// Version-1 production semantic type codes.
@@ -30,6 +34,7 @@ enum V1SemanticTypeCode {
   temporarySuspensionEnded,
   matchAbandoned,
   matchEnded,
+  goal,
   temporalCorrection,
   correction,
   legalSupersession,
@@ -46,6 +51,7 @@ extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
           'TEMPORARY_SUSPENSION_ENDED',
         V1SemanticTypeCode.matchAbandoned => 'MATCH_ABANDONED',
         V1SemanticTypeCode.matchEnded => 'MATCH_ENDED',
+        V1SemanticTypeCode.goal => 'GOAL',
         V1SemanticTypeCode.temporalCorrection => 'TEMPORAL_CORRECTION',
         V1SemanticTypeCode.correction => 'CORRECTION',
         V1SemanticTypeCode.legalSupersession => 'LEGAL_SUPERSESSION',
@@ -61,6 +67,7 @@ extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
         V1SemanticTypeCode.matchEnded ||
         V1SemanticTypeCode.temporalCorrection =>
           SemanticTypeCategory.temporal,
+        V1SemanticTypeCode.goal => SemanticTypeCategory.event,
         V1SemanticTypeCode.correction ||
         V1SemanticTypeCode.legalSupersession =>
           SemanticTypeCategory.correctionSupersession,
@@ -76,6 +83,7 @@ extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
           V1SemanticTypeCode.temporarySuspensionEnded,
         'MATCH_ABANDONED' => V1SemanticTypeCode.matchAbandoned,
         'MATCH_ENDED' => V1SemanticTypeCode.matchEnded,
+        'GOAL' => V1SemanticTypeCode.goal,
         'TEMPORAL_CORRECTION' => V1SemanticTypeCode.temporalCorrection,
         'CORRECTION' => V1SemanticTypeCode.correction,
         'LEGAL_SUPERSESSION' => V1SemanticTypeCode.legalSupersession,

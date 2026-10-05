@@ -4,6 +4,7 @@ import '../relationships.dart';
 import 'match_record_semantic_type.dart';
 import 'schema_semantic_interpreter.dart';
 import 'v1_semantic_contract.dart';
+import 'v1_semantic_payload.dart';
 
 /// Frozen v1 semantic interpretation table.
 ///
@@ -24,6 +25,10 @@ final class V1SchemaSemanticInterpreter implements SchemaSemanticInterpreter {
     final contract = V1SemanticContract.byCode[identity.code];
     if (contract == null) return null;
     if (record.recordKind != contract.requiredRecordKind) return null;
+    if (identity.code == V1SemanticTypeCode.goal &&
+        record.payload is! GoalPayload) {
+      return null;
+    }
 
     final targetId = _targetRecordId(record, identity.code);
     final missingTarget = contract.requiresTargetRelationship && targetId == null;
