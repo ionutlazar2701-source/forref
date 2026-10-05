@@ -8,13 +8,19 @@ enum SemanticTypeCategory {
 
 /// How a supported semantic affects projection.
 ///
-/// None of the v1 vocabulary computes elapsed time or sporting event state.
+/// None of these effects compute elapsed time. GOAL records which side is
+/// credited; it does not define own-goal, correction, or disciplinary meaning.
 enum SemanticEffect {
   /// Authoritative temporal transition. Not a durable match state.
   temporalTransitionAuthority,
 
   /// New record that changes how prior history is interpreted.
   historicalInterpretation,
+
+  /// Authoritative human determination of one sporting event.
+  ///
+  /// Does not compute playing time and does not rewrite temporal transitions.
+  sportingHumanDetermination,
 }
 
 /// Version-1 production semantic type codes.
@@ -33,6 +39,7 @@ enum V1SemanticTypeCode {
   temporalCorrection,
   correction,
   legalSupersession,
+  goal,
 }
 
 extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
@@ -49,6 +56,7 @@ extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
         V1SemanticTypeCode.temporalCorrection => 'TEMPORAL_CORRECTION',
         V1SemanticTypeCode.correction => 'CORRECTION',
         V1SemanticTypeCode.legalSupersession => 'LEGAL_SUPERSESSION',
+        V1SemanticTypeCode.goal => 'GOAL',
       };
 
   SemanticTypeCategory get category => switch (this) {
@@ -64,6 +72,7 @@ extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
         V1SemanticTypeCode.correction ||
         V1SemanticTypeCode.legalSupersession =>
           SemanticTypeCategory.correctionSupersession,
+        V1SemanticTypeCode.goal => SemanticTypeCategory.event,
       };
 
   static V1SemanticTypeCode? parseWire(String value) => switch (value) {
@@ -79,6 +88,7 @@ extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
         'TEMPORAL_CORRECTION' => V1SemanticTypeCode.temporalCorrection,
         'CORRECTION' => V1SemanticTypeCode.correction,
         'LEGAL_SUPERSESSION' => V1SemanticTypeCode.legalSupersession,
+        'GOAL' => V1SemanticTypeCode.goal,
         _ => null,
       };
 }

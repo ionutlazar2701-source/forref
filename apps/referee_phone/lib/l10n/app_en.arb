@@ -97,6 +97,8 @@
   "summary": "Summary",
   "undo": "Undo",
   "goal": "Goal",
+  "goalSaved": "Goal saved",
+  "goalNotSaved": "Goal was not saved",
   "yellow": "Yellow",
   "red": "Red",
   "sub": "Sub",

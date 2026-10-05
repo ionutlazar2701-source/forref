@@ -64,9 +64,9 @@ If the app is killed, rotated, or interrupted (call) **mid-flow**: restore the d
 
 ### Goal
 
-`Goal → Team → Player (or unknown / free number) → auto-save`
+`Goal → Home or Away → D1 → confirmation`
 
-Score increments **immediately**, even if player is Unknown. No assist, own-goal, or goal-type on the fast path. **Own goal is edit-later only.**
+The credited side is the initial sporting truth. That is at most two deliberate taps. Player, shirt number, manual minute, text, and a confirmation modal are not required before D1. The visible score and goal history update from the goal projection after D1. A failed commit leaves the score and history unchanged. Own-goal is not a separate fast-path choice.
 
 ### Yellow card
 

@@ -72,7 +72,22 @@ void main() {
     test('unknown semantic type returns unsupported', () {
       final contribution = resolver.resolve(
         _record(
-          recordId: 'goal-1',
+          recordId: 'assist-1',
+          recordKind: RecordKind.action,
+          payload: {
+            ProductionPayloadContract.semanticType: 'ASSIST',
+          },
+        ),
+      );
+
+      expect(contribution.status, SemanticSupportStatus.unsupported);
+      expect(contribution.isSupported, isFalse);
+    });
+
+    test('GOAL with the wrong record kind stays unsupported', () {
+      final contribution = resolver.resolve(
+        _record(
+          recordId: 'goal-action',
           recordKind: RecordKind.action,
           payload: {
             ProductionPayloadContract.semanticType: 'GOAL',
@@ -81,7 +96,29 @@ void main() {
       );
 
       expect(contribution.status, SemanticSupportStatus.unsupported);
-      expect(contribution.isSupported, isFalse);
+    });
+
+    test('GOAL human determination supports the score facet', () {
+      final contribution = resolver.resolve(
+        _record(
+          recordId: 'goal-1',
+          recordKind: RecordKind.humanDetermination,
+          payload: {
+            ProductionPayloadContract.semanticType: 'GOAL',
+          },
+        ),
+      );
+
+      expect(contribution.status, SemanticSupportStatus.supported);
+      expect(contribution.supportedFacets, [ProjectionFacet.score]);
+      expect(
+        V1SemanticContract.byCode[V1SemanticTypeCode.goal]!.createsSportingState,
+        isTrue,
+      );
+      expect(
+        V1SemanticContract.byCode[V1SemanticTypeCode.goal]!.requiredRecordKind,
+        RecordKind.humanDetermination,
+      );
     });
 
     test('unknown schema version returns unsupported', () {

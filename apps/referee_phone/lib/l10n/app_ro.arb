@@ -97,6 +97,8 @@
   "summary": "Sumar",
   "undo": "Anulează",
   "goal": "Gol",
+  "goalSaved": "Gol salvat",
+  "goalNotSaved": "Golul nu a fost salvat",
   "yellow": "Galben",
   "red": "Roșu",
   "sub": "Schimbare",

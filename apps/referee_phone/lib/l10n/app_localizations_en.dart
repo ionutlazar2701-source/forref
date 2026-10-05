@@ -267,6 +267,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goal => 'Goal';
 
   @override
+  String get goalSaved => 'Goal saved';
+
+  @override
+  String get goalNotSaved => 'Goal was not saved';
+
+  @override
   String get yellow => 'Yellow';
 
   @override

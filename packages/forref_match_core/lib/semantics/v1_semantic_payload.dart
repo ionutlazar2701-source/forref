@@ -96,6 +96,22 @@ final class CompetitionRulesContext {
       );
 }
 
+/// Side credited with a goal. This is the scoring side, not a player.
+enum CreditedSide { home, away }
+
+extension CreditedSideWire on CreditedSide {
+  String get wireValue => switch (this) {
+        CreditedSide.home => 'HOME',
+        CreditedSide.away => 'AWAY',
+      };
+
+  static CreditedSide? parseWire(String value) => switch (value) {
+        'HOME' => CreditedSide.home,
+        'AWAY' => CreditedSide.away,
+        _ => null,
+      };
+}
+
 /// Typed v1 production payload. Not a foundation facet-key map.
 sealed class V1SemanticPayload extends MatchRecordPayload {
   const V1SemanticPayload({
@@ -157,10 +173,36 @@ final class TemporalTransitionPayload extends V1SemanticPayload {
         true,
       V1SemanticTypeCode.temporalCorrection ||
       V1SemanticTypeCode.correction ||
-      V1SemanticTypeCode.legalSupersession =>
+      V1SemanticTypeCode.legalSupersession ||
+      V1SemanticTypeCode.goal =>
         false,
     };
   }
+}
+
+/// Credited goal. Player attribution is later enrichment and is not required.
+///
+/// [captureIntentId] is the referee action's idempotency key. It is not
+/// match time and it is not a player identifier.
+final class GoalPayload extends V1SemanticPayload {
+  GoalPayload({
+    required this.creditedSide,
+    required this.captureIntentId,
+    super.domainContractVersion,
+    super.competitionRulesContext,
+  }) : assert(
+          captureIntentId.isNotEmpty,
+          'GOAL requires a capture intent',
+        );
+
+  final CreditedSide creditedSide;
+
+  /// Stable id for one deliberate Goal capture. A retry of the same intent
+  /// must not append another GOAL.
+  final String captureIntentId;
+
+  @override
+  V1SemanticTypeCode get semanticType => V1SemanticTypeCode.goal;
 }
 
 /// Temporal correction of an existing record. Does not replace that record's id.

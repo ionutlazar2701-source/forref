@@ -50,8 +50,13 @@ final class PhoneTemporalEvidenceStore implements TemporalEvidencePort {
   final File _file;
   final MonotonicContinuityClock _clock;
 
+  /// Test seam. Production leaves this null.
+  Future<void> Function()? beforeAnchorForTest;
+
   /// Captures one monotonic evidence artifact. Does not write a Match Record.
   Future<TemporalEvidence> captureAnchor() async {
+    final pause = beforeAnchorForTest;
+    if (pause != null) await pause();
     final evidence = TemporalEvidence(
       evidenceId: const Uuid().v4(),
       capturedAt: _clock.chronology.toUtc(),
