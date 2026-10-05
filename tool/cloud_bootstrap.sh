@@ -45,6 +45,7 @@ ensure_system_packages() {
     libgtk-3-dev
     liblzma-dev
     libsqlite3-dev
+    libstdc++-14-dev
   )
   local missing=()
   local pkg
