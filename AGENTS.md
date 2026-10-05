@@ -79,6 +79,7 @@ When code exists, keep **task-relevant** docs in sync with behavior. Do not sile
 ## Cursor Cloud specific instructions
 
 - Run `./tool/verify_cloud.sh` from the repository root before reporting **COMPLETE**. Do not report complete when verification fails.
+- `./tool/cloud_bootstrap.sh` is idempotent. When `.fvm/fvm_config.json` pins a Flutter version, it installs that SDK under `/opt/flutter` (symlinked onto PATH) and the Linux desktop plus SQLite libraries the phone shell needs, if they are missing. Local FVM checkouts stay the developer path.
 - Cloud environments are **Linux**. Use repository-relative paths; never assume Windows drive letters, `C:\...`, or backslash-only path handling.
 - Never weaken Match Core, D1, authority, temporal, integrity, or fail-closed invariants for cloud convenience.
 - Never modify SQLite durability settings (`journal_mode`, `synchronous`, etc.) merely to make cloud tests faster.
