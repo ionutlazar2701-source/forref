@@ -76,6 +76,16 @@ void main() {
         payload: const LegalSupersessionPayload(),
         relationships: [LegalSupersessionTarget(targetRecordId: 'start-1')],
       ),
+      _typed(
+        recordId: 'goal-1',
+        originSequence: 7,
+        recordKind: RecordKind.humanDetermination,
+        payload: GoalPayload(
+          creditedSide: CreditedSide.home,
+          captureIntentId: 'intent-goal-1',
+        ),
+        relationships: [CausalDependency(targetRecordId: 'period-1')],
+      ),
     ];
 
     final store = SqliteDurableMatchStore.open(file);
@@ -95,6 +105,15 @@ void main() {
     expect(byId['tcorr-1']!.payload, isA<TemporalCorrectionPayload>());
     expect(byId['corr-1']!.payload, isA<CorrectionPayload>());
     expect(byId['super-1']!.payload, isA<LegalSupersessionPayload>());
+    expect(byId['goal-1']!.payload, isA<GoalPayload>());
+    expect(
+      (byId['goal-1']!.payload as GoalPayload).creditedSide,
+      CreditedSide.home,
+    );
+    expect(
+      (byId['goal-1']!.payload as GoalPayload).captureIntentId,
+      'intent-goal-1',
+    );
 
     expect(
       (byId['start-1']!.payload as TemporalTransitionPayload).semanticType,

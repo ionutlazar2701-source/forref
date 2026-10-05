@@ -590,6 +590,18 @@ abstract class AppLocalizations {
   /// **'Goal'**
   String get goal;
 
+  /// No description provided for @goalSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal saved'**
+  String get goalSaved;
+
+  /// No description provided for @goalNotSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal was not saved'**
+  String get goalNotSaved;
+
   /// No description provided for @yellow.
   ///
   /// In en, this message translates to:

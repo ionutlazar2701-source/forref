@@ -14,6 +14,7 @@ const _temporalTransitionType = 'v1-temporal-transition';
 const _temporalCorrectionType = 'v1-temporal-correction';
 const _correctionType = 'v1-correction';
 const _legalSupersessionType = 'v1-legal-supersession';
+const _goalType = 'v1-goal';
 
 const _rootKeys = {
   'storageEncoding',
@@ -148,6 +149,10 @@ Map<String, Object?> _encodePayload(MatchRecordPayload payload) {
       'semanticType': payload.semanticType.wireValue,
       if (payload is TemporalTransitionPayload && payload.period != null)
         'periodIndex': payload.period!.index,
+      if (payload is GoalPayload) ...{
+        'creditedSide': payload.creditedSide.wireValue,
+        'captureIntentId': payload.captureIntentId,
+      },
       if (payload.domainContractVersion != null)
         'domainContractVersion': payload.domainContractVersion!.value,
       if (payload.competitionRulesContext != null)
@@ -167,6 +172,7 @@ String _v1PayloadType(V1SemanticPayload payload) {
     TemporalCorrectionPayload() => _temporalCorrectionType,
     CorrectionPayload() => _correctionType,
     LegalSupersessionPayload() => _legalSupersessionType,
+    GoalPayload() => _goalType,
   };
 }
 
@@ -188,7 +194,8 @@ MatchRecordPayload _decodePayload(
   if (type == _temporalTransitionType ||
       type == _temporalCorrectionType ||
       type == _correctionType ||
-      type == _legalSupersessionType) {
+      type == _legalSupersessionType ||
+      type == _goalType) {
     if (storageEncoding != adapterLocalStorageEncoding) {
       throw FormatException(
         'Typed payload is missing adapter storage encoding',
@@ -201,13 +208,22 @@ MatchRecordPayload _decodePayload(
     }
     _requireKnownKeys(
       payload,
-      {
-        'type',
-        'semanticType',
-        'periodIndex',
-        'domainContractVersion',
-        'competitionRulesContext',
-      },
+      type == _goalType
+          ? {
+              'type',
+              'semanticType',
+              'creditedSide',
+              'captureIntentId',
+              'domainContractVersion',
+              'competitionRulesContext',
+            }
+          : {
+              'type',
+              'semanticType',
+              'periodIndex',
+              'domainContractVersion',
+              'competitionRulesContext',
+            },
       'typed payload',
     );
     return _decodeV1Payload(payload, type as String);
@@ -258,8 +274,40 @@ V1SemanticPayload _decodeV1Payload(
           competitionRulesContext: rules,
         ),
       ),
+    _goalType => _goalPayload(payload, code, domain, rules),
     _ => throw FormatException('Unsupported stored payload type: $type'),
   };
+}
+
+GoalPayload _goalPayload(
+  Map<String, Object?> payload,
+  V1SemanticTypeCode code,
+  DomainContractVersion? domain,
+  CompetitionRulesContext? rules,
+) {
+  if (code != V1SemanticTypeCode.goal) {
+    throw FormatException(
+      'Payload semantic type ${code.wireValue} does not match GOAL',
+    );
+  }
+  final side = payload['creditedSide'];
+  if (side is! String) {
+    throw FormatException('Stored GOAL creditedSide is missing');
+  }
+  final creditedSide = CreditedSideWire.parseWire(side);
+  if (creditedSide == null) {
+    throw FormatException('Stored GOAL creditedSide is invalid');
+  }
+  final intent = payload['captureIntentId'];
+  if (intent is! String || intent.isEmpty) {
+    throw FormatException('Stored GOAL captureIntentId is invalid');
+  }
+  return GoalPayload(
+    creditedSide: creditedSide,
+    captureIntentId: intent,
+    domainContractVersion: domain,
+    competitionRulesContext: rules,
+  );
 }
 
 TemporalTransitionPayload _temporalTransition(
@@ -279,7 +327,8 @@ TemporalTransitionPayload _temporalTransition(
       true,
     V1SemanticTypeCode.temporalCorrection ||
     V1SemanticTypeCode.correction ||
-    V1SemanticTypeCode.legalSupersession =>
+    V1SemanticTypeCode.legalSupersession ||
+    V1SemanticTypeCode.goal =>
       false,
   };
   if (!isTransition) {

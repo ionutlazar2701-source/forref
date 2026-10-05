@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:match_core/match_core.dart';
 import 'package:referee_phone/app_scope.dart';
 import 'package:referee_phone/features/live_match/capture_overlay.dart';
+import 'package:referee_phone/features/live_match/goal_time_label.dart';
 import 'package:referee_phone/features/live_match/live_match_terminal_ui.dart';
+import 'package:uuid/uuid.dart';
 import 'package:referee_phone/infrastructure/competition_rules/phone_match_capture_context.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
 import 'package:referee_phone/l10n/match_labels.dart';
@@ -49,8 +51,12 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
   TemporalEvidence? _suspensionBoundary;
   TemporalEvidence? _resumptionAnchor;
   List<TemporalEvidence> _recordedEvidence = const [];
+  GoalMatchProjection _goalProjection = GoalMatchProjection.empty;
   Timer? _clockTicker;
   EventType? _captureType;
+  bool _goalSideChoice = false;
+  bool _goalPending = false;
+  bool _goalCommitInFlight = false;
   DateTime? _lastActionAt;
   EventType? _lastActionType;
 
@@ -121,6 +127,10 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
         ? null
         : await evidence.resolve(resumptionId);
     final recordedEvidence = await _resolveRecordedEvidence(evidence, records);
+    final goalProjection = GoalMatchProjection.derive(
+      records: records,
+      evidence: recordedEvidence,
+    );
     final current = evidence?.currentObservation();
     final elapsed = deriveActivePeriodElapsed(
       temporal: temporal,
@@ -156,6 +166,7 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
       _suspensionBoundary = suspensionBoundary;
       _resumptionAnchor = resumptionAnchor;
       _recordedEvidence = recordedEvidence;
+      _goalProjection = goalProjection;
       _terminalEligibility = terminalEligibility;
     });
     _syncClockTicker();
@@ -175,9 +186,11 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
     }
   }
 
-  /// Recomputes the display from cached authority and the live sample.
+  /// Recomputes the display clock from cached authority and the live sample.
   ///
-  /// Does not commit a Match Record and does not persist elapsed seconds.
+  /// Does not commit a Match Record, does not persist elapsed seconds, and
+  /// does not rebuild [GoalMatchProjection]. Goal history stays at the last
+  /// D1 refresh.
   void _onClockTick() {
     final evidence = AppScope.of(context).temporalEvidence;
     final projection = _projection;
@@ -537,6 +550,79 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
     };
   }
 
+  void _openGoalSideChoice() {
+    if (_goalPending || _goalSideChoice || _goalCommitInFlight) return;
+    final now = DateTime.now();
+    if (_lastActionType == EventType.goal &&
+        _lastActionAt != null &&
+        now.difference(_lastActionAt!) < const Duration(milliseconds: 500)) {
+      return;
+    }
+    _lastActionAt = now;
+    _lastActionType = EventType.goal;
+    setState(() {
+      _captureType = null;
+      _goalSideChoice = true;
+    });
+  }
+
+  void _showGoalFeedback(String message) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _commitGoal(CreditedSide side) async {
+    if (_goalCommitInFlight) return;
+    _goalCommitInFlight = true;
+    final intentId = const Uuid().v4();
+    final l10n = AppLocalizations.of(context);
+    setState(() => _goalPending = true);
+    try {
+      final scope = AppScope.of(context);
+      final boundary = scope.matchApplication;
+      final evidence = scope.temporalEvidence;
+      final captureContext = await _captureContext(scope);
+      if (!mounted) return;
+      if (boundary == null || captureContext == null || evidence == null) {
+        setState(() => _goalPending = false);
+        _showGoalFeedback(l10n.goalNotSaved);
+        return;
+      }
+      final captured = await evidence.captureAnchor();
+      final result = await boundary.commitGoal(
+        captureContext,
+        creditedSide: side,
+        captureIntentId: intentId,
+        temporalContext: TemporalContext(
+          evidenceIds: [captured.evidenceId],
+          domainClockPolicyVersion:
+              PhoneCaptureIdentity.domainClockContract.value,
+        ),
+      );
+      if (!mounted) return;
+      if (result is! DurableCommitSuccess) {
+        setState(() => _goalPending = false);
+        _showGoalFeedback(l10n.goalNotSaved);
+        return;
+      }
+      await _refreshTemporal();
+      if (!mounted) return;
+      setState(() {
+        _goalPending = false;
+        _goalSideChoice = false;
+        _lastActionAt = null;
+      });
+      _showGoalFeedback(l10n.goalSaved);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _goalPending = false);
+      _showGoalFeedback(l10n.goalNotSaved);
+    } finally {
+      _goalCommitInFlight = false;
+    }
+  }
+
   void _startCapture(EventType type) {
     final now = DateTime.now();
     if (_captureType == null &&
@@ -592,7 +678,19 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
     final legacyHalfTimeVisible = !_intervalActive &&
         _endedPeriod == null &&
         _activePeriod == null;
-    final recent = match.events.reversed.take(7).toList();
+    final recent = match.events.reversed
+        .where((event) => event.type != EventType.goal)
+        .take(7)
+        .toList();
+    final recentGoals = _goalProjection.goals.reversed.take(7).toList();
+    final boundaryAvailable =
+        AppScope.of(context).matchApplication != null;
+    final homeScore = boundaryAvailable
+        ? _goalProjection.homeScore
+        : match.score.home;
+    final awayScore = boundaryAvailable
+        ? _goalProjection.awayScore
+        : match.score.away;
 
     return Scaffold(
       appBar: AppBar(
@@ -762,8 +860,8 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
               Text(
                 l10n.scoreLine(
                   homeLabel(match, l10n),
-                  match.score.home,
-                  match.score.away,
+                  homeScore,
+                  awayScore,
                   awayLabel(match, l10n),
                 ),
                 style: Theme.of(context).textTheme.headlineMedium,
@@ -778,13 +876,26 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                     SizedBox(
                       height: 48,
                       child: FilledButton(
-                        onPressed: () => _startCapture(type),
+                        onPressed: type == EventType.goal
+                            ? (_goalPending ? null : _openGoalSideChoice)
+                            : () => _startCapture(type),
                         child: Text(eventTypeLabel(type, l10n)),
                       ),
                     ),
                 ],
               ),
               const SizedBox(height: 16),
+              for (final goal in recentGoals)
+                ListTile(
+                  title: Text(
+                    '${formatProjectedGoalTime(goal.temporal, l10n)}  ${l10n.goal}',
+                  ),
+                  subtitle: Text(
+                    goal.creditedSide == CreditedSide.home
+                        ? homeLabel(match, l10n)
+                        : awayLabel(match, l10n),
+                  ),
+                ),
               for (final event in recent)
                 ListTile(
                   title: Text(
@@ -812,14 +923,72 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                 ),
               ),
             ),
-          if (_captureType != null)
+          if (_goalSideChoice)
+            Positioned.fill(
+              child: Material(
+                color: Theme.of(context).colorScheme.surface,
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          l10n.goal,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton(
+                            onPressed: _goalPending
+                                ? null
+                                : () => setState(() => _goalSideChoice = false),
+                            child: Text(l10n.back),
+                          ),
+                        ),
+                        FilledButton(
+                          onPressed: _goalPending
+                              ? null
+                              : () => _commitGoal(CreditedSide.home),
+                          child: Text(homeLabel(match, l10n)),
+                        ),
+                        const SizedBox(height: 12),
+                        FilledButton(
+                          onPressed: _goalPending
+                              ? null
+                              : () => _commitGoal(CreditedSide.away),
+                          child: Text(awayLabel(match, l10n)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          if (_captureType != null && _captureType != EventType.goal)
             Positioned.fill(
               child: CaptureOverlay(
                 match: match,
                 type: _captureType!,
-                onTypeChanged: (type) => setState(() => _captureType = type),
+                onTypeChanged: (type) {
+                  if (type == EventType.goal) {
+                    setState(() {
+                      _captureType = null;
+                      _goalSideChoice = true;
+                    });
+                    return;
+                  }
+                  setState(() => _captureType = type);
+                },
                 onCancel: () => setState(() => _captureType = null),
                 onSave: (type, data) async {
+                  if (type == EventType.goal) {
+                    setState(() {
+                      _captureType = null;
+                      _goalSideChoice = true;
+                    });
+                    return;
+                  }
                   setState(() => _captureType = null);
                   await session.saveEvent(type: type, data: data);
                 },

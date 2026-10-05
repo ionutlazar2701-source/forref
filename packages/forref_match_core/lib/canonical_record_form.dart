@@ -211,6 +211,10 @@ final class _PayloadSnapshot {
           'semanticType': payload.semanticType.wireValue,
           if (payload is TemporalTransitionPayload && payload.period != null)
             'periodIndex': payload.period!.index,
+          if (payload is GoalPayload) ...{
+            'creditedSide': payload.creditedSide.wireValue,
+            'captureIntentId': payload.captureIntentId,
+          },
           if (payload.domainContractVersion != null)
             'domainContractVersion': payload.domainContractVersion!.value,
           if (payload.competitionRulesContext != null)

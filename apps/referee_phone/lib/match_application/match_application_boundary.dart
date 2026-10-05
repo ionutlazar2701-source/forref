@@ -549,8 +549,107 @@ final class MatchApplicationBoundary
     );
   }
 
+  /// Authoritative GOAL. The credited side is the sporting truth.
+  ///
+  /// D1 completes inside this method. Callers must not treat a returned
+  /// failure as a saved goal, and must not write a legacy goal row alongside
+  /// a success. [captureIntentId] retries do not append a second GOAL.
+  /// Player attribution and a manual minute are not accepted.
+  Future<DurableCommitResult> commitGoal(
+    CaptureContext context, {
+    required CreditedSide creditedSide,
+    required TemporalContext temporalContext,
+    required String captureIntentId,
+  }) async {
+    if (context.authorityScope is! MainRefereeScope) {
+      return DurableCommitFailure(
+        recordId: captureIntentId,
+        reason: 'GOAL requires MAIN_REFEREE',
+      );
+    }
+    if (captureIntentId.isEmpty) {
+      return const DurableCommitFailure(
+        recordId: 'goal',
+        reason: 'GOAL requires a capture intent',
+      );
+    }
+    if (temporalContext.evidenceIds.isEmpty) {
+      return DurableCommitFailure(
+        recordId: captureIntentId,
+        reason: 'GOAL requires temporal evidence',
+      );
+    }
+
+    final preview = await _store.readCommittedForMatch(context.matchId);
+    final prior = _goalForIntent(preview, captureIntentId);
+    if (prior != null) {
+      return _idempotentGoalResult(prior, creditedSide);
+    }
+    final blocked = _goalAdmissionRejection(preview);
+    if (blocked != null) {
+      return DurableCommitFailure(
+        recordId: captureIntentId,
+        reason: blocked,
+      );
+    }
+    final active = _singleActivePeriodStart(preview);
+    if (active == null) {
+      return DurableCommitFailure(
+        recordId: captureIntentId,
+        reason: 'GOAL blocked before an active period',
+      );
+    }
+
+    final request = _recordBuilder.build(
+      context: context,
+      recordKind: RecordKind.humanDetermination,
+      payload: GoalPayload(
+        creditedSide: creditedSide,
+        captureIntentId: captureIntentId,
+        domainContractVersion: context.domainContractVersion,
+        competitionRulesContext: context.competitionRulesContext,
+      ),
+      integrity: const IntegrityMetadata(),
+      relationships: [
+        CausalDependency(targetRecordId: active.recordId),
+      ],
+      temporalContext: temporalContext,
+    );
+    final result = await _store.commitAtNextOriginSequence(
+      request,
+      rejectCommitted: (records) {
+        final duplicate = _goalDuplicateRejection(
+          records,
+          creditedSide: creditedSide,
+          captureIntentId: captureIntentId,
+          evidenceIds: temporalContext.evidenceIds,
+        );
+        if (duplicate != null) return duplicate;
+        final admission = _goalAdmissionRejection(records);
+        if (admission != null) return admission;
+        final current = _singleActivePeriodStart(records);
+        if (current == null || current.recordId != active.recordId) {
+          return 'GOAL blocked before an active period';
+        }
+        return null;
+      },
+    );
+    if (result is DurableCommitFailure &&
+        result.reason.startsWith(_goalIntentDuplicatePrefix)) {
+      final recordId =
+          result.reason.substring(_goalIntentDuplicatePrefix.length);
+      return DurableCommitSuccess(
+        committedRecordId: recordId,
+        diagnostics: 'idempotent-no-op; goal intent already committed',
+      );
+    }
+    return result;
+  }
+
   /// Constructs an authoritative record, allocates the next origin sequence
   /// atomically, and durable-commits. UI must not choose originSequence.
+  ///
+  /// GOAL capture must use [commitGoal], not this generic port.
   Future<DurableCommitResult> captureAndCommit(
     AuthoritativeCaptureCommand command,
   ) async {
@@ -698,6 +797,96 @@ List<MatchRecord> _openFormalSuspensions(
     for (final start in _formalSuspensions(records, periodStart))
       if (_resumptionCount(records, start) == 0) start,
   ];
+}
+
+const _goalIntentDuplicatePrefix = 'GOAL_INTENT_ALREADY_COMMITTED:';
+
+MatchRecord? _goalForIntent(List<MatchRecord> records, String captureIntentId) {
+  for (final record in records) {
+    final payload = record.payload;
+    if (payload is GoalPayload && payload.captureIntentId == captureIntentId) {
+      return record;
+    }
+  }
+  return null;
+}
+
+DurableCommitResult _idempotentGoalResult(
+  MatchRecord prior,
+  CreditedSide creditedSide,
+) {
+  final payload = prior.payload;
+  if (payload is! GoalPayload || payload.creditedSide != creditedSide) {
+    return DurableCommitFailure(
+      recordId: prior.recordId,
+      reason: 'GOAL capture intent conflicts with a committed determination',
+    );
+  }
+  return DurableCommitSuccess(
+    committedRecordId: prior.recordId,
+    diagnostics: 'idempotent-no-op; goal intent already committed',
+  );
+}
+
+String? _goalDuplicateRejection(
+  List<MatchRecord> records, {
+  required CreditedSide creditedSide,
+  required String captureIntentId,
+  required List<String> evidenceIds,
+}) {
+  for (final record in records) {
+    final payload = record.payload;
+    if (payload is! GoalPayload) continue;
+    if (payload.captureIntentId != captureIntentId) continue;
+    if (payload.creditedSide != creditedSide) {
+      return 'GOAL capture intent conflicts with a committed determination';
+    }
+    return '$_goalIntentDuplicatePrefix${record.recordId}';
+  }
+  for (final record in records) {
+    final payload = record.payload;
+    if (payload is! GoalPayload) continue;
+    final existing = record.temporalContext?.evidenceIds ?? const <String>[];
+    if (_sameIds(existing, evidenceIds)) {
+      return 'GOAL temporal evidence already committed';
+    }
+  }
+  return null;
+}
+
+String? _goalAdmissionRejection(List<MatchRecord> records) {
+  if (_hasTemporal(records, V1SemanticTypeCode.matchEnded)) {
+    return 'GOAL blocked after MATCH_ENDED';
+  }
+  if (_hasTemporal(records, V1SemanticTypeCode.matchAbandoned)) {
+    return 'GOAL blocked after MATCH_ABANDONED';
+  }
+  if (_matchStartedCount(records) != 1) {
+    return 'GOAL blocked before an active period';
+  }
+  final lineage = periodLineage(records: records);
+  if (lineage.ambiguous || lineage.endAmbiguous || lineage.activeStart == null) {
+    return 'GOAL blocked before an active period';
+  }
+  if (_openFormalSuspensions(records, lineage.activeStart!).isNotEmpty) {
+    return 'GOAL blocked during formal suspension';
+  }
+  return null;
+}
+
+bool _hasTemporal(List<MatchRecord> records, V1SemanticTypeCode code) {
+  for (final record in records) {
+    if (_isTemporal(record, code)) return true;
+  }
+  return false;
+}
+
+bool _sameIds(List<String> left, List<String> right) {
+  if (left.length != right.length) return false;
+  for (var index = 0; index < left.length; index++) {
+    if (left[index] != right[index]) return false;
+  }
+  return true;
 }
 
 int _resumptionCount(List<MatchRecord> records, MatchRecord suspensionStart) {

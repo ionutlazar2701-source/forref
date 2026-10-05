@@ -32,7 +32,9 @@ final class V1SemanticContract {
   final bool requiresTargetRelationship;
   final SemanticEffect effect;
 
-  /// Score, disciplinary, and other sporting event state are out of this vocabulary.
+  /// True only for a sporting determination such as GOAL.
+  ///
+  /// Disciplinary events and own-goal distinctions are not in this vocabulary.
   final bool createsSportingState;
 
   /// Resumption and other transitions are events, not durable match states.
@@ -155,6 +157,17 @@ final class V1SemanticContract {
       requiresTargetRelationship: true,
       effect: SemanticEffect.historicalInterpretation,
       createsSportingState: false,
+      isDurableMatchState: false,
+    ),
+    V1SemanticTypeCode.goal: V1SemanticContract(
+      code: V1SemanticTypeCode.goal,
+      requiredRecordKind: RecordKind.humanDetermination,
+      schemaVersion: schemaContractVersion,
+      category: SemanticTypeCategory.event,
+      projectionFacets: [ProjectionFacet.score],
+      requiresTargetRelationship: false,
+      effect: SemanticEffect.sportingHumanDetermination,
+      createsSportingState: true,
       isDurableMatchState: false,
     ),
   };

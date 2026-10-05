@@ -270,6 +270,12 @@ class AppLocalizationsRo extends AppLocalizations {
   String get goal => 'Gol';
 
   @override
+  String get goalSaved => 'Gol salvat';
+
+  @override
+  String get goalNotSaved => 'Golul nu a fost salvat';
+
+  @override
   String get yellow => 'Galben';
 
   @override

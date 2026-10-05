@@ -162,20 +162,40 @@ void main() {
 
     await tester.tap(find.text('Goal'));
     await tester.pump();
-    await tester.tap(find.text('HOME'));
-    await tester.pump();
+    final homeGoal = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'HOME'),
+    );
     await tester.runAsync(() async {
-      await tester.tap(find.text('Unknown'));
-      await Future<void>.delayed(const Duration(milliseconds: 400));
+      homeGoal.onPressed!();
+      await Future<void>.delayed(const Duration(seconds: 2));
     });
     await tester.pump();
 
-    expect(find.textContaining('Goal'), findsWidgets);
-    final stored = await db.listNewestFirst();
+    expect(find.text('Goal saved'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('HOME 1 — 0 AWAY'), findsWidgets);
+    late final List<Match> stored;
+    late final List<MatchRecord> records;
+    await tester.runAsync(() async {
+      stored = await db.listNewestFirst();
+      records = await composition.boundary.durableStore.readCommittedForMatch(
+        matchId,
+      );
+    });
     expect(stored, hasLength(1));
     expect(stored.single.status, MatchStatus.ready);
-    expect(stored.single.events, hasLength(1));
-    expect(stored.single.score.home, 1);
+    expect(stored.single.events, isEmpty);
+    expect(stored.single.score.home, 0);
+    expect(stored.single.score.away, 0);
+    final goals = [
+      for (final record in records)
+        if (record.payload is GoalPayload) record,
+    ];
+    expect(goals, hasLength(1));
+    expect(goals.single.recordKind, RecordKind.humanDetermination);
+    expect(
+      (goals.single.payload as GoalPayload).creditedSide,
+      CreditedSide.home,
+    );
   });
 
   testWidgets('failed kick-off does not show started state', (tester) async {
