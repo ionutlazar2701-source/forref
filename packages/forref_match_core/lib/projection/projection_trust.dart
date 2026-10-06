@@ -38,4 +38,5 @@ abstract final class ProjectionFacet {
   static const temporal = 'temporal';
   static const score = 'score';
   static const disciplinary = 'disciplinary';
+  static const identity = 'identity';
 }

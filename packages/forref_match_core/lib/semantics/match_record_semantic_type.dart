@@ -4,6 +4,8 @@ enum SemanticTypeCategory {
   authorityControl,
   correctionSupersession,
   event,
+  participantIdentity,
+  cardAuthority,
 }
 
 /// How a supported semantic affects projection.
@@ -21,6 +23,12 @@ enum SemanticEffect {
   ///
   /// Does not compute playing time and does not rewrite temporal transitions.
   sportingHumanDetermination,
+
+  /// Establishes or reconciles durable participant identity evidence.
+  participantIdentityAuthority,
+
+  /// Opens or closes card-display authority boundaries.
+  cardAuthorityTransition,
 }
 
 /// Version-1 production semantic type codes.
@@ -40,6 +48,11 @@ enum V1SemanticTypeCode {
   correction,
   legalSupersession,
   goal,
+  participantRegistered,
+  participantBindingCorrected,
+  participantIdentityReconciliation,
+  refereeEnteredFieldForMatchStart,
+  refereeLeftFieldAfterMatch,
 }
 
 extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
@@ -57,6 +70,15 @@ extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
         V1SemanticTypeCode.correction => 'CORRECTION',
         V1SemanticTypeCode.legalSupersession => 'LEGAL_SUPERSESSION',
         V1SemanticTypeCode.goal => 'GOAL',
+        V1SemanticTypeCode.participantRegistered => 'PARTICIPANT_REGISTERED',
+        V1SemanticTypeCode.participantBindingCorrected =>
+          'PARTICIPANT_BINDING_CORRECTED',
+        V1SemanticTypeCode.participantIdentityReconciliation =>
+          'PARTICIPANT_IDENTITY_RECONCILIATION',
+        V1SemanticTypeCode.refereeEnteredFieldForMatchStart =>
+          'REFEREE_ENTERED_FIELD_FOR_MATCH_START',
+        V1SemanticTypeCode.refereeLeftFieldAfterMatch =>
+          'REFEREE_LEFT_FIELD_AFTER_MATCH',
       };
 
   SemanticTypeCategory get category => switch (this) {
@@ -73,6 +95,14 @@ extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
         V1SemanticTypeCode.legalSupersession =>
           SemanticTypeCategory.correctionSupersession,
         V1SemanticTypeCode.goal => SemanticTypeCategory.event,
+        V1SemanticTypeCode.participantRegistered ||
+        V1SemanticTypeCode.participantIdentityReconciliation =>
+          SemanticTypeCategory.participantIdentity,
+        V1SemanticTypeCode.participantBindingCorrected =>
+          SemanticTypeCategory.participantIdentity,
+        V1SemanticTypeCode.refereeEnteredFieldForMatchStart ||
+        V1SemanticTypeCode.refereeLeftFieldAfterMatch =>
+          SemanticTypeCategory.cardAuthority,
       };
 
   static V1SemanticTypeCode? parseWire(String value) => switch (value) {
@@ -89,6 +119,15 @@ extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
         'CORRECTION' => V1SemanticTypeCode.correction,
         'LEGAL_SUPERSESSION' => V1SemanticTypeCode.legalSupersession,
         'GOAL' => V1SemanticTypeCode.goal,
+        'PARTICIPANT_REGISTERED' => V1SemanticTypeCode.participantRegistered,
+        'PARTICIPANT_BINDING_CORRECTED' =>
+          V1SemanticTypeCode.participantBindingCorrected,
+        'PARTICIPANT_IDENTITY_RECONCILIATION' =>
+          V1SemanticTypeCode.participantIdentityReconciliation,
+        'REFEREE_ENTERED_FIELD_FOR_MATCH_START' =>
+          V1SemanticTypeCode.refereeEnteredFieldForMatchStart,
+        'REFEREE_LEFT_FIELD_AFTER_MATCH' =>
+          V1SemanticTypeCode.refereeLeftFieldAfterMatch,
         _ => null,
       };
 }
