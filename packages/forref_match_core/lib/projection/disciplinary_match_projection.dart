@@ -12,6 +12,8 @@ import '../semantics/production_semantics_resolver.dart';
 import '../semantics/v1_semantic_payload.dart';
 import '../semantics/yellow_card_disciplinary_system_support.dart';
 import 'disciplinary_authority_projection.dart';
+import 'deterministic_match_projector.dart';
+import 'projection_context.dart';
 import 'participant_identity_projection.dart';
 import 'projection_semantics_resolver.dart';
 import 'projection_trust.dart';
@@ -146,6 +148,7 @@ enum UnresolvedDisciplinaryConsequenceCode {
   disciplinarySystemUnresolved,
   accountingScopeUnresolved,
   correctionLegalEffectUnresolved,
+  correctionConflict,
   duplicateCaptureIntent,
   missingLegalEffectTarget,
   mixedMatchRecords,
@@ -555,6 +558,42 @@ final class DisciplinaryMatchProjection {
           disciplinaryTrust,
           ProjectionTrust.incomplete,
         );
+      }
+    }
+
+    if (candidates.isNotEmpty) {
+      final foundationTrust =
+          DeterministicMatchProjector(resolver).projectRecords(
+        matchId: candidates.first.record.matchId,
+        records: ordered,
+        context: ProjectionContext(
+          evaluatedAuthorityGeneration: evaluatedAuthorityGeneration,
+          trackedFacets: const [
+            ProjectionFacet.disciplinaryState,
+            ProjectionFacet.identity,
+            ProjectionFacet.disciplinaryAccountingScope,
+          ],
+        ),
+      );
+      disciplinaryTrust = _lessTrusted(
+        disciplinaryTrust,
+        foundationTrust.trustFor(ProjectionFacet.disciplinaryState),
+      );
+      identityTrust = _lessTrusted(
+        identityTrust,
+        foundationTrust.trustFor(ProjectionFacet.identity),
+      );
+      final correctionConflict = foundationTrust.conflictNotes.any(
+        (note) => note.startsWith('contradictory corrections for target '),
+      );
+      if (correctionConflict) {
+        unresolved.add(
+          const UnresolvedDisciplinaryConsequence(
+            code: UnresolvedDisciplinaryConsequenceCode.correctionConflict,
+          ),
+        );
+        disciplinaryTrust = ProjectionTrust.conflicted;
+        hasGlobalUnresolved = true;
       }
     }
 

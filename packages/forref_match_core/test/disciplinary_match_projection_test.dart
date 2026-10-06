@@ -419,7 +419,39 @@ void main() {
     );
   });
 
-  test('later legal supersession resolves a generic correction target to none',
+  test('contradictory corrections propagate conflicted disciplinary trust', () {
+    final projection = _project([
+      _registered(1, homeSeven),
+      _yellow(2, 'yc-1', homeSeven, intent: 'intent-1'),
+      _correction(3, 'correction-a', 'yc-1'),
+      _correction(4, 'correction-b', 'yc-1'),
+    ]);
+
+    expect(projection.historicalCautions, hasLength(1));
+    expect(projection.standingCautions, isEmpty);
+    expect(projection.disciplinaryFacetTrust, ProjectionTrust.conflicted);
+    expect(projection.participantIdentityTrust, ProjectionTrust.conflicted);
+    expect(
+      projection.unresolvedConsequences.any(
+        (item) =>
+            item.code ==
+            UnresolvedDisciplinaryConsequenceCode.correctionConflict,
+      ),
+      isTrue,
+    );
+    expect(
+      projection
+          .priorCautionStateFor(
+            participantId: homeSeven.matchParticipantId,
+            accountingScope: DisciplinaryAccountingScope.match,
+          )
+          .state,
+      PriorCautionState.unresolved,
+    );
+  });
+
+  test(
+      'correction plus legal supersession preserves effect but exposes conflict',
       () {
     final projection = _project([
       _registered(1, homeSeven),
@@ -443,7 +475,15 @@ void main() {
       ),
       isEmpty,
     );
-    expect(projection.disciplinaryFacetTrust, ProjectionTrust.trusted);
+    expect(
+      projection.unresolvedConsequences.any(
+        (item) =>
+            item.code ==
+            UnresolvedDisciplinaryConsequenceCode.correctionConflict,
+      ),
+      isTrue,
+    );
+    expect(projection.disciplinaryFacetTrust, ProjectionTrust.conflicted);
     expect(
       projection
           .priorCautionStateFor(
@@ -451,7 +491,7 @@ void main() {
             accountingScope: DisciplinaryAccountingScope.match,
           )
           .state,
-      PriorCautionState.none,
+      PriorCautionState.unresolved,
     );
   });
 
