@@ -34,6 +34,7 @@ export 'semantics/match_record_semantic_type.dart';
 export 'semantics/production_payload_contract.dart';
 export 'semantics/v1_semantic_contract.dart';
 export 'semantics/v1_semantic_payload.dart';
+export 'semantics/yellow_card_semantic.dart';
 export 'semantics/production_semantics_resolver.dart';
 export 'semantics/schema_semantic_interpreter.dart';
 export 'semantics/v1_schema_semantic_interpreter.dart';

@@ -19,6 +19,7 @@ const _participantRegisteredType = 'v1-participant-registered';
 const _participantBindingCorrectedType = 'v1-participant-binding-corrected';
 const _participantIdentityReconciliationType =
     'v1-participant-identity-reconciliation';
+const _yellowCardType = 'v1-yellow-card';
 
 const _rootKeys = {
   'storageEncoding',
@@ -172,6 +173,15 @@ Map<String, Object?> _encodePayload(MatchRecordPayload payload) {
         'fromParticipantId': payload.fromParticipantId.value,
         'toParticipantId': payload.toParticipantId.value,
       },
+      if (payload is YellowCardPayload) ...{
+        'participantRef': ParticipantRefWire.encode(payload.participantRef),
+        'participantStatusAtDetermination':
+            payload.participantStatusAtDetermination.wireValue,
+        'disciplinaryAccountingScope':
+            payload.disciplinaryAccountingScope.wireValue,
+        'captureIntentId': payload.captureIntentId,
+        if (payload.reason != null) 'reason': payload.reason,
+      },
       if (payload.domainContractVersion != null)
         'domainContractVersion': payload.domainContractVersion!.value,
       if (payload.competitionRulesContext != null)
@@ -196,6 +206,7 @@ String _v1PayloadType(V1SemanticPayload payload) {
     ParticipantBindingCorrectionPayload() => _participantBindingCorrectedType,
     ParticipantIdentityReconciliationPayload() =>
       _participantIdentityReconciliationType,
+    YellowCardPayload() => _yellowCardType,
   };
 }
 
@@ -221,7 +232,8 @@ MatchRecordPayload _decodePayload(
       type == _goalType ||
       type == _participantRegisteredType ||
       type == _participantBindingCorrectedType ||
-      type == _participantIdentityReconciliationType) {
+      type == _participantIdentityReconciliationType ||
+      type == _yellowCardType) {
     if (storageEncoding != adapterLocalStorageEncoding) {
       throw FormatException(
         'Typed payload is missing adapter storage encoding',
@@ -266,6 +278,17 @@ MatchRecordPayload _decodePayload(
             'semanticType',
             'fromParticipantId',
             'toParticipantId',
+            'domainContractVersion',
+            'competitionRulesContext',
+          },
+        _yellowCardType => {
+            'type',
+            'semanticType',
+            'participantRef',
+            'participantStatusAtDetermination',
+            'disciplinaryAccountingScope',
+            'captureIntentId',
+            'reason',
             'domainContractVersion',
             'competitionRulesContext',
           },
@@ -334,8 +357,63 @@ V1SemanticPayload _decodeV1Payload(
       _participantBindingCorrectedPayload(payload, code, domain, rules),
     _participantIdentityReconciliationType =>
       _participantIdentityReconciliationPayload(payload, code, domain, rules),
+    _yellowCardType => _yellowCardPayload(payload, code, domain, rules),
     _ => throw FormatException('Unsupported stored payload type: $type'),
   };
+}
+
+YellowCardPayload _yellowCardPayload(
+  Map<String, Object?> payload,
+  V1SemanticTypeCode code,
+  DomainContractVersion? domain,
+  CompetitionRulesContext? rules,
+) {
+  if (code != V1SemanticTypeCode.yellowCard) {
+    throw FormatException(
+      'Payload semantic type ${code.wireValue} does not match YELLOW_CARD',
+    );
+  }
+  final participantRefRaw = payload['participantRef'];
+  if (participantRefRaw is! Map) {
+    throw FormatException('Stored YELLOW_CARD participantRef is missing');
+  }
+  final statusRaw = payload['participantStatusAtDetermination'];
+  if (statusRaw is! String) {
+    throw FormatException(
+      'Stored YELLOW_CARD participantStatusAtDetermination is missing',
+    );
+  }
+  final status = ParticipantStatusAtDeterminationWire.parseWire(statusRaw);
+  if (status == null) {
+    throw FormatException(
+      'Stored YELLOW_CARD participantStatusAtDetermination is invalid',
+    );
+  }
+  final scopeRaw = payload['disciplinaryAccountingScope'];
+  if (scopeRaw is! String) {
+    throw FormatException(
+      'Stored YELLOW_CARD disciplinaryAccountingScope is missing',
+    );
+  }
+  final scope = DisciplinaryAccountingScopeWire.parseWire(scopeRaw);
+  if (scope == null) {
+    throw FormatException(
+      'Stored YELLOW_CARD disciplinaryAccountingScope is invalid',
+    );
+  }
+  final intent = payload['captureIntentId'];
+  if (intent is! String || intent.isEmpty) {
+    throw FormatException('Stored YELLOW_CARD captureIntentId is invalid');
+  }
+  return YellowCardPayload(
+    participantRef: ParticipantRefWire.decode(_stringKeyMap(participantRefRaw)),
+    participantStatusAtDetermination: status,
+    disciplinaryAccountingScope: scope,
+    captureIntentId: intent,
+    reason: payload['reason'] as String?,
+    domainContractVersion: domain,
+    competitionRulesContext: rules,
+  );
 }
 
 GoalPayload _goalPayload(
@@ -484,7 +562,8 @@ TemporalTransitionPayload _temporalTransition(
     V1SemanticTypeCode.goal ||
     V1SemanticTypeCode.participantRegistered ||
     V1SemanticTypeCode.participantBindingCorrected ||
-    V1SemanticTypeCode.participantIdentityReconciliation =>
+    V1SemanticTypeCode.participantIdentityReconciliation ||
+    V1SemanticTypeCode.yellowCard =>
       false,
   };
   if (!isTransition) {

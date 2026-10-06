@@ -225,5 +225,20 @@ final class V1SemanticContract {
       createsSportingState: false,
       isDurableMatchState: false,
     ),
+    V1SemanticTypeCode.yellowCard: V1SemanticContract(
+      code: V1SemanticTypeCode.yellowCard,
+      requiredRecordKind: RecordKind.humanDetermination,
+      schemaVersion: schemaContractVersion,
+      category: SemanticTypeCategory.disciplinary,
+      projectionFacets: [
+        ProjectionFacet.disciplinaryState,
+        ProjectionFacet.identity,
+        ProjectionFacet.disciplinaryAccountingScope,
+      ],
+      requiresTargetRelationship: false,
+      effect: SemanticEffect.sportingHumanDetermination,
+      createsSportingState: true,
+      isDurableMatchState: false,
+    ),
   };
 }

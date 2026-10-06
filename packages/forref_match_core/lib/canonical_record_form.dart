@@ -1,3 +1,6 @@
+import 'participant/disciplinary_accounting_scope.dart';
+import 'participant/participant_ref.dart';
+import 'participant/participant_status_at_determination.dart';
 import 'authority.dart';
 import 'integrity.dart';
 import 'match_record.dart';
@@ -214,6 +217,15 @@ final class _PayloadSnapshot {
           if (payload is GoalPayload) ...{
             'creditedSide': payload.creditedSide.wireValue,
             'captureIntentId': payload.captureIntentId,
+          },
+          if (payload is YellowCardPayload) ...{
+            'participantRef': ParticipantRefWire.encode(payload.participantRef),
+            'participantStatusAtDetermination':
+                payload.participantStatusAtDetermination.wireValue,
+            'disciplinaryAccountingScope':
+                payload.disciplinaryAccountingScope.wireValue,
+            'captureIntentId': payload.captureIntentId,
+            if (payload.reason != null) 'reason': payload.reason,
           },
           if (payload.domainContractVersion != null)
             'domainContractVersion': payload.domainContractVersion!.value,

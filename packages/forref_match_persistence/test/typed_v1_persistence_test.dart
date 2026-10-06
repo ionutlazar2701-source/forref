@@ -131,6 +131,23 @@ void main() {
           semanticType: V1SemanticTypeCode.refereeLeftFieldAfterMatch,
         ),
       ),
+      _typed(
+        recordId: 'yellow-1',
+        originSequence: 13,
+        recordKind: RecordKind.humanDetermination,
+        payload: YellowCardPayload(
+          participantRef: ParticipantRef(
+            matchParticipantId: MatchParticipantId('mpid-yc-persist'),
+            teamSide: ParticipantTeamSide.home,
+            binding: const RosterLinkedBinding(rosterParticipantId: 'home-3'),
+          ),
+          participantStatusAtDetermination:
+              ParticipantStatusAtDetermination.onFieldPlayer,
+          disciplinaryAccountingScope: DisciplinaryAccountingScope.match,
+          captureIntentId: 'intent-yc-persist',
+          reason: 'dissent',
+        ),
+      ),
     ];
 
     final store = SqliteDurableMatchStore.open(file);
@@ -167,6 +184,11 @@ void main() {
     expect(
       (byId['left-1']!.payload as TemporalTransitionPayload).semanticType,
       V1SemanticTypeCode.refereeLeftFieldAfterMatch,
+    );
+    expect(byId['yellow-1']!.payload, isA<YellowCardPayload>());
+    expect(
+      (byId['yellow-1']!.payload as YellowCardPayload).reason,
+      'dissent',
     );
     expect(
       (byId['goal-1']!.payload as GoalPayload).creditedSide,

@@ -1,9 +1,11 @@
 import '../match_record.dart';
+import '../participant/disciplinary_accounting_scope.dart';
 import '../projection/projection_semantics_resolver.dart';
 import '../relationships.dart';
 import 'match_record_semantic_type.dart';
 import 'schema_semantic_interpreter.dart';
 import 'v1_semantic_contract.dart';
+import 'v1_semantic_payload.dart';
 
 /// Frozen v1 semantic interpretation table.
 ///
@@ -25,6 +27,10 @@ final class V1SchemaSemanticInterpreter implements SchemaSemanticInterpreter {
     if (contract == null) return null;
     if (record.recordKind != contract.requiredRecordKind) return null;
 
+    if (identity.code == V1SemanticTypeCode.yellowCard) {
+      return _yellowCardContribution(record, contract);
+    }
+
     final targetId = _targetRecordId(record, identity.code);
     final missingTarget = contract.requiresTargetRelationship && targetId == null;
 
@@ -33,6 +39,23 @@ final class V1SchemaSemanticInterpreter implements SchemaSemanticInterpreter {
       supportedFacets: contract.projectionFacets,
       missingRequiredRelationship: missingTarget,
       requiredTargetRecordId: targetId,
+    );
+  }
+
+  static SemanticProjectionContribution? _yellowCardContribution(
+    MatchRecord record,
+    V1SemanticContract contract,
+  ) {
+    final payload = record.payload;
+    if (payload is! YellowCardPayload) return null;
+
+    final standingEffectIncomplete = payload.disciplinaryAccountingScope ==
+        DisciplinaryAccountingScope.unresolved;
+
+    return SemanticProjectionContribution(
+      status: SemanticSupportStatus.supported,
+      supportedFacets: contract.projectionFacets,
+      missingRequiredRelationship: standingEffectIncomplete,
     );
   }
 
