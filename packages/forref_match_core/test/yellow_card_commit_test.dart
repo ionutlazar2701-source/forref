@@ -902,18 +902,17 @@ void main() {
     expect(source, isNot(contains('upsertMatch')));
   });
 
-  test('no standing-caution projection is added', () {
-    final files = Directory('lib')
-        .listSync(recursive: true)
-        .whereType<File>()
-        .where((file) => file.path.endsWith('.dart'));
-    for (final file in files) {
-      final text = file.readAsStringSync();
-      expect(text, isNot(contains('historicalCautions')));
-      expect(text, isNot(contains('standingCautions')));
-      expect(text, isNot(contains('priorCautionState')));
-      expect(text, isNot(contains('secondCaution')));
-    }
+  test('capture record stores no mutable standing-caution authority', () async {
+    await ready();
+    final saved =
+        await committer.commitYellowCard(command()) as YellowCardSaved;
+    final encoded = encodeMatchRecordForStorage(saved.record);
+    final payload = encoded['payload'] as Map<String, Object?>;
+    expect(payload.keys, isNot(contains('yellowCount')));
+    expect(payload.keys, isNot(contains('standingCautions')));
+    expect(payload.keys, isNot(contains('priorCautionState')));
+    expect(payload.keys, isNot(contains('isSecondYellow')));
+    expect(payload.keys, isNot(contains('dismissalRequired')));
   });
 
   test('no RED_CARD semantic or record is added', () async {

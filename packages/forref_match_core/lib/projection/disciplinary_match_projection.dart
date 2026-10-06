@@ -241,7 +241,13 @@ final class DisciplinaryMatchProjection {
     );
     final unresolved = <UnresolvedDisciplinaryConsequence>[];
     final candidates = <_CautionCandidate>[];
-    var identityTrust = ProjectionTrust.trusted;
+    var identityTrust = switch (identities.overallConfidence) {
+      IdentityConfidence.resolved ||
+      IdentityConfidence.provisional =>
+        ProjectionTrust.trusted,
+      IdentityConfidence.ambiguous => ProjectionTrust.incomplete,
+      IdentityConfidence.conflicted => ProjectionTrust.conflicted,
+    };
     var disciplinaryTrust = ProjectionTrust.trusted;
     var hasGlobalUnresolved = false;
 
@@ -398,8 +404,9 @@ final class DisciplinaryMatchProjection {
       final context = candidate.record.authorityContext;
       final generation = context?.generation?.value;
       final principal = context?.principal?.principalId;
-      if (generation == null || principal == null || principal.isEmpty)
+      if (generation == null || principal == null || principal.isEmpty) {
         continue;
+      }
       principalsByGeneration
           .putIfAbsent(generation, () => <String>{})
           .add(principal);
