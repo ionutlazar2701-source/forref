@@ -505,6 +505,13 @@ final class DisciplinaryMatchProjection {
           if (authorityCode == null) {
             target.legallySuperseded = true;
             target.unresolved = false;
+            unresolved.removeWhere(
+              (item) =>
+                  item.code ==
+                      UnresolvedDisciplinaryConsequenceCode
+                          .correctionLegalEffectUnresolved &&
+                  item.targetRecordId == target.record.recordId,
+            );
           } else {
             target.unresolved = true;
             unresolved.add(
@@ -592,6 +599,9 @@ final class DisciplinaryMatchProjection {
         canonicalParticipantId: participantId,
         accountingScope: scope,
       )] = PriorCautionAssessment.unresolved;
+    }
+    if (unresolved.isEmpty) {
+      disciplinaryTrust = ProjectionTrust.trusted;
     }
 
     return DisciplinaryMatchProjection._(

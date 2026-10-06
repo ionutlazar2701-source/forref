@@ -33,12 +33,26 @@ void main() {
         status: ParticipantStatusAtDetermination.onFieldPlayer,
         intent: 'intent-field',
       ),
+      _yellow(
+        4,
+        'yc-substituted',
+        homeSeven,
+        status: ParticipantStatusAtDetermination.substitutedPlayer,
+        intent: 'intent-substituted',
+      ),
+      _yellow(
+        5,
+        'yc-returned',
+        homeSeven,
+        status: ParticipantStatusAtDetermination.onFieldPlayer,
+        intent: 'intent-returned',
+      ),
     ];
 
     final projection = _project(records);
 
-    expect(projection.historicalCautions, hasLength(2));
-    expect(projection.standingCautions, hasLength(2));
+    expect(projection.historicalCautions, hasLength(4));
+    expect(projection.standingCautions, hasLength(4));
     expect(
       projection.standingCautions
           .map((caution) => caution.canonicalParticipantId)
@@ -49,19 +63,20 @@ void main() {
       projection.standingCautions
           .map((caution) => caution.standingOrdinal)
           .toList(),
-      [1, 2],
+      [1, 2, 3, 4],
     );
     expect(projection.standingCautions.first.hasPriorStandingCaution, isFalse);
+    expect(projection.standingCautions[1].hasPriorStandingCaution, isTrue);
+    expect(projection.standingCautions[1].isSecondStandingCaution, isTrue);
     expect(projection.standingCautions.last.hasPriorStandingCaution, isTrue);
-    expect(projection.standingCautions.last.isSecondStandingCaution, isTrue);
 
     final prior = projection.priorCautionStateFor(
       participantId: homeSeven.matchParticipantId,
       accountingScope: DisciplinaryAccountingScope.match,
     );
     expect(prior.state, PriorCautionState.standing);
-    expect(prior.standingCautionCount, 2);
-    expect(prior.nextStandingOrdinal, 3);
+    expect(prior.standingCautionCount, 4);
+    expect(prior.nextStandingOrdinal, 5);
     expect(prior.nextCautionWouldBeSecond, isFalse);
   });
 
@@ -401,6 +416,42 @@ void main() {
           )
           .state,
       PriorCautionState.unresolved,
+    );
+  });
+
+  test('later legal supersession resolves a generic correction target to none',
+      () {
+    final projection = _project([
+      _registered(1, homeSeven),
+      _yellow(2, 'yc-1', homeSeven, intent: 'intent-1'),
+      _correction(3, 'correction-1', 'yc-1'),
+      _legalSupersession(4, 'supersede-yc', 'yc-1'),
+    ]);
+
+    expect(projection.historicalCautions, hasLength(1));
+    expect(projection.standingCautions, isEmpty);
+    expect(
+      projection.historicalCautions.single.standingEffect,
+      CautionStandingEffect.legallySuperseded,
+    );
+    expect(
+      projection.unresolvedConsequences.where(
+        (item) =>
+            item.code ==
+            UnresolvedDisciplinaryConsequenceCode
+                .correctionLegalEffectUnresolved,
+      ),
+      isEmpty,
+    );
+    expect(projection.disciplinaryFacetTrust, ProjectionTrust.trusted);
+    expect(
+      projection
+          .priorCautionStateFor(
+            participantId: homeSeven.matchParticipantId,
+            accountingScope: DisciplinaryAccountingScope.match,
+          )
+          .state,
+      PriorCautionState.none,
     );
   });
 
