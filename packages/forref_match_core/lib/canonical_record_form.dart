@@ -102,28 +102,35 @@ final class _TemporalSnapshot {
   const _TemporalSnapshot({
     required this.evidenceIds,
     required this.domainClockPolicyVersion,
+    required this.explicitUncertainty,
   });
 
   factory _TemporalSnapshot.from(TemporalContext context) {
     return _TemporalSnapshot(
       evidenceIds: List<String>.from(context.evidenceIds),
       domainClockPolicyVersion: context.domainClockPolicyVersion,
+      explicitUncertainty: context.explicitUncertainty,
     );
   }
 
   final List<String> evidenceIds;
   final String? domainClockPolicyVersion;
+  final bool explicitUncertainty;
 
   @override
   bool operator ==(Object other) {
     return other is _TemporalSnapshot &&
         _listEquals(evidenceIds, other.evidenceIds) &&
-        domainClockPolicyVersion == other.domainClockPolicyVersion;
+        domainClockPolicyVersion == other.domainClockPolicyVersion &&
+        explicitUncertainty == other.explicitUncertainty;
   }
 
   @override
-  int get hashCode =>
-      Object.hash(Object.hashAll(evidenceIds), domainClockPolicyVersion);
+  int get hashCode => Object.hash(
+        Object.hashAll(evidenceIds),
+        domainClockPolicyVersion,
+        explicitUncertainty,
+      );
 }
 
 final class _AuthoritySnapshot {
@@ -311,7 +318,8 @@ int _deepHashCode(Object? value) {
     final entries = value.entries.toList()
       ..sort((a, b) => (a.key as String).compareTo(b.key as String));
     return Object.hashAll(
-      entries.map((entry) => Object.hash(entry.key, _deepHashCode(entry.value))),
+      entries
+          .map((entry) => Object.hash(entry.key, _deepHashCode(entry.value))),
     );
   }
   return value.hashCode;

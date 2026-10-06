@@ -3,10 +3,15 @@ final class TemporalContext {
   const TemporalContext({
     this.evidenceIds = const [],
     this.domainClockPolicyVersion,
+    this.explicitUncertainty = false,
   });
 
   final List<String> evidenceIds;
   final String? domainClockPolicyVersion;
+
+  /// The capture is bound to the domain clock, and an exact playing minute
+  /// is not available. This is not a fabricated `00:00` or a wall-clock minute.
+  final bool explicitUncertainty;
 }
 
 /// Evidence artifact resolved through [TemporalEvidencePort].

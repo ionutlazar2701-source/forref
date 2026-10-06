@@ -59,7 +59,8 @@ final class MatchApplicationBoundary
     if (matchStarted == null) {
       final started = await commitMatchStarted(context);
       if (started is! DurableCommitSuccess) {
-        final afterFailure = await _store.readCommittedForMatch(context.matchId);
+        final afterFailure =
+            await _store.readCommittedForMatch(context.matchId);
         matchStarted = _matchStartedRecord(afterFailure);
         if (matchStarted == null) {
           final reason = started is DurableCommitFailure
@@ -254,8 +255,7 @@ final class MatchApplicationBoundary
         if (lineage.activeStart != null) {
           return 'PERIOD_STARTED requires no active period';
         }
-        if (!lineage.intervalActive ||
-            lineage.latestEnded?.index != 1) {
+        if (!lineage.intervalActive || lineage.latestEnded?.index != 1) {
           return 'PERIOD_STARTED requires Period 1 ended';
         }
         final periodOne = lineage.starts.single;
@@ -503,7 +503,8 @@ final class MatchApplicationBoundary
       return Future<DurableCommitResult>.value(
         DurableCommitFailure(
           recordId: request.recordId,
-          reason: 'TEMPORARY_SUSPENSION_ENDED requires temporal anchor evidence',
+          reason:
+              'TEMPORARY_SUSPENSION_ENDED requires temporal anchor evidence',
         ),
       );
     }
@@ -646,13 +647,35 @@ final class MatchApplicationBoundary
     return result;
   }
 
+  /// Authoritative administered caution.
+  ///
+  /// D1 completes inside this method. A returned rejection is not Saved.
+  /// [CommitYellowCardCommand.captureIntentId] retries return the already
+  /// committed record and do not append another caution.
+  Future<YellowCardCommitResult> commitYellowCard(
+    CommitYellowCardCommand command,
+  ) {
+    return YellowCardCommitter(
+      originCommit: _store,
+      memory: _store,
+      recordBuilder: _recordBuilder,
+    ).commitYellowCard(command);
+  }
+
   /// Constructs an authoritative record, allocates the next origin sequence
   /// atomically, and durable-commits. UI must not choose originSequence.
   ///
-  /// GOAL capture must use [commitGoal], not this generic port.
+  /// GOAL capture must use [commitGoal]. YELLOW_CARD capture must use
+  /// [commitYellowCard]. This generic port cannot bypass those admission rules.
   Future<DurableCommitResult> captureAndCommit(
     AuthoritativeCaptureCommand command,
   ) async {
+    if (command.payload is YellowCardPayload) {
+      return const DurableCommitFailure(
+        recordId: 'yellow-card',
+        reason: 'YELLOW_CARD requires commitYellowCard',
+      );
+    }
     final request = _recordBuilder.build(
       context: command.context,
       recordKind: command.recordKind,
@@ -678,7 +701,8 @@ final class MatchApplicationBoundary
     return _projector.project(
       _store,
       matchId,
-      ProjectionContext(evaluatedAuthorityGeneration: evaluatedAuthorityGeneration),
+      ProjectionContext(
+          evaluatedAuthorityGeneration: evaluatedAuthorityGeneration),
     );
   }
 
@@ -865,7 +889,9 @@ String? _goalAdmissionRejection(List<MatchRecord> records) {
     return 'GOAL blocked before an active period';
   }
   final lineage = periodLineage(records: records);
-  if (lineage.ambiguous || lineage.endAmbiguous || lineage.activeStart == null) {
+  if (lineage.ambiguous ||
+      lineage.endAmbiguous ||
+      lineage.activeStart == null) {
     return 'GOAL blocked before an active period';
   }
   if (_openFormalSuspensions(records, lineage.activeStart!).isNotEmpty) {

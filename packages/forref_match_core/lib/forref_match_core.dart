@@ -5,6 +5,7 @@ export 'capture/authoritative_record_builder.dart';
 export 'capture/authoritative_record_commit_request.dart';
 export 'capture/capture_context.dart';
 export 'capture/record_identity_generator.dart';
+export 'capture/yellow_card_commit.dart';
 export 'authority.dart';
 export 'integrity.dart';
 export 'match_record.dart';

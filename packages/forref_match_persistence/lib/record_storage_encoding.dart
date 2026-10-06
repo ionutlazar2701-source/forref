@@ -53,6 +53,8 @@ Map<String, Object?> encodeMatchRecordForStorage(MatchRecord record) {
             'evidenceIds': record.temporalContext!.evidenceIds,
             'domainClockPolicyVersion':
                 record.temporalContext!.domainClockPolicyVersion,
+            if (record.temporalContext!.explicitUncertainty)
+              'explicitUncertainty': true,
           },
     'authorityContext': record.authorityContext == null
         ? null
@@ -88,7 +90,8 @@ MatchRecord decodeMatchRecordFromStorage(String jsonText) {
   _requireKnownKeys(json, _rootKeys, 'record');
 
   final storageEncoding = json['storageEncoding'];
-  if (storageEncoding != null && storageEncoding != adapterLocalStorageEncoding) {
+  if (storageEncoding != null &&
+      storageEncoding != adapterLocalStorageEncoding) {
     throw FormatException(
       'Unsupported adapter storage encoding: $storageEncoding',
     );
@@ -325,7 +328,8 @@ V1SemanticPayload _decodeV1Payload(
   final rules = _competitionRules(payload['competitionRulesContext']);
 
   return switch (type) {
-    _temporalTransitionType => _temporalTransition(payload, code, domain, rules),
+    _temporalTransitionType =>
+      _temporalTransition(payload, code, domain, rules),
     _temporalCorrectionType => _exactCode(
         code,
         V1SemanticTypeCode.temporalCorrection,
@@ -651,7 +655,8 @@ CompetitionRulesContext? _competitionRules(Object? value) {
   }
   return CompetitionRulesContext(
     rulesetId: rulesetId,
-    additionalPlayingPhase: _additionalPlayingPhase(json['additionalPlayingPhase']),
+    additionalPlayingPhase:
+        _additionalPlayingPhase(json['additionalPlayingPhase']),
     penaltyShootOutAfterMatchEnd:
         _penaltyShootOutAfterMatchEnd(json['penaltyShootOutAfterMatchEnd']),
     disciplinarySystem: _disciplinarySystem(json['disciplinarySystem']),
@@ -664,7 +669,8 @@ Map<String, Object?> _encodeCompetitionRules(CompetitionRulesContext rules) {
     if (rules.additionalPlayingPhase !=
         AdditionalPlayingPhaseDisposition.unresolved)
       'additionalPlayingPhase': rules.additionalPlayingPhase.wireValue,
-    if (rules.penaltyShootOutAfterMatchEnd) 'penaltyShootOutAfterMatchEnd': true,
+    if (rules.penaltyShootOutAfterMatchEnd)
+      'penaltyShootOutAfterMatchEnd': true,
     if (rules.disciplinarySystem != DisciplinarySystem.unresolved)
       'disciplinarySystem': rules.disciplinarySystem.wireValue,
   };
@@ -726,16 +732,21 @@ TemporalContext? _temporal(Object? value) {
   final json = _stringKeyMap(value);
   _requireKnownKeys(
     json,
-    {'evidenceIds', 'domainClockPolicyVersion'},
+    {'evidenceIds', 'domainClockPolicyVersion', 'explicitUncertainty'},
     'temporalContext',
   );
   final evidenceIds = json['evidenceIds'];
   if (evidenceIds is! List) {
     throw FormatException('Stored temporal evidence ids are missing');
   }
+  final uncertainty = json['explicitUncertainty'];
+  if (uncertainty != null && uncertainty is! bool) {
+    throw FormatException('Stored temporal explicitUncertainty is invalid');
+  }
   return TemporalContext(
     evidenceIds: [for (final id in evidenceIds) id as String],
     domainClockPolicyVersion: json['domainClockPolicyVersion'] as String?,
+    explicitUncertainty: uncertainty == true,
   );
 }
 
@@ -803,7 +814,8 @@ void _requireKnownKeys(
 ) {
   for (final key in json.keys) {
     if (!allowed.contains(key)) {
-      throw FormatException('Unknown $label field cannot be reconstructed: $key');
+      throw FormatException(
+          'Unknown $label field cannot be reconstructed: $key');
     }
   }
 }
