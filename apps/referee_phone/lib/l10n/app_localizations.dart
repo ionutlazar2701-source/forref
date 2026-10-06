@@ -602,6 +602,12 @@ abstract class AppLocalizations {
   /// **'Goal was not saved'**
   String get goalNotSaved;
 
+  /// No description provided for @legacyGoalsNotIncluded.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier goals saved in the old format are not shown here. The score reflects Match Memory only.'**
+  String get legacyGoalsNotIncluded;
+
   /// No description provided for @yellow.
   ///
   /// In en, this message translates to:

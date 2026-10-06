@@ -13,7 +13,7 @@ import 'package:referee_phone/l10n/match_labels.dart';
 import 'package:forref_match_core/forref_match_core.dart';
 import 'package:referee_phone/match/match_session.dart';
 import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
-import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_store.dart';
+import 'package:referee_phone/match_application/goal_match_read_model.dart';
 import 'package:referee_phone/match_application/kick_off_authority.dart';
 import 'package:referee_phone/match_application/match_started_read_model.dart';
 import 'package:referee_phone/match/new_match.dart';
@@ -126,7 +126,7 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
     final resumptionAnchor = evidence == null || resumptionId == null
         ? null
         : await evidence.resolve(resumptionId);
-    final recordedEvidence = await _resolveRecordedEvidence(evidence, records);
+    final recordedEvidence = await resolveRecordedEvidence(evidence, records);
     final goalProjection = GoalMatchProjection.derive(
       records: records,
       evidence: recordedEvidence,
@@ -997,23 +997,6 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
         ],
       ),
     );
-  }
-
-  Future<List<TemporalEvidence>> _resolveRecordedEvidence(
-    PhoneTemporalEvidenceStore? evidence,
-    List<MatchRecord> records,
-  ) async {
-    if (evidence == null) return const [];
-    final ids = <String>{};
-    for (final record in records) {
-      ids.addAll(record.temporalContext?.evidenceIds ?? const <String>[]);
-    }
-    final resolved = <TemporalEvidence>[];
-    for (final id in ids) {
-      final item = await evidence.resolve(id);
-      if (item != null) resolved.add(item);
-    }
-    return resolved;
   }
 
   String? _periodStartRecordId(
