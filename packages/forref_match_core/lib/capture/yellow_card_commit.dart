@@ -65,8 +65,11 @@ enum YellowCardCommitFailure {
 sealed class YellowCardCommitResult {
   const YellowCardCommitResult();
 
-  /// True only after certified D1 success, or recovery of a record that
-  /// already completed D1. This is the Saved acknowledgement boundary.
+  /// True only after adapter D1 success under the software
+  /// [DurableCommitPort] contract, or recovery of a record that already
+  /// completed that boundary. This is the Saved acknowledgement boundary.
+  ///
+  /// This does not claim platform or power-loss D1 certification.
   bool get ackEligible;
 }
 
@@ -272,6 +275,7 @@ TemporalContext bindYellowCardTemporalEvidence(
       evidenceIds: supplied.evidenceIds,
       domainClockPolicyVersion: supplied.domainClockPolicyVersion ??
           command.context.domainContractVersion?.value,
+      explicitUncertainty: supplied.explicitUncertainty,
     );
   }
   return TemporalContext(
@@ -283,9 +287,16 @@ TemporalContext bindYellowCardTemporalEvidence(
 
 /// One capture intent binds at most one authoritative YELLOW_CARD.
 ///
-/// Sporting identity is participant, status-at-determination, accounting
-/// scope, reason, and competition rules. Timestamp, temporal evidence, and
-/// payload similarity are not deduplication keys.
+/// Conflict identity is limited to minimum authoritative caution content:
+/// participant, status-at-determination, and accounting scope.
+///
+/// Current authority, competition rules, lifecycle state, timestamp, and
+/// temporal evidence are external admission/evidence context. They cannot
+/// retroactively conflict with a record that already completed D1.
+///
+/// Reason is optional enrichment, not minimum caution existence. A reason-only
+/// retry recovers the original immutable record; later changes belong in a
+/// future correction/enrichment path and never mutate this record.
 bool sameYellowCardSportingIdentity(
   YellowCardPayload committed,
   CommitYellowCardCommand command,
@@ -294,16 +305,7 @@ bool sameYellowCardSportingIdentity(
       committed.participantStatusAtDetermination ==
           command.participantStatusAtDetermination &&
       committed.disciplinaryAccountingScope ==
-          command.disciplinaryAccountingScope &&
-      committed.reason == _normalizeReason(command.reason) &&
-      committed.competitionRulesContext ==
-          command.context.competitionRulesContext;
-}
-
-String? _normalizeReason(String? value) {
-  if (value == null) return null;
-  final trimmed = value.trim();
-  return trimmed.isEmpty ? null : trimmed;
+          command.disciplinaryAccountingScope;
 }
 
 MatchRecord? yellowCardForCaptureIntent(

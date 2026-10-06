@@ -17,8 +17,10 @@ sealed class DurableCommitResult {
 
 /// D1 durable commit succeeded for exactly one record.
 ///
-/// Returned only by a **certified persistence adapter** after local durability
-/// is confirmed. Test/reference implementations must not return this.
+/// Returned only by a persistence adapter after it satisfies the software
+/// [DurableCommitPort] contract for local commit. This result makes ACK
+/// eligible; it does not itself certify platform or power-loss behavior.
+/// Test/reference implementations must not return this.
 final class DurableCommitSuccess extends DurableCommitResult {
   const DurableCommitSuccess({
     required this.committedRecordId,

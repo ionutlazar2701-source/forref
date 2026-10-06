@@ -552,36 +552,69 @@ void main() {
     expect((blank.record.payload as YellowCardPayload).reason, isNull);
   });
 
-  test(
-      'exact match minute unavailable still permits caution with explicit temporal uncertainty',
+  test('exact temporal evidence reference remains preserved', () async {
+    await ready();
+    final exactEvidence = TemporalEvidence(
+      evidenceId: 'clock-exact-1',
+      capturedAt: DateTime.utc(2026, 10, 6, 18),
+      continuityDomainId: 'continuity-a',
+      monotonicElapsed: const Duration(minutes: 23, seconds: 17),
+    );
+    final saved = await committer.commitYellowCard(
+      command(
+        temporal: TemporalContext(
+          evidenceIds: [exactEvidence.evidenceId],
+          domainClockPolicyVersion: 'domain-clock-v1',
+        ),
+      ),
+    ) as YellowCardSaved;
+    final committed = (await records()).last;
+    expect(
+      committed.temporalContext?.evidenceIds,
+      [exactEvidence.evidenceId],
+    );
+    expect(
+      committed.temporalContext?.domainClockPolicyVersion,
+      'domain-clock-v1',
+    );
+    expect(committed.temporalContext?.explicitUncertainty, isFalse);
+    expect(saved.record.recordId, committed.recordId);
+  });
+
+  test('continuity-unresolved temporal placement remains explicitly uncertain',
       () async {
     await ready();
     final saved = await committer.commitYellowCard(
       command(
-        temporal: const TemporalContext(explicitUncertainty: true),
+        temporal: const TemporalContext(
+          evidenceIds: ['clock-unresolved-1'],
+          domainClockPolicyVersion: 'domain-clock-v1',
+          explicitUncertainty: true,
+        ),
       ),
     ) as YellowCardSaved;
-    expect(saved.record.temporalContext?.explicitUncertainty, isTrue);
-    expect(saved.record.temporalContext?.evidenceIds, isEmpty);
-    final payload = encodeMatchRecordForStorage(saved.record)['payload']
+    final committed = (await records()).last;
+    expect(committed.recordId, saved.record.recordId);
+    expect(committed.temporalContext?.evidenceIds, ['clock-unresolved-1']);
+    expect(committed.temporalContext?.explicitUncertainty, isTrue);
+    final payload = encodeMatchRecordForStorage(committed)['payload']
         as Map<String, Object?>;
     expect(payload.keys, isNot(contains('minute')));
     expect(payload.keys, isNot(contains('matchMinute')));
     expect(payload.keys, isNot(contains('elapsedSeconds')));
     expect(payload.keys, isNot(contains('playingTime')));
     expect(payload.toString(), isNot(contains('00:00')));
+  });
 
-    final bound = await committer.commitYellowCard(
-      command(
-        intent: 'intent-bound-evidence',
-        temporal: const TemporalContext(evidenceIds: ['clock-interval-1']),
-      ),
-    ) as YellowCardSaved;
-    expect(bound.record.temporalContext?.evidenceIds, ['clock-interval-1']);
-    expect(bound.record.temporalContext?.explicitUncertainty, isFalse);
-    final boundPayload = encodeMatchRecordForStorage(bound.record)['payload']
-        as Map<String, Object?>;
-    expect(boundPayload.keys, isNot(contains('elapsedSeconds')));
+  test('no exact minute is required for yellow card authority', () async {
+    await ready();
+    final saved =
+        await committer.commitYellowCard(command()) as YellowCardSaved;
+    final committed = (await records()).last;
+    expect(committed.recordId, saved.record.recordId);
+    expect(committed.temporalContext?.evidenceIds, isEmpty);
+    expect(committed.temporalContext?.explicitUncertainty, isTrue);
+    expect(saved.ackEligible, isTrue);
   });
 
   test('first captureIntentId commit appends exactly one YC', () async {
@@ -590,40 +623,71 @@ void main() {
     expect(yellowsOf(await records()), hasLength(1));
   });
 
-  test('same intent retry returns the existing authority', () async {
-    await ready();
-    final first =
-        await committer.commitYellowCard(command()) as YellowCardSaved;
-    await leftField();
-    final retry = await committer.commitYellowCard(
-      command(
-        context: _context(generation: 2),
-        temporal: const TemporalContext(evidenceIds: ['later-clock']),
-      ),
-    ) as YellowCardSaved;
-    expect(retry.recoveredExisting, isTrue);
-    expect(retry.ackEligible, isTrue);
-    expect(retry.record.recordId, first.record.recordId);
-    expect(retry.record.originSequence, first.record.originSequence);
-    expect(retry.record.authorityContext?.generation?.value, 1);
-    expect(yellowsOf(await records()), hasLength(1));
-  });
-
-  test('same intent retry does not consume a new originSequence', () async {
+  test('committed intent survives later competition-rules change', () async {
     await ready();
     final first =
         await committer.commitYellowCard(command()) as YellowCardSaved;
     final before = [
       for (final record in await records()) record.originSequence,
     ];
-    final retry =
+    final retry = await committer.commitYellowCard(
+      command(
+        context: _context(system: DisciplinarySystem.temporaryDismissal),
+      ),
+    ) as YellowCardSaved;
+    expect(retry.recoveredExisting, isTrue);
+    expect(retry.record.recordId, first.record.recordId);
+    expect(retry.record.originSequence, first.record.originSequence);
+    expect(
+      (retry.record.payload as YellowCardPayload)
+          .competitionRulesContext
+          ?.disciplinarySystem,
+      DisciplinarySystem.ordinaryIfab,
+    );
+    expect(
+      [for (final record in await records()) record.originSequence],
+      before,
+    );
+    expect(yellowsOf(await records()), hasLength(1));
+  });
+
+  test('committed intent survives later authority-generation change', () async {
+    await ready();
+    final first =
         await committer.commitYellowCard(command()) as YellowCardSaved;
+    final before = [
+      for (final record in await records()) record.originSequence,
+    ];
+    final retry = await committer.commitYellowCard(
+      command(context: _context(generation: 2)),
+    ) as YellowCardSaved;
     final after = [
       for (final record in await records()) record.originSequence,
     ];
     expect(retry.recoveredExisting, isTrue);
     expect(after, before);
     expect(retry.record.originSequence, first.record.originSequence);
+    expect(retry.record.authorityContext?.generation?.value, 1);
+  });
+
+  test('committed intent survives later card-authority closure', () async {
+    await ready();
+    final first =
+        await committer.commitYellowCard(command()) as YellowCardSaved;
+    await leftField();
+    final before = [
+      for (final record in await records()) record.originSequence,
+    ];
+    final retry =
+        await committer.commitYellowCard(command()) as YellowCardSaved;
+    expect(retry.recoveredExisting, isTrue);
+    expect(retry.record.recordId, first.record.recordId);
+    expect(retry.record.originSequence, first.record.originSequence);
+    expect(
+      [for (final record in await records()) record.originSequence],
+      before,
+    );
+    expect(yellowsOf(await records()), hasLength(1));
   });
 
   test('same intent and different participant is an idempotency conflict',
@@ -666,13 +730,6 @@ void main() {
       (statusConflict as YellowCardCommitRejected).failure,
       YellowCardCommitFailure.idempotencyConflict,
     );
-    final reasonConflict = await committer.commitYellowCard(
-      command(reason: 'unsporting behaviour'),
-    );
-    expect(
-      (reasonConflict as YellowCardCommitRejected).failure,
-      YellowCardCommitFailure.idempotencyConflict,
-    );
     final scopeConflict = await committer.commitYellowCard(
       command(
         scope: DisciplinaryAccountingScope.shootout,
@@ -686,6 +743,40 @@ void main() {
     expect(
       [for (final record in await records()) record.originSequence],
       sequences,
+    );
+    expect(yellowsOf(await records()), hasLength(1));
+  });
+
+  test('reason-only retry recovers original immutable enrichment', () async {
+    await ready();
+    final first = await committer.commitYellowCard(
+      command(reason: 'dissent'),
+    ) as YellowCardSaved;
+    final before = [
+      for (final record in await records()) record.originSequence,
+    ];
+
+    final changed = await committer.commitYellowCard(
+      command(reason: 'unsporting behaviour'),
+    ) as YellowCardSaved;
+    final removed =
+        await committer.commitYellowCard(command()) as YellowCardSaved;
+
+    expect(changed.recoveredExisting, isTrue);
+    expect(removed.recoveredExisting, isTrue);
+    expect(changed.record.recordId, first.record.recordId);
+    expect(removed.record.recordId, first.record.recordId);
+    expect(
+      (changed.record.payload as YellowCardPayload).reason,
+      'dissent',
+    );
+    expect(
+      (removed.record.payload as YellowCardPayload).reason,
+      'dissent',
+    );
+    expect(
+      [for (final record in await records()) record.originSequence],
+      before,
     );
     expect(yellowsOf(await records()), hasLength(1));
   });

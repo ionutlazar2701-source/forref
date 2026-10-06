@@ -106,7 +106,7 @@ void main() {
       expect(outcome, isA<DurableCommitFailure>());
     });
 
-    test('reference implementation cannot represent certified D1 success', () async {
+    test('reference implementation cannot return adapter D1 success', () async {
       final port = ReferenceTestOnlyCommitPort();
       final outcome = await port.commit(_sampleRecord(recordId: 'rec-x'));
 
@@ -143,7 +143,8 @@ void main() {
       );
     });
 
-    test('legal supersession links forward without mutating the prior record', () {
+    test('legal supersession links forward without mutating the prior record',
+        () {
       const priorId = 'determination-1';
       final supersession = MatchRecord(
         recordId: 'super-1',
@@ -267,7 +268,8 @@ final class _RecordCountProjection implements MatchProjection {
   final int committedRecordCount;
 }
 
-final class _CountingProjector implements MatchProjector<_RecordCountProjection> {
+final class _CountingProjector
+    implements MatchProjector<_RecordCountProjection> {
   const _CountingProjector();
 
   @override
