@@ -35,7 +35,6 @@ extension PhoneCompetitionFormatChoiceMapping on PhoneCompetitionFormatChoice {
       rulesetId: rulesetId,
       additionalPlayingPhase: additionalPlayingPhase,
       penaltyShootOutAfterMatchEnd: penaltyShootOutAfterMatchEnd,
-      disciplinarySystem: DisciplinarySystem.ordinaryIfab,
     );
   }
 }

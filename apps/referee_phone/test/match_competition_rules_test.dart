@@ -130,12 +130,67 @@ void main() {
     );
   });
 
-  test('setup format persist selects ordinary IFAB explicitly', () {
+  test('standard competition format does not establish ORDINARY_IFAB', () {
     final rules = PhoneCompetitionFormatChoice.noAdditionalPlayingPeriods
         .toRulesContext(penaltyShootOutAfterMatchEnd: false);
-    expect(rules.disciplinarySystem, DisciplinarySystem.ordinaryIfab);
     expect(rules.additionalPlayingPhase,
         AdditionalPlayingPhaseDisposition.noneRequired);
+    expect(rules.disciplinarySystem, DisciplinarySystem.unresolved);
+  });
+
+  test('extra time may apply does not establish ORDINARY_IFAB', () {
+    final rules = PhoneCompetitionFormatChoice.additionalPlayingPhaseMayApply
+        .toRulesContext(penaltyShootOutAfterMatchEnd: false);
+    expect(rules.additionalPlayingPhase,
+        AdditionalPlayingPhaseDisposition.unresolved);
+    expect(rules.disciplinarySystem, DisciplinarySystem.unresolved);
+  });
+
+  test('shoot-out selection does not establish ORDINARY_IFAB', () {
+    final rules = PhoneCompetitionFormatChoice.noAdditionalPlayingPeriods
+        .toRulesContext(penaltyShootOutAfterMatchEnd: true);
+    expect(rules.penaltyShootOutAfterMatchEnd, isTrue);
+    expect(rules.disciplinarySystem, DisciplinarySystem.unresolved);
+  });
+
+  test('setup persist without disciplinary selection remains UNRESOLVED', () async {
+    final store = MatchCompetitionRulesStore(temp);
+    await store.saveForMatch(
+      'match-1',
+      PhoneCompetitionFormatChoice.noAdditionalPlayingPeriods.toRulesContext(
+        penaltyShootOutAfterMatchEnd: true,
+      ),
+    );
+    expect(
+      (await store.loadForMatch('match-1')).disciplinarySystem,
+      DisciplinarySystem.unresolved,
+    );
+  });
+
+  test('explicit ORDINARY_IFAB remains supported and persists', () async {
+    const rules = CompetitionRulesContext(
+      rulesetId: 'ifab',
+      disciplinarySystem: DisciplinarySystem.ordinaryIfab,
+    );
+    expect(
+      YellowCardDisciplinarySystemSupportGate.assess(rules),
+      YellowCardDisciplinarySystemSupport.supported,
+    );
+    final store = MatchCompetitionRulesStore(temp);
+    await store.saveForMatch('match-1', rules);
+    expect(await store.loadForMatch('match-1'), rules);
+  });
+
+  test('explicit TEMPORARY_DISMISSAL remains unsupported for Yellow Card V1', () {
+    expect(
+      YellowCardDisciplinarySystemSupportGate.assess(
+        const CompetitionRulesContext(
+          rulesetId: 'youth',
+          disciplinarySystem: DisciplinarySystem.temporaryDismissal,
+        ),
+      ),
+      YellowCardDisciplinarySystemSupport.unsupportedModifiedSystem,
+    );
   });
 
   test('CaptureContext carries persisted disciplinary system', () async {
