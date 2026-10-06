@@ -99,6 +99,7 @@
   "goal": "Goal",
   "goalSaved": "Goal saved",
   "goalNotSaved": "Goal was not saved",
+  "legacyGoalsNotIncluded": "Earlier goals saved in the old format are not shown here. The score reflects Match Memory only.",
   "yellow": "Yellow",
   "red": "Red",
   "sub": "Sub",

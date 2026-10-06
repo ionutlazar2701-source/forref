@@ -99,6 +99,7 @@
   "goal": "Gol",
   "goalSaved": "Gol salvat",
   "goalNotSaved": "Golul nu a fost salvat",
+  "legacyGoalsNotIncluded": "Golurile salvate anterior în formatul vechi nu apar aici. Scorul reflectă doar Match Memory.",
   "yellow": "Galben",
   "red": "Roșu",
   "sub": "Schimbare",

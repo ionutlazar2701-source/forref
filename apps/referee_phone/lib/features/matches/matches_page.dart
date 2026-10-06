@@ -4,6 +4,7 @@ import 'package:referee_phone/app_scope.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
 import 'package:referee_phone/l10n/match_labels.dart';
 import 'package:referee_phone/match/new_match.dart';
+import 'package:referee_phone/match_application/goal_match_read_model.dart';
 import 'package:referee_phone/routing/app_router.dart';
 
 class MatchesPage extends StatefulWidget {
@@ -15,6 +16,7 @@ class MatchesPage extends StatefulWidget {
 
 class _MatchesPageState extends State<MatchesPage> {
   List<Match> _matches = const [];
+  Map<String, GoalMatchReadModel> _goalReads = const {};
   bool _loading = true;
 
   @override
@@ -24,11 +26,21 @@ class _MatchesPageState extends State<MatchesPage> {
   }
 
   Future<void> _reload() async {
-    final db = AppScope.of(context).database;
-    final list = await db.listNewestFirst();
+    final scope = AppScope.of(context);
+    final list = await scope.database.listNewestFirst();
+    final goalReads = <String, GoalMatchReadModel>{};
+    for (final match in list) {
+      final read = await loadGoalMatchReadModel(
+        scope,
+        match.matchId,
+        legacyMatch: match,
+      );
+      if (read != null) goalReads[match.matchId] = read;
+    }
     if (!mounted) return;
     setState(() {
       _matches = list;
+      _goalReads = goalReads;
       _loading = false;
     });
   }
@@ -83,8 +95,10 @@ class _MatchesPageState extends State<MatchesPage> {
                           title: Text(
                             l10n.scoreLine(
                               homeLabel(match, l10n),
-                              match.score.home,
-                              match.score.away,
+                              _goalReads[match.matchId]?.homeScore ??
+                                  match.score.home,
+                              _goalReads[match.matchId]?.awayScore ??
+                                  match.score.away,
                               awayLabel(match, l10n),
                             ),
                           ),

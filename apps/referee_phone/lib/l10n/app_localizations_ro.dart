@@ -276,6 +276,10 @@ class AppLocalizationsRo extends AppLocalizations {
   String get goalNotSaved => 'Golul nu a fost salvat';
 
   @override
+  String get legacyGoalsNotIncluded =>
+      'Golurile salvate anterior în formatul vechi nu apar aici. Scorul reflectă doar Match Memory.';
+
+  @override
   String get yellow => 'Galben';
 
   @override

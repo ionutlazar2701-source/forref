@@ -273,6 +273,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goalNotSaved => 'Goal was not saved';
 
   @override
+  String get legacyGoalsNotIncluded =>
+      'Earlier goals saved in the old format are not shown here. The score reflects Match Memory only.';
+
+  @override
   String get yellow => 'Yellow';
 
   @override
