@@ -1,3 +1,7 @@
+import '../participant/match_participant_id.dart';
+import '../participant/participant_binding.dart';
+import '../participant/participant_status_at_determination.dart';
+import '../participant/participant_team_side.dart';
 import '../payload.dart';
 import 'match_record_semantic_type.dart';
 
@@ -174,8 +178,14 @@ final class TemporalTransitionPayload extends V1SemanticPayload {
       V1SemanticTypeCode.temporalCorrection ||
       V1SemanticTypeCode.correction ||
       V1SemanticTypeCode.legalSupersession ||
-      V1SemanticTypeCode.goal =>
+      V1SemanticTypeCode.goal ||
+      V1SemanticTypeCode.participantRegistered ||
+      V1SemanticTypeCode.participantBindingCorrected ||
+      V1SemanticTypeCode.participantIdentityReconciliation =>
         false,
+      V1SemanticTypeCode.refereeEnteredFieldForMatchStart ||
+      V1SemanticTypeCode.refereeLeftFieldAfterMatch =>
+        true,
     };
   }
 }
@@ -236,4 +246,63 @@ final class LegalSupersessionPayload extends V1SemanticPayload {
 
   @override
   V1SemanticTypeCode get semanticType => V1SemanticTypeCode.legalSupersession;
+}
+
+/// Establishes one durable [MatchParticipantId] and its initial binding.
+final class ParticipantRegisteredPayload extends V1SemanticPayload {
+  ParticipantRegisteredPayload({
+    required this.matchParticipantId,
+    required this.teamSide,
+    required this.binding,
+    this.initialStatus,
+    super.domainContractVersion,
+    super.competitionRulesContext,
+  });
+
+  final MatchParticipantId matchParticipantId;
+  final ParticipantTeamSide teamSide;
+  final ParticipantBinding binding;
+
+  /// Optional status snapshot at registration. Does not define identity.
+  final ParticipantStatusAtDetermination? initialStatus;
+
+  @override
+  V1SemanticTypeCode get semanticType => V1SemanticTypeCode.participantRegistered;
+}
+
+/// Corrects binding evidence for an existing participant registration.
+final class ParticipantBindingCorrectionPayload extends V1SemanticPayload {
+  ParticipantBindingCorrectionPayload({
+    required this.matchParticipantId,
+    required this.correctedBinding,
+    super.domainContractVersion,
+    super.competitionRulesContext,
+  });
+
+  final MatchParticipantId matchParticipantId;
+  final ParticipantBinding correctedBinding;
+
+  @override
+  V1SemanticTypeCode get semanticType =>
+      V1SemanticTypeCode.participantBindingCorrected;
+}
+
+/// Maps a provisional participant identity to a canonical participant identity.
+final class ParticipantIdentityReconciliationPayload extends V1SemanticPayload {
+  ParticipantIdentityReconciliationPayload({
+    required this.fromParticipantId,
+    required this.toParticipantId,
+    super.domainContractVersion,
+    super.competitionRulesContext,
+  }) : assert(
+          fromParticipantId.value != toParticipantId.value,
+          'Reconciliation requires distinct participant ids',
+        );
+
+  final MatchParticipantId fromParticipantId;
+  final MatchParticipantId toParticipantId;
+
+  @override
+  V1SemanticTypeCode get semanticType =>
+      V1SemanticTypeCode.participantIdentityReconciliation;
 }

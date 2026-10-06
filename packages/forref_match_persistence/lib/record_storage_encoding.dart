@@ -15,6 +15,10 @@ const _temporalCorrectionType = 'v1-temporal-correction';
 const _correctionType = 'v1-correction';
 const _legalSupersessionType = 'v1-legal-supersession';
 const _goalType = 'v1-goal';
+const _participantRegisteredType = 'v1-participant-registered';
+const _participantBindingCorrectedType = 'v1-participant-binding-corrected';
+const _participantIdentityReconciliationType =
+    'v1-participant-identity-reconciliation';
 
 const _rootKeys = {
   'storageEncoding',
@@ -153,6 +157,21 @@ Map<String, Object?> _encodePayload(MatchRecordPayload payload) {
         'creditedSide': payload.creditedSide.wireValue,
         'captureIntentId': payload.captureIntentId,
       },
+      if (payload is ParticipantRegisteredPayload) ...{
+        'matchParticipantId': payload.matchParticipantId.value,
+        'teamSide': payload.teamSide.wireValue,
+        'binding': ParticipantBindingWire.encode(payload.binding),
+        if (payload.initialStatus != null)
+          'initialStatus': payload.initialStatus!.wireValue,
+      },
+      if (payload is ParticipantBindingCorrectionPayload) ...{
+        'matchParticipantId': payload.matchParticipantId.value,
+        'binding': ParticipantBindingWire.encode(payload.correctedBinding),
+      },
+      if (payload is ParticipantIdentityReconciliationPayload) ...{
+        'fromParticipantId': payload.fromParticipantId.value,
+        'toParticipantId': payload.toParticipantId.value,
+      },
       if (payload.domainContractVersion != null)
         'domainContractVersion': payload.domainContractVersion!.value,
       if (payload.competitionRulesContext != null)
@@ -173,6 +192,10 @@ String _v1PayloadType(V1SemanticPayload payload) {
     CorrectionPayload() => _correctionType,
     LegalSupersessionPayload() => _legalSupersessionType,
     GoalPayload() => _goalType,
+    ParticipantRegisteredPayload() => _participantRegisteredType,
+    ParticipantBindingCorrectionPayload() => _participantBindingCorrectedType,
+    ParticipantIdentityReconciliationPayload() =>
+      _participantIdentityReconciliationType,
   };
 }
 
@@ -195,7 +218,10 @@ MatchRecordPayload _decodePayload(
       type == _temporalCorrectionType ||
       type == _correctionType ||
       type == _legalSupersessionType ||
-      type == _goalType) {
+      type == _goalType ||
+      type == _participantRegisteredType ||
+      type == _participantBindingCorrectedType ||
+      type == _participantIdentityReconciliationType) {
     if (storageEncoding != adapterLocalStorageEncoding) {
       throw FormatException(
         'Typed payload is missing adapter storage encoding',
@@ -208,22 +234,49 @@ MatchRecordPayload _decodePayload(
     }
     _requireKnownKeys(
       payload,
-      type == _goalType
-          ? {
-              'type',
-              'semanticType',
-              'creditedSide',
-              'captureIntentId',
-              'domainContractVersion',
-              'competitionRulesContext',
-            }
-          : {
-              'type',
-              'semanticType',
-              'periodIndex',
-              'domainContractVersion',
-              'competitionRulesContext',
-            },
+      switch (type) {
+        _goalType => {
+            'type',
+            'semanticType',
+            'creditedSide',
+            'captureIntentId',
+            'domainContractVersion',
+            'competitionRulesContext',
+          },
+        _participantRegisteredType => {
+            'type',
+            'semanticType',
+            'matchParticipantId',
+            'teamSide',
+            'binding',
+            'initialStatus',
+            'domainContractVersion',
+            'competitionRulesContext',
+          },
+        _participantBindingCorrectedType => {
+            'type',
+            'semanticType',
+            'matchParticipantId',
+            'binding',
+            'domainContractVersion',
+            'competitionRulesContext',
+          },
+        _participantIdentityReconciliationType => {
+            'type',
+            'semanticType',
+            'fromParticipantId',
+            'toParticipantId',
+            'domainContractVersion',
+            'competitionRulesContext',
+          },
+        _ => {
+            'type',
+            'semanticType',
+            'periodIndex',
+            'domainContractVersion',
+            'competitionRulesContext',
+          },
+      },
       'typed payload',
     );
     return _decodeV1Payload(payload, type as String);
@@ -275,6 +328,12 @@ V1SemanticPayload _decodeV1Payload(
         ),
       ),
     _goalType => _goalPayload(payload, code, domain, rules),
+    _participantRegisteredType =>
+      _participantRegisteredPayload(payload, code, domain, rules),
+    _participantBindingCorrectedType =>
+      _participantBindingCorrectedPayload(payload, code, domain, rules),
+    _participantIdentityReconciliationType =>
+      _participantIdentityReconciliationPayload(payload, code, domain, rules),
     _ => throw FormatException('Unsupported stored payload type: $type'),
   };
 }
@@ -310,6 +369,98 @@ GoalPayload _goalPayload(
   );
 }
 
+ParticipantRegisteredPayload _participantRegisteredPayload(
+  Map<String, Object?> payload,
+  V1SemanticTypeCode code,
+  DomainContractVersion? domain,
+  CompetitionRulesContext? rules,
+) {
+  if (code != V1SemanticTypeCode.participantRegistered) {
+    throw FormatException(
+      'Payload semantic type ${code.wireValue} does not match PARTICIPANT_REGISTERED',
+    );
+  }
+  final teamSide = ParticipantTeamSideWire.parseWire(
+    _nonEmptyString(payload['teamSide']),
+  );
+  if (teamSide == null) {
+    throw FormatException('Stored participant teamSide is invalid');
+  }
+  final bindingRaw = payload['binding'];
+  if (bindingRaw is! Map) {
+    throw FormatException('Stored participant binding is missing');
+  }
+  final statusRaw = payload['initialStatus'];
+  return ParticipantRegisteredPayload(
+    matchParticipantId: MatchParticipantId(
+      _nonEmptyString(payload['matchParticipantId']),
+    ),
+    teamSide: teamSide,
+    binding: ParticipantBindingWire.decode(_stringKeyMap(bindingRaw)),
+    initialStatus: statusRaw == null
+        ? null
+        : ParticipantStatusAtDeterminationWire.parseWire(statusRaw as String),
+    domainContractVersion: domain,
+    competitionRulesContext: rules,
+  );
+}
+
+ParticipantBindingCorrectionPayload _participantBindingCorrectedPayload(
+  Map<String, Object?> payload,
+  V1SemanticTypeCode code,
+  DomainContractVersion? domain,
+  CompetitionRulesContext? rules,
+) {
+  if (code != V1SemanticTypeCode.participantBindingCorrected) {
+    throw FormatException(
+      'Payload semantic type ${code.wireValue} does not match PARTICIPANT_BINDING_CORRECTED',
+    );
+  }
+  final bindingRaw = payload['binding'];
+  if (bindingRaw is! Map) {
+    throw FormatException('Stored participant binding is missing');
+  }
+  return ParticipantBindingCorrectionPayload(
+    matchParticipantId: MatchParticipantId(
+      _nonEmptyString(payload['matchParticipantId']),
+    ),
+    correctedBinding: ParticipantBindingWire.decode(_stringKeyMap(bindingRaw)),
+    domainContractVersion: domain,
+    competitionRulesContext: rules,
+  );
+}
+
+ParticipantIdentityReconciliationPayload
+    _participantIdentityReconciliationPayload(
+  Map<String, Object?> payload,
+  V1SemanticTypeCode code,
+  DomainContractVersion? domain,
+  CompetitionRulesContext? rules,
+) {
+  if (code != V1SemanticTypeCode.participantIdentityReconciliation) {
+    throw FormatException(
+      'Payload semantic type ${code.wireValue} does not match PARTICIPANT_IDENTITY_RECONCILIATION',
+    );
+  }
+  return ParticipantIdentityReconciliationPayload(
+    fromParticipantId: MatchParticipantId(
+      _nonEmptyString(payload['fromParticipantId']),
+    ),
+    toParticipantId: MatchParticipantId(
+      _nonEmptyString(payload['toParticipantId']),
+    ),
+    domainContractVersion: domain,
+    competitionRulesContext: rules,
+  );
+}
+
+String _nonEmptyString(Object? value) {
+  if (value is! String || value.isEmpty) {
+    throw FormatException('Stored string field is invalid');
+  }
+  return value;
+}
+
 TemporalTransitionPayload _temporalTransition(
   Map<String, Object?> payload,
   V1SemanticTypeCode code,
@@ -323,12 +474,17 @@ TemporalTransitionPayload _temporalTransition(
     V1SemanticTypeCode.temporarySuspensionStarted ||
     V1SemanticTypeCode.temporarySuspensionEnded ||
     V1SemanticTypeCode.matchAbandoned ||
-    V1SemanticTypeCode.matchEnded =>
+    V1SemanticTypeCode.matchEnded ||
+    V1SemanticTypeCode.refereeEnteredFieldForMatchStart ||
+    V1SemanticTypeCode.refereeLeftFieldAfterMatch =>
       true,
     V1SemanticTypeCode.temporalCorrection ||
     V1SemanticTypeCode.correction ||
     V1SemanticTypeCode.legalSupersession ||
-    V1SemanticTypeCode.goal =>
+    V1SemanticTypeCode.goal ||
+    V1SemanticTypeCode.participantRegistered ||
+    V1SemanticTypeCode.participantBindingCorrected ||
+    V1SemanticTypeCode.participantIdentityReconciliation =>
       false,
   };
   if (!isTransition) {
@@ -350,6 +506,12 @@ PeriodIdentity? _periodIdentity(Object? value, V1SemanticTypeCode code) {
       code == V1SemanticTypeCode.periodEnded ||
       code == V1SemanticTypeCode.temporarySuspensionStarted ||
       code == V1SemanticTypeCode.temporarySuspensionEnded;
+  final forbidsPeriod =
+      code == V1SemanticTypeCode.refereeEnteredFieldForMatchStart ||
+          code == V1SemanticTypeCode.refereeLeftFieldAfterMatch;
+  if (forbidsPeriod && value != null) {
+    throw FormatException('${code.wireValue} must not carry periodIndex');
+  }
   if (value == null) {
     if (requiresPeriod) {
       throw FormatException('${code.wireValue} requires periodIndex');

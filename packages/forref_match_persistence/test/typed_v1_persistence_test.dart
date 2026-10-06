@@ -86,6 +86,51 @@ void main() {
         ),
         relationships: [CausalDependency(targetRecordId: 'period-1')],
       ),
+      _typed(
+        recordId: 'participant-1',
+        originSequence: 8,
+        recordKind: RecordKind.action,
+        payload: ParticipantRegisteredPayload(
+          matchParticipantId: MatchParticipantId('mpid-persist-1'),
+          teamSide: ParticipantTeamSide.home,
+          binding: const RosterLinkedBinding(rosterParticipantId: 'home-10'),
+        ),
+      ),
+      _typed(
+        recordId: 'participant-corr-1',
+        originSequence: 9,
+        recordKind: RecordKind.correction,
+        payload: ParticipantBindingCorrectionPayload(
+          matchParticipantId: MatchParticipantId('mpid-persist-1'),
+          correctedBinding: const TeamScopedNumberBinding(shirtNumber: 10),
+        ),
+        relationships: [CorrectionTarget(targetRecordId: 'participant-1')],
+      ),
+      _typed(
+        recordId: 'participant-recon-1',
+        originSequence: 10,
+        recordKind: RecordKind.action,
+        payload: ParticipantIdentityReconciliationPayload(
+          fromParticipantId: MatchParticipantId('mpid-prov-persist'),
+          toParticipantId: MatchParticipantId('mpid-persist-1'),
+        ),
+      ),
+      _typed(
+        recordId: 'entered-1',
+        originSequence: 11,
+        recordKind: RecordKind.temporalFact,
+        payload: TemporalTransitionPayload(
+          semanticType: V1SemanticTypeCode.refereeEnteredFieldForMatchStart,
+        ),
+      ),
+      _typed(
+        recordId: 'left-1',
+        originSequence: 12,
+        recordKind: RecordKind.temporalFact,
+        payload: TemporalTransitionPayload(
+          semanticType: V1SemanticTypeCode.refereeLeftFieldAfterMatch,
+        ),
+      ),
     ];
 
     final store = SqliteDurableMatchStore.open(file);
@@ -106,6 +151,23 @@ void main() {
     expect(byId['corr-1']!.payload, isA<CorrectionPayload>());
     expect(byId['super-1']!.payload, isA<LegalSupersessionPayload>());
     expect(byId['goal-1']!.payload, isA<GoalPayload>());
+    expect(byId['participant-1']!.payload, isA<ParticipantRegisteredPayload>());
+    expect(
+      byId['participant-corr-1']!.payload,
+      isA<ParticipantBindingCorrectionPayload>(),
+    );
+    expect(
+      byId['participant-recon-1']!.payload,
+      isA<ParticipantIdentityReconciliationPayload>(),
+    );
+    expect(
+      (byId['entered-1']!.payload as TemporalTransitionPayload).semanticType,
+      V1SemanticTypeCode.refereeEnteredFieldForMatchStart,
+    );
+    expect(
+      (byId['left-1']!.payload as TemporalTransitionPayload).semanticType,
+      V1SemanticTypeCode.refereeLeftFieldAfterMatch,
+    );
     expect(
       (byId['goal-1']!.payload as GoalPayload).creditedSide,
       CreditedSide.home,
