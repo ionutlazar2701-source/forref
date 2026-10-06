@@ -1,3 +1,9 @@
 {
-  "install": "./tool/cloud_bootstrap.sh"
+  "name": "FORREF",
+  "user": "ubuntu",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "install": "bash ./tool/cloud_bootstrap.sh"
 }
