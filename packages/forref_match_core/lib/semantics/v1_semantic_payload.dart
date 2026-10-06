@@ -1,9 +1,12 @@
+import '../participant/disciplinary_accounting_scope.dart';
 import '../participant/match_participant_id.dart';
 import '../participant/participant_binding.dart';
+import '../participant/participant_ref.dart';
 import '../participant/participant_status_at_determination.dart';
 import '../participant/participant_team_side.dart';
 import '../payload.dart';
 import 'match_record_semantic_type.dart';
+import 'yellow_card_semantic.dart';
 
 /// Domain-contract generation. Distinct from Match Record [schemaVersion].
 final class DomainContractVersion {
@@ -181,7 +184,8 @@ final class TemporalTransitionPayload extends V1SemanticPayload {
       V1SemanticTypeCode.goal ||
       V1SemanticTypeCode.participantRegistered ||
       V1SemanticTypeCode.participantBindingCorrected ||
-      V1SemanticTypeCode.participantIdentityReconciliation =>
+      V1SemanticTypeCode.participantIdentityReconciliation ||
+      V1SemanticTypeCode.yellowCard =>
         false,
       V1SemanticTypeCode.refereeEnteredFieldForMatchStart ||
       V1SemanticTypeCode.refereeLeftFieldAfterMatch =>
@@ -305,4 +309,43 @@ final class ParticipantIdentityReconciliationPayload extends V1SemanticPayload {
   @override
   V1SemanticTypeCode get semanticType =>
       V1SemanticTypeCode.participantIdentityReconciliation;
+}
+
+/// Authoritative administered caution to one identified participant.
+///
+/// See [YellowCardSemantic.canonicalMeaning]. Represents a completed caution,
+/// not a decision, intention, pending state, or automatic second-yellow effect.
+final class YellowCardPayload extends V1SemanticPayload {
+  YellowCardPayload({
+    required this.participantRef,
+    required this.participantStatusAtDetermination,
+    required this.disciplinaryAccountingScope,
+    required this.captureIntentId,
+    String? reason,
+    super.domainContractVersion,
+    super.competitionRulesContext,
+  })  : assert(
+          captureIntentId.isNotEmpty,
+          'YELLOW_CARD requires a capture intent',
+        ),
+        reason = _normalizeReason(reason);
+
+  final ParticipantRef participantRef;
+  final ParticipantStatusAtDetermination participantStatusAtDetermination;
+  final DisciplinaryAccountingScope disciplinaryAccountingScope;
+
+  /// Idempotency key for one deliberate capture. Not sporting meaning.
+  final String captureIntentId;
+
+  /// Optional enrichment. Absent or blank means no reason recorded.
+  final String? reason;
+
+  @override
+  V1SemanticTypeCode get semanticType => V1SemanticTypeCode.yellowCard;
+
+  static String? _normalizeReason(String? value) {
+    if (value == null) return null;
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
 }

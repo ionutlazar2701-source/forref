@@ -39,4 +39,6 @@ abstract final class ProjectionFacet {
   static const score = 'score';
   static const disciplinary = 'disciplinary';
   static const identity = 'identity';
+  static const disciplinaryState = 'disciplinaryState';
+  static const disciplinaryAccountingScope = 'disciplinaryAccountingScope';
 }

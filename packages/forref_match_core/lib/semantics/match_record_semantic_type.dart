@@ -6,6 +6,7 @@ enum SemanticTypeCategory {
   event,
   participantIdentity,
   cardAuthority,
+  disciplinary,
 }
 
 /// How a supported semantic affects projection.
@@ -53,6 +54,7 @@ enum V1SemanticTypeCode {
   participantIdentityReconciliation,
   refereeEnteredFieldForMatchStart,
   refereeLeftFieldAfterMatch,
+  yellowCard,
 }
 
 extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
@@ -79,6 +81,7 @@ extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
           'REFEREE_ENTERED_FIELD_FOR_MATCH_START',
         V1SemanticTypeCode.refereeLeftFieldAfterMatch =>
           'REFEREE_LEFT_FIELD_AFTER_MATCH',
+        V1SemanticTypeCode.yellowCard => 'YELLOW_CARD',
       };
 
   SemanticTypeCategory get category => switch (this) {
@@ -103,6 +106,7 @@ extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
         V1SemanticTypeCode.refereeEnteredFieldForMatchStart ||
         V1SemanticTypeCode.refereeLeftFieldAfterMatch =>
           SemanticTypeCategory.cardAuthority,
+        V1SemanticTypeCode.yellowCard => SemanticTypeCategory.disciplinary,
       };
 
   static V1SemanticTypeCode? parseWire(String value) => switch (value) {
@@ -128,6 +132,7 @@ extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
           V1SemanticTypeCode.refereeEnteredFieldForMatchStart,
         'REFEREE_LEFT_FIELD_AFTER_MATCH' =>
           V1SemanticTypeCode.refereeLeftFieldAfterMatch,
+        'YELLOW_CARD' => V1SemanticTypeCode.yellowCard,
         _ => null,
       };
 }
