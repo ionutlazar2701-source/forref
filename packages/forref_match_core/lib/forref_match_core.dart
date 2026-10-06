@@ -35,6 +35,8 @@ export 'semantics/production_payload_contract.dart';
 export 'semantics/v1_semantic_contract.dart';
 export 'semantics/v1_semantic_payload.dart';
 export 'semantics/yellow_card_semantic.dart';
+export 'semantics/disciplinary_system.dart';
+export 'semantics/yellow_card_disciplinary_system_support.dart';
 export 'semantics/production_semantics_resolver.dart';
 export 'semantics/schema_semantic_interpreter.dart';
 export 'semantics/v1_schema_semantic_interpreter.dart';

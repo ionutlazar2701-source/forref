@@ -641,6 +641,7 @@ CompetitionRulesContext? _competitionRules(Object? value) {
       'rulesetId',
       'additionalPlayingPhase',
       'penaltyShootOutAfterMatchEnd',
+      'disciplinarySystem',
     },
     'competitionRulesContext',
   );
@@ -653,6 +654,7 @@ CompetitionRulesContext? _competitionRules(Object? value) {
     additionalPlayingPhase: _additionalPlayingPhase(json['additionalPlayingPhase']),
     penaltyShootOutAfterMatchEnd:
         _penaltyShootOutAfterMatchEnd(json['penaltyShootOutAfterMatchEnd']),
+    disciplinarySystem: _disciplinarySystem(json['disciplinarySystem']),
   );
 }
 
@@ -663,7 +665,21 @@ Map<String, Object?> _encodeCompetitionRules(CompetitionRulesContext rules) {
         AdditionalPlayingPhaseDisposition.unresolved)
       'additionalPlayingPhase': rules.additionalPlayingPhase.wireValue,
     if (rules.penaltyShootOutAfterMatchEnd) 'penaltyShootOutAfterMatchEnd': true,
+    if (rules.disciplinarySystem != DisciplinarySystem.unresolved)
+      'disciplinarySystem': rules.disciplinarySystem.wireValue,
   };
+}
+
+DisciplinarySystem _disciplinarySystem(Object? value) {
+  if (value == null) return DisciplinarySystem.unresolved;
+  if (value is! String) {
+    throw FormatException('Stored disciplinarySystem is invalid');
+  }
+  final parsed = DisciplinarySystemWire.parseWire(value);
+  if (parsed == null) {
+    throw FormatException('Stored disciplinarySystem is invalid');
+  }
+  return parsed;
 }
 
 AdditionalPlayingPhaseDisposition _additionalPlayingPhase(Object? value) {

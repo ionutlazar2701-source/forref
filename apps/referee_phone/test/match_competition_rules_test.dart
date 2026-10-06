@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:forref_match_core/forref_match_core.dart';
+import 'package:referee_phone/infrastructure/competition_rules/phone_competition_format_choice.dart';
 import 'package:referee_phone/infrastructure/competition_rules/match_competition_rules_store.dart';
 import 'package:referee_phone/infrastructure/competition_rules/phone_match_capture_context.dart';
 import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
@@ -27,6 +28,7 @@ void main() {
     expect(rules.additionalPlayingPhase, AdditionalPlayingPhaseDisposition.unresolved);
     expect(rules.penaltyShootOutAfterMatchEnd, isFalse);
     expect(rules.rulesetId, 'ifab');
+    expect(rules.disciplinarySystem, DisciplinarySystem.unresolved);
   });
 
   test('default rules are not NONE_REQUIRED', () async {
@@ -126,6 +128,37 @@ void main() {
       (periodStarted.payload as TemporalTransitionPayload).competitionRulesContext,
       _noneRequired,
     );
+  });
+
+  test('setup format persist selects ordinary IFAB explicitly', () {
+    final rules = PhoneCompetitionFormatChoice.noAdditionalPlayingPeriods
+        .toRulesContext(penaltyShootOutAfterMatchEnd: false);
+    expect(rules.disciplinarySystem, DisciplinarySystem.ordinaryIfab);
+    expect(rules.additionalPlayingPhase,
+        AdditionalPlayingPhaseDisposition.noneRequired);
+  });
+
+  test('CaptureContext carries persisted disciplinary system', () async {
+    const rules = CompetitionRulesContext(
+      rulesetId: 'ifab',
+      disciplinarySystem: DisciplinarySystem.ordinaryIfab,
+    );
+    final opened = await _open(temp);
+    await opened.rulesStore.saveForMatch('match-1', rules);
+    final context = await opened.capture.captureContextFor('match-1');
+    expect(context.competitionRulesContext?.disciplinarySystem,
+        DisciplinarySystem.ordinaryIfab);
+  });
+
+  test('reopen preserves disciplinary system in match rules store', () async {
+    const rules = CompetitionRulesContext(
+      rulesetId: 'ifab',
+      disciplinarySystem: DisciplinarySystem.temporaryDismissal,
+    );
+    final store = MatchCompetitionRulesStore(temp);
+    await store.saveForMatch('match-1', rules);
+    final reopened = MatchCompetitionRulesStore(temp);
+    expect(await reopened.loadForMatch('match-1'), rules);
   });
 
   test('legacy Match status is not the competition rules authority', () {

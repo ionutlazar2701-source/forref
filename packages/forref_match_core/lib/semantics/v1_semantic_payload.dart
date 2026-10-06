@@ -5,6 +5,7 @@ import '../participant/participant_ref.dart';
 import '../participant/participant_status_at_determination.dart';
 import '../participant/participant_team_side.dart';
 import '../payload.dart';
+import 'disciplinary_system.dart';
 import 'match_record_semantic_type.dart';
 import 'yellow_card_semantic.dart';
 
@@ -76,6 +77,7 @@ final class CompetitionRulesContext {
     required this.rulesetId,
     this.additionalPlayingPhase = AdditionalPlayingPhaseDisposition.unresolved,
     this.penaltyShootOutAfterMatchEnd = false,
+    this.disciplinarySystem = DisciplinarySystem.unresolved,
   });
 
   final String rulesetId;
@@ -88,18 +90,23 @@ final class CompetitionRulesContext {
   /// This does not require another playing period.
   final bool penaltyShootOutAfterMatchEnd;
 
+  /// Explicit competition disciplinary system. Never inferred from [rulesetId].
+  final DisciplinarySystem disciplinarySystem;
+
   @override
   bool operator ==(Object other) =>
       other is CompetitionRulesContext &&
       rulesetId == other.rulesetId &&
       additionalPlayingPhase == other.additionalPlayingPhase &&
-      penaltyShootOutAfterMatchEnd == other.penaltyShootOutAfterMatchEnd;
+      penaltyShootOutAfterMatchEnd == other.penaltyShootOutAfterMatchEnd &&
+      disciplinarySystem == other.disciplinarySystem;
 
   @override
   int get hashCode => Object.hash(
         rulesetId,
         additionalPlayingPhase,
         penaltyShootOutAfterMatchEnd,
+        disciplinarySystem,
       );
 }
 

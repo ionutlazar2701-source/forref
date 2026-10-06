@@ -11,7 +11,10 @@ final class MatchCompetitionRulesStore {
   MatchCompetitionRulesStore(Directory storageRoot)
       : _file = File('${storageRoot.path}/forref_match_competition_rules.json');
 
-  static const unresolvedDefault = CompetitionRulesContext(rulesetId: 'ifab');
+  static const unresolvedDefault = CompetitionRulesContext(
+    rulesetId: 'ifab',
+    disciplinarySystem: DisciplinarySystem.unresolved,
+  );
 
   final File _file;
 
@@ -81,7 +84,20 @@ final class MatchCompetitionRulesStore {
       additionalPlayingPhase: _decodeDisposition(json['additionalPlayingPhase']),
       penaltyShootOutAfterMatchEnd:
           json['penaltyShootOutAfterMatchEnd'] == true,
+      disciplinarySystem: _decodeDisciplinarySystem(json['disciplinarySystem']),
     );
+  }
+
+  DisciplinarySystem _decodeDisciplinarySystem(Object? value) {
+    if (value == null) return DisciplinarySystem.unresolved;
+    if (value is! String) {
+      throw FormatException('Stored disciplinarySystem is invalid');
+    }
+    final parsed = DisciplinarySystemWire.parseWire(value);
+    if (parsed == null) {
+      throw FormatException('Stored disciplinarySystem is invalid');
+    }
+    return parsed;
   }
 
   AdditionalPlayingPhaseDisposition _decodeDisposition(Object? value) {
@@ -106,6 +122,8 @@ final class MatchCompetitionRulesStore {
         'additionalPlayingPhase': rules.additionalPlayingPhase.wireValue,
       if (rules.penaltyShootOutAfterMatchEnd)
         'penaltyShootOutAfterMatchEnd': true,
+      if (rules.disciplinarySystem != DisciplinarySystem.unresolved)
+        'disciplinarySystem': rules.disciplinarySystem.wireValue,
     };
   }
 }
