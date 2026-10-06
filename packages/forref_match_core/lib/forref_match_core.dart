@@ -23,6 +23,7 @@ export 'projection/goal_match_projection.dart';
 export 'projection/normal_match_end_eligibility.dart';
 export 'projection/participant_identity_projection.dart';
 export 'projection/disciplinary_authority_projection.dart';
+export 'projection/disciplinary_match_projection.dart';
 export 'participant/disciplinary_accounting_scope.dart';
 export 'participant/identity_confidence.dart';
 export 'participant/match_participant_id.dart';
