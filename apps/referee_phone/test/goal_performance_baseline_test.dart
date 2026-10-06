@@ -107,11 +107,15 @@ void main() {
     final encoded = const JsonEncoder.withIndent('  ').convert(report);
     // ignore: avoid_print
     print(encoded);
-    final out = Directory('/opt/cursor/artifacts');
-    if (!out.existsSync()) out.createSync(recursive: true);
-    File('${out.path}/goal_performance_baseline.json').writeAsStringSync(
-      encoded,
-    );
+    try {
+      final out = Directory('/opt/cursor/artifacts');
+      if (!out.existsSync()) out.createSync(recursive: true);
+      File('${out.path}/goal_performance_baseline.json').writeAsStringSync(
+        encoded,
+      );
+    } on FileSystemException {
+      // Artifact mount may be unavailable in some cloud runs; stdout report suffices.
+    }
 
     await composition.close();
     temp.deleteSync(recursive: true);
