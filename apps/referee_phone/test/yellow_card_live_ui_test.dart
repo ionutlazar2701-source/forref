@@ -90,9 +90,7 @@ void main() {
       fixture.evidence.beforeAnchorForTest = () => gate.future;
       final commitWatch = Stopwatch()..start();
       await tester.tap(find.byKey(const Key('yellow-commit')));
-      await tester.pump();
-
-      expect(find.text('Saving…'), findsOneWidget);
+      await fixture.pumpUntil(tester, find.text('Saving…'));
       expect(find.textContaining('Yellow saved'), findsNothing);
       expect(
         tester
