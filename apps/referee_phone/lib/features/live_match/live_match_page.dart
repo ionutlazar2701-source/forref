@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:match_core/match_core.dart';
@@ -799,21 +797,6 @@ class _LiveMatchPageState extends State<LiveMatchPage>
           temporalContext: temporalContext,
         ),
       );
-      // #region agent log
-      File('/opt/cursor/logs/debug.log').writeAsStringSync(
-        '${jsonEncode({
-              'hypothesisId': 'D',
-              'location': 'live_match_page.dart:_commitYellowCard:result',
-              'message': 'yellow commit returned to UI',
-              'data': {
-                'resultType': result.runtimeType.toString(),
-                'mounted': mounted
-              },
-              'timestamp': DateTime.now().millisecondsSinceEpoch
-            })}\n',
-        mode: FileMode.append,
-      );
-      // #endregion
       if (!mounted) return;
       if (result case YellowCardSaved(:final record)) {
         await _completeYellowSave(record, selected);
