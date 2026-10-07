@@ -74,6 +74,7 @@ void main() {
   }) async {
     for (var i = 0; i < maxPumps; i++) {
       if (finder.evaluate().isEmpty) return;
+      await tester.runAsync(() => Future<void>(() {}));
       await tester.pump(const Duration(milliseconds: 100));
     }
     fail('Timed out waiting for $finder to disappear');
