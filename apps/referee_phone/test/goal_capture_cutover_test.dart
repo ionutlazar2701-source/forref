@@ -202,7 +202,8 @@ void main() {
     );
   });
 
-  testWidgets('Goal to Away updates the projected score and not the legacy row', (
+  testWidgets('Goal to Away updates the projected score and not the legacy row',
+      (
     tester,
   ) async {
     await openLive(tester);
@@ -228,7 +229,8 @@ void main() {
     expect(goals.single.creditedSide, CreditedSide.away);
   });
 
-  testWidgets('failed goal commit leaves score and history unchanged and can retry', (
+  testWidgets(
+      'failed goal commit leaves score and history unchanged and can retry', (
     tester,
   ) async {
     await openLive(tester);
@@ -308,7 +310,8 @@ void main() {
     expect(stored.single.score.home, 0);
   });
 
-  testWidgets('a second tap while a goal commit is pending does not duplicate it', (
+  testWidgets(
+      'a second tap while a goal commit is pending does not duplicate it', (
     tester,
   ) async {
     await openLive(tester);
@@ -333,34 +336,28 @@ void main() {
     expect(liveScore('HOME 1 — 0 AWAY'), findsOneWidget);
     final recorded = await readStores(tester);
     final records = recorded.records;
-    expect(records.where((record) => record.payload is GoalPayload), hasLength(1));
+    expect(
+        records.where((record) => record.payload is GoalPayload), hasLength(1));
   });
 
-  testWidgets('yellow capture still writes a legacy event and not a goal record', (
+  testWidgets('Yellow opens authoritative selector without changing Goal state',
+      (
     tester,
   ) async {
     await openLive(tester);
     await tester.tap(find.text('Yellow'));
     await tester.pump();
-    await tester.tap(find.text('HOME'));
-    await tester.pump();
-    final unknown = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Unknown'),
-    );
-    await tester.runAsync(() async {
-      unknown.onPressed!();
-      await Future<void>.delayed(const Duration(milliseconds: 500));
-    });
-    await tester.pump();
+    await pumpUntilFound(tester, find.text('Record Yellow'));
 
     expect(liveScore('HOME 0 — 0 AWAY'), findsOneWidget);
     final recorded = await readStores(tester);
     final stored = recorded.stored;
-    expect(stored.single.events, hasLength(1));
-    expect(stored.single.events.single.type, EventType.yellowCard);
+    expect(stored.single.events, isEmpty);
     expect(stored.single.score.home, 0);
     final records = recorded.records;
     expect(records.where((record) => record.payload is GoalPayload), isEmpty);
+    expect(records.where((record) => record.payload is YellowCardPayload),
+        isEmpty);
     expect(records, hasLength(2));
   });
 }

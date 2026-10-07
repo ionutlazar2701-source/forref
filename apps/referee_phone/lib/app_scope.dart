@@ -3,6 +3,7 @@ import 'package:referee_phone/infrastructure/database/local_match_database.dart'
 import 'package:referee_phone/infrastructure/competition_rules/phone_match_capture_context.dart';
 import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
 import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_store.dart';
+import 'package:referee_phone/infrastructure/yellow_card/phone_yellow_card_draft_store.dart';
 import 'package:referee_phone/match_application/match_application_boundary.dart';
 
 class AppScope extends InheritedWidget {
@@ -14,6 +15,7 @@ class AppScope extends InheritedWidget {
     this.captureIdentity,
     this.matchCaptureContext,
     this.temporalEvidence,
+    this.yellowCardDraftStore,
     required super.child,
   });
 
@@ -32,6 +34,9 @@ class AppScope extends InheritedWidget {
   /// In-process temporal evidence. Not Match Memory and not a certified clock.
   final PhoneTemporalEvidenceStore? temporalEvidence;
 
+  /// Non-authoritative Yellow selector/intent recovery state.
+  final PhoneYellowCardDraftStore? yellowCardDraftStore;
+
   static AppScope of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<AppScope>();
     assert(scope != null, 'AppScope missing');
@@ -45,5 +50,6 @@ class AppScope extends InheritedWidget {
       oldWidget.matchApplication != matchApplication ||
       oldWidget.captureIdentity != captureIdentity ||
       oldWidget.matchCaptureContext != matchCaptureContext ||
-      oldWidget.temporalEvidence != temporalEvidence;
+      oldWidget.temporalEvidence != temporalEvidence ||
+      oldWidget.yellowCardDraftStore != yellowCardDraftStore;
 }

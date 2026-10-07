@@ -369,4 +369,87 @@ class AppLocalizationsRo extends AppLocalizations {
   String clockWithAdded(String clock, int minutes) {
     return '$clock +$minutes';
   }
+
+  @override
+  String get recordYellow => 'Înregistrează galben';
+
+  @override
+  String get recordSecondCaution => 'Înregistrează al doilea galben';
+
+  @override
+  String get saving => 'Se salvează…';
+
+  @override
+  String yellowSavedParticipant(String participant) {
+    return 'Galben salvat · $participant';
+  }
+
+  @override
+  String get priorCautionRecorded => 'AVERTISMENT ANTERIOR ÎNREGISTRAT';
+
+  @override
+  String get identityProvisional => 'Identitate provizorie';
+
+  @override
+  String get cautionHistoryCannotBeConfirmed =>
+      'Istoricul avertismentelor nu poate fi confirmat';
+
+  @override
+  String get cannotIdentifyParticipantReliably =>
+      'Participantul nu poate fi identificat sigur';
+
+  @override
+  String get participantDetailsConflict =>
+      'Detaliile participantului sunt în conflict';
+
+  @override
+  String get notSaved => 'Nesalvat';
+
+  @override
+  String get retry => 'Reîncearcă';
+
+  @override
+  String get checkingSaveStatus => 'Se verifică salvarea…';
+
+  @override
+  String get checkingCautionHistory => 'Se verifică istoricul avertismentelor…';
+
+  @override
+  String get secondCautionRecorded => 'AL DOILEA AVERTISMENT ÎNREGISTRAT';
+
+  @override
+  String get noRedCardRecorded => 'Nu a fost înregistrat niciun cartonaș roșu';
+
+  @override
+  String get dismiss => 'Închide';
+
+  @override
+  String get bench => 'Bancă';
+
+  @override
+  String get officials => 'Oficiali';
+
+  @override
+  String get noOnFieldParticipants => 'Niciun jucător pe teren';
+
+  @override
+  String get noBenchParticipants => 'Niciun participant pe bancă';
+
+  @override
+  String get noOfficials => 'Niciun oficial';
+
+  @override
+  String get onField => 'Pe teren';
+
+  @override
+  String get substitute => 'Rezervă';
+
+  @override
+  String get substitutedPlayer => 'Jucător înlocuit';
+
+  @override
+  String get teamOfficial => 'Oficial de echipă';
+
+  @override
+  String get seniorCoachPresent => 'Antrenor principal prezent';
 }

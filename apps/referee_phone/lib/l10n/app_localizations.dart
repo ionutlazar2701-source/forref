@@ -781,6 +781,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{clock} +{minutes}'**
   String clockWithAdded(String clock, int minutes);
+
+  /// No description provided for @recordYellow.
+  ///
+  /// In en, this message translates to:
+  /// **'Record Yellow'**
+  String get recordYellow;
+
+  /// No description provided for @recordSecondCaution.
+  ///
+  /// In en, this message translates to:
+  /// **'Record second caution'**
+  String get recordSecondCaution;
+
+  /// No description provided for @saving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get saving;
+
+  /// No description provided for @yellowSavedParticipant.
+  ///
+  /// In en, this message translates to:
+  /// **'Yellow saved · {participant}'**
+  String yellowSavedParticipant(String participant);
+
+  /// No description provided for @priorCautionRecorded.
+  ///
+  /// In en, this message translates to:
+  /// **'PRIOR CAUTION RECORDED'**
+  String get priorCautionRecorded;
+
+  /// No description provided for @identityProvisional.
+  ///
+  /// In en, this message translates to:
+  /// **'Identity provisional'**
+  String get identityProvisional;
+
+  /// No description provided for @cautionHistoryCannotBeConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Caution history cannot be confirmed'**
+  String get cautionHistoryCannotBeConfirmed;
+
+  /// No description provided for @cannotIdentifyParticipantReliably.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot identify participant reliably'**
+  String get cannotIdentifyParticipantReliably;
+
+  /// No description provided for @participantDetailsConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Participant details conflict'**
+  String get participantDetailsConflict;
+
+  /// No description provided for @notSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Not saved'**
+  String get notSaved;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @checkingSaveStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking save status…'**
+  String get checkingSaveStatus;
+
+  /// No description provided for @checkingCautionHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking caution history…'**
+  String get checkingCautionHistory;
+
+  /// No description provided for @secondCautionRecorded.
+  ///
+  /// In en, this message translates to:
+  /// **'SECOND CAUTION RECORDED'**
+  String get secondCautionRecorded;
+
+  /// No description provided for @noRedCardRecorded.
+  ///
+  /// In en, this message translates to:
+  /// **'No red card has been recorded'**
+  String get noRedCardRecorded;
+
+  /// No description provided for @dismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get dismiss;
+
+  /// No description provided for @bench.
+  ///
+  /// In en, this message translates to:
+  /// **'Bench'**
+  String get bench;
+
+  /// No description provided for @officials.
+  ///
+  /// In en, this message translates to:
+  /// **'Officials'**
+  String get officials;
+
+  /// No description provided for @noOnFieldParticipants.
+  ///
+  /// In en, this message translates to:
+  /// **'No on-field participants'**
+  String get noOnFieldParticipants;
+
+  /// No description provided for @noBenchParticipants.
+  ///
+  /// In en, this message translates to:
+  /// **'No bench participants'**
+  String get noBenchParticipants;
+
+  /// No description provided for @noOfficials.
+  ///
+  /// In en, this message translates to:
+  /// **'No officials'**
+  String get noOfficials;
+
+  /// No description provided for @onField.
+  ///
+  /// In en, this message translates to:
+  /// **'On field'**
+  String get onField;
+
+  /// No description provided for @substitute.
+  ///
+  /// In en, this message translates to:
+  /// **'Substitute'**
+  String get substitute;
+
+  /// No description provided for @substitutedPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Substituted player'**
+  String get substitutedPlayer;
+
+  /// No description provided for @teamOfficial.
+  ///
+  /// In en, this message translates to:
+  /// **'Team official'**
+  String get teamOfficial;
+
+  /// No description provided for @seniorCoachPresent.
+  ///
+  /// In en, this message translates to:
+  /// **'Senior coach present'**
+  String get seniorCoachPresent;
 }
 
 class _AppLocalizationsDelegate

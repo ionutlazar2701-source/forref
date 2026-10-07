@@ -366,4 +366,86 @@ class AppLocalizationsEn extends AppLocalizations {
   String clockWithAdded(String clock, int minutes) {
     return '$clock +$minutes';
   }
+
+  @override
+  String get recordYellow => 'Record Yellow';
+
+  @override
+  String get recordSecondCaution => 'Record second caution';
+
+  @override
+  String get saving => 'Saving…';
+
+  @override
+  String yellowSavedParticipant(String participant) {
+    return 'Yellow saved · $participant';
+  }
+
+  @override
+  String get priorCautionRecorded => 'PRIOR CAUTION RECORDED';
+
+  @override
+  String get identityProvisional => 'Identity provisional';
+
+  @override
+  String get cautionHistoryCannotBeConfirmed =>
+      'Caution history cannot be confirmed';
+
+  @override
+  String get cannotIdentifyParticipantReliably =>
+      'Cannot identify participant reliably';
+
+  @override
+  String get participantDetailsConflict => 'Participant details conflict';
+
+  @override
+  String get notSaved => 'Not saved';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get checkingSaveStatus => 'Checking save status…';
+
+  @override
+  String get checkingCautionHistory => 'Checking caution history…';
+
+  @override
+  String get secondCautionRecorded => 'SECOND CAUTION RECORDED';
+
+  @override
+  String get noRedCardRecorded => 'No red card has been recorded';
+
+  @override
+  String get dismiss => 'Dismiss';
+
+  @override
+  String get bench => 'Bench';
+
+  @override
+  String get officials => 'Officials';
+
+  @override
+  String get noOnFieldParticipants => 'No on-field participants';
+
+  @override
+  String get noBenchParticipants => 'No bench participants';
+
+  @override
+  String get noOfficials => 'No officials';
+
+  @override
+  String get onField => 'On field';
+
+  @override
+  String get substitute => 'Substitute';
+
+  @override
+  String get substitutedPlayer => 'Substituted player';
+
+  @override
+  String get teamOfficial => 'Team official';
+
+  @override
+  String get seniorCoachPresent => 'Senior coach present';
 }
