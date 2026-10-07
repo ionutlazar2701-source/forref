@@ -63,7 +63,9 @@ void main() {
       var records = await fixture.records(tester);
       expect(records.where((r) => r.payload is YellowCardPayload), isEmpty);
 
-      await tester.tap(find.byKey(const Key('yellow-option-mpid-away-9')));
+      final awayNine = find.byKey(const Key('yellow-option-mpid-away-9'));
+      await tester.ensureVisible(awayNine);
+      await tester.tap(awayNine);
       await tester.pump();
       expect(find.textContaining('#9'), findsWidgets);
       records = await fixture.records(tester);
