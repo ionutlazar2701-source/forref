@@ -66,26 +66,26 @@ final class PhoneYellowCardDraftStore {
   final File _file;
 
   Future<PhoneYellowCardDraft?> load(String matchId) async {
-    final all = await _readAll();
+    final all = _readAll();
     final raw = all[matchId];
     return raw == null ? null : _decode(matchId, raw);
   }
 
   Future<void> save(PhoneYellowCardDraft draft) async {
-    final all = await _readAll();
+    final all = _readAll();
     all[draft.matchId] = _encode(draft);
-    await _writeAll(all);
+    _writeAll(all);
   }
 
   Future<void> delete(String matchId) async {
-    final all = await _readAll();
+    final all = _readAll();
     if (all.remove(matchId) == null) return;
-    await _writeAll(all);
+    _writeAll(all);
   }
 
-  Future<Map<String, Map<String, Object?>>> _readAll() async {
+  Map<String, Map<String, Object?>> _readAll() {
     if (!_file.existsSync()) return {};
-    final raw = await _file.readAsString();
+    final raw = _file.readAsStringSync();
     if (raw.trim().isEmpty) return {};
     final decoded = jsonDecode(raw);
     if (decoded is! Map) {
@@ -101,13 +101,11 @@ final class PhoneYellowCardDraftStore {
     };
   }
 
-  Future<void> _writeAll(
-    Map<String, Map<String, Object?>> all,
-  ) async {
+  void _writeAll(Map<String, Map<String, Object?>> all) {
     if (!_file.parent.existsSync()) {
       _file.parent.createSync(recursive: true);
     }
-    await _file.writeAsString(jsonEncode(all), flush: true);
+    _file.writeAsStringSync(jsonEncode(all), flush: true);
   }
 
   Map<String, Object?> _encode(PhoneYellowCardDraft draft) => {
