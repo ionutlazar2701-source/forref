@@ -40,8 +40,8 @@ final class DisciplinaryAuthorityProjection {
     CompetitionRulesContext? competitionRules,
   }) {
     final ordered = [...records]..sort(deterministicRecordOrder);
-    MatchRecord? entered;
-    MatchRecord? left;
+    var enteredCommitted = false;
+    var leftCommitted = false;
     var matchStarted = false;
     var matchEnded = false;
 
@@ -54,19 +54,19 @@ final class DisciplinaryAuthorityProjection {
           case V1SemanticTypeCode.matchEnded:
             matchEnded = true;
           case V1SemanticTypeCode.refereeEnteredFieldForMatchStart:
-            entered = record;
+            enteredCommitted = true;
           case V1SemanticTypeCode.refereeLeftFieldAfterMatch:
-            left = record;
+            leftCommitted = true;
           default:
             break;
         }
       }
     }
 
-    final enteredCommitted = entered != null;
-    final leftCommitted = left != null;
-    final open = entered != null &&
-        (left == null || entered.originSequence > left.originSequence);
+    // Terminal leave: once the referee has left the field, card authority
+    // stays closed. A later erroneous or replayed ENTER record must not
+    // reopen the disciplinary window without explicit future supersession.
+    final open = enteredCommitted && !leftCommitted;
 
     final accountingScope = _deriveAccountingScope(
       cardDisplayOpen: open,

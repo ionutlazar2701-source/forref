@@ -13,6 +13,8 @@ import 'package:referee_phone/infrastructure/database/local_match_database.dart'
 import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
 import 'package:referee_phone/infrastructure/match_memory/match_application_composition.dart';
 import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_store.dart';
+import 'package:referee_phone/infrastructure/yellow_card/phone_match_foundation.dart';
+import 'package:referee_phone/infrastructure/yellow_card/phone_participant_registry_store.dart';
 import 'package:referee_phone/l10n/app_localizations_en.dart';
 
 void main() {
@@ -22,6 +24,8 @@ void main() {
   late PhoneCaptureIdentity identity;
   late PhoneMatchCaptureContext matchCaptureContext;
   late PhoneTemporalEvidenceStore evidence;
+  late PhoneParticipantRegistryStore participantRegistry;
+  late PhoneMatchFoundation matchFoundation;
   late _ManualClock clock;
 
   setUp(() async {
@@ -35,6 +39,11 @@ void main() {
     );
     clock = _ManualClock();
     evidence = PhoneTemporalEvidenceStore(storageRoot: temp, clock: clock);
+    participantRegistry = PhoneParticipantRegistryStore(temp);
+    matchFoundation = PhoneMatchFoundation(
+      boundary: composition.boundary,
+      registry: participantRegistry,
+    );
   });
 
   tearDown(() async {
@@ -52,6 +61,8 @@ void main() {
       captureIdentity: identity,
       matchCaptureContext: matchCaptureContext,
       temporalEvidence: evidence,
+      participantRegistry: participantRegistry,
+      matchFoundation: matchFoundation,
     );
   }
 
@@ -65,6 +76,19 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
     fail('Timed out waiting for $finder');
+  }
+
+  Future<void> pumpUntilNotFound(
+    WidgetTester tester,
+    Finder finder, {
+    int maxPumps = 50,
+  }) async {
+    for (var i = 0; i < maxPumps; i++) {
+      if (finder.evaluate().isEmpty) return;
+      await tester.runAsync(() => Future<void>(() {}));
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    fail('Timed out waiting for $finder to disappear');
   }
 
   Future<void> pumpUntilAnyFound(
@@ -103,8 +127,14 @@ void main() {
       find.text('Kick-off'),
       find.text('Complete period start'),
     ]);
+    final enterField = find.byKey(const Key('enter-field'));
+    if (enterField.evaluate().isNotEmpty) {
+      await tester.tap(enterField);
+      await tester.pump();
+      await pumpUntilFound(tester, find.text('Entered field'));
+    }
     await tester.runAsync(() async {
-      await tester.tap(find.text('Kick-off'));
+      await tester.tap(find.byKey(const Key('kick-off')));
       await Future<void>.delayed(const Duration(seconds: 3));
     });
     await tester.pump();
@@ -202,7 +232,8 @@ void main() {
     );
   });
 
-  testWidgets('Goal to Away updates the projected score and not the legacy row', (
+  testWidgets('Goal to Away updates the projected score and not the legacy row',
+      (
     tester,
   ) async {
     await openLive(tester);
@@ -228,7 +259,8 @@ void main() {
     expect(goals.single.creditedSide, CreditedSide.away);
   });
 
-  testWidgets('failed goal commit leaves score and history unchanged and can retry', (
+  testWidgets(
+      'failed goal commit leaves score and history unchanged and can retry', (
     tester,
   ) async {
     await openLive(tester);
@@ -308,7 +340,8 @@ void main() {
     expect(stored.single.score.home, 0);
   });
 
-  testWidgets('a second tap while a goal commit is pending does not duplicate it', (
+  testWidgets(
+      'a second tap while a goal commit is pending does not duplicate it', (
     tester,
   ) async {
     await openLive(tester);
@@ -333,35 +366,52 @@ void main() {
     expect(liveScore('HOME 1 — 0 AWAY'), findsOneWidget);
     final recorded = await readStores(tester);
     final records = recorded.records;
-    expect(records.where((record) => record.payload is GoalPayload), hasLength(1));
+    expect(
+        records.where((record) => record.payload is GoalPayload), hasLength(1));
   });
 
-  testWidgets('yellow capture still writes a legacy event and not a goal record', (
+  testWidgets('Yellow opens authoritative selector without changing Goal state',
+      (
     tester,
   ) async {
-    await openLive(tester);
-    await tester.tap(find.text('Yellow'));
+    await tester.pumpWidget(testApp());
     await tester.pump();
-    await tester.tap(find.text('HOME'));
+    await pumpUntilFound(tester, find.text('Matches'));
+    await tester.tap(find.text('New Match'));
     await tester.pump();
-    final unknown = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Unknown'),
+    await pumpUntilFound(tester, find.text('Match setup'));
+    await tester.tap(find.text('Live Match'));
+    await tester.pump();
+    await pumpUntilFound(tester, find.byKey(const Key('enter-field')));
+    await tester.tap(find.byKey(const Key('enter-field')));
+    await tester.pump();
+    await pumpUntilFound(tester, find.text('Entered field'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Yellow'));
+    await tester.pump();
+    await pumpUntilFound(tester, find.text('Record Yellow'));
+    await pumpUntilNotFound(
+      tester,
+      find.byKey(const Key('yellow-loading')),
     );
-    await tester.runAsync(() async {
-      unknown.onPressed!();
-      await Future<void>.delayed(const Duration(milliseconds: 500));
-    });
-    await tester.pump();
 
     expect(liveScore('HOME 0 — 0 AWAY'), findsOneWidget);
     final recorded = await readStores(tester);
     final stored = recorded.stored;
-    expect(stored.single.events, hasLength(1));
-    expect(stored.single.events.single.type, EventType.yellowCard);
+    expect(stored.single.events, isEmpty);
     expect(stored.single.score.home, 0);
     final records = recorded.records;
     expect(records.where((record) => record.payload is GoalPayload), isEmpty);
-    expect(records, hasLength(2));
+    expect(records.where((record) => record.payload is YellowCardPayload),
+        isEmpty);
+    expect(
+      records.where(
+        (record) =>
+            record.payload is TemporalTransitionPayload &&
+            (record.payload as TemporalTransitionPayload).semanticType ==
+                V1SemanticTypeCode.refereeEnteredFieldForMatchStart,
+      ),
+      hasLength(1),
+    );
   });
 }
 

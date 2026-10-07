@@ -3,6 +3,9 @@ import 'package:referee_phone/infrastructure/database/local_match_database.dart'
 import 'package:referee_phone/infrastructure/competition_rules/phone_match_capture_context.dart';
 import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
 import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_store.dart';
+import 'package:referee_phone/infrastructure/yellow_card/phone_match_foundation.dart';
+import 'package:referee_phone/infrastructure/yellow_card/phone_participant_registry_store.dart';
+import 'package:referee_phone/infrastructure/yellow_card/phone_yellow_card_draft_store.dart';
 import 'package:referee_phone/match_application/match_application_boundary.dart';
 
 class AppScope extends InheritedWidget {
@@ -14,6 +17,9 @@ class AppScope extends InheritedWidget {
     this.captureIdentity,
     this.matchCaptureContext,
     this.temporalEvidence,
+    this.yellowCardDraftStore,
+    this.participantRegistry,
+    this.matchFoundation,
     required super.child,
   });
 
@@ -32,6 +38,15 @@ class AppScope extends InheritedWidget {
   /// In-process temporal evidence. Not Match Memory and not a certified clock.
   final PhoneTemporalEvidenceStore? temporalEvidence;
 
+  /// Non-authoritative Yellow selector/intent recovery state.
+  final PhoneYellowCardDraftStore? yellowCardDraftStore;
+
+  /// Stable roster-to-participant mapping for Yellow foundation wiring.
+  final PhoneParticipantRegistryStore? participantRegistry;
+
+  /// Production Match Memory foundation commits for Yellow Card.
+  final PhoneMatchFoundation? matchFoundation;
+
   static AppScope of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<AppScope>();
     assert(scope != null, 'AppScope missing');
@@ -45,5 +60,8 @@ class AppScope extends InheritedWidget {
       oldWidget.matchApplication != matchApplication ||
       oldWidget.captureIdentity != captureIdentity ||
       oldWidget.matchCaptureContext != matchCaptureContext ||
-      oldWidget.temporalEvidence != temporalEvidence;
+      oldWidget.temporalEvidence != temporalEvidence ||
+      oldWidget.yellowCardDraftStore != yellowCardDraftStore ||
+      oldWidget.participantRegistry != participantRegistry ||
+      oldWidget.matchFoundation != matchFoundation;
 }

@@ -11,6 +11,8 @@ import 'package:referee_phone/infrastructure/competition_rules/phone_match_captu
 import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
 import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_store.dart';
 import 'package:referee_phone/infrastructure/match_memory/match_application_composition.dart';
+import 'package:referee_phone/infrastructure/yellow_card/phone_match_foundation.dart';
+import 'package:referee_phone/infrastructure/yellow_card/phone_participant_registry_store.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
 
 void main() {
@@ -20,6 +22,8 @@ void main() {
   late PhoneCaptureIdentity identity;
   late PhoneMatchCaptureContext matchCaptureContext;
   late PhoneTemporalEvidenceStore evidence;
+  late PhoneParticipantRegistryStore participantRegistry;
+  late PhoneMatchFoundation matchFoundation;
 
   setUp(() async {
     db = LocalMatchDatabase.memory();
@@ -31,9 +35,15 @@ void main() {
       rulesStore: MatchCompetitionRulesStore(temp),
     );
     evidence = PhoneTemporalEvidenceStore(storageRoot: temp);
+    participantRegistry = PhoneParticipantRegistryStore(temp);
+    matchFoundation = PhoneMatchFoundation(
+      boundary: composition.boundary,
+      registry: participantRegistry,
+    );
   });
 
   tearDown(() async {
+    composition.boundary.durableStore.abortBeforeCommitForTest = null;
     await composition.close();
     await db.close();
     if (temp.existsSync()) {
@@ -96,6 +106,8 @@ void main() {
       captureIdentity: identity,
       matchCaptureContext: matchCaptureContext,
       temporalEvidence: evidence,
+      participantRegistry: participantRegistry,
+      matchFoundation: matchFoundation,
     );
   }
 
@@ -122,6 +134,47 @@ void main() {
     ]);
   }
 
+  Future<void> enterFieldIfNeeded(WidgetTester tester) async {
+    final enterField = find.byKey(const Key('enter-field'));
+    if (enterField.evaluate().isEmpty) return;
+    await tester.runAsync(() async {
+      tester.widget<FilledButton>(enterField).onPressed?.call();
+      await Future<void>.delayed(const Duration(seconds: 2));
+    });
+    await tester.pump();
+    await pumpUntilFound(tester, find.text('Entered field'));
+    await tester.pump();
+  }
+
+  Future<void> tapKickOffOnly(WidgetTester tester) async {
+    await tester.runAsync(() async {
+      tester
+          .widget<FilledButton>(find.byKey(const Key('kick-off')))
+          .onPressed
+          ?.call();
+      await Future<void>.delayed(const Duration(seconds: 3));
+    });
+  }
+
+  Future<void> tapKickOff(WidgetTester tester) async {
+    await enterFieldIfNeeded(tester);
+    await tapKickOffOnly(tester);
+  }
+
+  Future<void> invokeFilledButton(
+    WidgetTester tester,
+    String label,
+  ) async {
+    await tester.runAsync(() async {
+      tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, label))
+          .onPressed
+          ?.call();
+      await Future<void>.delayed(const Duration(seconds: 3));
+    });
+    await tester.pump();
+  }
+
   testWidgets('shell builds', (tester) async {
     await pumpMatchesLoaded(tester, testApp());
     expect(find.text('Matches'), findsOneWidget);
@@ -136,10 +189,7 @@ void main() {
     await enterLiveMatch(tester);
     expect(find.text('Kick-off'), findsOneWidget);
     expect(find.textContaining('Ready'), findsWidgets);
-    await tester.runAsync(() async {
-      await tester.tap(find.text('Kick-off'));
-      await Future<void>.delayed(const Duration(seconds: 3));
-    });
+    await tapKickOff(tester);
     await tester.pump();
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(seconds: 2)),
@@ -157,7 +207,7 @@ void main() {
     await tester.runAsync(() async {
       final records =
           await composition.boundary.durableStore.readCommittedForMatch(matchId);
-      expect(records, hasLength(2));
+      expect(records, hasLength(3));
     });
 
     await tester.tap(find.text('Goal'));
@@ -167,9 +217,10 @@ void main() {
     );
     await tester.runAsync(() async {
       homeGoal.onPressed!();
-      await Future<void>.delayed(const Duration(seconds: 2));
+      await Future<void>.delayed(const Duration(seconds: 3));
     });
     await tester.pump();
+    await pumpUntilFound(tester, find.text('Goal saved'));
 
     expect(find.text('Goal saved'), findsAtLeastNWidgets(1));
     expect(find.textContaining('HOME 1 — 0 AWAY'), findsWidgets);
@@ -199,20 +250,18 @@ void main() {
   });
 
   testWidgets('failed kick-off does not show started state', (tester) async {
-    composition.boundary.durableStore.abortBeforeCommitForTest = () {
-      throw StateError('abort before commit');
-    };
     await pumpMatchesLoaded(tester, testApp());
     await startNewMatchSetup(tester);
     await enterLiveMatch(tester);
+    await enterFieldIfNeeded(tester);
+    composition.boundary.durableStore.abortBeforeCommitForTest = () {
+      throw StateError('abort before commit');
+    };
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 400)),
     );
 
-    await tester.runAsync(() async {
-      await tester.tap(find.text('Kick-off'));
-      await Future<void>.delayed(const Duration(seconds: 3));
-    });
+    await tapKickOffOnly(tester);
     await tester.pump();
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(seconds: 2)),
@@ -222,13 +271,20 @@ void main() {
     expect(find.text('Match started'), findsNothing);
     expect(find.textContaining('Period 1'), findsNothing);
     expect(find.text('Kick-off'), findsOneWidget);
+    await pumpUntilFound(tester, find.text('Kick-off was not saved'));
     expect(find.text('Kick-off was not saved'), findsAtLeastNWidgets(1));
     expect((await db.listNewestFirst()).single.status, MatchStatus.ready);
+    composition.boundary.durableStore.abortBeforeCommitForTest = null;
   });
 
   testWidgets('incomplete period start is recoverable without a second match start', (
     tester,
   ) async {
+    await pumpMatchesLoaded(tester, testApp());
+    await startNewMatchSetup(tester);
+    await enterLiveMatch(tester);
+    await enterFieldIfNeeded(tester);
+
     var commits = 0;
     composition.boundary.durableStore.abortBeforeCommitForTest = () {
       commits += 1;
@@ -237,14 +293,7 @@ void main() {
       }
     };
 
-    await pumpMatchesLoaded(tester, testApp());
-    await startNewMatchSetup(tester);
-    await enterLiveMatch(tester);
-
-    await tester.runAsync(() async {
-      await tester.tap(find.text('Kick-off'));
-      await Future<void>.delayed(const Duration(seconds: 3));
-    });
+    await tapKickOffOnly(tester);
     await tester.pump();
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(seconds: 2)),
@@ -288,9 +337,9 @@ void main() {
         matchId,
       );
     });
-    expect(records, hasLength(2));
+    expect(records, hasLength(3));
     expect(
-      (records[1].payload as TemporalTransitionPayload).semanticType,
+      (records[2].payload as TemporalTransitionPayload).semanticType,
       V1SemanticTypeCode.periodStarted,
     );
     expect((await db.listNewestFirst()).single.status, MatchStatus.ready);
@@ -302,10 +351,7 @@ void main() {
     await pumpMatchesLoaded(tester, testApp());
     await startNewMatchSetup(tester);
     await enterLiveMatch(tester);
-    await tester.runAsync(() async {
-      await tester.tap(find.text('Kick-off'));
-      await Future<void>.delayed(const Duration(seconds: 3));
-    });
+    await tapKickOff(tester);
     await tester.pump();
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(seconds: 2)),
@@ -340,15 +386,15 @@ void main() {
         matchId,
       );
     });
-    expect(records, hasLength(3));
+    expect(records, hasLength(4));
     expect(
-      (records[2].payload as TemporalTransitionPayload).semanticType,
+      (records[3].payload as TemporalTransitionPayload).semanticType,
       V1SemanticTypeCode.temporarySuspensionStarted,
     );
-    expect(records[2].relationships.single, isA<CausalDependency>());
+    expect(records[3].relationships.single, isA<CausalDependency>());
     expect(
-      (records[2].relationships.single as CausalDependency).targetRecordId,
-      records[1].recordId,
+      (records[3].relationships.single as CausalDependency).targetRecordId,
+      records[2].recordId,
     );
     final stored = await db.listNewestFirst();
     expect(stored.single.status, MatchStatus.ready);
@@ -359,10 +405,7 @@ void main() {
     await pumpMatchesLoaded(tester, testApp());
     await startNewMatchSetup(tester);
     await enterLiveMatch(tester);
-    await tester.runAsync(() async {
-      await tester.tap(find.text('Kick-off'));
-      await Future<void>.delayed(const Duration(seconds: 3));
-    });
+    await tapKickOff(tester);
     await tester.pump();
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(seconds: 2)),
@@ -372,17 +415,10 @@ void main() {
       throw StateError('abort before commit');
     };
 
-    await tester.runAsync(() async {
-      await tester.tap(find.text('Suspend match'));
-      await Future<void>.delayed(const Duration(seconds: 3));
-    });
-    await tester.pump();
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(seconds: 2)),
-    );
-    await tester.pump();
+    await invokeFilledButton(tester, 'Suspend match');
 
     expect(find.text('Match suspended'), findsNothing);
+    await pumpUntilFound(tester, find.text('Suspension was not saved'));
     expect(find.text('Suspension was not saved'), findsAtLeastNWidgets(1));
     expect(find.text('Suspend match'), findsOneWidget);
     expect(find.text('Continuity exact'), findsOneWidget);
@@ -393,7 +429,7 @@ void main() {
         matchId,
       );
     });
-    expect(records, hasLength(2));
+    expect(records, hasLength(3));
     expect((await db.listNewestFirst()).single.status, MatchStatus.ready);
   });
 
@@ -404,10 +440,7 @@ void main() {
     await startNewMatchSetup(tester);
     await enterLiveMatch(tester);
     expect(find.text('Added time'), findsOneWidget);
-    await tester.runAsync(() async {
-      await tester.tap(find.text('Kick-off'));
-      await Future<void>.delayed(const Duration(seconds: 3));
-    });
+    await tapKickOff(tester);
     await tester.pump();
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(seconds: 2)),
@@ -487,24 +520,24 @@ void main() {
         matchId,
       );
     });
-    expect(records, hasLength(6));
+    expect(records, hasLength(7));
     expect(
-      (records[3].payload as TemporalTransitionPayload).semanticType,
+      (records[4].payload as TemporalTransitionPayload).semanticType,
       V1SemanticTypeCode.temporarySuspensionEnded,
     );
     expect(
-      (records[3].relationships.single as CausalDependency).targetRecordId,
-      records[2].recordId,
+      (records[4].relationships.single as CausalDependency).targetRecordId,
+      records[3].recordId,
     );
     expect(
-      (records[5].payload as TemporalTransitionPayload).semanticType,
+      (records[6].payload as TemporalTransitionPayload).semanticType,
       V1SemanticTypeCode.temporarySuspensionEnded,
     );
     expect(
-      (records[5].relationships.single as CausalDependency).targetRecordId,
-      records[4].recordId,
+      (records[6].relationships.single as CausalDependency).targetRecordId,
+      records[5].recordId,
     );
-    expect(records[2].recordId, isNot(records[4].recordId));
+    expect(records[3].recordId, isNot(records[5].recordId));
     expect(records.where(_isPeriodEnded), isEmpty);
     final stored = await db.listNewestFirst();
     expect(stored.single.status, MatchStatus.ready);
@@ -515,10 +548,7 @@ void main() {
     await pumpMatchesLoaded(tester, testApp());
     await startNewMatchSetup(tester);
     await enterLiveMatch(tester);
-    await tester.runAsync(() async {
-      await tester.tap(find.text('Kick-off'));
-      await Future<void>.delayed(const Duration(seconds: 3));
-    });
+    await tapKickOff(tester);
     await tester.pump();
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(seconds: 2)),
@@ -537,17 +567,10 @@ void main() {
       throw StateError('abort before commit');
     };
 
-    await tester.runAsync(() async {
-      await tester.tap(find.text('Resume match'));
-      await Future<void>.delayed(const Duration(seconds: 3));
-    });
-    await tester.pump();
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(seconds: 2)),
-    );
-    await tester.pump();
+    await invokeFilledButton(tester, 'Resume match');
 
     expect(find.text('Match suspended'), findsOneWidget);
+    await pumpUntilFound(tester, find.text('Resume was not saved'));
     expect(find.text('Resume was not saved'), findsAtLeastNWidgets(1));
     expect(find.text('Resume match'), findsOneWidget);
     final matchId = (await db.listNewestFirst()).single.matchId;
@@ -557,7 +580,7 @@ void main() {
         matchId,
       );
     });
-    expect(records, hasLength(3));
+    expect(records, hasLength(4));
     expect((await db.listNewestFirst()).single.status, MatchStatus.ready);
   });
 
@@ -567,10 +590,7 @@ void main() {
     await pumpMatchesLoaded(tester, testApp());
     await startNewMatchSetup(tester);
     await enterLiveMatch(tester);
-    await tester.runAsync(() async {
-      await tester.tap(find.text('Kick-off'));
-      await Future<void>.delayed(const Duration(seconds: 3));
-    });
+    await tapKickOff(tester);
     await tester.pump();
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(seconds: 2)),
@@ -611,16 +631,16 @@ void main() {
         matchId,
       );
     });
-    expect(records, hasLength(3));
+    expect(records, hasLength(4));
     expect(
-      (records[2].payload as TemporalTransitionPayload).semanticType,
+      (records[3].payload as TemporalTransitionPayload).semanticType,
       V1SemanticTypeCode.periodEnded,
     );
     expect(
-      (records[2].relationships.single as CausalDependency).targetRecordId,
-      records[1].recordId,
+      (records[3].relationships.single as CausalDependency).targetRecordId,
+      records[2].recordId,
     );
-    expect((records[2].payload as TemporalTransitionPayload).period?.index, 1);
+    expect((records[3].payload as TemporalTransitionPayload).period?.index, 1);
     final stored = await db.listNewestFirst();
     expect(stored.single.status, MatchStatus.ready);
     expect(stored.single.events, isEmpty);
@@ -630,10 +650,7 @@ void main() {
     await pumpMatchesLoaded(tester, testApp());
     await startNewMatchSetup(tester);
     await enterLiveMatch(tester);
-    await tester.runAsync(() async {
-      await tester.tap(find.text('Kick-off'));
-      await Future<void>.delayed(const Duration(seconds: 3));
-    });
+    await tapKickOff(tester);
     await tester.pump();
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(seconds: 2)),
@@ -695,19 +712,19 @@ void main() {
         matchId,
       );
     });
-    expect(records, hasLength(4));
+    expect(records, hasLength(5));
     expect(
-      (records[3].payload as TemporalTransitionPayload).semanticType,
+      (records[4].payload as TemporalTransitionPayload).semanticType,
       V1SemanticTypeCode.periodStarted,
     );
-    expect((records[3].payload as TemporalTransitionPayload).period?.index, 2);
+    expect((records[4].payload as TemporalTransitionPayload).period?.index, 2);
     expect(
-      (records[3].relationships.single as CausalDependency).targetRecordId,
-      records[2].recordId,
+      (records[4].relationships.single as CausalDependency).targetRecordId,
+      records[3].recordId,
     );
     expect(
-      records[3].temporalContext!.evidenceIds.single,
-      isNot(records[1].temporalContext!.evidenceIds.single),
+      records[4].temporalContext!.evidenceIds.single,
+      isNot(records[2].temporalContext!.evidenceIds.single),
     );
     expect((await db.listNewestFirst()).single.status, MatchStatus.ready);
     expect((await db.listNewestFirst()).single.events, isEmpty);
@@ -717,10 +734,7 @@ void main() {
     await pumpMatchesLoaded(tester, testApp());
     await startNewMatchSetup(tester);
     await enterLiveMatch(tester);
-    await tester.runAsync(() async {
-      await tester.tap(find.text('Kick-off'));
-      await Future<void>.delayed(const Duration(seconds: 3));
-    });
+    await tapKickOff(tester);
     await tester.pump();
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(seconds: 2)),
@@ -739,16 +753,9 @@ void main() {
       throw StateError('abort before commit');
     };
 
-    await tester.runAsync(() async {
-      await tester.tap(find.text('Start Period 2'));
-      await Future<void>.delayed(const Duration(seconds: 3));
-    });
-    await tester.pump();
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(seconds: 2)),
-    );
-    await tester.pump();
+    await invokeFilledButton(tester, 'Start Period 2');
 
+    await pumpUntilFound(tester, find.text('Period start was not saved'));
     expect(find.text('Period start was not saved'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Interval'), findsOneWidget);
     expect(find.text('Start Period 2'), findsOneWidget);
@@ -760,17 +767,14 @@ void main() {
         matchId,
       );
     });
-    expect(records, hasLength(3));
+    expect(records, hasLength(4));
   });
 
   testWidgets('failed period end stays on active Period 1', (tester) async {
     await pumpMatchesLoaded(tester, testApp());
     await startNewMatchSetup(tester);
     await enterLiveMatch(tester);
-    await tester.runAsync(() async {
-      await tester.tap(find.text('Kick-off'));
-      await Future<void>.delayed(const Duration(seconds: 3));
-    });
+    await tapKickOff(tester);
     await tester.pump();
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(seconds: 2)),
@@ -780,16 +784,9 @@ void main() {
       throw StateError('abort before commit');
     };
 
-    await tester.runAsync(() async {
-      await tester.tap(find.text('End period'));
-      await Future<void>.delayed(const Duration(seconds: 3));
-    });
-    await tester.pump();
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(seconds: 2)),
-    );
-    await tester.pump();
+    await invokeFilledButton(tester, 'End period');
 
+    await pumpUntilFound(tester, find.text('Period end was not saved'));
     expect(find.text('Period end was not saved'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Period 1 ended'), findsNothing);
     expect(find.text('End period'), findsOneWidget);
@@ -801,7 +798,7 @@ void main() {
         matchId,
       );
     });
-    expect(records, hasLength(2));
+    expect(records, hasLength(3));
     expect(records.where(_isPeriodEnded), isEmpty);
     expect((await db.listNewestFirst()).single.status, MatchStatus.ready);
   });
@@ -812,10 +809,7 @@ void main() {
     await pumpMatchesLoaded(tester, testApp());
     await startNewMatchSetup(tester);
     await enterLiveMatch(tester);
-    await tester.runAsync(() async {
-      await tester.tap(find.text('Kick-off'));
-      await Future<void>.delayed(const Duration(seconds: 3));
-    });
+    await tapKickOff(tester);
     await tester.pump();
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(seconds: 2)),
@@ -880,15 +874,15 @@ void main() {
         matchId,
       );
     });
-    expect(records, hasLength(5));
+    expect(records, hasLength(6));
     expect(
-      (records[4].payload as TemporalTransitionPayload).semanticType,
+      (records[5].payload as TemporalTransitionPayload).semanticType,
       V1SemanticTypeCode.periodEnded,
     );
-    expect((records[4].payload as TemporalTransitionPayload).period?.index, 2);
+    expect((records[5].payload as TemporalTransitionPayload).period?.index, 2);
     expect(
-      (records[4].relationships.single as CausalDependency).targetRecordId,
-      records[3].recordId,
+      (records[5].relationships.single as CausalDependency).targetRecordId,
+      records[4].recordId,
     );
     expect((await db.listNewestFirst()).single.status, MatchStatus.ready);
     expect((await db.listNewestFirst()).single.events, isEmpty);
@@ -898,10 +892,7 @@ void main() {
     await pumpMatchesLoaded(tester, testApp());
     await startNewMatchSetup(tester);
     await enterLiveMatch(tester);
-    await tester.runAsync(() async {
-      await tester.tap(find.text('Kick-off'));
-      await Future<void>.delayed(const Duration(seconds: 3));
-    });
+    await tapKickOff(tester);
     await tester.pump();
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(seconds: 2)),
@@ -929,16 +920,9 @@ void main() {
       throw StateError('abort before commit');
     };
 
-    await tester.runAsync(() async {
-      await tester.tap(find.text('End period'));
-      await Future<void>.delayed(const Duration(seconds: 3));
-    });
-    await tester.pump();
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(seconds: 2)),
-    );
-    await tester.pump();
+    await invokeFilledButton(tester, 'End period');
 
+    await pumpUntilFound(tester, find.text('Period end was not saved'));
     expect(find.text('Period end was not saved'), findsAtLeastNWidgets(1));
     expect(find.text('Period 2 ended'), findsNothing);
     expect(find.text('End period'), findsOneWidget);
@@ -950,7 +934,7 @@ void main() {
         matchId,
       );
     });
-    expect(records, hasLength(4));
+    expect(records, hasLength(5));
     expect((await db.listNewestFirst()).single.status, MatchStatus.ready);
   });
 

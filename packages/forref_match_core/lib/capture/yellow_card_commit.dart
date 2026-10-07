@@ -57,6 +57,7 @@ enum YellowCardCommitFailure {
   disciplinarySystemUnresolved,
   disciplinaryAccountingScopeUnresolved,
   authorityInvalid,
+  invalidCaptureIntent,
   idempotencyConflict,
   durableCommitFailure,
 }
@@ -346,11 +347,9 @@ final class YellowCardCommitter {
   Future<YellowCardCommitResult> commitYellowCard(
     CommitYellowCardCommand command,
   ) async {
-    if (command.captureIntentId.isEmpty) {
-      throw ArgumentError.value(
-        command.captureIntentId,
-        'captureIntentId',
-        'YELLOW_CARD requires a capture intent',
+    if (command.captureIntentId.trim().isEmpty) {
+      return const YellowCardCommitRejected(
+        YellowCardCommitFailure.invalidCaptureIntent,
       );
     }
 
@@ -411,7 +410,15 @@ final class YellowCardCommitter {
 
     switch (result) {
       case DurableCommitSuccess():
-        final committed = await memory.getById(result.committedRecordId);
+        var committed = await memory.getById(result.committedRecordId);
+        if (committed == null || committed.payload is! YellowCardPayload) {
+          final recoveredRecords =
+              await memory.readCommittedForMatch(command.context.matchId);
+          committed = yellowCardForCaptureIntent(
+            recoveredRecords,
+            command.captureIntentId,
+          );
+        }
         if (committed == null || committed.payload is! YellowCardPayload) {
           return const YellowCardCommitRejected(
             YellowCardCommitFailure.durableCommitFailure,

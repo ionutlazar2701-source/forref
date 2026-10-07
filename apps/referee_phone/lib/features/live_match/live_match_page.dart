@@ -6,6 +6,8 @@ import 'package:referee_phone/app_scope.dart';
 import 'package:referee_phone/features/live_match/capture_overlay.dart';
 import 'package:referee_phone/features/live_match/goal_time_label.dart';
 import 'package:referee_phone/features/live_match/live_match_terminal_ui.dart';
+import 'package:referee_phone/features/live_match/yellow_card_capture_overlay.dart';
+import 'package:referee_phone/features/live_match/yellow_card_phone_read_model.dart';
 import 'package:uuid/uuid.dart';
 import 'package:referee_phone/infrastructure/competition_rules/phone_match_capture_context.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
@@ -14,6 +16,9 @@ import 'package:forref_match_core/forref_match_core.dart';
 import 'package:referee_phone/match/match_session.dart';
 import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
 import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_store.dart';
+import 'package:referee_phone/infrastructure/yellow_card/phone_match_foundation.dart';
+import 'package:referee_phone/infrastructure/yellow_card/phone_participant_registry_store.dart';
+import 'package:referee_phone/infrastructure/yellow_card/phone_yellow_card_draft_store.dart';
 import 'package:referee_phone/match_application/kick_off_authority.dart';
 import 'package:referee_phone/match_application/match_started_read_model.dart';
 import 'package:referee_phone/match/new_match.dart';
@@ -28,7 +33,8 @@ class LiveMatchPage extends StatefulWidget {
   State<LiveMatchPage> createState() => _LiveMatchPageState();
 }
 
-class _LiveMatchPageState extends State<LiveMatchPage> {
+class _LiveMatchPageState extends State<LiveMatchPage>
+    with WidgetsBindingObserver {
   MatchSession? _session;
   bool _kickOffPending = false;
   bool _suspensionPending = false;
@@ -52,6 +58,9 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
   TemporalEvidence? _resumptionAnchor;
   List<TemporalEvidence> _recordedEvidence = const [];
   GoalMatchProjection _goalProjection = GoalMatchProjection.empty;
+  ParticipantIdentityProjection _participantIdentities =
+      ParticipantIdentityProjection.empty;
+  DisciplinaryMatchProjection? _disciplinaryProjection;
   Timer? _clockTicker;
   EventType? _captureType;
   bool _goalSideChoice = false;
@@ -59,16 +68,31 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
   bool _goalCommitInFlight = false;
   DateTime? _lastActionAt;
   EventType? _lastActionType;
+  bool _yellowOpen = false;
+  bool _yellowLoading = false;
+  bool _yellowSaving = false;
+  bool _yellowChecking = false;
+  bool _yellowFailed = false;
+  bool _yellowCommitInFlight = false;
+  bool _fieldEntryPending = false;
+  bool _refereeEnteredFieldCommitted = false;
+  bool _cardDisplayAuthorityOpen = false;
+  List<PhoneParticipantRegistryEntry> _registryEntries = const [];
+  YellowParticipantOption? _yellowSelected;
+  String? _yellowIntentId;
+  bool _yellowPriorExistedAtCommit = false;
+  YellowParticipantOption? _secondCautionParticipant;
+  String? _secondCautionRecordId;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
   Future<void> _load() async {
-    final match =
-        await AppScope.of(context).database.getMatch(widget.matchId);
+    final match = await AppScope.of(context).database.getMatch(widget.matchId);
     if (!mounted || match == null) return;
     _session?.dispose();
     final session = MatchSession(
@@ -80,6 +104,42 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
     });
     setState(() => _session = session);
     await _refreshTemporal();
+    await _restoreYellowDraft();
+  }
+
+  Future<void> _enterField() async {
+    if (_fieldEntryPending || _refereeEnteredFieldCommitted) return;
+    final scope = AppScope.of(context);
+    final foundation = scope.matchFoundation;
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
+    final captureContext = await _captureContext(scope);
+    if (foundation == null || captureContext == null) return;
+    setState(() => _fieldEntryPending = true);
+    try {
+      final outcome = await foundation.commitRefereeEnteredField(captureContext);
+      if (!mounted) return;
+      if (outcome is FieldEntryCommitFailed) {
+        messenger
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(content: Text(l10n.enterFieldNotSaved)));
+        return;
+      }
+      await _refreshTemporal();
+      if (!mounted) return;
+      if (outcome is FieldEntryCommitted) {
+        messenger
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(content: Text(l10n.enterFieldSaved)));
+      }
+    } catch (_) {
+      if (!mounted) return;
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text(l10n.enterFieldNotSaved)));
+    } finally {
+      if (mounted) setState(() => _fieldEntryPending = false);
+    }
   }
 
   Future<CaptureContext?> _captureContext(AppScope scope) async {
@@ -97,6 +157,9 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
     final boundary = scope.matchApplication;
     final identity = scope.captureIdentity;
     if (boundary == null || identity == null) return;
+    _registryEntries =
+        await scope.participantRegistry?.loadForMatch(widget.matchId) ??
+            const [];
     final projection = await boundary.project(
       widget.matchId,
       evaluatedAuthorityGeneration:
@@ -104,6 +167,20 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
     );
     final records = await boundary.durableStore.readCommittedForMatch(
       widget.matchId,
+    );
+    final captureContext = await _captureContext(scope);
+    final participantIdentities =
+        ParticipantIdentityProjection.derive(records: records);
+    final disciplinaryProjection = DisciplinaryMatchProjection.derive(
+      records: records,
+      evaluatedAuthorityGeneration:
+          captureContext?.projectionAuthorityGeneration ??
+              PhoneCaptureIdentity.initialAuthorityGeneration,
+      competitionRules: captureContext?.competitionRulesContext,
+    );
+    final disciplinaryAuthority = DisciplinaryAuthorityProjection.derive(
+      records: records,
+      competitionRules: captureContext?.competitionRulesContext,
     );
     final started = MatchStartedReadModel.from(
       projection: projection,
@@ -167,6 +244,11 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
       _resumptionAnchor = resumptionAnchor;
       _recordedEvidence = recordedEvidence;
       _goalProjection = goalProjection;
+      _participantIdentities = participantIdentities;
+      _disciplinaryProjection = disciplinaryProjection;
+      _refereeEnteredFieldCommitted =
+          disciplinaryAuthority.refereeEnteredFieldCommitted;
+      _cardDisplayAuthorityOpen = disciplinaryAuthority.cardDisplayAuthorityOpen;
       _terminalEligibility = terminalEligibility;
     });
     _syncClockTicker();
@@ -467,6 +549,12 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
     }
   }
 
+  bool get _fieldEntryLifecycleIncomplete =>
+      _matchStarted && !_refereeEnteredFieldCommitted;
+
+  bool get _kickOffActionable =>
+      _refereeEnteredFieldCommitted && !_kickOffPending;
+
   Future<void> _kickOff() async {
     final scope = AppScope.of(context);
     final l10n = AppLocalizations.of(context);
@@ -477,6 +565,9 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
         captureContext == null ||
         _kickOffPending ||
         _activePeriod != null) {
+      return;
+    }
+    if (!_temporallyIncomplete && !_refereeEnteredFieldCommitted) {
       return;
     }
     setState(() => _kickOffPending = true);
@@ -523,9 +614,17 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _clockTicker?.cancel();
     _session?.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _yellowChecking) {
+      unawaited(_reconcileYellowIntent());
+    }
   }
 
   String _cutOverClockLabel(AppLocalizations l10n) {
@@ -623,6 +722,370 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
     }
   }
 
+  List<YellowParticipantOption> _currentYellowOptions() {
+    final match = _session?.match;
+    final disciplinary = _disciplinaryProjection;
+    if (match == null || disciplinary == null || !mounted) return const [];
+    final l10n = AppLocalizations.of(context);
+    return buildYellowParticipantOptions(
+      match: match,
+      identities: _participantIdentities,
+      disciplinary: disciplinary,
+      homeLabel: homeLabel(match, l10n),
+      awayLabel: awayLabel(match, l10n),
+      registryEntries: _registryEntries,
+    );
+  }
+
+  YellowParticipantOption? _resolveYellowSelection(
+    YellowParticipantOption selected,
+  ) {
+    final options = _currentYellowOptions();
+    for (final option in options) {
+      if (option.participantRef.matchParticipantId ==
+              selected.participantRef.matchParticipantId &&
+          option.status == selected.status) {
+        return option;
+      }
+    }
+    for (final option in options) {
+      if (option.participantRef.matchParticipantId ==
+          selected.participantRef.matchParticipantId) {
+        return option;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _openYellowSelector() async {
+    if (_yellowOpen || _yellowSaving || _yellowChecking) return;
+    final now = DateTime.now();
+    if (_lastActionType == EventType.yellowCard &&
+        _lastActionAt != null &&
+        now.difference(_lastActionAt!) < const Duration(milliseconds: 500)) {
+      return;
+    }
+    _lastActionAt = now;
+    _lastActionType = EventType.yellowCard;
+    setState(() {
+      _captureType = null;
+      _yellowOpen = true;
+      _yellowLoading = true;
+      _yellowFailed = false;
+      _yellowSelected = null;
+      _yellowIntentId = null;
+      _yellowPriorExistedAtCommit = false;
+    });
+    try {
+      await _refreshTemporal();
+    } finally {
+      if (mounted) setState(() => _yellowLoading = false);
+    }
+  }
+
+  Future<void> _selectYellowParticipant(
+    YellowParticipantOption option,
+  ) async {
+    if (_yellowSaving || _yellowChecking || _yellowIntentId != null) return;
+    setState(() {
+      _yellowSelected = option;
+      _yellowFailed = false;
+    });
+    await AppScope.of(context).yellowCardDraftStore?.save(
+          PhoneYellowCardDraft(
+            matchId: widget.matchId,
+            phase: YellowCardDraftPhase.selecting,
+            participantId: option.participantRef.matchParticipantId,
+            participantStatus: option.status,
+          ),
+        );
+  }
+
+  Future<void> _cancelYellowSelector() async {
+    if (_yellowSaving || _yellowChecking) return;
+    await AppScope.of(context).yellowCardDraftStore?.delete(widget.matchId);
+    if (!mounted) return;
+    setState(() {
+      _yellowOpen = false;
+      _yellowSelected = null;
+      _yellowIntentId = null;
+      _yellowPriorExistedAtCommit = false;
+      _yellowFailed = false;
+      _lastActionAt = null;
+    });
+  }
+
+  Future<void> _commitYellowCard() async {
+    if (_yellowSaving || _yellowChecking || _yellowCommitInFlight) return;
+    final selected = _yellowSelected;
+    if (selected == null || selected.identityBlocksCommit) return;
+
+    _yellowCommitInFlight = true;
+    final intentId = _yellowIntentId ?? const Uuid().v4();
+    setState(() {
+      _yellowIntentId = intentId;
+      _yellowSaving = true;
+      _yellowFailed = false;
+      _yellowChecking = false;
+    });
+
+    try {
+      final scope = AppScope.of(context);
+      final draftStore = scope.yellowCardDraftStore;
+      await draftStore?.save(
+        PhoneYellowCardDraft(
+          matchId: widget.matchId,
+          phase: YellowCardDraftPhase.checking,
+          participantId: selected.participantRef.matchParticipantId,
+          participantStatus: selected.status,
+          captureIntentId: intentId,
+          priorCautionExisted:
+              selected.priorAwareness == YellowPriorAwareness.exists,
+        ),
+      );
+
+      await _refreshTemporal();
+      if (!mounted) return;
+
+      final refreshed = _resolveYellowSelection(selected);
+      if (refreshed == null || refreshed.identityBlocksCommit) {
+        await _markYellowRetryable();
+        return;
+      }
+
+      final boundary = scope.matchApplication;
+      final captureContext = await _captureContext(scope);
+      if (boundary == null || captureContext == null) {
+        await _markYellowRetryable();
+        return;
+      }
+
+      TemporalContext temporalContext = TemporalContext(
+        domainClockPolicyVersion:
+            PhoneCaptureIdentity.domainClockContract.value,
+        explicitUncertainty: true,
+      );
+      final evidence = scope.temporalEvidence;
+      if (evidence != null) {
+        try {
+          final captured = await evidence.captureAnchor();
+          temporalContext = TemporalContext(
+            evidenceIds: [captured.evidenceId],
+            domainClockPolicyVersion:
+                PhoneCaptureIdentity.domainClockContract.value,
+          );
+        } catch (_) {
+          // Exact placement is optional. The explicit uncertainty above is
+          // preserved rather than fabricating match time.
+        }
+      }
+
+      final accountingScope =
+          _disciplinaryProjection?.disciplinaryAccountingScope;
+      if (accountingScope == null ||
+          accountingScope == DisciplinaryAccountingScope.unresolved) {
+        await _markYellowRetryable();
+        return;
+      }
+
+      final result = await boundary.commitYellowCard(
+        CommitYellowCardCommand(
+          context: captureContext,
+          participantRef: refreshed.participantRef,
+          participantStatusAtDetermination: refreshed.status,
+          disciplinaryAccountingScope: accountingScope,
+          captureIntentId: intentId,
+          temporalContext: temporalContext,
+        ),
+      );
+      if (!mounted) return;
+      if (result case YellowCardSaved(:final record)) {
+        await _completeYellowSave(record, refreshed);
+      } else {
+        await _reconcileYellowIntent();
+      }
+    } catch (_) {
+      if (!mounted) return;
+      await _reconcileYellowIntent();
+    } finally {
+      _yellowCommitInFlight = false;
+    }
+  }
+
+  Future<void> _markYellowRetryable() async {
+    final selected = _yellowSelected;
+    final intentId = _yellowIntentId;
+    if (selected != null && intentId != null) {
+      await AppScope.of(context).yellowCardDraftStore?.save(
+            PhoneYellowCardDraft(
+              matchId: widget.matchId,
+              phase: YellowCardDraftPhase.retryable,
+              participantId: selected.participantRef.matchParticipantId,
+              participantStatus: selected.status,
+              captureIntentId: intentId,
+              priorCautionExisted: _yellowPriorExistedAtCommit,
+            ),
+          );
+    }
+    if (!mounted) return;
+    setState(() {
+      _yellowSaving = false;
+      _yellowChecking = false;
+      _yellowFailed = true;
+    });
+  }
+
+  Future<void> _reconcileYellowIntent() async {
+    final intentId = _yellowIntentId;
+    final boundary = AppScope.of(context).matchApplication;
+    if (intentId == null || boundary == null) return;
+    if (mounted) {
+      setState(() {
+        _yellowSaving = false;
+        _yellowChecking = true;
+        _yellowFailed = false;
+      });
+    }
+    try {
+      final records =
+          await boundary.durableStore.readCommittedForMatch(widget.matchId);
+      final existing = yellowCardForCaptureIntent(records, intentId);
+      if (!mounted) return;
+      if (existing != null) {
+        await _completeYellowSave(existing, _yellowSelected);
+      } else {
+        await _markYellowRetryable();
+      }
+    } catch (_) {
+      if (!mounted) return;
+      await _markYellowRetryable();
+    }
+  }
+
+  Future<void> _completeYellowSave(
+    MatchRecord record,
+    YellowParticipantOption? preCommitSelection,
+  ) async {
+    await _refreshTemporal();
+    if (!mounted) return;
+    final options = _currentYellowOptions();
+    final payload = record.payload;
+    final participantId = payload is YellowCardPayload
+        ? payload.participantRef.matchParticipantId
+        : preCommitSelection?.participantRef.matchParticipantId;
+    YellowParticipantOption? participant = preCommitSelection;
+    for (final option in options) {
+      if (option.participantRef.matchParticipantId == participantId) {
+        participant = option;
+        break;
+      }
+    }
+    final projected = _disciplinaryProjection?.historicalCautions
+        .where((caution) => caution.recordId == record.recordId)
+        .firstOrNull;
+    final secondCaution = projected?.isSecondStandingCaution == true;
+    final draftStore = AppScope.of(context).yellowCardDraftStore;
+    if (secondCaution) {
+      await draftStore?.save(
+        PhoneYellowCardDraft(
+          matchId: widget.matchId,
+          phase: YellowCardDraftPhase.secondCautionAcknowledgement,
+          participantId: participantId,
+          participantStatus: payload is YellowCardPayload
+              ? payload.participantStatusAtDetermination
+              : preCommitSelection?.status,
+          captureIntentId: payload is YellowCardPayload
+              ? payload.captureIntentId
+              : _yellowIntentId,
+          committedRecordId: record.recordId,
+          priorCautionExisted: secondCaution,
+        ),
+      );
+    } else {
+      await draftStore?.delete(widget.matchId);
+    }
+    if (!mounted) return;
+    setState(() {
+      _yellowOpen = false;
+      _yellowLoading = false;
+      _yellowSaving = false;
+      _yellowChecking = false;
+      _yellowFailed = false;
+      _yellowSelected = null;
+      _yellowIntentId = null;
+      _yellowPriorExistedAtCommit = false;
+      _lastActionAt = null;
+      if (secondCaution) {
+        _secondCautionParticipant = participant;
+        _secondCautionRecordId = record.recordId;
+      }
+    });
+    if (!secondCaution && participant != null) {
+      final l10n = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              l10n.yellowSavedParticipant(_yellowParticipantLabel(participant)),
+            ),
+          ),
+        );
+    }
+  }
+
+  Future<void> _restoreYellowDraft() async {
+    final draftStore = AppScope.of(context).yellowCardDraftStore;
+    if (draftStore == null) return;
+    final draft = await draftStore.load(widget.matchId);
+    if (!mounted || draft == null) return;
+    final options = _currentYellowOptions();
+    YellowParticipantOption? selected;
+    for (final option in options) {
+      if (option.participantRef.matchParticipantId == draft.participantId &&
+          (draft.participantStatus == null ||
+              option.status == draft.participantStatus)) {
+        selected = option;
+        break;
+      }
+    }
+    if (draft.phase == YellowCardDraftPhase.secondCautionAcknowledgement) {
+      setState(() {
+        _secondCautionParticipant = selected;
+        _secondCautionRecordId = draft.committedRecordId;
+      });
+      return;
+    }
+    setState(() {
+      _yellowOpen = true;
+      _yellowSelected = selected;
+      _yellowIntentId = draft.captureIntentId;
+      _yellowPriorExistedAtCommit = draft.priorCautionExisted;
+      _yellowChecking = draft.phase == YellowCardDraftPhase.checking;
+      _yellowFailed = draft.phase == YellowCardDraftPhase.retryable;
+    });
+    if (draft.phase == YellowCardDraftPhase.checking) {
+      await _reconcileYellowIntent();
+    }
+  }
+
+  Future<void> _dismissSecondCautionAcknowledgement() async {
+    await AppScope.of(context).yellowCardDraftStore?.delete(widget.matchId);
+    if (!mounted) return;
+    setState(() {
+      _secondCautionParticipant = null;
+      _secondCautionRecordId = null;
+    });
+  }
+
+  String _yellowParticipantLabel(YellowParticipantOption participant) {
+    final number =
+        participant.shirtNumber == null ? null : '#${participant.shirtNumber}';
+    return [number, participant.displayName ?? participant.teamLabel]
+        .whereType<String>()
+        .join(' ');
+  }
+
   void _startCapture(EventType type) {
     final now = DateTime.now();
     if (_captureType == null &&
@@ -669,28 +1132,55 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                         ? l10n.periodStartIncomplete
                         : '${periodLabel(match.currentState.periodId, l10n)}  ${matchStatusLabel(match, l10n)}';
     final terminalBlockedMessage = showTerminalBlockedReason(
-          eligibility: _terminalEligibility,
-          matchNormallyEnded: _temporal.matchNormallyEnded,
-          matchStarted: _matchStarted,
-        )
+      eligibility: _terminalEligibility,
+      matchNormallyEnded: _temporal.matchNormallyEnded,
+      matchStarted: _matchStarted,
+    )
         ? terminalEligibilityMessage(l10n, _terminalEligibility!)
         : null;
-    final legacyHalfTimeVisible = !_intervalActive &&
-        _endedPeriod == null &&
-        _activePeriod == null;
+    final legacyHalfTimeVisible =
+        !_intervalActive && _endedPeriod == null && _activePeriod == null;
     final recent = match.events.reversed
         .where((event) => event.type != EventType.goal)
         .take(7)
         .toList();
     final recentGoals = _goalProjection.goals.reversed.take(7).toList();
-    final boundaryAvailable =
-        AppScope.of(context).matchApplication != null;
-    final homeScore = boundaryAvailable
-        ? _goalProjection.homeScore
-        : match.score.home;
-    final awayScore = boundaryAvailable
-        ? _goalProjection.awayScore
-        : match.score.away;
+    final yellowOptions = _currentYellowOptions();
+    final yellowHomePlayers = yellowOptions
+        .where(
+          (option) =>
+              option.participantRef.teamSide == ParticipantTeamSide.home &&
+              option.status == ParticipantStatusAtDetermination.onFieldPlayer,
+        )
+        .toList();
+    final yellowAwayPlayers = yellowOptions
+        .where(
+          (option) =>
+              option.participantRef.teamSide == ParticipantTeamSide.away &&
+              option.status == ParticipantStatusAtDetermination.onFieldPlayer,
+        )
+        .toList();
+    final yellowBench = yellowOptions
+        .where(
+          (option) =>
+              option.status == ParticipantStatusAtDetermination.substitute ||
+              option.status ==
+                  ParticipantStatusAtDetermination.substitutedPlayer,
+        )
+        .toList();
+    final yellowOfficials = yellowOptions
+        .where(
+          (option) =>
+              option.status == ParticipantStatusAtDetermination.teamOfficial ||
+              option.status ==
+                  ParticipantStatusAtDetermination.seniorCoachPresent,
+        )
+        .toList();
+    final boundaryAvailable = AppScope.of(context).matchApplication != null;
+    final homeScore =
+        boundaryAvailable ? _goalProjection.homeScore : match.score.home;
+    final awayScore =
+        boundaryAvailable ? _goalProjection.awayScore : match.score.away;
 
     return Scaffold(
       appBar: AppBar(
@@ -710,6 +1200,43 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
           ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              if (_secondCautionRecordId != null)
+                Card(
+                  key: const Key('second-caution-acknowledgement'),
+                  color: Theme.of(context).colorScheme.errorContainer,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          l10n.secondCautionRecorded,
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onErrorContainer,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
+                        if (_secondCautionParticipant != null)
+                          Text(
+                            _yellowParticipantLabel(
+                              _secondCautionParticipant!,
+                            ),
+                          ),
+                        Text(l10n.noRedCardRecorded),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: _dismissSecondCautionAcknowledgement,
+                            child: Text(l10n.dismiss),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               Text(
                 '$clock  $temporalLabel',
                 style: Theme.of(context).textTheme.headlineSmall,
@@ -726,8 +1253,9 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                 Text(l10n.noActivePlayingPeriod),
               ] else if (_temporal.bothOrdinaryPeriodsEnded)
                 Text(l10n.noActivePlayingPeriod),
-              if (terminalBlockedMessage != null)
-                Text(terminalBlockedMessage),
+              if (terminalBlockedMessage != null) Text(terminalBlockedMessage),
+              if (_fieldEntryLifecycleIncomplete)
+                Text(l10n.fieldEntryLifecycleIncomplete),
               if (cutOverClock &&
                   !_intervalActive &&
                   _elapsed.continuity !=
@@ -749,9 +1277,19 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                 children: [
                   if (match.status == MatchStatus.ready &&
                       !_matchStarted &&
+                      !_temporallyIncomplete &&
+                      !_refereeEnteredFieldCommitted)
+                    FilledButton(
+                      key: const Key('enter-field'),
+                      onPressed: _fieldEntryPending ? null : _enterField,
+                      child: Text(l10n.enterField),
+                    ),
+                  if (match.status == MatchStatus.ready &&
+                      !_matchStarted &&
                       !_temporallyIncomplete)
                     FilledButton(
-                      onPressed: _kickOffPending ? null : _kickOff,
+                      key: const Key('kick-off'),
+                      onPressed: _kickOffActionable ? _kickOff : null,
                       child: Text(l10n.kickOff),
                     ),
                   if (_temporallyIncomplete)
@@ -878,7 +1416,13 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                       child: FilledButton(
                         onPressed: type == EventType.goal
                             ? (_goalPending ? null : _openGoalSideChoice)
-                            : () => _startCapture(type),
+                            : type == EventType.yellowCard
+                                ? (_yellowSaving ||
+                                        _yellowChecking ||
+                                        !_cardDisplayAuthorityOpen
+                                    ? null
+                                    : _openYellowSelector)
+                                : () => _startCapture(type),
                         child: Text(eventTypeLabel(type, l10n)),
                       ),
                     ),
@@ -965,7 +1509,9 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                 ),
               ),
             ),
-          if (_captureType != null && _captureType != EventType.goal)
+          if (_captureType != null &&
+              _captureType != EventType.goal &&
+              _captureType != EventType.yellowCard)
             Positioned.fill(
               child: CaptureOverlay(
                 match: match,
@@ -976,6 +1522,11 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                       _captureType = null;
                       _goalSideChoice = true;
                     });
+                    return;
+                  }
+                  if (type == EventType.yellowCard) {
+                    setState(() => _captureType = null);
+                    unawaited(_openYellowSelector());
                     return;
                   }
                   setState(() => _captureType = type);
@@ -992,6 +1543,23 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                   setState(() => _captureType = null);
                   await session.saveEvent(type: type, data: data);
                 },
+              ),
+            ),
+          if (_yellowOpen)
+            Positioned.fill(
+              child: YellowCardCaptureOverlay(
+                homePlayers: yellowHomePlayers,
+                awayPlayers: yellowAwayPlayers,
+                bench: yellowBench,
+                officials: yellowOfficials,
+                selected: _yellowSelected,
+                loading: _yellowLoading,
+                saving: _yellowSaving,
+                checking: _yellowChecking,
+                failed: _yellowFailed,
+                onSelect: _selectYellowParticipant,
+                onCommit: _commitYellowCard,
+                onCancel: _cancelYellowSelector,
               ),
             ),
         ],

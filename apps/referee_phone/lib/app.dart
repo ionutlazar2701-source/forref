@@ -4,6 +4,9 @@ import 'package:referee_phone/infrastructure/database/local_match_database.dart'
 import 'package:referee_phone/infrastructure/competition_rules/phone_match_capture_context.dart';
 import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
 import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_store.dart';
+import 'package:referee_phone/infrastructure/yellow_card/phone_match_foundation.dart';
+import 'package:referee_phone/infrastructure/yellow_card/phone_participant_registry_store.dart';
+import 'package:referee_phone/infrastructure/yellow_card/phone_yellow_card_draft_store.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
 import 'package:referee_phone/match_application/match_application_boundary.dart';
 import 'package:referee_phone/routing/app_router.dart';
@@ -16,6 +19,9 @@ class RefereeApp extends StatefulWidget {
     this.captureIdentity,
     this.matchCaptureContext,
     this.temporalEvidence,
+    this.yellowCardDraftStore,
+    this.participantRegistry,
+    this.matchFoundation,
   });
 
   final LocalMatchDatabase database;
@@ -28,6 +34,9 @@ class RefereeApp extends StatefulWidget {
   final PhoneMatchCaptureContext? matchCaptureContext;
 
   final PhoneTemporalEvidenceStore? temporalEvidence;
+  final PhoneYellowCardDraftStore? yellowCardDraftStore;
+  final PhoneParticipantRegistryStore? participantRegistry;
+  final PhoneMatchFoundation? matchFoundation;
 
   @override
   State<RefereeApp> createState() => _RefereeAppState();
@@ -51,6 +60,9 @@ class _RefereeAppState extends State<RefereeApp> {
       captureIdentity: widget.captureIdentity,
       matchCaptureContext: widget.matchCaptureContext,
       temporalEvidence: widget.temporalEvidence,
+      yellowCardDraftStore: widget.yellowCardDraftStore,
+      participantRegistry: widget.participantRegistry,
+      matchFoundation: widget.matchFoundation,
       child: ValueListenableBuilder<Locale?>(
         valueListenable: locale,
         builder: (context, resolved, _) {

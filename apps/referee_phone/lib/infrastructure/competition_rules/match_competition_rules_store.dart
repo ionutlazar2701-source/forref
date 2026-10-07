@@ -19,7 +19,7 @@ final class MatchCompetitionRulesStore {
   final File _file;
 
   Future<CompetitionRulesContext> loadForMatch(String matchId) async {
-    final all = await _readAll();
+    final all = _readAll();
     return all[matchId] ?? unresolvedDefault;
   }
 
@@ -27,24 +27,24 @@ final class MatchCompetitionRulesStore {
     String matchId,
     CompetitionRulesContext rules,
   ) async {
-    final all = await _readAll();
+    final all = _readAll();
     all[matchId] = rules;
-    await _writeAll(all);
+    _writeAll(all);
   }
 
   /// Creates an explicit unresolved rules entry for a new match.
   Future<void> ensureForMatch(String matchId) async {
-    final all = await _readAll();
+    final all = _readAll();
     if (all.containsKey(matchId)) return;
     all[matchId] = unresolvedDefault;
-    await _writeAll(all);
+    _writeAll(all);
   }
 
-  Future<Map<String, CompetitionRulesContext>> _readAll() async {
+  Map<String, CompetitionRulesContext> _readAll() {
     if (!_file.existsSync()) return {};
     late final String raw;
     try {
-      raw = await _file.readAsString();
+      raw = _file.readAsStringSync();
     } on FileSystemException {
       return {};
     }
@@ -63,7 +63,7 @@ final class MatchCompetitionRulesStore {
     return out;
   }
 
-  Future<void> _writeAll(Map<String, CompetitionRulesContext> all) async {
+  void _writeAll(Map<String, CompetitionRulesContext> all) {
     if (!_file.parent.existsSync()) {
       _file.parent.createSync(recursive: true);
     }
@@ -71,7 +71,7 @@ final class MatchCompetitionRulesStore {
     for (final entry in all.entries) {
       encoded[entry.key] = _encode(entry.value);
     }
-    await _file.writeAsString(jsonEncode(encoded), flush: true);
+    _file.writeAsStringSync(jsonEncode(encoded), flush: true);
   }
 
   CompetitionRulesContext _decode(Map<dynamic, dynamic> json) {
@@ -81,7 +81,8 @@ final class MatchCompetitionRulesStore {
     }
     return CompetitionRulesContext(
       rulesetId: rulesetId,
-      additionalPlayingPhase: _decodeDisposition(json['additionalPlayingPhase']),
+      additionalPlayingPhase:
+          _decodeDisposition(json['additionalPlayingPhase']),
       penaltyShootOutAfterMatchEnd:
           json['penaltyShootOutAfterMatchEnd'] == true,
       disciplinarySystem: _decodeDisciplinarySystem(json['disciplinarySystem']),

@@ -36,12 +36,14 @@ final class SqliteDurableMatchStore
   SqliteDurableMatchStore._(this._db);
 
   final Database _db;
-  Future<void> _queue = Future<void>.value();
 
   /// Test-only abort injected after insert and before `COMMIT`.
   ///
   /// A throw rolls the transaction back. It does not simulate power loss.
   void Function()? abortBeforeCommitForTest;
+
+  /// Test-only abort injected at the start of [readCommittedForMatch].
+  void Function()? abortBeforeReadForTest;
 
   /// Opens [file], applies the D1 pragmas, and creates the append-only table.
   ///
@@ -119,7 +121,7 @@ final class SqliteDurableMatchStore
 
   @override
   Future<DurableCommitResult> commit(MatchRecord record) {
-    return _serialized(() async => _commit(record));
+    return _serialized(() => _commit(record));
   }
 
   @override
@@ -128,7 +130,7 @@ final class SqliteDurableMatchStore
     String? Function(List<MatchRecord> committedForMatch)? rejectCommitted,
   }) {
     return _serialized(
-      () async => _commitAtNextOriginSequence(
+      () => _commitAtNextOriginSequence(
         request,
         rejectCommitted: rejectCommitted,
       ),
@@ -298,12 +300,16 @@ final class SqliteDurableMatchStore
 
   @override
   Future<MatchRecord?> getById(String recordId) {
-    return _serialized(() async => _readById(recordId));
+    return _serialized(() => _readById(recordId));
   }
 
   @override
   Future<List<MatchRecord>> readCommittedForMatch(String matchId) {
-    return _serialized(() async {
+    return _serialized(() {
+      final abort = abortBeforeReadForTest;
+      if (abort != null) {
+        abort();
+      }
       final rows = _db.select(
         '''
         SELECT record_json FROM committed_match_records
@@ -324,7 +330,7 @@ final class SqliteDurableMatchStore
     required String matchId,
     required String originDeviceId,
   }) {
-    return _serialized(() async => _originSequenceFrontier(
+    return _serialized(() => _originSequenceFrontier(
           matchId: matchId,
           originDeviceId: originDeviceId,
         ));
@@ -417,14 +423,12 @@ final class SqliteDurableMatchStore
     return _db.select('PRAGMA $name').first.columnAt(0).toString();
   }
 
-  Future<T> _serialized<T>(Future<T> Function() action) {
-    final result = _queue.then((_) => action());
-    _queue = result.then((_) {}, onError: (Object error, StackTrace stackTrace) {});
-    return result;
+  Future<T> _serialized<T>(T Function() action) {
+    return Future<T>.sync(action);
   }
 
   Future<void> close() {
-    return _serialized(() async {
+    return _serialized(() {
       _db.close();
     });
   }

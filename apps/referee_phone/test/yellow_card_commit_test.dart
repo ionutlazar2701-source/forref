@@ -116,7 +116,27 @@ void main() {
     expect(yellows.single.recordKind, RecordKind.humanDetermination);
   });
 
-  test('no legacy yellow event and no yellow card UI', () {
+  test('empty captureIntentId returns typed rejection through phone boundary',
+      () async {
+    await prepare();
+    final result = await composition.boundary.commitYellowCard(
+      CommitYellowCardCommand(
+        context: context(),
+        participantRef: participant,
+        participantStatusAtDetermination:
+            ParticipantStatusAtDetermination.onFieldPlayer,
+        disciplinaryAccountingScope: DisciplinaryAccountingScope.match,
+        captureIntentId: '',
+      ),
+    );
+    expect(result, isA<YellowCardCommitRejected>());
+    expect(
+      (result as YellowCardCommitRejected).failure,
+      YellowCardCommitFailure.invalidCaptureIntent,
+    );
+  });
+
+  test('phone Yellow UI is isolated from legacy MatchSession authority', () {
     final session = File('lib/match/match_session.dart').readAsStringSync();
     expect(session, isNot(contains('commitYellowCard')));
     expect(session, contains('upsertMatch'));
@@ -127,16 +147,13 @@ void main() {
     expect(boundary, isNot(contains('package:match_core')));
     expect(boundary, isNot(contains('EventType.yellowCard')));
 
-    final features = Directory('lib/features')
-        .listSync(recursive: true)
-        .whereType<File>()
-        .where((file) => file.path.endsWith('.dart'));
-    for (final file in features) {
-      final text = file.readAsStringSync();
-      expect(text, isNot(contains('commitYellowCard')));
-      expect(text, isNot(contains('standingCautions')));
-      expect(text, isNot(contains('historicalCautions')));
-    }
+    final legacyOverlay =
+        File('lib/features/live_match/capture_overlay.dart').readAsStringSync();
+    expect(legacyOverlay, isNot(contains('commitYellowCard')));
+    final livePage =
+        File('lib/features/live_match/live_match_page.dart').readAsStringSync();
+    expect(livePage, contains('commitYellowCard'));
+    expect(livePage, contains('YellowCardCaptureOverlay'));
 
     expect(
       Directory(temp.path).listSync(recursive: true).whereType<File>().map(

@@ -39,6 +39,10 @@
   "playerNumber": "Number",
   "playerName": "Name",
   "liveMatch": "Live Match",
+  "enterField": "Enter field",
+  "enterFieldSaved": "Entered field",
+  "enterFieldNotSaved": "Field entry was not saved",
+  "fieldEntryLifecycleIncomplete": "Field entry was not recorded before the match started",
   "kickOff": "Kick-off",
   "matchStarted": "Match started",
   "kickOffNotSaved": "Kick-off was not saved",
@@ -142,5 +146,36 @@
       "clock": {"type": "String"},
       "minutes": {"type": "int"}
     }
-  }
+  },
+  "recordYellow": "Record Yellow",
+  "recordSecondCaution": "Record second caution",
+  "saving": "Saving…",
+  "yellowSavedParticipant": "Yellow saved · {participant}",
+  "@yellowSavedParticipant": {
+    "placeholders": {
+      "participant": {"type": "String"}
+    }
+  },
+  "priorCautionRecorded": "PRIOR CAUTION RECORDED",
+  "identityProvisional": "Identity provisional",
+  "cautionHistoryCannotBeConfirmed": "Caution history cannot be confirmed",
+  "cannotIdentifyParticipantReliably": "Cannot identify participant reliably",
+  "participantDetailsConflict": "Participant details conflict",
+  "notSaved": "Not saved",
+  "retry": "Retry",
+  "checkingSaveStatus": "Checking save status…",
+  "checkingCautionHistory": "Checking caution history…",
+  "secondCautionRecorded": "SECOND CAUTION RECORDED",
+  "noRedCardRecorded": "No red card has been recorded",
+  "dismiss": "Dismiss",
+  "bench": "Bench",
+  "officials": "Officials",
+  "noOnFieldParticipants": "No on-field participants",
+  "noBenchParticipants": "No bench participants",
+  "noOfficials": "No officials",
+  "onField": "On field",
+  "substitute": "Substitute",
+  "substitutedPlayer": "Substituted player",
+  "teamOfficial": "Team official",
+  "seniorCoachPresent": "Senior coach present"
 }
