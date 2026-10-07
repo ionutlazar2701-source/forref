@@ -42,6 +42,7 @@
   "enterField": "Enter field",
   "enterFieldSaved": "Entered field",
   "enterFieldNotSaved": "Field entry was not saved",
+  "fieldEntryLifecycleIncomplete": "Field entry was not recorded before the match started",
   "kickOff": "Kick-off",
   "matchStarted": "Match started",
   "kickOffNotSaved": "Kick-off was not saved",

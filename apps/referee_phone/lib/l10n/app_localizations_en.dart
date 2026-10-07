@@ -138,6 +138,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enterFieldNotSaved => 'Field entry was not saved';
 
   @override
+  String get fieldEntryLifecycleIncomplete =>
+      'Field entry was not recorded before the match started';
+
+  @override
   String get kickOff => 'Kick-off';
 
   @override

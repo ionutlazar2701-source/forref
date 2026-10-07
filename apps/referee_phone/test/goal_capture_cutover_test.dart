@@ -127,8 +127,14 @@ void main() {
       find.text('Kick-off'),
       find.text('Complete period start'),
     ]);
+    final enterField = find.byKey(const Key('enter-field'));
+    if (enterField.evaluate().isNotEmpty) {
+      await tester.tap(enterField);
+      await tester.pump();
+      await pumpUntilFound(tester, find.text('Entered field'));
+    }
     await tester.runAsync(() async {
-      await tester.tap(find.text('Kick-off'));
+      await tester.tap(find.byKey(const Key('kick-off')));
       await Future<void>.delayed(const Duration(seconds: 3));
     });
     await tester.pump();

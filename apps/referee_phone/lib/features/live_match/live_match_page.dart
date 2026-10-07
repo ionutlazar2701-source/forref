@@ -549,6 +549,12 @@ class _LiveMatchPageState extends State<LiveMatchPage>
     }
   }
 
+  bool get _fieldEntryLifecycleIncomplete =>
+      _matchStarted && !_refereeEnteredFieldCommitted;
+
+  bool get _kickOffActionable =>
+      _refereeEnteredFieldCommitted && !_kickOffPending;
+
   Future<void> _kickOff() async {
     final scope = AppScope.of(context);
     final l10n = AppLocalizations.of(context);
@@ -559,6 +565,9 @@ class _LiveMatchPageState extends State<LiveMatchPage>
         captureContext == null ||
         _kickOffPending ||
         _activePeriod != null) {
+      return;
+    }
+    if (!_temporallyIncomplete && !_refereeEnteredFieldCommitted) {
       return;
     }
     setState(() => _kickOffPending = true);
@@ -1245,6 +1254,8 @@ class _LiveMatchPageState extends State<LiveMatchPage>
               ] else if (_temporal.bothOrdinaryPeriodsEnded)
                 Text(l10n.noActivePlayingPeriod),
               if (terminalBlockedMessage != null) Text(terminalBlockedMessage),
+              if (_fieldEntryLifecycleIncomplete)
+                Text(l10n.fieldEntryLifecycleIncomplete),
               if (cutOverClock &&
                   !_intervalActive &&
                   _elapsed.continuity !=
@@ -1277,7 +1288,8 @@ class _LiveMatchPageState extends State<LiveMatchPage>
                       !_matchStarted &&
                       !_temporallyIncomplete)
                     FilledButton(
-                      onPressed: _kickOffPending ? null : _kickOff,
+                      key: const Key('kick-off'),
+                      onPressed: _kickOffActionable ? _kickOff : null,
                       child: Text(l10n.kickOff),
                     ),
                   if (_temporallyIncomplete)

@@ -42,6 +42,7 @@
   "enterField": "Intră pe teren",
   "enterFieldSaved": "Intrare pe teren înregistrată",
   "enterFieldNotSaved": "Intrarea pe teren nu a fost salvată",
+  "fieldEntryLifecycleIncomplete": "Intrarea pe teren nu a fost înregistrată înainte de startul meciului",
   "kickOff": "Start",
   "matchStarted": "Meci început",
   "kickOffNotSaved": "Startul nu a fost salvat",

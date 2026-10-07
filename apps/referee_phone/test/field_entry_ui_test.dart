@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:forref_match_core/forref_match_core.dart';
 import 'package:match_core/match_core.dart';
 import 'package:referee_phone/app.dart';
+import 'package:referee_phone/features/live_match/yellow_card_capture_overlay.dart';
 import 'package:referee_phone/infrastructure/competition_rules/match_competition_rules_store.dart';
 import 'package:referee_phone/infrastructure/competition_rules/phone_match_capture_context.dart';
 import 'package:referee_phone/infrastructure/database/local_match_database.dart';
@@ -29,6 +30,60 @@ void main() {
   testWidgets('opening Live Match does not commit field entry', (tester) async {
     await fixture.openLive(tester);
     expect(await fixture.fieldEntryCount(), 0);
+  });
+
+  testWidgets('READY without field entry keeps Kick-off disabled', (tester) async {
+    await fixture.openLive(tester);
+    expect(
+      tester.widget<FilledButton>(find.byKey(const Key('kick-off'))).onPressed,
+      isNull,
+    );
+  });
+
+  testWidgets('opening Live Match alone does not unlock Kick-off', (tester) async {
+    await fixture.openLive(tester);
+    await fixture.reopenLive(tester);
+    expect(
+      tester.widget<FilledButton>(find.byKey(const Key('kick-off'))).onPressed,
+      isNull,
+    );
+  });
+
+  testWidgets('successful Enter field unlocks Kick-off', (tester) async {
+    await fixture.openLive(tester);
+    await fixture.tapEnterField(tester);
+    await fixture.pumpUntil(tester, find.text('Entered field'));
+    expect(
+      tester.widget<FilledButton>(find.byKey(const Key('kick-off'))).onPressed,
+      isNotNull,
+    );
+  });
+
+  testWidgets('failed Enter field D1 keeps Kick-off disabled', (tester) async {
+    await fixture.openLive(tester);
+    fixture.composition.boundary.durableStore.abortBeforeCommitForTest = () {
+      throw StateError('abort before commit');
+    };
+    await tester.tap(find.byKey(const Key('enter-field')));
+    await tester.pump();
+    await fixture.pumpUntil(tester, find.text('Field entry was not saved'));
+    expect(
+      tester.widget<FilledButton>(find.byKey(const Key('kick-off'))).onPressed,
+      isNull,
+    );
+    fixture.composition.boundary.durableStore.abortBeforeCommitForTest = null;
+  });
+
+  testWidgets('reopen after field entry restores Kick-off availability',
+      (tester) async {
+    await fixture.openLive(tester);
+    await fixture.tapEnterField(tester);
+    await fixture.pumpUntil(tester, find.text('Entered field'));
+    await fixture.reopenLive(tester);
+    expect(
+      tester.widget<FilledButton>(find.byKey(const Key('kick-off'))).onPressed,
+      isNotNull,
+    );
   });
 
   testWidgets('reopening Live Match does not commit field entry', (tester) async {
@@ -84,8 +139,7 @@ void main() {
     );
   });
 
-  testWidgets('Yellow after Enter field opens selector pre-kick-off',
-      (tester) async {
+  testWidgets('Enter field then Yellow then Kick-off is valid', (tester) async {
     await fixture.openLive(tester);
     await fixture.tapEnterField(tester);
     await fixture.pumpUntil(tester, find.text('Entered field'));
@@ -95,25 +149,63 @@ void main() {
       tester,
       find.byKey(const Key('yellow-option-mpid-test-1')),
     );
-    expect(find.text('Kick-off'), findsOneWidget);
-  });
-
-  testWidgets('MATCH_STARTED alone does not fabricate field entry',
-      (tester) async {
-    await fixture.openLive(tester);
+    expect(
+      tester.widget<FilledButton>(find.byKey(const Key('kick-off'))).onPressed,
+      isNotNull,
+    );
+    tester
+        .widget<YellowCardCaptureOverlay>(
+          find.byType(YellowCardCaptureOverlay),
+        )
+        .onCancel
+        .call();
+    await tester.pump();
     await tester.runAsync(() async {
-      await tester.tap(find.text('Kick-off'));
+      tester
+          .widget<FilledButton>(find.byKey(const Key('kick-off')))
+          .onPressed!
+          .call();
       await Future<void>.delayed(const Duration(seconds: 3));
     });
     await tester.pump();
     await fixture.pumpUntil(tester, find.text('Match started'));
+    expect(await fixture.fieldEntryCount(), 1);
+  });
+
+  testWidgets('MATCH_STARTED without field entry is lifecycle-incomplete',
+      (tester) async {
+    await fixture.openLive(tester);
+    await tester.runAsync(() async {
+      await fixture.seedMatchStartedWithoutFieldEntry();
+    });
+    await fixture.reopenLive(tester);
+    await fixture.pumpUntil(
+      tester,
+      find.text('Field entry was not recorded before the match started'),
+    );
     expect(await fixture.fieldEntryCount(), 0);
+    expect(
+      find.text('Field entry was not recorded before the match started'),
+      findsOneWidget,
+    );
     expect(
       tester
           .widget<FilledButton>(find.widgetWithText(FilledButton, 'Yellow'))
           .onPressed,
       isNull,
     );
+  });
+
+  testWidgets('MATCH_STARTED alone does not fabricate field entry',
+      (tester) async {
+    await fixture.openLive(tester);
+    await tester.runAsync(() async {
+      await fixture.seedMatchStartedWithoutFieldEntry();
+    });
+    await fixture.reopenLive(tester);
+    await fixture.pumpUntil(tester, find.text('Complete period start'));
+    expect(await fixture.fieldEntryCount(), 0);
+    expect(find.text('Match started'), findsOneWidget);
   });
 }
 
@@ -126,6 +218,7 @@ final class _FieldEntryFixture {
     required this.capture,
     required this.registry,
     required this.foundation,
+    required this.evidence,
     required this.matchId,
   });
 
@@ -136,6 +229,7 @@ final class _FieldEntryFixture {
   final PhoneMatchCaptureContext capture;
   final PhoneParticipantRegistryStore registry;
   final PhoneMatchFoundation foundation;
+  final PhoneTemporalEvidenceStore evidence;
   final String matchId;
 
   static Future<_FieldEntryFixture> create() async {
@@ -149,6 +243,7 @@ final class _FieldEntryFixture {
       rulesStore: MatchCompetitionRulesStore(temp),
     );
     final registry = PhoneParticipantRegistryStore(temp);
+    final evidence = PhoneTemporalEvidenceStore(storageRoot: temp);
     final foundation = PhoneMatchFoundation(
       boundary: composition.boundary,
       registry: registry,
@@ -188,6 +283,7 @@ final class _FieldEntryFixture {
       capture: capture,
       registry: registry,
       foundation: foundation,
+      evidence: evidence,
       matchId: match.matchId,
     );
     await fixture._registerRosterOnly();
@@ -205,7 +301,7 @@ final class _FieldEntryFixture {
         matchApplication: composition.boundary,
         captureIdentity: identity,
         matchCaptureContext: capture,
-        temporalEvidence: PhoneTemporalEvidenceStore(storageRoot: temp),
+        temporalEvidence: evidence,
         participantRegistry: registry,
         matchFoundation: foundation,
       );
@@ -216,7 +312,28 @@ final class _FieldEntryFixture {
     await pumpUntil(tester, find.text('Matches'));
     await tester.tap(find.text('HOME 0 — 0 AWAY').first);
     await tester.pump();
-    await pumpUntil(tester, find.text('Kick-off'));
+    await pumpUntilLiveMatchSettled(tester);
+  }
+
+  Future<void> pumpUntilLiveMatchSettled(WidgetTester tester) async {
+    for (var i = 0; i < 100; i++) {
+      await tester.runAsync(() => Future<void>.value());
+      await tester.pump(const Duration(milliseconds: 50));
+      if (find.text('Match started').evaluate().isNotEmpty) return;
+      if (find.text('Complete period start').evaluate().isNotEmpty) return;
+      if (find.text('Field entry was not recorded before the match started')
+          .evaluate()
+          .isNotEmpty) {
+        return;
+      }
+      if (find.byKey(const Key('enter-field')).evaluate().isNotEmpty) return;
+      final kickOff = find.byKey(const Key('kick-off'));
+      if (kickOff.evaluate().isNotEmpty &&
+          find.byKey(const Key('enter-field')).evaluate().isEmpty) {
+        return;
+      }
+    }
+    fail('Timed out waiting for Live Match to settle');
   }
 
   Future<void> reopenLive(WidgetTester tester) async {
@@ -228,6 +345,12 @@ final class _FieldEntryFixture {
   Future<void> tapEnterField(WidgetTester tester) async {
     await tester.tap(find.byKey(const Key('enter-field')));
     await tester.pump();
+  }
+
+  Future<void> seedMatchStartedWithoutFieldEntry() async {
+    final context = await capture.captureContextFor(matchId);
+    final result = await composition.boundary.commitMatchStarted(context);
+    expect(result, isA<DurableCommitSuccess>());
   }
 
   Future<int> fieldEntryCount() async {

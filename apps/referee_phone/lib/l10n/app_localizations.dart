@@ -350,6 +350,12 @@ abstract class AppLocalizations {
   /// **'Field entry was not saved'**
   String get enterFieldNotSaved;
 
+  /// No description provided for @fieldEntryLifecycleIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Field entry was not recorded before the match started'**
+  String get fieldEntryLifecycleIncomplete;
+
   /// No description provided for @kickOff.
   ///
   /// In en, this message translates to:

@@ -138,6 +138,10 @@ class AppLocalizationsRo extends AppLocalizations {
   String get enterFieldNotSaved => 'Intrarea pe teren nu a fost salvată';
 
   @override
+  String get fieldEntryLifecycleIncomplete =>
+      'Intrarea pe teren nu a fost înregistrată înainte de startul meciului';
+
+  @override
   String get kickOff => 'Start';
 
   @override
