@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:forref_match_core/canonical_record_form.dart';
@@ -37,6 +38,7 @@ final class SqliteDurableMatchStore
 
   final Database _db;
   Future<void> _queue = Future<void>.value();
+  int _debugSerialId = 0;
 
   /// Test-only abort injected after insert and before `COMMIT`.
   ///
@@ -171,6 +173,19 @@ final class SqliteDurableMatchStore
       return _insertCommittedRecord(record);
     } catch (error) {
       _rollbackIfNeeded();
+      // #region agent log
+      File('/opt/cursor/logs/debug.log').writeAsStringSync(
+        '${jsonEncode({
+              'hypothesisId': 'B,C',
+              'location':
+                  'sqlite_durable_match_store.dart:_commitAtNextOriginSequence:catch',
+              'message': 'commit abort caught and rolled back',
+              'data': {'errorType': error.runtimeType.toString()},
+              'timestamp': DateTime.now().millisecondsSinceEpoch
+            })}\n',
+        mode: FileMode.append,
+      );
+      // #endregion
       return DurableCommitFailure(
         recordId: request.recordId,
         reason: 'commit aborted: $error',
@@ -257,6 +272,19 @@ final class SqliteDurableMatchStore
 
     final abort = abortBeforeCommitForTest;
     if (abort != null) {
+      // #region agent log
+      File('/opt/cursor/logs/debug.log').writeAsStringSync(
+        '${jsonEncode({
+              'hypothesisId': 'B,C',
+              'location':
+                  'sqlite_durable_match_store.dart:_insertCommittedRecord:abort',
+              'message': 'abort hook invoked before commit',
+              'data': {'recordId': record.recordId},
+              'timestamp': DateTime.now().millisecondsSinceEpoch
+            })}\n',
+        mode: FileMode.append,
+      );
+      // #endregion
       abort();
     }
 
@@ -418,11 +446,83 @@ final class SqliteDurableMatchStore
   }
 
   Future<T> _serialized<T>(Future<T> Function() action) {
-    final result = _queue.then((_) => action());
-    final tail = result.then<void>((_) {},
-        onError: (Object error, StackTrace stackTrace) {});
+    final operationId = ++_debugSerialId;
+    // #region agent log
+    File('/opt/cursor/logs/debug.log').writeAsStringSync(
+      '${jsonEncode({
+            'hypothesisId': 'A,E',
+            'location': 'sqlite_durable_match_store.dart:_serialized:enqueue',
+            'message': 'serialized operation enqueued',
+            'data': {'operationId': operationId},
+            'timestamp': DateTime.now().millisecondsSinceEpoch
+          })}\n',
+      mode: FileMode.append,
+    );
+    // #endregion
+    final result = _queue.then((_) async {
+      // #region agent log
+      File('/opt/cursor/logs/debug.log').writeAsStringSync(
+        '${jsonEncode({
+              'hypothesisId': 'A,B,E',
+              'location': 'sqlite_durable_match_store.dart:_serialized:action',
+              'message': 'serialized action started',
+              'data': {'operationId': operationId},
+              'timestamp': DateTime.now().millisecondsSinceEpoch
+            })}\n',
+        mode: FileMode.append,
+      );
+      // #endregion
+      final value = await action();
+      // #region agent log
+      File('/opt/cursor/logs/debug.log').writeAsStringSync(
+        '${jsonEncode({
+              'hypothesisId': 'A,B',
+              'location': 'sqlite_durable_match_store.dart:_serialized:result',
+              'message': 'serialized action returned',
+              'data': {
+                'operationId': operationId,
+                'resultType': value.runtimeType.toString()
+              },
+              'timestamp': DateTime.now().millisecondsSinceEpoch
+            })}\n',
+        mode: FileMode.append,
+      );
+      // #endregion
+      return value;
+    });
+    final tail = result.then<void>((value) {
+      // #region agent log
+      File('/opt/cursor/logs/debug.log').writeAsStringSync(
+        '${jsonEncode({
+              'hypothesisId': 'A,B,E',
+              'location': 'sqlite_durable_match_store.dart:_serialized:tail',
+              'message': 'serialized tail advanced',
+              'data': {
+                'operationId': operationId,
+                'resultType': value.runtimeType.toString()
+              },
+              'timestamp': DateTime.now().millisecondsSinceEpoch
+            })}\n',
+        mode: FileMode.append,
+      );
+      // #endregion
+    }, onError: (Object error, StackTrace stackTrace) {});
     _queue = tail;
-    return tail.then((_) => result);
+    return tail.then((_) {
+      // #region agent log
+      File('/opt/cursor/logs/debug.log').writeAsStringSync(
+        '${jsonEncode({
+              'hypothesisId': 'A,E',
+              'location': 'sqlite_durable_match_store.dart:_serialized:release',
+              'message': 'serialized caller released',
+              'data': {'operationId': operationId},
+              'timestamp': DateTime.now().millisecondsSinceEpoch
+            })}\n',
+        mode: FileMode.append,
+      );
+      // #endregion
+      return result;
+    });
   }
 
   Future<void> close() {
