@@ -7,6 +7,8 @@ import 'package:referee_phone/infrastructure/competition_rules/phone_match_captu
 import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
 import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_store.dart';
 import 'package:referee_phone/infrastructure/match_memory/match_application_composition.dart';
+import 'package:referee_phone/infrastructure/yellow_card/phone_match_foundation.dart';
+import 'package:referee_phone/infrastructure/yellow_card/phone_participant_registry_store.dart';
 import 'package:referee_phone/infrastructure/yellow_card/phone_yellow_card_draft_store.dart';
 
 Future<void> main() async {
@@ -23,6 +25,11 @@ Future<void> main() async {
   );
   final temporalEvidence = PhoneTemporalEvidenceStore(storageRoot: storageRoot);
   final yellowCardDraftStore = PhoneYellowCardDraftStore(storageRoot);
+  final participantRegistry = PhoneParticipantRegistryStore(storageRoot);
+  final matchFoundation = PhoneMatchFoundation(
+    boundary: composition.boundary,
+    registry: participantRegistry,
+  );
   runApp(
     RefereeApp(
       database: LocalMatchDatabase(),
@@ -31,6 +38,8 @@ Future<void> main() async {
       matchCaptureContext: matchCaptureContext,
       temporalEvidence: temporalEvidence,
       yellowCardDraftStore: yellowCardDraftStore,
+      participantRegistry: participantRegistry,
+      matchFoundation: matchFoundation,
     ),
   );
 }

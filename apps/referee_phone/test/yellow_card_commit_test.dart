@@ -116,6 +116,26 @@ void main() {
     expect(yellows.single.recordKind, RecordKind.humanDetermination);
   });
 
+  test('empty captureIntentId returns typed rejection through phone boundary',
+      () async {
+    await prepare();
+    final result = await composition.boundary.commitYellowCard(
+      CommitYellowCardCommand(
+        context: context(),
+        participantRef: participant,
+        participantStatusAtDetermination:
+            ParticipantStatusAtDetermination.onFieldPlayer,
+        disciplinaryAccountingScope: DisciplinaryAccountingScope.match,
+        captureIntentId: '',
+      ),
+    );
+    expect(result, isA<YellowCardCommitRejected>());
+    expect(
+      (result as YellowCardCommitRejected).failure,
+      YellowCardCommitFailure.invalidCaptureIntent,
+    );
+  });
+
   test('phone Yellow UI is isolated from legacy MatchSession authority', () {
     final session = File('lib/match/match_session.dart').readAsStringSync();
     expect(session, isNot(contains('commitYellowCard')));

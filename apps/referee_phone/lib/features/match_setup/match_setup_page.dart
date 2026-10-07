@@ -147,12 +147,24 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
   Future<void> _goLive() async {
     await _persistSetup();
     final session = _session;
-    if (session == null) return;
+    if (session == null || !mounted) return;
+    final scope = AppScope.of(context);
+    final navigator = Navigator.of(context);
+    final foundation = scope.matchFoundation;
+    final matchCapture = scope.matchCaptureContext;
+    if (foundation != null && matchCapture != null) {
+      final captureContext =
+          await matchCapture.captureContextFor(widget.matchId);
+      await foundation.registerRosterFromMatch(
+        context: captureContext,
+        match: session.match,
+      );
+    }
     if (session.match.status == MatchStatus.setup) {
       await session.goReady();
     }
     if (!mounted) return;
-    await Navigator.of(context).pushNamedAndRemoveUntil(
+    await navigator.pushNamedAndRemoveUntil(
       AppRouter.liveMatch,
       (route) =>
           route.settings.name == AppRouter.matches || route.isFirst,
