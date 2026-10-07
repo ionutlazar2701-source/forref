@@ -459,7 +459,10 @@ final class SqliteDurableMatchStore
       mode: FileMode.append,
     );
     // #endregion
-    final result = _queue.then((_) async {
+    late T value;
+    Object? actionError;
+    StackTrace? actionStackTrace;
+    final tail = _queue.then((_) async {
       // #region agent log
       File('/opt/cursor/logs/debug.log').writeAsStringSync(
         '${jsonEncode({
@@ -472,25 +475,28 @@ final class SqliteDurableMatchStore
         mode: FileMode.append,
       );
       // #endregion
-      final value = await action();
-      // #region agent log
-      File('/opt/cursor/logs/debug.log').writeAsStringSync(
-        '${jsonEncode({
-              'hypothesisId': 'A,B',
-              'location': 'sqlite_durable_match_store.dart:_serialized:result',
-              'message': 'serialized action returned',
-              'data': {
-                'operationId': operationId,
-                'resultType': value.runtimeType.toString()
-              },
-              'timestamp': DateTime.now().millisecondsSinceEpoch
-            })}\n',
-        mode: FileMode.append,
-      );
-      // #endregion
-      return value;
-    });
-    final tail = result.then<void>((value) {
+      try {
+        value = await action();
+        // #region agent log
+        File('/opt/cursor/logs/debug.log').writeAsStringSync(
+          '${jsonEncode({
+                'hypothesisId': 'A,B',
+                'location':
+                    'sqlite_durable_match_store.dart:_serialized:result',
+                'message': 'serialized action returned',
+                'data': {
+                  'operationId': operationId,
+                  'resultType': value.runtimeType.toString()
+                },
+                'timestamp': DateTime.now().millisecondsSinceEpoch
+              })}\n',
+          mode: FileMode.append,
+        );
+        // #endregion
+      } catch (error, stackTrace) {
+        actionError = error;
+        actionStackTrace = stackTrace;
+      }
       // #region agent log
       File('/opt/cursor/logs/debug.log').writeAsStringSync(
         '${jsonEncode({
@@ -499,14 +505,15 @@ final class SqliteDurableMatchStore
               'message': 'serialized tail advanced',
               'data': {
                 'operationId': operationId,
-                'resultType': value.runtimeType.toString()
+                'resultType':
+                    actionError == null ? value.runtimeType.toString() : 'error'
               },
               'timestamp': DateTime.now().millisecondsSinceEpoch
             })}\n',
         mode: FileMode.append,
       );
       // #endregion
-    }, onError: (Object error, StackTrace stackTrace) {});
+    });
     _queue = tail;
     return tail.then((_) {
       // #region agent log
@@ -521,7 +528,11 @@ final class SqliteDurableMatchStore
         mode: FileMode.append,
       );
       // #endregion
-      return result;
+      final error = actionError;
+      if (error != null) {
+        Error.throwWithStackTrace(error, actionStackTrace!);
+      }
+      return value;
     });
   }
 
