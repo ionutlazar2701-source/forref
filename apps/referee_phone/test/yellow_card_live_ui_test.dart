@@ -692,6 +692,10 @@ final class _YellowUiFixture {
       tester,
       find.byKey(const Key('yellow-option-mpid-home-7')),
     );
+    await pumpUntilGone(
+      tester,
+      find.byKey(const Key('yellow-loading')),
+    );
   }
 
   Future<void> pumpUntil(
@@ -705,6 +709,19 @@ final class _YellowUiFixture {
       await tester.pump(const Duration(milliseconds: 50));
     }
     fail('Timed out waiting for $finder');
+  }
+
+  Future<void> pumpUntilGone(
+    WidgetTester tester,
+    Finder finder, {
+    int maxPumps = 100,
+  }) async {
+    for (var i = 0; i < maxPumps; i++) {
+      if (finder.evaluate().isEmpty) return;
+      await tester.runAsync(() => Future<void>(() {}));
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    fail('Timed out waiting for $finder to disappear');
   }
 
   Future<List<MatchRecord>> records(WidgetTester tester) async {
