@@ -61,6 +61,7 @@ class _LiveMatchPageState extends State<LiveMatchPage>
   ParticipantIdentityProjection _participantIdentities =
       ParticipantIdentityProjection.empty;
   DisciplinaryMatchProjection? _disciplinaryProjection;
+  Future<void>? _refreshInFlight;
   Timer? _clockTicker;
   EventType? _captureType;
   bool _goalSideChoice = false;
@@ -112,7 +113,19 @@ class _LiveMatchPageState extends State<LiveMatchPage>
     return identity.contextFor(widget.matchId);
   }
 
-  Future<void> _refreshTemporal() async {
+  Future<void> _refreshTemporal() {
+    final current = _refreshInFlight;
+    if (current != null) return current;
+    final refresh = _performRefreshTemporal();
+    _refreshInFlight = refresh;
+    return refresh.whenComplete(() {
+      if (identical(_refreshInFlight, refresh)) {
+        _refreshInFlight = null;
+      }
+    });
+  }
+
+  Future<void> _performRefreshTemporal() async {
     final scope = AppScope.of(context);
     final boundary = scope.matchApplication;
     final identity = scope.captureIdentity;
