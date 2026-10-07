@@ -8,6 +8,7 @@ import 'package:referee_phone/features/live_match/goal_time_label.dart';
 import 'package:referee_phone/features/live_match/live_match_terminal_ui.dart';
 import 'package:referee_phone/features/live_match/yellow_card_capture_overlay.dart';
 import 'package:referee_phone/features/live_match/yellow_card_phone_read_model.dart';
+import 'package:referee_phone/features/live_match/yellow_card_read_surface.dart';
 import 'package:uuid/uuid.dart';
 import 'package:referee_phone/infrastructure/competition_rules/phone_match_capture_context.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
@@ -1140,8 +1141,35 @@ class _LiveMatchPageState extends State<LiveMatchPage>
         : null;
     final legacyHalfTimeVisible =
         !_intervalActive && _endedPeriod == null && _activePeriod == null;
+    final disciplinary = _disciplinaryProjection;
+    final yellowPolicy = disciplinary == null
+        ? LegacyYellowDataPolicy.authorityOnly
+        : legacyYellowDataPolicy(
+            legacyEvents: match.events,
+            disciplinary: disciplinary,
+          );
+    final yellowPolicyNotice = legacyYellowPolicyNotice(yellowPolicy, l10n);
+    final recentYellowRows = disciplinary == null
+        ? const <YellowCardHistoryRow>[]
+        : buildYellowCardHistoryRows(
+            match: match,
+            disciplinary: disciplinary,
+            identities: _participantIdentities,
+            records: _records,
+            evidenceById: temporalEvidenceById(_recordedEvidence),
+            l10n: l10n,
+            registryEntries: _registryEntries,
+            limit: 7,
+          );
     final recent = match.events.reversed
-        .where((event) => event.type != EventType.goal)
+        .where((event) {
+          if (event.type == EventType.goal) return false;
+          if (event.type == EventType.yellowCard &&
+              yellowPolicy != LegacyYellowDataPolicy.legacyOnly) {
+            return false;
+          }
+          return true;
+        })
         .take(7)
         .toList();
     final recentGoals = _goalProjection.goals.reversed.take(7).toList();
@@ -1429,6 +1457,14 @@ class _LiveMatchPageState extends State<LiveMatchPage>
                 ],
               ),
               const SizedBox(height: 16),
+              if (yellowPolicyNotice.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    yellowPolicyNotice,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
               for (final goal in recentGoals)
                 ListTile(
                   title: Text(
@@ -1438,6 +1474,16 @@ class _LiveMatchPageState extends State<LiveMatchPage>
                     goal.creditedSide == CreditedSide.home
                         ? homeLabel(match, l10n)
                         : awayLabel(match, l10n),
+                  ),
+                ),
+              for (final yellow in recentYellowRows)
+                ListTile(
+                  key: Key('yellow-history-${yellow.recordId}'),
+                  title: Text('${yellow.timeLabel}  ${l10n.yellow}'),
+                  subtitle: Text(
+                    yellow.detailLine.isEmpty
+                        ? yellow.participantLabel
+                        : '${yellow.participantLabel} · ${yellow.detailLine}',
                   ),
                 ),
               for (final event in recent)

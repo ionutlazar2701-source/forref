@@ -465,4 +465,26 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get seniorCoachPresent => 'Antrenor principal prezent';
+
+  @override
+  String get yellowCardShootoutScope => 'Lovituri de departajare';
+
+  @override
+  String get yellowCardSuperseded => 'Înlocuit';
+
+  @override
+  String get yellowCardStandingUnresolved => 'Sancțiune în vigoare nerezolvată';
+
+  @override
+  String yellowCardStandingOrdinal(int ordinal) {
+    return 'Avertisment în vigoare $ordinal';
+  }
+
+  @override
+  String get yellowCardLegacyDataLimitation =>
+      'Cartonașele galbene folosesc doar datele de dinainte de migrare; istoricul Match Memory nu este disponibil.';
+
+  @override
+  String get yellowCardMixedLegacyWithheld =>
+      'Evenimentele vechi de cartonaș galben sunt ascunse; istoricul în vigoare vine din Match Memory.';
 }

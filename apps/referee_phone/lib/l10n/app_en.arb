@@ -177,5 +177,16 @@
   "substitute": "Substitute",
   "substitutedPlayer": "Substituted player",
   "teamOfficial": "Team official",
-  "seniorCoachPresent": "Senior coach present"
+  "seniorCoachPresent": "Senior coach present",
+  "yellowCardShootoutScope": "Shoot-out",
+  "yellowCardSuperseded": "Superseded",
+  "yellowCardStandingUnresolved": "Standing unresolved",
+  "yellowCardStandingOrdinal": "Standing caution {ordinal}",
+  "@yellowCardStandingOrdinal": {
+    "placeholders": {
+      "ordinal": {"type": "int"}
+    }
+  },
+  "yellowCardLegacyDataLimitation": "Yellow cards on this match use pre-cutover data only; Match Memory cautions are not available.",
+  "yellowCardMixedLegacyWithheld": "Older yellow card events are hidden; standing history comes from Match Memory."
 }

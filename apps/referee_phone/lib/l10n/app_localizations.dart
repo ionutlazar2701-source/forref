@@ -961,6 +961,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Senior coach present'**
   String get seniorCoachPresent;
+
+  /// No description provided for @yellowCardShootoutScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoot-out'**
+  String get yellowCardShootoutScope;
+
+  /// No description provided for @yellowCardSuperseded.
+  ///
+  /// In en, this message translates to:
+  /// **'Superseded'**
+  String get yellowCardSuperseded;
+
+  /// No description provided for @yellowCardStandingUnresolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Standing unresolved'**
+  String get yellowCardStandingUnresolved;
+
+  /// No description provided for @yellowCardStandingOrdinal.
+  ///
+  /// In en, this message translates to:
+  /// **'Standing caution {ordinal}'**
+  String yellowCardStandingOrdinal(int ordinal);
+
+  /// No description provided for @yellowCardLegacyDataLimitation.
+  ///
+  /// In en, this message translates to:
+  /// **'Yellow cards on this match use pre-cutover data only; Match Memory cautions are not available.'**
+  String get yellowCardLegacyDataLimitation;
+
+  /// No description provided for @yellowCardMixedLegacyWithheld.
+  ///
+  /// In en, this message translates to:
+  /// **'Older yellow card events are hidden; standing history comes from Match Memory.'**
+  String get yellowCardMixedLegacyWithheld;
 }
 
 class _AppLocalizationsDelegate

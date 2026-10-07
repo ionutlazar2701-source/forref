@@ -158,5 +158,16 @@
   "substitute": "Rezervă",
   "substitutedPlayer": "Jucător înlocuit",
   "teamOfficial": "Oficial de echipă",
-  "seniorCoachPresent": "Antrenor principal prezent"
+  "seniorCoachPresent": "Antrenor principal prezent",
+  "yellowCardShootoutScope": "Lovituri de departajare",
+  "yellowCardSuperseded": "Înlocuit",
+  "yellowCardStandingUnresolved": "Sancțiune în vigoare nerezolvată",
+  "yellowCardStandingOrdinal": "Avertisment în vigoare {ordinal}",
+  "@yellowCardStandingOrdinal": {
+    "placeholders": {
+      "ordinal": {"type": "int"}
+    }
+  },
+  "yellowCardLegacyDataLimitation": "Cartonașele galbene folosesc doar datele de dinainte de migrare; istoricul Match Memory nu este disponibil.",
+  "yellowCardMixedLegacyWithheld": "Evenimentele vechi de cartonaș galben sunt ascunse; istoricul în vigoare vine din Match Memory."
 }

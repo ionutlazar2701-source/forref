@@ -79,6 +79,32 @@ void main() {
     },
   );
 
+  testWidgets('committed Yellow appears in live history from Match Memory', (
+    tester,
+  ) async {
+    await fixture.openYellow(tester);
+    await tester.tap(find.byKey(const Key('yellow-option-mpid-home-7')));
+    await tester.pump();
+    await tester.runAsync(() async {
+      tester
+          .widget<FilledButton>(find.byKey(const Key('yellow-commit')))
+          .onPressed!();
+    });
+    await fixture.pumpUntil(tester, find.textContaining('Yellow saved'));
+    expect(find.byKey(const Key('yellow-history')), findsNothing);
+    final recordId = (await fixture.records(tester))
+        .where((r) => r.payload is YellowCardPayload)
+        .single
+        .recordId;
+    expect(find.byKey(Key('yellow-history-$recordId')), findsOneWidget);
+    expect(find.textContaining('10:00  Yellow'), findsNothing);
+    final stored = await fixture.legacyMatch(tester);
+    expect(
+      stored.events.where((e) => e.type == EventType.yellowCard),
+      isEmpty,
+    );
+  });
+
   testWidgets(
     'D1 in-flight freezes selection and one deliberate intent saves once',
     (tester) async {
