@@ -419,8 +419,10 @@ final class SqliteDurableMatchStore
 
   Future<T> _serialized<T>(Future<T> Function() action) {
     final result = _queue.then((_) => action());
-    _queue = result.then((_) {}, onError: (Object error, StackTrace stackTrace) {});
-    return result;
+    final tail = result.then<void>((_) {},
+        onError: (Object error, StackTrace stackTrace) {});
+    _queue = tail;
+    return tail.then((_) => result);
   }
 
   Future<void> close() {
