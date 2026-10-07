@@ -150,14 +150,7 @@ void main() {
       fixture.composition.boundary.durableStore.abortBeforeCommitForTest =
           () => throw StateError('abort Yellow D1');
 
-      await tester.runAsync(
-        tester
-            .widget<YellowCardCaptureOverlay>(
-              find.byType(YellowCardCaptureOverlay),
-            )
-            .onCommit,
-      );
-      await tester.pump();
+      await tester.tap(find.byKey(const Key('yellow-commit')));
       await fixture.pumpUntil(tester, find.text('Not saved'));
       expect(find.byKey(const Key('yellow-selected')), findsOneWidget);
       expect(find.text('Retry'), findsOneWidget);
@@ -172,14 +165,7 @@ void main() {
       );
 
       fixture.composition.boundary.durableStore.abortBeforeCommitForTest = null;
-      await tester.runAsync(
-        tester
-            .widget<YellowCardCaptureOverlay>(
-              find.byType(YellowCardCaptureOverlay),
-            )
-            .onCommit,
-      );
-      await tester.pump();
+      await tester.tap(find.byKey(const Key('yellow-commit')));
       await fixture.pumpUntil(tester, find.textContaining('Yellow saved'));
       final yellows = (await fixture.records(tester))
           .where((record) => record.payload is YellowCardPayload)
@@ -365,9 +351,7 @@ void main() {
               checking: false,
               failed: false,
               onSelect: (_) {},
-              onCommit: () async {
-                committed++;
-              },
+              onCommit: () => committed++,
               onCancel: () {},
             ),
           ),
@@ -392,9 +376,7 @@ void main() {
                 checking: false,
                 failed: false,
                 onSelect: (_) {},
-                onCommit: () async {
-                  committed++;
-                },
+                onCommit: () => committed++,
                 onCancel: () {},
               ),
             ),
