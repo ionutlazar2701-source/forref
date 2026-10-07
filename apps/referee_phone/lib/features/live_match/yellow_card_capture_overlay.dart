@@ -111,7 +111,8 @@ class _YellowCardCaptureOverlayState extends State<YellowCardCaptureOverlay> {
                 ],
               ),
             ),
-            if (widget.loading) const LinearProgressIndicator(),
+            if (widget.loading)
+              const LinearProgressIndicator(key: Key('yellow-loading')),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.all(16),

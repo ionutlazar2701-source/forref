@@ -67,6 +67,18 @@ void main() {
     fail('Timed out waiting for $finder');
   }
 
+  Future<void> pumpUntilNotFound(
+    WidgetTester tester,
+    Finder finder, {
+    int maxPumps = 50,
+  }) async {
+    for (var i = 0; i < maxPumps; i++) {
+      if (finder.evaluate().isEmpty) return;
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    fail('Timed out waiting for $finder to disappear');
+  }
+
   Future<void> pumpUntilAnyFound(
     WidgetTester tester,
     List<Finder> finders, {
@@ -348,6 +360,10 @@ void main() {
     await tester.tap(find.text('Yellow'));
     await tester.pump();
     await pumpUntilFound(tester, find.text('Record Yellow'));
+    await pumpUntilNotFound(
+      tester,
+      find.byKey(const Key('yellow-loading')),
+    );
 
     expect(liveScore('HOME 0 — 0 AWAY'), findsOneWidget);
     final recorded = await readStores(tester);

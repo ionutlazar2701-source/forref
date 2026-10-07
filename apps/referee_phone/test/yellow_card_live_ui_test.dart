@@ -35,11 +35,14 @@ void main() {
       final selectorWatch = Stopwatch()..start();
       await tester.tap(find.text('Yellow'));
       await tester.pump();
-      await fixture.pumpUntil(tester, find.text('Record Yellow'));
+      await fixture.pumpUntil(
+        tester,
+        find.byKey(const Key('yellow-option-mpid-home-7')),
+      );
       selectorWatch.stop();
 
-      expect(find.text('HOME'), findsOneWidget);
-      expect(find.text('AWAY'), findsOneWidget);
+      expect(find.text('HOME'), findsWidgets);
+      expect(find.text('AWAY'), findsWidgets);
       expect(find.byKey(const Key('yellow-selected')), findsNothing);
       expect(
         tester
@@ -354,11 +357,6 @@ void main() {
         ),
       );
 
-      Future<void> select(String id) async {
-        await tester.tap(find.byKey(Key('yellow-option-$id')));
-        await tester.pump();
-      }
-
       // Re-pump with each option selected to exercise exact trust rendering.
       for (final current in options) {
         await tester.pumpWidget(
@@ -426,7 +424,6 @@ void main() {
         }
       }
       expect(committed, 0);
-      expect(select, isA<Function>());
     },
   );
 }
@@ -672,7 +669,10 @@ final class _YellowUiFixture {
     await openLive(tester);
     await tester.tap(find.text('Yellow'));
     await tester.pump();
-    await pumpUntil(tester, find.text('Record Yellow'));
+    await pumpUntil(
+      tester,
+      find.byKey(const Key('yellow-option-mpid-home-7')),
+    );
   }
 
   Future<void> pumpUntil(

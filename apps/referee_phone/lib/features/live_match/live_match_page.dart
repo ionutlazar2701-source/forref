@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:match_core/match_core.dart';
@@ -114,6 +116,22 @@ class _LiveMatchPageState extends State<LiveMatchPage>
     final scope = AppScope.of(context);
     final boundary = scope.matchApplication;
     final identity = scope.captureIdentity;
+    // #region agent log
+    File('/opt/cursor/logs/debug.log').writeAsStringSync(
+      '${jsonEncode({
+            'hypothesisId': 'A,B,D',
+            'location': 'live_match_page.dart:_refreshTemporal:entry',
+            'message': 'refresh entered',
+            'data': {
+              'matchId': widget.matchId,
+              'mounted': mounted,
+              'yellowOpen': _yellowOpen
+            },
+            'timestamp': DateTime.now().millisecondsSinceEpoch
+          })}\n',
+      mode: FileMode.append,
+    );
+    // #endregion
     if (boundary == null || identity == null) return;
     final projection = await boundary.project(
       widget.matchId,
@@ -123,6 +141,24 @@ class _LiveMatchPageState extends State<LiveMatchPage>
     final records = await boundary.durableStore.readCommittedForMatch(
       widget.matchId,
     );
+    // #region agent log
+    File('/opt/cursor/logs/debug.log').writeAsStringSync(
+      '${jsonEncode({
+            'hypothesisId': 'B',
+            'location': 'live_match_page.dart:_refreshTemporal:records',
+            'message': 'durable records loaded',
+            'data': {
+              'recordCount': records.length,
+              'participantRecords': records
+                  .where((record) =>
+                      record.payload is ParticipantRegisteredPayload)
+                  .length
+            },
+            'timestamp': DateTime.now().millisecondsSinceEpoch
+          })}\n',
+      mode: FileMode.append,
+    );
+    // #endregion
     final captureContext = await _captureContext(scope);
     final participantIdentities =
         ParticipantIdentityProjection.derive(records: records);
@@ -172,6 +208,22 @@ class _LiveMatchPageState extends State<LiveMatchPage>
     );
     NormalMatchEndEligibility? terminalEligibility;
     final matchCapture = scope.matchCaptureContext;
+    // #region agent log
+    File('/opt/cursor/logs/debug.log').writeAsStringSync(
+      '${jsonEncode({
+            'hypothesisId': 'C',
+            'location':
+                'live_match_page.dart:_refreshTemporal:eligibility-before',
+            'message': 'terminal eligibility branch',
+            'data': {
+              'hasCapture': matchCapture != null,
+              'started': started.authoritativelyStarted
+            },
+            'timestamp': DateTime.now().millisecondsSinceEpoch
+          })}\n',
+      mode: FileMode.append,
+    );
+    // #endregion
     if (matchCapture != null && started.authoritativelyStarted) {
       terminalEligibility = await assessStoredNormalMatchEndEligibility(
         capture: matchCapture,
@@ -179,6 +231,23 @@ class _LiveMatchPageState extends State<LiveMatchPage>
         records: records,
       );
     }
+    // #region agent log
+    File('/opt/cursor/logs/debug.log').writeAsStringSync(
+      '${jsonEncode({
+            'hypothesisId': 'C,D',
+            'location': 'live_match_page.dart:_refreshTemporal:publish',
+            'message': 'refresh ready to publish',
+            'data': {
+              'mounted': mounted,
+              'identityCount':
+                  participantIdentities.participantsByRegisteredId.length,
+              'disciplinaryReady': true
+            },
+            'timestamp': DateTime.now().millisecondsSinceEpoch
+          })}\n',
+      mode: FileMode.append,
+    );
+    // #endregion
     if (!mounted) return;
     setState(() {
       _matchStarted = started.authoritativelyStarted;
@@ -199,6 +268,22 @@ class _LiveMatchPageState extends State<LiveMatchPage>
       _disciplinaryProjection = disciplinaryProjection;
       _terminalEligibility = terminalEligibility;
     });
+    // #region agent log
+    File('/opt/cursor/logs/debug.log').writeAsStringSync(
+      '${jsonEncode({
+            'hypothesisId': 'A,D',
+            'location': 'live_match_page.dart:_refreshTemporal:exit',
+            'message': 'refresh published',
+            'data': {
+              'yellowOpen': _yellowOpen,
+              'identityCount':
+                  _participantIdentities.participantsByRegisteredId.length
+            },
+            'timestamp': DateTime.now().millisecondsSinceEpoch
+          })}\n',
+      mode: FileMode.append,
+    );
+    // #endregion
     _syncClockTicker();
   }
 
@@ -553,6 +638,21 @@ class _LiveMatchPageState extends State<LiveMatchPage>
 
   @override
   void dispose() {
+    // #region agent log
+    File('/opt/cursor/logs/debug.log').writeAsStringSync(
+      '${jsonEncode({
+            'hypothesisId': 'D,E',
+            'location': 'live_match_page.dart:dispose',
+            'message': 'live page disposing',
+            'data': {
+              'yellowOpen': _yellowOpen,
+              'yellowLoading': _yellowLoading
+            },
+            'timestamp': DateTime.now().millisecondsSinceEpoch
+          })}\n',
+      mode: FileMode.append,
+    );
+    // #endregion
     WidgetsBinding.instance.removeObserver(this);
     _clockTicker?.cancel();
     _session?.dispose();
@@ -677,6 +777,22 @@ class _LiveMatchPageState extends State<LiveMatchPage>
 
   Future<void> _openYellowSelector() async {
     if (_yellowOpen || _yellowSaving || _yellowChecking) return;
+    // #region agent log
+    File('/opt/cursor/logs/debug.log').writeAsStringSync(
+      '${jsonEncode({
+            'hypothesisId': 'A',
+            'location': 'live_match_page.dart:_openYellowSelector:entry',
+            'message': 'yellow selector opening',
+            'data': {
+              'identityCount':
+                  _participantIdentities.participantsByRegisteredId.length,
+              'hasDisciplinary': _disciplinaryProjection != null
+            },
+            'timestamp': DateTime.now().millisecondsSinceEpoch
+          })}\n',
+      mode: FileMode.append,
+    );
+    // #endregion
     final now = DateTime.now();
     if (_lastActionType == EventType.yellowCard &&
         _lastActionAt != null &&
@@ -698,6 +814,23 @@ class _LiveMatchPageState extends State<LiveMatchPage>
       await _refreshTemporal();
     } finally {
       if (mounted) setState(() => _yellowLoading = false);
+      // #region agent log
+      File('/opt/cursor/logs/debug.log').writeAsStringSync(
+        '${jsonEncode({
+              'hypothesisId': 'A,D,E',
+              'location': 'live_match_page.dart:_openYellowSelector:exit',
+              'message': 'yellow selector refresh finished',
+              'data': {
+                'mounted': mounted,
+                'identityCount':
+                    _participantIdentities.participantsByRegisteredId.length,
+                'optionCount': mounted ? _currentYellowOptions().length : -1
+              },
+              'timestamp': DateTime.now().millisecondsSinceEpoch
+            })}\n',
+        mode: FileMode.append,
+      );
+      // #endregion
     }
   }
 
