@@ -189,6 +189,20 @@ bool _goalsEqual(List<ProjectedGoal> left, List<ProjectedGoal> right) {
   return true;
 }
 
+/// Trusted playing-time placement for a period-anchored human determination
+/// (goals, cautions, and other records that cite an active period start).
+ProjectedGoalTemporal projectedPlayingTimeAtRecord({
+  required MatchRecord record,
+  required List<MatchRecord> records,
+  required Map<String, TemporalEvidence> evidenceById,
+}) {
+  return _temporalAtGoal(
+    goal: record,
+    records: records,
+    evidenceById: evidenceById,
+  );
+}
+
 ProjectedGoalTemporal _temporalAtGoal({
   required MatchRecord goal,
   required List<MatchRecord> records,

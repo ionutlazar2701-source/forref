@@ -461,4 +461,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get seniorCoachPresent => 'Senior coach present';
+
+  @override
+  String get yellowCardShootoutScope => 'Shoot-out';
+
+  @override
+  String get yellowCardSuperseded => 'Superseded';
+
+  @override
+  String get yellowCardStandingUnresolved => 'Standing unresolved';
+
+  @override
+  String yellowCardStandingOrdinal(int ordinal) {
+    return 'Standing caution $ordinal';
+  }
+
+  @override
+  String get yellowCardLegacyDataLimitation =>
+      'Yellow cards on this match use pre-cutover data only; Match Memory cautions are not available.';
+
+  @override
+  String get yellowCardMixedLegacyWithheld =>
+      'Older yellow card events are hidden; standing history comes from Match Memory.';
 }
