@@ -42,6 +42,9 @@ final class SqliteDurableMatchStore
   /// A throw rolls the transaction back. It does not simulate power loss.
   void Function()? abortBeforeCommitForTest;
 
+  /// Test-only abort injected at the start of [readCommittedForMatch].
+  void Function()? abortBeforeReadForTest;
+
   /// Opens [file], applies the D1 pragmas, and creates the append-only table.
   ///
   /// SQLite replays or rolls back a hot rollback journal during open.
@@ -303,6 +306,10 @@ final class SqliteDurableMatchStore
   @override
   Future<List<MatchRecord>> readCommittedForMatch(String matchId) {
     return _serialized(() {
+      final abort = abortBeforeReadForTest;
+      if (abort != null) {
+        abort();
+      }
       final rows = _db.select(
         '''
         SELECT record_json FROM committed_match_records
