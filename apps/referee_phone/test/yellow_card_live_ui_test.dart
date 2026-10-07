@@ -289,8 +289,8 @@ void main() {
       await tester.tap(find.text('Bench'));
       await tester.pump();
       expect(find.text('Sub Twelve'), findsOneWidget);
-      expect(find.textContaining('Substitute'), findsOneWidget);
-      expect(find.textContaining('Substituted player'), findsOneWidget);
+      expect(find.text('HOME · Substitute'), findsOneWidget);
+      expect(find.text('HOME · Substituted player'), findsOneWidget);
 
       await tester.tap(find.text('Officials'));
       await tester.pump();
