@@ -292,6 +292,8 @@ void main() {
       expect(find.text('HOME · Substitute'), findsOneWidget);
       expect(find.text('HOME · Substituted player'), findsOneWidget);
 
+      await tester.tap(find.text('Bench'));
+      await tester.pump();
       await tester.tap(find.text('Officials'));
       await tester.pump();
       expect(find.text('Coach Ionescu'), findsOneWidget);
