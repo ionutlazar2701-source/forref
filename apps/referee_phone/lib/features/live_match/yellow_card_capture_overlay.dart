@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:forref_match_core/forref_match_core.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
@@ -64,7 +66,7 @@ class YellowCardCaptureOverlay extends StatefulWidget {
   final bool checking;
   final bool failed;
   final ValueChanged<YellowParticipantOption> onSelect;
-  final VoidCallback onCommit;
+  final Future<void> Function() onCommit;
   final VoidCallback onCancel;
 
   @override
@@ -196,7 +198,8 @@ class _YellowCardCaptureOverlayState extends State<YellowCardCaptureOverlay> {
               padding: const EdgeInsets.all(16),
               child: FilledButton(
                 key: const Key('yellow-commit'),
-                onPressed: canCommit ? widget.onCommit : null,
+                onPressed:
+                    canCommit ? () => unawaited(widget.onCommit()) : null,
                 child: Text(
                   widget.saving
                       ? l10n.saving
