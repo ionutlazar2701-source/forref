@@ -682,6 +682,7 @@ final class _YellowUiFixture {
   }) async {
     for (var i = 0; i < maxPumps; i++) {
       if (finder.evaluate().isNotEmpty) return;
+      await tester.runAsync(() => Future<void>(() {}));
       await tester.pump(const Duration(milliseconds: 50));
     }
     fail('Timed out waiting for $finder');
