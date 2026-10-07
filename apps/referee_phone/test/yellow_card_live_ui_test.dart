@@ -277,6 +277,11 @@ void main() {
     'Bench and Officials are bounded secondary paths including senior coach slot',
     (tester) async {
       await fixture.openYellow(tester);
+      await tester.drag(
+        find.byType(ListView).last,
+        const Offset(0, -300),
+      );
+      await tester.pump();
       expect(find.text('Bench'), findsOneWidget);
       expect(find.text('Officials'), findsOneWidget);
       expect(find.text('Sub Twelve'), findsNothing);
