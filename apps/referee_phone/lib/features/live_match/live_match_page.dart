@@ -16,6 +16,7 @@ import 'package:forref_match_core/forref_match_core.dart';
 import 'package:referee_phone/match/match_session.dart';
 import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
 import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_store.dart';
+import 'package:referee_phone/infrastructure/yellow_card/phone_participant_registry_store.dart';
 import 'package:referee_phone/infrastructure/yellow_card/phone_yellow_card_draft_store.dart';
 import 'package:referee_phone/match_application/kick_off_authority.dart';
 import 'package:referee_phone/match_application/match_started_read_model.dart';
@@ -71,6 +72,8 @@ class _LiveMatchPageState extends State<LiveMatchPage>
   bool _yellowSaving = false;
   bool _yellowChecking = false;
   bool _yellowFailed = false;
+  bool _yellowCommitInFlight = false;
+  List<PhoneParticipantRegistryEntry> _registryEntries = const [];
   YellowParticipantOption? _yellowSelected;
   String? _yellowIntentId;
   bool _yellowPriorExistedAtCommit = false;
@@ -96,8 +99,21 @@ class _LiveMatchPageState extends State<LiveMatchPage>
       if (mounted) setState(() {});
     });
     setState(() => _session = session);
+    await _ensureMatchFoundation(session.match);
     await _refreshTemporal();
     await _restoreYellowDraft();
+  }
+
+  Future<void> _ensureMatchFoundation(Match match) async {
+    final scope = AppScope.of(context);
+    final foundation = scope.matchFoundation;
+    final captureContext = await _captureContext(scope);
+    if (foundation == null || captureContext == null) return;
+    if (match.status == MatchStatus.setup ||
+        match.status == MatchStatus.completed) {
+      return;
+    }
+    await foundation.ensureRefereeEnteredField(captureContext);
   }
 
   Future<CaptureContext?> _captureContext(AppScope scope) async {
@@ -115,6 +131,9 @@ class _LiveMatchPageState extends State<LiveMatchPage>
     final boundary = scope.matchApplication;
     final identity = scope.captureIdentity;
     if (boundary == null || identity == null) return;
+    _registryEntries =
+        await scope.participantRegistry?.loadForMatch(widget.matchId) ??
+            const [];
     final projection = await boundary.project(
       widget.matchId,
       evaluatedAuthorityGeneration:
@@ -672,7 +691,28 @@ class _LiveMatchPageState extends State<LiveMatchPage>
       disciplinary: disciplinary,
       homeLabel: homeLabel(match, l10n),
       awayLabel: awayLabel(match, l10n),
+      registryEntries: _registryEntries,
     );
+  }
+
+  YellowParticipantOption? _resolveYellowSelection(
+    YellowParticipantOption selected,
+  ) {
+    final options = _currentYellowOptions();
+    for (final option in options) {
+      if (option.participantRef.matchParticipantId ==
+              selected.participantRef.matchParticipantId &&
+          option.status == selected.status) {
+        return option;
+      }
+    }
+    for (final option in options) {
+      if (option.participantRef.matchParticipantId ==
+          selected.participantRef.matchParticipantId) {
+        return option;
+      }
+    }
+    return null;
   }
 
   Future<void> _openYellowSelector() async {
@@ -734,37 +774,50 @@ class _LiveMatchPageState extends State<LiveMatchPage>
   }
 
   Future<void> _commitYellowCard() async {
-    if (_yellowSaving || _yellowChecking) return;
+    if (_yellowSaving || _yellowChecking || _yellowCommitInFlight) return;
     final selected = _yellowSelected;
     if (selected == null || selected.identityBlocksCommit) return;
+
+    _yellowCommitInFlight = true;
     final intentId = _yellowIntentId ?? const Uuid().v4();
     setState(() {
       _yellowIntentId = intentId;
-      _yellowPriorExistedAtCommit =
-          selected.priorAwareness == YellowPriorAwareness.exists;
       _yellowSaving = true;
       _yellowFailed = false;
+      _yellowChecking = false;
     });
-    final scope = AppScope.of(context);
-    final draftStore = scope.yellowCardDraftStore;
-    await draftStore?.save(
-      PhoneYellowCardDraft(
-        matchId: widget.matchId,
-        phase: YellowCardDraftPhase.checking,
-        participantId: selected.participantRef.matchParticipantId,
-        participantStatus: selected.status,
-        captureIntentId: intentId,
-        priorCautionExisted: _yellowPriorExistedAtCommit,
-      ),
-    );
 
     try {
+      final scope = AppScope.of(context);
+      final draftStore = scope.yellowCardDraftStore;
+      await draftStore?.save(
+        PhoneYellowCardDraft(
+          matchId: widget.matchId,
+          phase: YellowCardDraftPhase.checking,
+          participantId: selected.participantRef.matchParticipantId,
+          participantStatus: selected.status,
+          captureIntentId: intentId,
+          priorCautionExisted:
+              selected.priorAwareness == YellowPriorAwareness.exists,
+        ),
+      );
+
+      await _refreshTemporal();
+      if (!mounted) return;
+
+      final refreshed = _resolveYellowSelection(selected);
+      if (refreshed == null || refreshed.identityBlocksCommit) {
+        await _markYellowRetryable();
+        return;
+      }
+
       final boundary = scope.matchApplication;
       final captureContext = await _captureContext(scope);
       if (boundary == null || captureContext == null) {
         await _markYellowRetryable();
         return;
       }
+
       TemporalContext temporalContext = TemporalContext(
         domainClockPolicyVersion:
             PhoneCaptureIdentity.domainClockContract.value,
@@ -784,14 +837,20 @@ class _LiveMatchPageState extends State<LiveMatchPage>
           // preserved rather than fabricating match time.
         }
       }
+
       final accountingScope =
-          _disciplinaryProjection?.disciplinaryAccountingScope ??
-              DisciplinaryAccountingScope.unresolved;
+          _disciplinaryProjection?.disciplinaryAccountingScope;
+      if (accountingScope == null ||
+          accountingScope == DisciplinaryAccountingScope.unresolved) {
+        await _markYellowRetryable();
+        return;
+      }
+
       final result = await boundary.commitYellowCard(
         CommitYellowCardCommand(
           context: captureContext,
-          participantRef: selected.participantRef,
-          participantStatusAtDetermination: selected.status,
+          participantRef: refreshed.participantRef,
+          participantStatusAtDetermination: refreshed.status,
           disciplinaryAccountingScope: accountingScope,
           captureIntentId: intentId,
           temporalContext: temporalContext,
@@ -799,17 +858,15 @@ class _LiveMatchPageState extends State<LiveMatchPage>
       );
       if (!mounted) return;
       if (result case YellowCardSaved(:final record)) {
-        await _completeYellowSave(record, selected);
+        await _completeYellowSave(record, refreshed);
       } else {
-        await _markYellowRetryable();
+        await _reconcileYellowIntent();
       }
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _yellowSaving = false;
-        _yellowChecking = true;
-      });
       await _reconcileYellowIntent();
+    } finally {
+      _yellowCommitInFlight = false;
     }
   }
 
@@ -858,14 +915,8 @@ class _LiveMatchPageState extends State<LiveMatchPage>
         await _markYellowRetryable();
       }
     } catch (_) {
-      // Local authority could not yet be read. Stay blocked and reconcile on
-      // the next lifecycle resume rather than exposing another commit.
       if (!mounted) return;
-      setState(() {
-        _yellowSaving = false;
-        _yellowChecking = true;
-        _yellowFailed = false;
-      });
+      await _markYellowRetryable();
     }
   }
 
@@ -890,8 +941,7 @@ class _LiveMatchPageState extends State<LiveMatchPage>
     final projected = _disciplinaryProjection?.historicalCautions
         .where((caution) => caution.recordId == record.recordId)
         .firstOrNull;
-    final secondCaution = _yellowPriorExistedAtCommit ||
-        projected?.isSecondStandingCaution == true;
+    final secondCaution = projected?.isSecondStandingCaution == true;
     final draftStore = AppScope.of(context).yellowCardDraftStore;
     if (secondCaution) {
       await draftStore?.save(
