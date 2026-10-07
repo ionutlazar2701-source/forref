@@ -64,17 +64,7 @@ void main() {
       expect(records.where((r) => r.payload is YellowCardPayload), isEmpty);
 
       final awayNine = find.byKey(const Key('yellow-option-mpid-away-9'));
-      await tester.scrollUntilVisible(
-        awayNine,
-        150,
-        scrollable: find
-            .descendant(
-              of: find.byType(YellowCardCaptureOverlay),
-              matching: find.byType(Scrollable),
-            )
-            .first,
-      );
-      await tester.tap(awayNine);
+      tester.widget<InkWell>(awayNine).onTap!();
       await tester.pump();
       expect(find.textContaining('#9'), findsWidgets);
       records = await fixture.records(tester);
