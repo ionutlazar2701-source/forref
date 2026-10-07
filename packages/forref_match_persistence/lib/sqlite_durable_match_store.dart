@@ -37,7 +37,6 @@ final class SqliteDurableMatchStore
   SqliteDurableMatchStore._(this._db);
 
   final Database _db;
-  Future<void> _queue = Future<void>.value();
   int _debugSerialId = 0;
 
   /// Test-only abort injected after insert and before `COMMIT`.
@@ -121,7 +120,7 @@ final class SqliteDurableMatchStore
 
   @override
   Future<DurableCommitResult> commit(MatchRecord record) {
-    return _serialized(() async => _commit(record));
+    return _serialized(() => _commit(record));
   }
 
   @override
@@ -130,7 +129,7 @@ final class SqliteDurableMatchStore
     String? Function(List<MatchRecord> committedForMatch)? rejectCommitted,
   }) {
     return _serialized(
-      () async => _commitAtNextOriginSequence(
+      () => _commitAtNextOriginSequence(
         request,
         rejectCommitted: rejectCommitted,
       ),
@@ -326,12 +325,12 @@ final class SqliteDurableMatchStore
 
   @override
   Future<MatchRecord?> getById(String recordId) {
-    return _serialized(() async => _readById(recordId));
+    return _serialized(() => _readById(recordId));
   }
 
   @override
   Future<List<MatchRecord>> readCommittedForMatch(String matchId) {
-    return _serialized(() async {
+    return _serialized(() {
       final rows = _db.select(
         '''
         SELECT record_json FROM committed_match_records
@@ -352,7 +351,7 @@ final class SqliteDurableMatchStore
     required String matchId,
     required String originDeviceId,
   }) {
-    return _serialized(() async => _originSequenceFrontier(
+    return _serialized(() => _originSequenceFrontier(
           matchId: matchId,
           originDeviceId: originDeviceId,
         ));
@@ -445,7 +444,7 @@ final class SqliteDurableMatchStore
     return _db.select('PRAGMA $name').first.columnAt(0).toString();
   }
 
-  Future<T> _serialized<T>(Future<T> Function() action) {
+  Future<T> _serialized<T>(T Function() action) {
     final operationId = ++_debugSerialId;
     // #region agent log
     File('/opt/cursor/logs/debug.log').writeAsStringSync(
@@ -459,10 +458,7 @@ final class SqliteDurableMatchStore
       mode: FileMode.append,
     );
     // #endregion
-    late T value;
-    Object? actionError;
-    StackTrace? actionStackTrace;
-    final tail = _queue.then((_) async {
+    return Future<T>.sync(() {
       // #region agent log
       File('/opt/cursor/logs/debug.log').writeAsStringSync(
         '${jsonEncode({
@@ -475,28 +471,22 @@ final class SqliteDurableMatchStore
         mode: FileMode.append,
       );
       // #endregion
-      try {
-        value = await action();
-        // #region agent log
-        File('/opt/cursor/logs/debug.log').writeAsStringSync(
-          '${jsonEncode({
-                'hypothesisId': 'A,B',
-                'location':
-                    'sqlite_durable_match_store.dart:_serialized:result',
-                'message': 'serialized action returned',
-                'data': {
-                  'operationId': operationId,
-                  'resultType': value.runtimeType.toString()
-                },
-                'timestamp': DateTime.now().millisecondsSinceEpoch
-              })}\n',
-          mode: FileMode.append,
-        );
-        // #endregion
-      } catch (error, stackTrace) {
-        actionError = error;
-        actionStackTrace = stackTrace;
-      }
+      final value = action();
+      // #region agent log
+      File('/opt/cursor/logs/debug.log').writeAsStringSync(
+        '${jsonEncode({
+              'hypothesisId': 'A,B',
+              'location': 'sqlite_durable_match_store.dart:_serialized:result',
+              'message': 'serialized action returned',
+              'data': {
+                'operationId': operationId,
+                'resultType': value.runtimeType.toString()
+              },
+              'timestamp': DateTime.now().millisecondsSinceEpoch
+            })}\n',
+        mode: FileMode.append,
+      );
+      // #endregion
       // #region agent log
       File('/opt/cursor/logs/debug.log').writeAsStringSync(
         '${jsonEncode({
@@ -505,17 +495,13 @@ final class SqliteDurableMatchStore
               'message': 'serialized tail advanced',
               'data': {
                 'operationId': operationId,
-                'resultType':
-                    actionError == null ? value.runtimeType.toString() : 'error'
+                'resultType': value.runtimeType.toString()
               },
               'timestamp': DateTime.now().millisecondsSinceEpoch
             })}\n',
         mode: FileMode.append,
       );
       // #endregion
-    });
-    _queue = tail;
-    return tail.then((_) {
       // #region agent log
       File('/opt/cursor/logs/debug.log').writeAsStringSync(
         '${jsonEncode({
@@ -528,16 +514,12 @@ final class SqliteDurableMatchStore
         mode: FileMode.append,
       );
       // #endregion
-      final error = actionError;
-      if (error != null) {
-        Error.throwWithStackTrace(error, actionStackTrace!);
-      }
       return value;
     });
   }
 
   Future<void> close() {
-    return _serialized(() async {
+    return _serialized(() {
       _db.close();
     });
   }
