@@ -64,7 +64,7 @@ class YellowCardCaptureOverlay extends StatefulWidget {
   final bool checking;
   final bool failed;
   final ValueChanged<YellowParticipantOption> onSelect;
-  final VoidCallback onCommit;
+  final Future<void> Function() onCommit;
   final VoidCallback onCancel;
 
   @override
