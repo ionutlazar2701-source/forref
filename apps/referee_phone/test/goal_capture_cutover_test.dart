@@ -13,6 +13,8 @@ import 'package:referee_phone/infrastructure/database/local_match_database.dart'
 import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
 import 'package:referee_phone/infrastructure/match_memory/match_application_composition.dart';
 import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_store.dart';
+import 'package:referee_phone/infrastructure/yellow_card/phone_match_foundation.dart';
+import 'package:referee_phone/infrastructure/yellow_card/phone_participant_registry_store.dart';
 import 'package:referee_phone/l10n/app_localizations_en.dart';
 
 void main() {
@@ -22,6 +24,8 @@ void main() {
   late PhoneCaptureIdentity identity;
   late PhoneMatchCaptureContext matchCaptureContext;
   late PhoneTemporalEvidenceStore evidence;
+  late PhoneParticipantRegistryStore participantRegistry;
+  late PhoneMatchFoundation matchFoundation;
   late _ManualClock clock;
 
   setUp(() async {
@@ -35,6 +39,11 @@ void main() {
     );
     clock = _ManualClock();
     evidence = PhoneTemporalEvidenceStore(storageRoot: temp, clock: clock);
+    participantRegistry = PhoneParticipantRegistryStore(temp);
+    matchFoundation = PhoneMatchFoundation(
+      boundary: composition.boundary,
+      registry: participantRegistry,
+    );
   });
 
   tearDown(() async {
@@ -52,6 +61,8 @@ void main() {
       captureIdentity: identity,
       matchCaptureContext: matchCaptureContext,
       temporalEvidence: evidence,
+      participantRegistry: participantRegistry,
+      matchFoundation: matchFoundation,
     );
   }
 
@@ -357,8 +368,19 @@ void main() {
       (
     tester,
   ) async {
-    await openLive(tester);
-    await tester.tap(find.text('Yellow'));
+    await tester.pumpWidget(testApp());
+    await tester.pump();
+    await pumpUntilFound(tester, find.text('Matches'));
+    await tester.tap(find.text('New Match'));
+    await tester.pump();
+    await pumpUntilFound(tester, find.text('Match setup'));
+    await tester.tap(find.text('Live Match'));
+    await tester.pump();
+    await pumpUntilFound(tester, find.byKey(const Key('enter-field')));
+    await tester.tap(find.byKey(const Key('enter-field')));
+    await tester.pump();
+    await pumpUntilFound(tester, find.text('Entered field'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Yellow'));
     await tester.pump();
     await pumpUntilFound(tester, find.text('Record Yellow'));
     await pumpUntilNotFound(
@@ -375,7 +397,15 @@ void main() {
     expect(records.where((record) => record.payload is GoalPayload), isEmpty);
     expect(records.where((record) => record.payload is YellowCardPayload),
         isEmpty);
-    expect(records, hasLength(2));
+    expect(
+      records.where(
+        (record) =>
+            record.payload is TemporalTransitionPayload &&
+            (record.payload as TemporalTransitionPayload).semanticType ==
+                V1SemanticTypeCode.refereeEnteredFieldForMatchStart,
+      ),
+      hasLength(1),
+    );
   });
 }
 

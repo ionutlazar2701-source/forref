@@ -6,7 +6,14 @@ import 'package:referee_phone/match_application/match_application_boundary.dart'
 
 /// Production wiring for Yellow Card Match Memory foundation facts.
 ///
-/// Does not fabricate roster completeness or equate kick-off with field entry.
+/// Roster snapshot policy:
+/// - [registerRosterFromMatch] at Go Live is the initial disciplinary identity
+///   snapshot into Match Memory.
+/// - Later legacy squad edits do not silently rewrite Match Memory identity
+///   (see [PhoneParticipantRegistryStore] display snapshots).
+/// - Post–Go Live roster reconciliation remains future work.
+///
+/// Field entry is never inferred from opening Live Match, kick-off, or Yellow.
 final class PhoneMatchFoundation {
   const PhoneMatchFoundation({
     required this.boundary,
@@ -18,16 +25,16 @@ final class PhoneMatchFoundation {
   final PhoneParticipantRegistryStore registry;
   final MatchParticipantIdGenerator participantIdGenerator;
 
-  Future<bool> ensureRefereeEnteredField(CaptureContext context) async {
+  /// Commits field entry on explicit referee action. Idempotent when already
+  /// durably recorded.
+  Future<FieldEntryCommitOutcome> commitRefereeEnteredField(
+    CaptureContext context,
+  ) async {
     final records =
         await boundary.durableStore.readCommittedForMatch(context.matchId);
-    final already = records.any(
-      (record) =>
-          record.payload is TemporalTransitionPayload &&
-          (record.payload as TemporalTransitionPayload).semanticType ==
-              V1SemanticTypeCode.refereeEnteredFieldForMatchStart,
-    );
-    if (already) return true;
+    if (matchMemoryHasFieldEntry(records)) {
+      return const FieldEntryAlreadyCommitted();
+    }
 
     final result = await boundary.captureAndCommit(
       AuthoritativeCaptureCommand(
@@ -39,7 +46,10 @@ final class PhoneMatchFoundation {
         integrity: const IntegrityMetadata(),
       ),
     );
-    return result is DurableCommitSuccess;
+    if (result is DurableCommitSuccess) {
+      return const FieldEntryCommitted();
+    }
+    return const FieldEntryCommitFailed();
   }
 
   Future<void> registerRosterFromMatch({
@@ -141,4 +151,20 @@ bool matchMemoryHasFieldEntry(List<MatchRecord> records) {
 
 bool matchMemoryHasParticipantRegistrations(List<MatchRecord> records) {
   return records.any((record) => record.payload is ParticipantRegisteredPayload);
+}
+
+sealed class FieldEntryCommitOutcome {
+  const FieldEntryCommitOutcome();
+}
+
+final class FieldEntryAlreadyCommitted extends FieldEntryCommitOutcome {
+  const FieldEntryAlreadyCommitted();
+}
+
+final class FieldEntryCommitted extends FieldEntryCommitOutcome {
+  const FieldEntryCommitted();
+}
+
+final class FieldEntryCommitFailed extends FieldEntryCommitOutcome {
+  const FieldEntryCommitFailed();
 }

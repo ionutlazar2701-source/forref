@@ -129,6 +129,15 @@ class AppLocalizationsRo extends AppLocalizations {
   String get liveMatch => 'Meci live';
 
   @override
+  String get enterField => 'Intră pe teren';
+
+  @override
+  String get enterFieldSaved => 'Intrare pe teren înregistrată';
+
+  @override
+  String get enterFieldNotSaved => 'Intrarea pe teren nu a fost salvată';
+
+  @override
   String get kickOff => 'Start';
 
   @override

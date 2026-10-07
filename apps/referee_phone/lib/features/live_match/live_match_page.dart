@@ -16,6 +16,7 @@ import 'package:forref_match_core/forref_match_core.dart';
 import 'package:referee_phone/match/match_session.dart';
 import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
 import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_store.dart';
+import 'package:referee_phone/infrastructure/yellow_card/phone_match_foundation.dart';
 import 'package:referee_phone/infrastructure/yellow_card/phone_participant_registry_store.dart';
 import 'package:referee_phone/infrastructure/yellow_card/phone_yellow_card_draft_store.dart';
 import 'package:referee_phone/match_application/kick_off_authority.dart';
@@ -73,6 +74,9 @@ class _LiveMatchPageState extends State<LiveMatchPage>
   bool _yellowChecking = false;
   bool _yellowFailed = false;
   bool _yellowCommitInFlight = false;
+  bool _fieldEntryPending = false;
+  bool _refereeEnteredFieldCommitted = false;
+  bool _cardDisplayAuthorityOpen = false;
   List<PhoneParticipantRegistryEntry> _registryEntries = const [];
   YellowParticipantOption? _yellowSelected;
   String? _yellowIntentId;
@@ -99,21 +103,43 @@ class _LiveMatchPageState extends State<LiveMatchPage>
       if (mounted) setState(() {});
     });
     setState(() => _session = session);
-    await _ensureMatchFoundation(session.match);
     await _refreshTemporal();
     await _restoreYellowDraft();
   }
 
-  Future<void> _ensureMatchFoundation(Match match) async {
+  Future<void> _enterField() async {
+    if (_fieldEntryPending || _refereeEnteredFieldCommitted) return;
     final scope = AppScope.of(context);
     final foundation = scope.matchFoundation;
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
     final captureContext = await _captureContext(scope);
     if (foundation == null || captureContext == null) return;
-    if (match.status == MatchStatus.setup ||
-        match.status == MatchStatus.completed) {
-      return;
+    setState(() => _fieldEntryPending = true);
+    try {
+      final outcome = await foundation.commitRefereeEnteredField(captureContext);
+      if (!mounted) return;
+      if (outcome is FieldEntryCommitFailed) {
+        messenger
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(content: Text(l10n.enterFieldNotSaved)));
+        return;
+      }
+      await _refreshTemporal();
+      if (!mounted) return;
+      if (outcome is FieldEntryCommitted) {
+        messenger
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(content: Text(l10n.enterFieldSaved)));
+      }
+    } catch (_) {
+      if (!mounted) return;
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text(l10n.enterFieldNotSaved)));
+    } finally {
+      if (mounted) setState(() => _fieldEntryPending = false);
     }
-    await foundation.ensureRefereeEnteredField(captureContext);
   }
 
   Future<CaptureContext?> _captureContext(AppScope scope) async {
@@ -150,6 +176,10 @@ class _LiveMatchPageState extends State<LiveMatchPage>
       evaluatedAuthorityGeneration:
           captureContext?.projectionAuthorityGeneration ??
               PhoneCaptureIdentity.initialAuthorityGeneration,
+      competitionRules: captureContext?.competitionRulesContext,
+    );
+    final disciplinaryAuthority = DisciplinaryAuthorityProjection.derive(
+      records: records,
       competitionRules: captureContext?.competitionRulesContext,
     );
     final started = MatchStartedReadModel.from(
@@ -216,6 +246,9 @@ class _LiveMatchPageState extends State<LiveMatchPage>
       _goalProjection = goalProjection;
       _participantIdentities = participantIdentities;
       _disciplinaryProjection = disciplinaryProjection;
+      _refereeEnteredFieldCommitted =
+          disciplinaryAuthority.refereeEnteredFieldCommitted;
+      _cardDisplayAuthorityOpen = disciplinaryAuthority.cardDisplayAuthorityOpen;
       _terminalEligibility = terminalEligibility;
     });
     _syncClockTicker();
@@ -1233,6 +1266,15 @@ class _LiveMatchPageState extends State<LiveMatchPage>
                 children: [
                   if (match.status == MatchStatus.ready &&
                       !_matchStarted &&
+                      !_temporallyIncomplete &&
+                      !_refereeEnteredFieldCommitted)
+                    FilledButton(
+                      key: const Key('enter-field'),
+                      onPressed: _fieldEntryPending ? null : _enterField,
+                      child: Text(l10n.enterField),
+                    ),
+                  if (match.status == MatchStatus.ready &&
+                      !_matchStarted &&
                       !_temporallyIncomplete)
                     FilledButton(
                       onPressed: _kickOffPending ? null : _kickOff,
@@ -1363,7 +1405,9 @@ class _LiveMatchPageState extends State<LiveMatchPage>
                         onPressed: type == EventType.goal
                             ? (_goalPending ? null : _openGoalSideChoice)
                             : type == EventType.yellowCard
-                                ? (_yellowSaving || _yellowChecking
+                                ? (_yellowSaving ||
+                                        _yellowChecking ||
+                                        !_cardDisplayAuthorityOpen
                                     ? null
                                     : _openYellowSelector)
                                 : () => _startCapture(type),

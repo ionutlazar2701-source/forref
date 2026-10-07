@@ -224,7 +224,6 @@ final class _HardeningFixture {
     final match = (await db.getMatch(matchId))!;
     final context = await capture.captureContextFor(matchId);
     await foundation.registerRosterFromMatch(context: context, match: match);
-    await foundation.ensureRefereeEnteredField(context);
   }
 
   RefereeApp app() => RefereeApp(
@@ -238,6 +237,8 @@ final class _HardeningFixture {
       );
 
   Future<void> seedPriorCaution() async {
+    final context = await capture.captureContextFor(matchId);
+    await foundation.commitRefereeEnteredField(context);
     await commitYellowFor(
       homeOne.matchParticipantId,
       captureIntentId: 'intent-prior',
@@ -268,8 +269,13 @@ final class _HardeningFixture {
     await pumpUntil(tester, find.text('Matches'));
     await tester.tap(find.text('HOME 0 — 0 AWAY').first);
     await tester.pump();
-    await pumpUntil(tester, find.text('Yellow'));
-    await tester.tap(find.text('Yellow'));
+    await pumpUntil(tester, find.text('Kick-off'));
+    if (find.byKey(const Key('enter-field')).evaluate().isNotEmpty) {
+      await tester.tap(find.byKey(const Key('enter-field')));
+      await tester.pump();
+      await pumpUntil(tester, find.text('Entered field'));
+    }
+    await tester.tap(find.widgetWithText(FilledButton, 'Yellow'));
     await tester.pump();
     await pumpUntil(tester, find.byKey(const Key('yellow-option-mpid-test-1')));
   }

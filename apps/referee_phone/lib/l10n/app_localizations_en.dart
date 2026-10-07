@@ -129,6 +129,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get liveMatch => 'Live Match';
 
   @override
+  String get enterField => 'Enter field';
+
+  @override
+  String get enterFieldSaved => 'Entered field';
+
+  @override
+  String get enterFieldNotSaved => 'Field entry was not saved';
+
+  @override
   String get kickOff => 'Kick-off';
 
   @override

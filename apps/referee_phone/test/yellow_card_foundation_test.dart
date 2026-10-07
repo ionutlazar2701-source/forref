@@ -84,22 +84,46 @@ void main() {
     if (temp.existsSync()) temp.deleteSync(recursive: true);
   });
 
-  test('production foundation registers roster and opens field entry', () async {
+  test('Go Live registration does not commit field entry', () async {
     final match = (await db.getMatch(matchId))!;
     final context = await capture.captureContextFor(matchId);
 
     await foundation.registerRosterFromMatch(context: context, match: match);
-    expect(await foundation.ensureRefereeEnteredField(context), isTrue);
+
+    final records =
+        await composition.boundary.durableStore.readCommittedForMatch(matchId);
+    expect(matchMemoryHasFieldEntry(records), isFalse);
+    expect(matchMemoryHasParticipantRegistrations(records), isTrue);
+    expect(records.where((r) => r.payload is ParticipantRegisteredPayload),
+        hasLength(2));
+  });
+
+  test('explicit field entry opens card-display authority', () async {
+    final match = (await db.getMatch(matchId))!;
+    final context = await capture.captureContextFor(matchId);
+    await foundation.registerRosterFromMatch(context: context, match: match);
+
+    expect(
+      await foundation.commitRefereeEnteredField(context),
+      isA<FieldEntryCommitted>(),
+    );
+    expect(
+      await foundation.commitRefereeEnteredField(context),
+      isA<FieldEntryAlreadyCommitted>(),
+    );
 
     final records =
         await composition.boundary.durableStore.readCommittedForMatch(matchId);
     expect(matchMemoryHasFieldEntry(records), isTrue);
-    expect(matchMemoryHasParticipantRegistrations(records), isTrue);
-    expect(records.where((r) => r.payload is ParticipantRegisteredPayload),
-        hasLength(2));
-
-    final identities = ParticipantIdentityProjection.derive(records: records);
-    expect(identities.participantsByRegisteredId, hasLength(2));
+    expect(
+      records.where(
+        (r) =>
+            r.payload is TemporalTransitionPayload &&
+            (r.payload as TemporalTransitionPayload).semanticType ==
+                V1SemanticTypeCode.refereeEnteredFieldForMatchStart,
+      ),
+      hasLength(1),
+    );
     final authority = DisciplinaryAuthorityProjection.derive(records: records);
     expect(authority.cardDisplayAuthorityOpen, isTrue);
   });
@@ -109,7 +133,7 @@ void main() {
     final match = (await db.getMatch(matchId))!;
     final context = await capture.captureContextFor(matchId);
     await foundation.registerRosterFromMatch(context: context, match: match);
-    await foundation.ensureRefereeEnteredField(context);
+    await foundation.commitRefereeEnteredField(context);
 
     await tester.pumpWidget(
       RefereeApp(
@@ -149,7 +173,7 @@ void main() {
     final match = (await db.getMatch(matchId))!;
     final context = await capture.captureContextFor(matchId);
     await foundation.registerRosterFromMatch(context: context, match: match);
-    await foundation.ensureRefereeEnteredField(context);
+    await foundation.commitRefereeEnteredField(context);
 
     final now = DateTime.utc(2026, 10, 7, 12);
     final legacyYellow = match.copyWith(

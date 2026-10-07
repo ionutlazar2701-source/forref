@@ -332,6 +332,24 @@ abstract class AppLocalizations {
   /// **'Live Match'**
   String get liveMatch;
 
+  /// No description provided for @enterField.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter field'**
+  String get enterField;
+
+  /// No description provided for @enterFieldSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Entered field'**
+  String get enterFieldSaved;
+
+  /// No description provided for @enterFieldNotSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Field entry was not saved'**
+  String get enterFieldNotSaved;
+
   /// No description provided for @kickOff.
   ///
   /// In en, this message translates to:
