@@ -22,6 +22,7 @@ final class TemporalMatchProjection {
     this.endedPeriods = const [],
     this.bothOrdinaryPeriodsEnded = false,
     this.matchNormallyEnded = false,
+    this.matchAbandoned = false,
   });
 
   static const empty = TemporalMatchProjection(
@@ -57,6 +58,11 @@ final class TemporalMatchProjection {
   /// Not fixture validation, a final result, or a completed shoot-out.
   final bool matchNormallyEnded;
 
+  /// A `MATCH_ABANDONED` record is in the trusted temporal chain.
+  ///
+  /// Disposable projection only. It does not by itself write a further record.
+  final bool matchAbandoned;
+
   /// More than one end claims the same period lineage.
   final bool periodEndAmbiguous;
 
@@ -78,7 +84,8 @@ final class TemporalMatchProjection {
     required MatchProjectionState projection,
     required List<MatchRecord> records,
   }) {
-    if (projection.trustFor(ProjectionFacet.temporal) != ProjectionTrust.trusted) {
+    if (projection.trustFor(ProjectionFacet.temporal) !=
+        ProjectionTrust.trusted) {
       return empty;
     }
 
@@ -94,9 +101,10 @@ final class TemporalMatchProjection {
     }
     if (matchStartCount != 1 || matchStart == null) return empty;
 
+    final abandoned = _matchAbandoned(sorted);
     final lineage = periodLineage(records: sorted);
     if (lineage.starts.isEmpty && !lineage.ambiguous) {
-      return const TemporalMatchProjection(
+      return TemporalMatchProjection(
         matchStarted: true,
         activePeriod: null,
         endedPeriod: null,
@@ -104,10 +112,11 @@ final class TemporalMatchProjection {
         intervalActive: false,
         temporallyIncomplete: true,
         formallySuspended: false,
+        matchAbandoned: abandoned,
       );
     }
     if (lineage.ambiguous) {
-      return const TemporalMatchProjection(
+      return TemporalMatchProjection(
         matchStarted: true,
         activePeriod: null,
         endedPeriod: null,
@@ -115,6 +124,7 @@ final class TemporalMatchProjection {
         intervalActive: false,
         temporallyIncomplete: false,
         formallySuspended: false,
+        matchAbandoned: abandoned,
       );
     }
     if (lineage.activeStart == null) {
@@ -124,13 +134,13 @@ final class TemporalMatchProjection {
         activePeriod: null,
         endedPeriod: lineage.latestEnded,
         periodEndAmbiguous: lineage.endAmbiguous,
-        intervalActive:
-            lineage.intervalActive && !_matchAbandoned(sorted) && !normallyEnded,
+        intervalActive: lineage.intervalActive && !abandoned && !normallyEnded,
         temporallyIncomplete: false,
         formallySuspended: false,
         endedPeriods: lineage.endedPeriods,
         bothOrdinaryPeriodsEnded: lineage.bothOrdinaryPeriodsEnded,
         matchNormallyEnded: normallyEnded,
+        matchAbandoned: abandoned,
       );
     }
     final activePeriod =
@@ -149,6 +159,7 @@ final class TemporalMatchProjection {
       formallySuspended: history.formallySuspended,
       endedPeriods: lineage.endedPeriods,
       bothOrdinaryPeriodsEnded: false,
+      matchAbandoned: abandoned,
     );
   }
 }
@@ -313,9 +324,8 @@ PeriodLineage periodLineage({required List<MatchRecord> records}) {
   final lastEnds = _endsTargeting(sorted, chain.last);
   final lastOpen = !endAmbiguous && lastEnds.isEmpty;
   final activeStart = lastOpen ? chain.last : null;
-  final endedRecords = lastOpen || endAmbiguous
-      ? chain.take(chain.length - 1)
-      : chain;
+  final endedRecords =
+      lastOpen || endAmbiguous ? chain.take(chain.length - 1) : chain;
   final endedPeriods = [
     for (final start in endedRecords)
       (start.payload as TemporalTransitionPayload).period!,
