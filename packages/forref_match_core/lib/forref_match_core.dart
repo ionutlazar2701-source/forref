@@ -18,6 +18,7 @@ export 'projection/projection_semantics_resolver.dart';
 export 'projection/projection_trust.dart';
 export 'projection/temporal_match_projection.dart';
 export 'projection/active_period_elapsed.dart';
+export 'projection/temporal_display_state.dart';
 export 'projection/normal_match_end_eligibility.dart';
 export 'semantics/additional_playing_phase_policy.dart';
 export 'semantics/match_record_semantic_type.dart';
