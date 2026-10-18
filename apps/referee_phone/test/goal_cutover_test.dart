@@ -158,6 +158,31 @@ void main() {
     expect(known.goalsByTeam[awayTeam], 2);
   });
 
+  test('generation other than 1 cannot commit a Goal', () async {
+    final match = await seedMatch();
+    await ensureRootAndKickOff(match.matchId);
+    final current = identity.contextFor(match.matchId);
+    final stale = CaptureContext(
+      matchId: current.matchId,
+      originDeviceId: current.originDeviceId,
+      authorityScope: const MainRefereeScope(),
+      authorityPrincipalId: current.authorityPrincipalId,
+      authorityGeneration: 2,
+      projectionAuthorityGeneration: current.projectionAuthorityGeneration,
+      activeCaptureDeviceId: current.activeCaptureDeviceId,
+    );
+    final result = await composition.boundary.commitGoal(
+      stale,
+      scoringTeamId: MatchTeamId(match.teams.home.teamId),
+      captureIntentId: 'intent-stale-gen',
+    );
+    expect(result, isA<DurableCommitFailure>());
+    final records = await composition.boundary.durableStore.readCommittedForMatch(
+      match.matchId,
+    );
+    expect(records.where((record) => record.payload is GoalPayload), isEmpty);
+  });
+
   test('kick-off with bound integrity and no goals is KnownScore 0-0', () async {
     final match = await seedMatch();
     await ensureRootAndKickOff(match.matchId);

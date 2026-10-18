@@ -6,6 +6,12 @@ sealed class AuthorityScope {
 /// V1 capture scope: main referee (`MAIN_REFEREE`).
 final class MainRefereeScope extends AuthorityScope {
   const MainRefereeScope();
+
+  @override
+  bool operator ==(Object other) => other is MainRefereeScope;
+
+  @override
+  int get hashCode => 'MAIN_REFEREE'.hashCode;
 }
 
 /// V1 domain constant for the sole usable authority scope.

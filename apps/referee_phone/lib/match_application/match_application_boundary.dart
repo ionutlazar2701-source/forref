@@ -172,6 +172,12 @@ final class MatchApplicationBoundary
         reason: 'Goal captureIntentId cannot be empty',
       );
     }
+    if (context.authorityGeneration != 1) {
+      return DurableCommitFailure(
+        recordId: '',
+        reason: 'WAVE 1 Goal requires generation-1 capture authority',
+      );
+    }
     final rootFailure = await _ensureGenerationOneAuthorityRoot(context);
     if (rootFailure != null) {
       return rootFailure;
