@@ -372,6 +372,46 @@ void main() {
       expect(projection.trustFor(ProjectionFacet.score), isNot(ProjectionTrust.trusted));
     });
 
+    test('correction cycle yields unavailable score', () {
+      final goal = goalRecord(
+        recordId: 'goal-1',
+        captureIntentId: 'intent-1',
+        scoringTeam: teamA,
+      );
+      final corrA = MatchRecord(
+        recordId: 'corr-a',
+        matchId: matchId,
+        recordKind: RecordKind.correction,
+        schemaVersion: 1,
+        recordedAt: DateTime.utc(2026, 10, 2, 12, 3),
+        originDeviceId: deviceId,
+        originSequence: 3,
+        authorityContext: authority(),
+        relationships: const [CorrectionTarget(targetRecordId: 'corr-b')],
+        payload: CorrectionPayload(repairedScoringTeamId: teamB),
+        integrity: const IntegrityMetadata(evidenceRefs: ['ev-ca']),
+      );
+      final corrB = MatchRecord(
+        recordId: 'corr-b',
+        matchId: matchId,
+        recordKind: RecordKind.correction,
+        schemaVersion: 1,
+        recordedAt: DateTime.utc(2026, 10, 2, 12, 4),
+        originDeviceId: deviceId,
+        originSequence: 4,
+        authorityContext: authority(),
+        relationships: const [CorrectionTarget(targetRecordId: 'corr-a')],
+        payload: CorrectionPayload(repairedScoringTeamId: teamA),
+        integrity: const IntegrityMetadata(evidenceRefs: ['ev-cb']),
+      );
+      final projection = projector.projectRecords(
+        matchId: matchId,
+        records: [bootstrap(), goal, corrA, corrB],
+        context: context(scoreProof: proof()),
+      );
+      expect(projection.scoreProjection, isA<ScoreUnavailable>());
+    });
+
     test('permuting record order does not change effective goals', () {
       final goal = goalRecord(
         recordId: 'goal-1',

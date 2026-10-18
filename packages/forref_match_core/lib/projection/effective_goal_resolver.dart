@@ -79,10 +79,14 @@ EffectiveGoalResolution resolveEffectiveGoals({
     final repaired =
         (correction.payload as CorrectionPayload).repairedScoringTeamId;
     if (repaired == null) continue;
-    final goalId = _ultimateGoalIdForRecord(
+    final walk = _walkCorrectionChain(
       _correctionTarget(correction)!,
       recordsById,
     );
+    if (walk.cycle) {
+      return const EffectiveGoalUnavailable();
+    }
+    final goalId = walk.goalId;
     if (goalId == null) continue;
     repairedTeamsByGoal.putIfAbsent(goalId, () => {}).add(repaired);
   }
@@ -174,25 +178,38 @@ _SupersessionEffectiveness _supersessionEffectiveness(
   return _SupersessionEffectiveness.effective;
 }
 
-String? _ultimateGoalIdForRecord(
+final class _CorrectionWalk {
+  const _CorrectionWalk._({required this.cycle, this.goalId});
+
+  const _CorrectionWalk.cycle() : this._(cycle: true);
+
+  const _CorrectionWalk.goal(String goalId) : this._(cycle: false, goalId: goalId);
+
+  const _CorrectionWalk.notAGoal() : this._(cycle: false);
+
+  final bool cycle;
+  final String? goalId;
+}
+
+_CorrectionWalk _walkCorrectionChain(
   String recordId,
   Map<String, MatchRecord> recordsById,
 ) {
   final visiting = <String>{};
   var current = recordId;
   while (true) {
-    if (visiting.contains(current)) return null;
+    if (visiting.contains(current)) return const _CorrectionWalk.cycle();
     visiting.add(current);
     final record = recordsById[current];
-    if (record == null) return null;
-    if (record.payload is GoalPayload) return current;
+    if (record == null) return const _CorrectionWalk.notAGoal();
+    if (record.payload is GoalPayload) return _CorrectionWalk.goal(current);
     if (record.recordKind == RecordKind.correction) {
       final next = _correctionTarget(record);
-      if (next == null) return null;
+      if (next == null) return const _CorrectionWalk.notAGoal();
       current = next;
       continue;
     }
-    return null;
+    return const _CorrectionWalk.notAGoal();
   }
 }
 
