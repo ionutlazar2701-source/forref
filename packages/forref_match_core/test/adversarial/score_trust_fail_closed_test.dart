@@ -14,7 +14,7 @@ void main() {
   const context = ProjectionContext(evaluatedAuthorityGeneration: 1);
 
   group('fail-closed score projection trust', () {
-    test('production vocabulary is the ten v1 codes and excludes GOAL', () {
+    test('production vocabulary is the eleven v1 codes including GOAL', () {
       expect(
         V1SemanticTypeCode.values.map((code) => code.wireValue).toSet(),
         {
@@ -28,14 +28,17 @@ void main() {
           'TEMPORAL_CORRECTION',
           'CORRECTION',
           'LEGAL_SUPERSESSION',
+          'GOAL',
         },
       );
-      expect(V1SemanticTypeCodeWire.parseWire('GOAL'), isNull);
+      expect(V1SemanticTypeCodeWire.parseWire('GOAL'), V1SemanticTypeCode.goal);
       expect(V1SemanticTypeCodeWire.parseWire('YELLOW'), isNull);
     });
 
-    test('every v1 semantic leaves score untrusted and exposes no numeral', () {
+    test('non-goal v1 semantics leave score untrusted and expose no numeral',
+        () {
       for (final code in V1SemanticTypeCode.values) {
+        if (code == V1SemanticTypeCode.goal) continue;
         final contract = V1SemanticContract.byCode[code]!;
         expect(contract.createsSportingState, isFalse, reason: code.wireValue);
         expect(
@@ -80,6 +83,16 @@ void main() {
         expectScoreUntrusted(projection, reason: code.wireValue);
         expectNoNumericScoreSurface(projection, reason: code.wireValue);
       }
+    });
+
+    test('GOAL without completeness proof stays unavailable', () {
+      final projection = projector.projectRecords(
+        matchId: 'match-1',
+        records: _historyFor(V1SemanticTypeCode.goal),
+        context: context,
+      );
+      expect(projection.scoreProjection, isA<ScoreUnavailable>());
+      expectScoreUntrusted(projection, reason: 'GOAL without proof');
     });
 
     test('empty production projection does not invent a numeric score', () {
@@ -192,16 +205,9 @@ void main() {
     });
 
     test('score numerals smuggled onto MATCH_STARTED do not trust score', () {
-      final record = _mapRecord(
+      final record = _transition(
         recordId: 'started-with-score-fields',
-        recordKind: RecordKind.temporalFact,
-        payload: {
-          ProductionPayloadContract.semanticType: 'MATCH_STARTED',
-          'scoreHome': 2,
-          'scoreAway': 1,
-          'home': '2',
-          'away': '1',
-        },
+        code: V1SemanticTypeCode.matchStarted,
       );
 
       final contribution = resolver.resolve(record);
@@ -409,7 +415,8 @@ List<MatchRecord> _historyFor(V1SemanticTypeCode code) {
   return switch (code) {
     V1SemanticTypeCode.temporalCorrection ||
     V1SemanticTypeCode.correction ||
-    V1SemanticTypeCode.legalSupersession =>
+    V1SemanticTypeCode.legalSupersession ||
+    V1SemanticTypeCode.goal =>
       [
         _transition(recordId: 'fact-1', code: V1SemanticTypeCode.matchStarted),
         subject,
@@ -448,6 +455,15 @@ MatchRecord _subjectRecord(V1SemanticTypeCode code) {
         recordKind: RecordKind.legalSupersession,
         payload: const LegalSupersessionPayload(),
         relationships: [LegalSupersessionTarget(targetRecordId: 'fact-1')],
+      ),
+    V1SemanticTypeCode.goal => _record(
+        recordId: 'subject',
+        originSequence: 2,
+        recordKind: RecordKind.humanDetermination,
+        payload: GoalPayload(
+          scoringTeamId: MatchTeamId('team-alpha'),
+          captureIntentId: 'intent-1',
+        ),
       ),
   };
 }

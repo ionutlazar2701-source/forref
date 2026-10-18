@@ -1,3 +1,4 @@
+import '../match_team.dart';
 import '../payload.dart';
 import 'match_record_semantic_type.dart';
 
@@ -157,7 +158,8 @@ final class TemporalTransitionPayload extends V1SemanticPayload {
         true,
       V1SemanticTypeCode.temporalCorrection ||
       V1SemanticTypeCode.correction ||
-      V1SemanticTypeCode.legalSupersession =>
+      V1SemanticTypeCode.legalSupersession ||
+      V1SemanticTypeCode.goal =>
         false,
     };
   }
@@ -177,12 +179,32 @@ final class TemporalCorrectionPayload extends V1SemanticPayload {
 /// Historical correction. The corrected record remains in Match Memory.
 final class CorrectionPayload extends V1SemanticPayload {
   const CorrectionPayload({
+    this.repairedScoringTeamId,
     super.domainContractVersion,
     super.competitionRulesContext,
   });
 
+  /// Required when this correction repairs a Goal; optional for other targets.
+  final MatchTeamId? repairedScoringTeamId;
+
   @override
   V1SemanticTypeCode get semanticType => V1SemanticTypeCode.correction;
+}
+
+/// Authoritative Goal awarded to [scoringTeamId].
+final class GoalPayload extends V1SemanticPayload {
+  GoalPayload({
+    required this.scoringTeamId,
+    required this.captureIntentId,
+    super.domainContractVersion,
+    super.competitionRulesContext,
+  }) : assert(captureIntentId.isNotEmpty);
+
+  final MatchTeamId scoringTeamId;
+  final String captureIntentId;
+
+  @override
+  V1SemanticTypeCode get semanticType => V1SemanticTypeCode.goal;
 }
 
 /// Legal supersession. The superseded record remains in Match Memory.

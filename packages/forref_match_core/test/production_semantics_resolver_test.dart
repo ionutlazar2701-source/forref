@@ -48,18 +48,14 @@ void main() {
         _record(
           recordId: 'corr-1',
           recordKind: RecordKind.correction,
-          payload: {
-            ProductionPayloadContract.semanticType: 'CORRECTION',
-          },
+          payload: const CorrectionPayload(),
         ),
       );
       final supersession = resolver.resolve(
         _record(
           recordId: 'super-1',
           recordKind: RecordKind.legalSupersession,
-          payload: {
-            ProductionPayloadContract.semanticType: 'LEGAL_SUPERSESSION',
-          },
+          payload: const LegalSupersessionPayload(),
         ),
       );
 
@@ -104,9 +100,7 @@ void main() {
         _record(
           recordId: 'corr-a',
           recordKind: RecordKind.correction,
-          payload: {
-            ProductionPayloadContract.semanticType: 'CORRECTION',
-          },
+          payload: const CorrectionPayload(),
         ),
       );
       final second = resolver.resolve(
@@ -114,9 +108,7 @@ void main() {
           recordId: 'corr-b',
           originSequence: 2,
           recordKind: RecordKind.correction,
-          payload: {
-            ProductionPayloadContract.semanticType: 'CORRECTION',
-          },
+          payload: const CorrectionPayload(),
         ),
       );
 
@@ -159,17 +151,15 @@ void main() {
       final original = _record(
         recordId: 'fact-1',
         recordKind: RecordKind.temporalFact,
-        payload: {
-          ProductionPayloadContract.semanticType: 'MATCH_STARTED',
-        },
+        payload: TemporalTransitionPayload(
+          semanticType: V1SemanticTypeCode.matchStarted,
+        ),
       );
       final correction = _record(
         recordId: 'corr-1',
         originSequence: 2,
         recordKind: RecordKind.correction,
-        payload: {
-          ProductionPayloadContract.semanticType: 'CORRECTION',
-        },
+        payload: const CorrectionPayload(),
         relationships: [CorrectionTarget(targetRecordId: 'fact-1')],
       );
 
@@ -193,10 +183,22 @@ MatchRecord _record({
   String matchId = 'match-1',
   RecordKind recordKind = RecordKind.occurrence,
   int schemaVersion = 1,
-  Map<String, Object?> payload = const {},
+  Object payload = const <String, Object?>{},
   int originSequence = 1,
   List<RecordRelationship> relationships = const [],
 }) {
+  final MatchRecordPayload resolvedPayload;
+  if (payload is MatchRecordPayload) {
+    resolvedPayload = payload;
+  } else if (payload is Map<String, Object?>) {
+    resolvedPayload = StructuredPayload(payload);
+  } else if (payload is Map) {
+    resolvedPayload = StructuredPayload({
+      for (final entry in payload.entries) entry.key as String: entry.value,
+    });
+  } else {
+    throw ArgumentError('Unsupported test payload: $payload');
+  }
   return MatchRecord(
     recordId: recordId,
     matchId: matchId,
@@ -205,7 +207,7 @@ MatchRecord _record({
     recordedAt: DateTime.utc(2026, 10, 2, 12, originSequence),
     originDeviceId: 'dev-a',
     originSequence: originSequence,
-    payload: StructuredPayload(payload),
+    payload: resolvedPayload,
     integrity: const IntegrityMetadata(),
     relationships: relationships,
   );

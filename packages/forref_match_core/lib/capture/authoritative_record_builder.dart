@@ -32,15 +32,19 @@ final class AuthoritativeRecordBuilder {
       );
     }
 
+    final id = recordId ?? identityGenerator.newRecordId();
+    final boundIntegrity = integrity.evidenceRefs.isEmpty
+        ? IntegrityMetadata(evidenceRefs: [id])
+        : integrity;
     return AuthoritativeRecordCommitRequest(
-      recordId: recordId ?? identityGenerator.newRecordId(),
+      recordId: id,
       matchId: context.matchId,
       originDeviceId: context.originDeviceId,
       recordKind: recordKind,
       schemaVersion: context.schemaVersion,
       recordedAt: recordedAt ?? DateTime.now().toUtc(),
       payload: payload,
-      integrity: integrity,
+      integrity: boundIntegrity,
       temporalContext: temporalContext,
       authorityContext: AuthorityContext(
         scope: context.authorityScope,

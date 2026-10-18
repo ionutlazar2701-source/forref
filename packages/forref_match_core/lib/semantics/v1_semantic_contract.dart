@@ -157,5 +157,16 @@ final class V1SemanticContract {
       createsSportingState: false,
       isDurableMatchState: false,
     ),
+    V1SemanticTypeCode.goal: V1SemanticContract(
+      code: V1SemanticTypeCode.goal,
+      requiredRecordKind: RecordKind.humanDetermination,
+      schemaVersion: schemaContractVersion,
+      category: SemanticTypeCategory.event,
+      projectionFacets: [ProjectionFacet.score],
+      requiresTargetRelationship: false,
+      effect: SemanticEffect.historicalInterpretation,
+      createsSportingState: true,
+      isDurableMatchState: false,
+    ),
   };
 }

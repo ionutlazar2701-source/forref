@@ -12,11 +12,13 @@ RELIABILITY: FROZEN CANDIDATE
 
 SIMPLICITY: FROZEN CANDIDATE
 
-PRODUCT COMMAND: PENDING FINAL ACCEPTANCE
+PRODUCT COMMAND: FOUNDATION FREEZE ACCEPTED
 
-WAVE 1: HOLD — AWAITING FOUNDATION FREEZE SHA ACCEPTANCE
+WAVE 1: LAUNCH NOW / IN EXECUTION
 
-This document does not implement Goal or Score. It does not authorize WAVE 1. It does not certify hardware, referees, or power-loss durability.
+Accepted Foundation SHA: `5772671a9674e00c372268047d5f54073610af22`.
+
+This document does not implement Goal or Score. Acceptance authorizes WAVE 1 Goal and Score only. It does not change the frozen rules below. It does not certify hardware, referees, or power-loss durability.
 
 ## Domain freeze
 
@@ -154,4 +156,4 @@ WAVE 0E aligned these active instructions with this operating model:
 - `docs/product.md`
 - `docs/mvp-scope.md`
 
-`docs/architecture-authority.md` was not edited. ADR-001 through ADR-018 stay in force. Product Command acceptance of the freeze SHA is still pending. WAVE 1 stays HOLD. WAVE 0F is a governance reconciliation candidate and does not change this freeze. The occurrence classification is [WAVE0F_GOVERNANCE.md](WAVE0F_GOVERNANCE.md). The WAVE 0E classification remains [WAVE0E_GOVERNANCE.md](WAVE0E_GOVERNANCE.md).
+`docs/architecture-authority.md` was not edited. ADR-001 through ADR-018 stay in force. Product Command accepted Foundation Freeze SHA `5772671a9674e00c372268047d5f54073610af22`. WAVE 1 is LAUNCH NOW / IN EXECUTION. That acceptance does not change the frozen rules in this file. The occurrence classification is [WAVE0F_GOVERNANCE.md](WAVE0F_GOVERNANCE.md). The WAVE 0E classification remains [WAVE0E_GOVERNANCE.md](WAVE0E_GOVERNANCE.md).

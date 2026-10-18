@@ -1,5 +1,6 @@
 import '../ports.dart';
 import 'projection_trust.dart';
+import 'score_projection.dart';
 
 /// Disposable deterministic projection over committed Match Memory.
 final class MatchProjectionState implements MatchProjection {
@@ -7,6 +8,7 @@ final class MatchProjectionState implements MatchProjection {
     required this.matchId,
     required this.evaluatedAuthorityGeneration,
     required Map<String, FacetTrust> facetTrust,
+    required this.scoreProjection,
     required List<String> committedRecordIds,
     required List<String> missingDependencyTargets,
     required List<String> conflictNotes,
@@ -22,6 +24,7 @@ final class MatchProjectionState implements MatchProjection {
   final String matchId;
   final int evaluatedAuthorityGeneration;
   final Map<String, FacetTrust> facetTrust;
+  final ScoreProjection scoreProjection;
   final List<String> committedRecordIds;
   final List<String> missingDependencyTargets;
   final List<String> conflictNotes;
@@ -38,6 +41,7 @@ final class MatchProjectionState implements MatchProjection {
         matchId == other.matchId &&
         evaluatedAuthorityGeneration == other.evaluatedAuthorityGeneration &&
         _mapEquals(facetTrust, other.facetTrust) &&
+        scoreProjection == other.scoreProjection &&
         _listEquals(committedRecordIds, other.committedRecordIds) &&
         _listEquals(missingDependencyTargets, other.missingDependencyTargets) &&
         _listEquals(conflictNotes, other.conflictNotes) &&
@@ -52,6 +56,7 @@ final class MatchProjectionState implements MatchProjection {
         matchId,
         evaluatedAuthorityGeneration,
         Object.hashAll(facetTrust.entries),
+        scoreProjection,
         Object.hashAll(committedRecordIds),
         Object.hashAll(missingDependencyTargets),
         Object.hashAll(conflictNotes),

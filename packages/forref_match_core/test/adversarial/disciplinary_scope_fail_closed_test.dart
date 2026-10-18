@@ -11,7 +11,6 @@ void main() {
       final wires =
           V1SemanticTypeCode.values.map((code) => code.wireValue).toSet();
       for (final wire in const [
-        'GOAL',
         'YELLOW',
         'RED',
         'SUBSTITUTION',
@@ -22,10 +21,15 @@ void main() {
         expect(wires, isNot(contains(wire)), reason: wire);
         expect(V1SemanticTypeCodeWire.parseWire(wire), isNull, reason: wire);
       }
+      expect(wires, contains('GOAL'));
 
       for (final code in V1SemanticTypeCode.values) {
         final contract = V1SemanticContract.byCode[code]!;
-        expect(contract.createsSportingState, isFalse, reason: code.wireValue);
+        if (code == V1SemanticTypeCode.goal) {
+          expect(contract.createsSportingState, isTrue, reason: code.wireValue);
+        } else {
+          expect(contract.createsSportingState, isFalse, reason: code.wireValue);
+        }
         expect(
           contract.projectionFacets,
           isNot(contains(ProjectionFacet.disciplinary)),
@@ -324,6 +328,10 @@ MatchRecordPayload _payloadFor(V1SemanticTypeCode code) {
       TemporalTransitionPayload(
         semanticType: code,
         period: const PeriodIdentity(index: 1),
+      ),
+    V1SemanticTypeCode.goal => GoalPayload(
+        scoringTeamId: MatchTeamId('team-alpha'),
+        captureIntentId: 'intent-1',
       ),
   };
 }

@@ -14,6 +14,7 @@ const _temporalTransitionType = 'v1-temporal-transition';
 const _temporalCorrectionType = 'v1-temporal-correction';
 const _correctionType = 'v1-correction';
 const _legalSupersessionType = 'v1-legal-supersession';
+const _goalType = 'v1-goal';
 
 const _rootKeys = {
   'storageEncoding',
@@ -154,6 +155,13 @@ Map<String, Object?> _encodePayload(MatchRecordPayload payload) {
         'competitionRulesContext': _encodeCompetitionRules(
           payload.competitionRulesContext!,
         ),
+      if (payload is GoalPayload) ...{
+        'scoringTeamId': payload.scoringTeamId.value,
+        'captureIntentId': payload.captureIntentId,
+      },
+      if (payload is CorrectionPayload &&
+          payload.repairedScoringTeamId != null)
+        'repairedScoringTeamId': payload.repairedScoringTeamId!.value,
     };
   }
   throw FormatException(
@@ -167,6 +175,7 @@ String _v1PayloadType(V1SemanticPayload payload) {
     TemporalCorrectionPayload() => _temporalCorrectionType,
     CorrectionPayload() => _correctionType,
     LegalSupersessionPayload() => _legalSupersessionType,
+    GoalPayload() => _goalType,
   };
 }
 
@@ -188,7 +197,8 @@ MatchRecordPayload _decodePayload(
   if (type == _temporalTransitionType ||
       type == _temporalCorrectionType ||
       type == _correctionType ||
-      type == _legalSupersessionType) {
+      type == _legalSupersessionType ||
+      type == _goalType) {
     if (storageEncoding != adapterLocalStorageEncoding) {
       throw FormatException(
         'Typed payload is missing adapter storage encoding',
@@ -207,6 +217,9 @@ MatchRecordPayload _decodePayload(
         'periodIndex',
         'domainContractVersion',
         'competitionRulesContext',
+        'scoringTeamId',
+        'captureIntentId',
+        'repairedScoringTeamId',
       },
       'typed payload',
     );
@@ -246,6 +259,7 @@ V1SemanticPayload _decodeV1Payload(
         code,
         V1SemanticTypeCode.correction,
         () => CorrectionPayload(
+          repairedScoringTeamId: _optionalTeamId(payload['repairedScoringTeamId']),
           domainContractVersion: domain,
           competitionRulesContext: rules,
         ),
@@ -254,6 +268,16 @@ V1SemanticPayload _decodeV1Payload(
         code,
         V1SemanticTypeCode.legalSupersession,
         () => LegalSupersessionPayload(
+          domainContractVersion: domain,
+          competitionRulesContext: rules,
+        ),
+      ),
+    _goalType => _exactCode(
+        code,
+        V1SemanticTypeCode.goal,
+        () => GoalPayload(
+          scoringTeamId: MatchTeamId(_requiredString(payload, 'scoringTeamId')),
+          captureIntentId: _requiredString(payload, 'captureIntentId'),
           domainContractVersion: domain,
           competitionRulesContext: rules,
         ),
@@ -279,7 +303,8 @@ TemporalTransitionPayload _temporalTransition(
       true,
     V1SemanticTypeCode.temporalCorrection ||
     V1SemanticTypeCode.correction ||
-    V1SemanticTypeCode.legalSupersession =>
+    V1SemanticTypeCode.legalSupersession ||
+    V1SemanticTypeCode.goal =>
       false,
   };
   if (!isTransition) {
@@ -316,6 +341,22 @@ PeriodIdentity? _periodIdentity(Object? value, V1SemanticTypeCode code) {
     throw FormatException('Stored periodIndex is invalid');
   }
   return PeriodIdentity(index: value);
+}
+
+String _requiredString(Map<String, Object?> payload, String key) {
+  final value = payload[key];
+  if (value is! String || value.isEmpty) {
+    throw FormatException('Stored $key is missing');
+  }
+  return value;
+}
+
+MatchTeamId? _optionalTeamId(Object? value) {
+  if (value == null) return null;
+  if (value is! String || value.isEmpty) {
+    throw FormatException('Stored repairedScoringTeamId is invalid');
+  }
+  return MatchTeamId(value);
 }
 
 T _exactCode<T>(

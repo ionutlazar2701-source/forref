@@ -6,6 +6,55 @@ import 'package:sqlite3/sqlite3.dart';
 
 import 'record_storage_encoding.dart';
 
+/// Decoded committed records plus any rows that could not be decoded.
+final class CommittedMatchMemorySnapshot {
+  const CommittedMatchMemorySnapshot({
+    required this.records,
+    required this.quarantinedRecordIds,
+  });
+
+  final List<MatchRecord> records;
+  final List<String> quarantinedRecordIds;
+
+  bool get hasQuarantine => quarantinedRecordIds.isNotEmpty;
+}
+
+/// Read failed because at least one committed row could not be decoded.
+final class CommittedRecordQuarantineException implements Exception {
+  CommittedRecordQuarantineException({
+    required this.matchId,
+    required this.quarantinedRecordIds,
+    required this.decodedRecordCount,
+  });
+
+  final String matchId;
+  final List<String> quarantinedRecordIds;
+  final int decodedRecordCount;
+
+  @override
+  String toString() =>
+      'CommittedRecordQuarantineException(matchId=$matchId, '
+      'quarantinedRecordIds=$quarantinedRecordIds, '
+      'decodedRecordCount=$decodedRecordCount)';
+}
+
+/// Outcome of persisting a generation-1 authority root.
+sealed class GenerationOneRootCommitResult {
+  const GenerationOneRootCommitResult();
+}
+
+final class GenerationOneRootCommitSuccess extends GenerationOneRootCommitResult {
+  const GenerationOneRootCommitSuccess({this.diagnostics});
+
+  final String? diagnostics;
+}
+
+final class GenerationOneRootCommitFailure extends GenerationOneRootCommitResult {
+  const GenerationOneRootCommitFailure({required this.reason});
+
+  final String reason;
+}
+
 /// File-backed append-only Match Memory.
 ///
 /// **D1 boundary used by this adapter**
@@ -97,7 +146,30 @@ final class SqliteDurableMatchStore
       CREATE UNIQUE INDEX IF NOT EXISTS ux_origin_slot
       ON committed_match_records(match_id, origin_device_id, origin_sequence)
     ''');
+    _db.execute('''
+      CREATE TABLE IF NOT EXISTS capture_intent_admissions (
+        match_id TEXT NOT NULL,
+        authority_scope TEXT NOT NULL,
+        capture_intent_id TEXT NOT NULL,
+        committed_record_id TEXT NOT NULL,
+        semantic_type_wire TEXT NOT NULL,
+        authority_principal_id TEXT NOT NULL,
+        authority_generation INTEGER NOT NULL,
+        scoring_team_id TEXT,
+        PRIMARY KEY (match_id, authority_scope, capture_intent_id)
+      )
+    ''');
+    _db.execute('''
+      CREATE TABLE IF NOT EXISTS generation_one_authority_roots (
+        match_id TEXT PRIMARY KEY,
+        principal_id TEXT NOT NULL,
+        device_id TEXT NOT NULL,
+        generation INTEGER NOT NULL CHECK (generation = 1)
+      )
+    ''');
   }
+
+  static const _mainRefereeScopeWire = 'MAIN_REFEREE';
 
   void _requireIntegrity() {
     final rows = _db.select('PRAGMA integrity_check');
@@ -115,6 +187,27 @@ final class SqliteDurableMatchStore
       "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
     );
     return [for (final row in rows) row.columnAt(0) as String];
+  }
+
+  /// Commits a generation-1 authority root when none exists for [root.matchId].
+  Future<GenerationOneRootCommitResult> commitGenerationOneAuthorityRoot(
+    GenerationOneAuthorityRoot root,
+  ) {
+    return _serialized(() async => _commitGenerationOneAuthorityRoot(root));
+  }
+
+  /// Reads the persisted generation-1 root, if any.
+  Future<GenerationOneAuthorityRoot?> readGenerationOneAuthorityRoot(
+    String matchId,
+  ) {
+    return _serialized(() async => _readGenerationOneAuthorityRoot(matchId));
+  }
+
+  /// Committed records for [matchId], including quarantined row ids when present.
+  Future<CommittedMatchMemorySnapshot> readCommittedForMatchWithQuarantine(
+    String matchId,
+  ) {
+    return _serialized(() async => _readCommittedSnapshotLocked(matchId));
   }
 
   @override
@@ -141,6 +234,16 @@ final class SqliteDurableMatchStore
   }) {
     _db.execute('BEGIN IMMEDIATE');
     try {
+      final admissionEarly = _captureIntentAdmissionBeforeInsert(
+        matchId: request.matchId,
+        authorityContext: request.authorityContext,
+        payload: request.payload,
+        failureRecordId: request.recordId,
+      );
+      if (admissionEarly != null) {
+        return admissionEarly;
+      }
+
       final existingById = _readById(request.recordId);
       if (existingById != null) {
         _db.execute('ROLLBACK');
@@ -210,6 +313,16 @@ final class SqliteDurableMatchStore
       );
     }
 
+    final admissionEarly = _captureIntentAdmissionBeforeInsert(
+      matchId: record.matchId,
+      authorityContext: record.authorityContext,
+      payload: record.payload,
+      failureRecordId: record.recordId,
+    );
+    if (admissionEarly != null) {
+      return admissionEarly;
+    }
+
     final existingById = _readById(record.recordId);
     if (existingById != null) {
       if (identicalCanonicalRecordContent(existingById, record)) {
@@ -254,6 +367,8 @@ final class SqliteDurableMatchStore
         recordJson,
       ],
     );
+
+    _insertCaptureIntentAdmissionLocked(record);
 
     final abort = abortBeforeCommitForTest;
     if (abort != null) {
@@ -302,21 +417,16 @@ final class SqliteDurableMatchStore
   }
 
   @override
-  Future<List<MatchRecord>> readCommittedForMatch(String matchId) {
-    return _serialized(() async {
-      final rows = _db.select(
-        '''
-        SELECT record_json FROM committed_match_records
-        WHERE match_id = ?
-        ORDER BY rowid
-        ''',
-        [matchId],
+  Future<List<MatchRecord>> readCommittedForMatch(String matchId) async {
+    final snapshot = await readCommittedForMatchWithQuarantine(matchId);
+    if (snapshot.hasQuarantine) {
+      throw CommittedRecordQuarantineException(
+        matchId: matchId,
+        quarantinedRecordIds: snapshot.quarantinedRecordIds,
+        decodedRecordCount: snapshot.records.length,
       );
-      return [
-        for (final row in rows)
-          decodeMatchRecordFromStorage(row.columnAt(0) as String),
-      ];
-    });
+    }
+    return snapshot.records;
   }
 
   /// Frontier reconstructed only from committed rows for one origin.
@@ -367,18 +477,247 @@ final class SqliteDurableMatchStore
   }
 
   List<MatchRecord> _readCommittedForMatchLocked(String matchId) {
+    return _readCommittedSnapshotLocked(matchId).records;
+  }
+
+  CommittedMatchMemorySnapshot _readCommittedSnapshotLocked(String matchId) {
     final rows = _db.select(
       '''
-      SELECT record_json FROM committed_match_records
+      SELECT record_id, record_json FROM committed_match_records
       WHERE match_id = ?
       ORDER BY rowid
       ''',
       [matchId],
     );
-    return [
-      for (final row in rows)
-        decodeMatchRecordFromStorage(row.columnAt(0) as String),
-    ];
+    final records = <MatchRecord>[];
+    final quarantined = <String>[];
+    for (final row in rows) {
+      final recordId = row.columnAt(0) as String;
+      final jsonText = row.columnAt(1) as String;
+      try {
+        records.add(decodeMatchRecordFromStorage(jsonText));
+      } on Object {
+        quarantined.add(recordId);
+      }
+    }
+    return CommittedMatchMemorySnapshot(
+      records: records,
+      quarantinedRecordIds: quarantined,
+    );
+  }
+
+  GenerationOneRootCommitResult _commitGenerationOneAuthorityRoot(
+    GenerationOneAuthorityRoot root,
+  ) {
+    if (root.generation != 1) {
+      return const GenerationOneRootCommitFailure(
+        reason: 'generation-1 root requires generation=1',
+      );
+    }
+    _db.execute('BEGIN IMMEDIATE');
+    try {
+      final existing = _readGenerationOneAuthorityRootLocked(root.matchId);
+      if (existing != null) {
+        if (existing == root) {
+          _commitTransaction();
+          return const GenerationOneRootCommitSuccess(
+            diagnostics: 'idempotent-no-op; generation-1 root already committed',
+          );
+        }
+        _db.execute('ROLLBACK');
+        return const GenerationOneRootCommitFailure(
+          reason:
+              'generation-1 root conflict: match already has a different root',
+        );
+      }
+
+      final hasRecords = _matchHasCommittedRecordsLocked(root.matchId);
+      if (hasRecords) {
+        _db.execute('ROLLBACK');
+        return const GenerationOneRootCommitFailure(
+          reason:
+              'generation-1 root cannot be established after match records exist',
+        );
+      }
+
+      _db.execute(
+        '''
+        INSERT INTO generation_one_authority_roots (
+          match_id, principal_id, device_id, generation
+        ) VALUES (?, ?, ?, ?)
+        ''',
+        [root.matchId, root.principalId, root.deviceId, root.generation],
+      );
+      _commitTransaction();
+      return const GenerationOneRootCommitSuccess(
+        diagnostics: 'generation-1 authority root committed',
+      );
+    } catch (error) {
+      _rollbackIfNeeded();
+      return GenerationOneRootCommitFailure(
+        reason: 'generation-1 root commit aborted: $error',
+      );
+    }
+  }
+
+  GenerationOneAuthorityRoot? _readGenerationOneAuthorityRoot(String matchId) {
+    return _readGenerationOneAuthorityRootLocked(matchId);
+  }
+
+  GenerationOneAuthorityRoot? _readGenerationOneAuthorityRootLocked(
+    String matchId,
+  ) {
+    final rows = _db.select(
+      '''
+      SELECT principal_id, device_id, generation
+      FROM generation_one_authority_roots
+      WHERE match_id = ?
+      ''',
+      [matchId],
+    );
+    if (rows.isEmpty) return null;
+    final row = rows.first;
+    return GenerationOneAuthorityRoot(
+      matchId: matchId,
+      principalId: row.columnAt(0) as String,
+      deviceId: row.columnAt(1) as String,
+    );
+  }
+
+  bool _matchHasCommittedRecordsLocked(String matchId) {
+    final rows = _db.select(
+      'SELECT 1 FROM committed_match_records WHERE match_id = ? LIMIT 1',
+      [matchId],
+    );
+    return rows.isNotEmpty;
+  }
+
+  DurableCommitResult? _captureIntentAdmissionBeforeInsert({
+    required String matchId,
+    required AuthorityContext? authorityContext,
+    required MatchRecordPayload payload,
+    required String failureRecordId,
+  }) {
+    if (payload is! GoalPayload) {
+      return null;
+    }
+
+    final scope = authorityContext?.scope;
+    if (scope is! MainRefereeScope) {
+      _db.execute('ROLLBACK');
+      return DurableCommitFailure(
+        recordId: failureRecordId,
+        reason: 'capture-intent admission requires MAIN_REFEREE authority scope',
+      );
+    }
+
+    final meaning = CaptureIntentMeaning(
+      semanticType: V1SemanticTypeCode.goal,
+      authorityPrincipalId: authorityContext?.principal?.principalId ?? '',
+      authorityGeneration: authorityContext?.generation?.value ?? 0,
+      scoringTeamId: payload.scoringTeamId,
+    );
+
+    final existing = _readCaptureIntentAdmissionLocked(
+      matchId: matchId,
+      authorityScopeWire: _mainRefereeScopeWire,
+      captureIntentId: payload.captureIntentId,
+    );
+    if (existing == null) {
+      return null;
+    }
+
+    if (_admissionMeaningMatches(existing, meaning)) {
+      _commitTransaction();
+      return DurableCommitSuccess(
+        committedRecordId: existing.committedRecordId,
+        diagnostics: 'capture-intent-idempotent; already committed',
+      );
+    }
+
+    _db.execute('ROLLBACK');
+    return DurableCommitFailure(
+      recordId: failureRecordId,
+      reason:
+          'idempotency conflict: capture intent ${payload.captureIntentId} '
+          'already bound to a different goal meaning',
+    );
+  }
+
+  void _insertCaptureIntentAdmissionLocked(MatchRecord record) {
+    final payload = record.payload;
+    if (payload is! GoalPayload) {
+      return;
+    }
+    final scope = record.authorityContext?.scope;
+    if (scope is! MainRefereeScope) {
+      throw StateError(
+        'capture-intent admission requires MAIN_REFEREE authority scope',
+      );
+    }
+    _db.execute(
+      '''
+      INSERT INTO capture_intent_admissions (
+        match_id,
+        authority_scope,
+        capture_intent_id,
+        committed_record_id,
+        semantic_type_wire,
+        authority_principal_id,
+        authority_generation,
+        scoring_team_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ''',
+      [
+        record.matchId,
+        _mainRefereeScopeWire,
+        payload.captureIntentId,
+        record.recordId,
+        V1SemanticTypeCode.goal.wireValue,
+        record.authorityContext?.principal?.principalId ?? '',
+        record.authorityContext?.generation?.value ?? 0,
+        payload.scoringTeamId.value,
+      ],
+    );
+  }
+
+  _StoredCaptureIntentAdmission? _readCaptureIntentAdmissionLocked({
+    required String matchId,
+    required String authorityScopeWire,
+    required String captureIntentId,
+  }) {
+    final rows = _db.select(
+      '''
+      SELECT
+        committed_record_id,
+        semantic_type_wire,
+        authority_principal_id,
+        authority_generation,
+        scoring_team_id
+      FROM capture_intent_admissions
+      WHERE match_id = ? AND authority_scope = ? AND capture_intent_id = ?
+      ''',
+      [matchId, authorityScopeWire, captureIntentId],
+    );
+    if (rows.isEmpty) return null;
+    final row = rows.first;
+    return _StoredCaptureIntentAdmission(
+      committedRecordId: row.columnAt(0) as String,
+      semanticTypeWire: row.columnAt(1) as String,
+      authorityPrincipalId: row.columnAt(2) as String,
+      authorityGeneration: row.columnAt(3) as int,
+      scoringTeamId: row.columnAt(4) as String?,
+    );
+  }
+
+  bool _admissionMeaningMatches(
+    _StoredCaptureIntentAdmission stored,
+    CaptureIntentMeaning requested,
+  ) {
+    return stored.semanticTypeWire == requested.semanticType.wireValue &&
+        stored.authorityPrincipalId == requested.authorityPrincipalId &&
+        stored.authorityGeneration == requested.authorityGeneration &&
+        stored.scoringTeamId == requested.scoringTeamId.value;
   }
 
   MatchRecord? _readById(String recordId) {
@@ -428,4 +767,33 @@ final class SqliteDurableMatchStore
       _db.close();
     });
   }
+
+  /// Rows in [capture_intent_admissions] for tests and recovery checks.
+  int captureIntentAdmissionCount({String? matchId}) {
+    if (matchId == null) {
+      final rows = _db.select('SELECT COUNT(*) FROM capture_intent_admissions');
+      return rows.first.columnAt(0) as int;
+    }
+    final rows = _db.select(
+      'SELECT COUNT(*) FROM capture_intent_admissions WHERE match_id = ?',
+      [matchId],
+    );
+    return rows.first.columnAt(0) as int;
+  }
+}
+
+final class _StoredCaptureIntentAdmission {
+  const _StoredCaptureIntentAdmission({
+    required this.committedRecordId,
+    required this.semanticTypeWire,
+    required this.authorityPrincipalId,
+    required this.authorityGeneration,
+    required this.scoringTeamId,
+  });
+
+  final String committedRecordId;
+  final String semanticTypeWire;
+  final String authorityPrincipalId;
+  final int authorityGeneration;
+  final String? scoringTeamId;
 }
