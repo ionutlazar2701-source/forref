@@ -128,9 +128,15 @@ One integration owner per wave for each of those groups. WAVE 0 changed none of 
 
 | Field | Value |
 | --- | --- |
-| STATUS | LAUNCH NOW / IN EXECUTION. Product Command accepted the Foundation Freeze. |
+| STATUS | Software PASS on the implementation tip below. WAVE 2 is HOLD and is not authorized. |
 | ACCEPTED FOUNDATION SHA | `5772671a9674e00c372268047d5f54073610af22` |
-| EXECUTION BASE SHA | The commit that adds this section and [WAVE1_EXECUTION_MANIFEST.md](WAVE1_EXECUTION_MANIFEST.md). Implementation descends from that commit. |
+| EXECUTION BASE SHA | `54d4de0215de208c7fea1d30cbbbeb9535f81efd` |
+| IMPLEMENTATION TIP | `4e5fa663414b317f9bdfc05ccd7735bb07a71e90` |
 | BRANCH | `cursor/forref-wave1-goal-score-30fd` |
-| SCOPE | Authoritative Goal and trustworthy score only. WAVE 2 is not authorized. |
+| SCOPE | Authoritative Goal and trustworthy score only. |
 | CONTRACT | [WAVE1_GOAL_SCORE_CONTRACT.md](WAVE1_GOAL_SCORE_CONTRACT.md). Foundation semantics are unchanged. |
+| EVIDENCE | [WAVE1_HANDOFF.md](WAVE1_HANDOFF.md), [WAVE1_TEST_MATRIX.md](WAVE1_TEST_MATRIX.md), [WAVE1_ADVERSARIAL_REPORT.md](WAVE1_ADVERSARIAL_REPORT.md), [WAVE1_REUSE_REPORT.md](WAVE1_REUSE_REPORT.md) |
+| TESTS | `./tool/verify_cloud.sh` on `4e5fa663414b317f9bdfc05ccd7735bb07a71e90` PASSED. Core 194, persistence 42, phone 125. TEST EXECUTED PASS. Not CI PASS. |
+| SABOTEUR | Grok agent returned HOLD on `MainRefereeScope` identity equality. Fixed at `d31f1d1e7459649e62d01b73a42cb2f74d8e51a7`. Attack tests then passed. |
+| LOCAL GATES | LOCAL GATE REQUIRED. Physical power-loss, device storage, watch lifecycle, battery, and human referee validation remain uncertified. |
+| NEXT WAVE | WAVE 2 HOLD. Identity, Yellow, and Cautions are not started. |
