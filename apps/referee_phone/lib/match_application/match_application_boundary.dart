@@ -122,9 +122,76 @@ final class MatchApplicationBoundary
     );
   }
 
+  /// Rebuilds [ScoreProjection] from committed Match Memory and match team ids.
+  Future<ScoreProjection> readScoreProjection({
+    required String matchId,
+    required int evaluatedAuthorityGeneration,
+    required MatchTeamId homeTeamId,
+    required MatchTeamId awayTeamId,
+  }) async {
+    final root = await _store.readGenerationOneAuthorityRoot(matchId);
+    final records = await _store.readCommittedForMatch(matchId);
+    final proof = root == null
+        ? null
+        : ScoreCompletenessProof(
+            matchAuthorityMode: MatchAuthorityMode.matchMemory,
+            teamBindings: [
+              MatchTeamBinding(matchId: matchId, teamId: homeTeamId),
+              MatchTeamBinding(matchId: matchId, teamId: awayTeamId),
+            ],
+            generationOneRoot: root,
+          );
+    final state = _projector.projectRecords(
+      matchId: matchId,
+      records: records,
+      context: ProjectionContext(
+        evaluatedAuthorityGeneration: evaluatedAuthorityGeneration,
+        scoreCompletenessProof: proof,
+      ),
+    );
+    return state.scoreProjection;
+  }
+
+  /// Authoritative Goal for [scoringTeamId]. Does not require scorer identity.
+  ///
+  /// Fails closed without calling legacy writers. Same [captureIntentId] returns
+  /// the original [DurableCommitSuccess] when the goal was already saved.
+  Future<DurableCommitResult> commitGoal(
+    CaptureContext context, {
+    required MatchTeamId scoringTeamId,
+    required String captureIntentId,
+  }) async {
+    if (captureIntentId.isEmpty) {
+      return DurableCommitFailure(
+        recordId: '',
+        reason: 'Goal captureIntentId cannot be empty',
+      );
+    }
+    final rootFailure = await _ensureGenerationOneAuthorityRoot(context);
+    if (rootFailure != null) {
+      return rootFailure;
+    }
+    final request = _recordBuilder.build(
+      context: context,
+      recordKind: RecordKind.humanDetermination,
+      payload: GoalPayload(
+        scoringTeamId: scoringTeamId,
+        captureIntentId: captureIntentId,
+        domainContractVersion: context.domainContractVersion,
+        competitionRulesContext: context.competitionRulesContext,
+      ),
+      integrity: const IntegrityMetadata(evidenceRefs: ['goal-capture']),
+    );
+    return _store.commitAtNextOriginSequence(request);
+  }
+
   /// Authoritative match start. Fails closed when this match already has
   /// `MATCH_STARTED`. The guard runs inside the durable commit transaction.
-  Future<DurableCommitResult> commitMatchStarted(CaptureContext context) {
+  Future<DurableCommitResult> commitMatchStarted(CaptureContext context) async {
+    final rootFailure = await _ensureGenerationOneAuthorityRoot(context);
+    if (rootFailure != null) {
+      return rootFailure;
+    }
     final request = _recordBuilder.build(
       context: context,
       recordKind: RecordKind.temporalFact,
@@ -149,6 +216,46 @@ final class MatchApplicationBoundary
         return null;
       },
     );
+  }
+
+  /// Commits generation-1 root when missing and allowed. Returns a failure
+  /// result when records exist without a root (no silent recreation).
+  Future<DurableCommitResult?> _ensureGenerationOneAuthorityRoot(
+    CaptureContext context,
+  ) async {
+    final matchId = context.matchId;
+    final existing = await _store.readGenerationOneAuthorityRoot(matchId);
+    if (existing != null) {
+      if (existing.principalId != context.authorityPrincipalId ||
+          existing.deviceId != context.originDeviceId) {
+        return DurableCommitFailure(
+          recordId: '',
+          reason: 'generation-1 root does not match capture identity',
+        );
+      }
+      return null;
+    }
+    final records = await _store.readCommittedForMatch(matchId);
+    if (records.isNotEmpty) {
+      return DurableCommitFailure(
+        recordId: '',
+        reason:
+            'generation-1 authority root missing after committed match records',
+      );
+    }
+    final root = GenerationOneAuthorityRoot(
+      matchId: matchId,
+      principalId: context.authorityPrincipalId,
+      deviceId: context.originDeviceId,
+    );
+    final outcome = await _store.commitGenerationOneAuthorityRoot(root);
+    return switch (outcome) {
+      GenerationOneRootCommitSuccess() => null,
+      GenerationOneRootCommitFailure(:final reason) => DurableCommitFailure(
+          recordId: '',
+          reason: reason,
+        ),
+    };
   }
 
   /// Authoritative period start. Fails closed inside the commit transaction

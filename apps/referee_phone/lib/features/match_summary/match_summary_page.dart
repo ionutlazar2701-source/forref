@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:match_core/match_core.dart';
+import 'package:forref_match_core/forref_match_core.dart';
 import 'package:referee_phone/app_scope.dart';
+import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
 import 'package:referee_phone/l10n/match_labels.dart';
 import 'package:referee_phone/match/match_session.dart';
@@ -18,6 +20,7 @@ class MatchSummaryPage extends StatefulWidget {
 
 class _MatchSummaryPageState extends State<MatchSummaryPage> {
   MatchSession? _session;
+  ScoreProjection? _scoreProjection;
 
   @override
   void initState() {
@@ -37,7 +40,24 @@ class _MatchSummaryPageState extends State<MatchSummaryPage> {
     session.addListener(() {
       if (mounted) setState(() {});
     });
-    setState(() => _session = session);
+    final scope = AppScope.of(context);
+    ScoreProjection? scoreProjection;
+    final boundary = scope.matchApplication;
+    final identity = scope.captureIdentity;
+    if (boundary != null && identity != null) {
+      scoreProjection = await boundary.readScoreProjection(
+        matchId: widget.matchId,
+        evaluatedAuthorityGeneration:
+            PhoneCaptureIdentity.initialAuthorityGeneration,
+        homeTeamId: MatchTeamId(match.teams.home.teamId),
+        awayTeamId: MatchTeamId(match.teams.away.teamId),
+      );
+    }
+    if (!mounted) return;
+    setState(() {
+      _session = session;
+      _scoreProjection = scoreProjection;
+    });
   }
 
   @override
@@ -91,15 +111,9 @@ class _MatchSummaryPageState extends State<MatchSummaryPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(
-            l10n.scoreLine(
-              homeLabel(match, l10n),
-              match.score.home,
-              match.score.away,
-              awayLabel(match, l10n),
-            ),
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
+          // PRODUCT PRESENTATION DELTA: summary omits score numerals when not KnownScore.
+          if (_summaryScoreHeadline(context, match, l10n) != null)
+            _summaryScoreHeadline(context, match, l10n)!,
           Text(matchStatusLabel(match, l10n)),
           Text(formatMatchClock(session.displayedElapsed())),
           const SizedBox(height: 12),
@@ -125,6 +139,40 @@ class _MatchSummaryPageState extends State<MatchSummaryPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget? _summaryScoreHeadline(
+    BuildContext context,
+    Match match,
+    AppLocalizations l10n,
+  ) {
+    final boundary = AppScope.of(context).matchApplication;
+    if (boundary == null) {
+      return Text(
+        l10n.scoreLine(
+          homeLabel(match, l10n),
+          match.score.home,
+          match.score.away,
+          awayLabel(match, l10n),
+        ),
+        style: Theme.of(context).textTheme.headlineMedium,
+      );
+    }
+    final projection = _scoreProjection;
+    if (projection == null || projection is! KnownScore) {
+      return null;
+    }
+    final homeId = MatchTeamId(match.teams.home.teamId);
+    final awayId = MatchTeamId(match.teams.away.teamId);
+    return Text(
+      l10n.scoreLine(
+        homeLabel(match, l10n),
+        projection.goalsByTeam[homeId] ?? 0,
+        projection.goalsByTeam[awayId] ?? 0,
+        awayLabel(match, l10n),
+      ),
+      style: Theme.of(context).textTheme.headlineMedium,
     );
   }
 }

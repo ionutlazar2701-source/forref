@@ -1,0 +1,189 @@
+import 'dart:io';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:forref_match_core/forref_match_core.dart';
+import 'package:forref_match_persistence/forref_match_persistence.dart';
+import 'package:match_core/match_core.dart';
+import 'package:referee_phone/match_application/authoritative_capture_command.dart';
+import 'package:referee_phone/infrastructure/database/local_match_database.dart';
+import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
+import 'package:referee_phone/infrastructure/match_memory/match_application_composition.dart';
+import 'package:referee_phone/match/new_match.dart';
+import 'package:referee_phone/match_application/kick_off_authority.dart';
+
+void main() {
+  late Directory temp;
+  late LocalMatchDatabase db;
+  late MatchApplicationComposition composition;
+  late PhoneCaptureIdentity identity;
+
+  setUp(() async {
+    temp = await Directory.systemTemp.createTemp('goal_cutover_');
+    db = LocalMatchDatabase.memory();
+    composition = await MatchApplicationComposition.open(storageRoot: temp);
+    identity = await PhoneCaptureIdentityStore(temp).loadOrCreate();
+  });
+
+  tearDown(() async {
+    await composition.close();
+    await db.close();
+    if (temp.existsSync()) temp.deleteSync(recursive: true);
+  });
+
+  Future<Match> seedMatch() async {
+    final match = newLocalMatch(DateTime.utc(2026, 10, 2, 12));
+    await db.upsertMatch(match);
+    return match;
+  }
+
+  Future<void> ensureRootAndKickOff(String matchId) async {
+    final context = identity.contextFor(matchId);
+    expect(
+      await composition.boundary.durableStore.commitGenerationOneAuthorityRoot(
+        GenerationOneAuthorityRoot(
+          matchId: matchId,
+          principalId: context.authorityPrincipalId,
+          deviceId: context.originDeviceId,
+        ),
+      ),
+      isA<GenerationOneRootCommitSuccess>(),
+    );
+    expect(
+      await composition.boundary.commitKickOff(
+        context,
+        period: const PeriodIdentity(index: 1),
+      ),
+      isA<KickOffAuthorityCommitted>(),
+    );
+  }
+
+  test('MATCH_MEMORY goal commit does not add a legacy goal event', () async {
+    final match = await seedMatch();
+    await ensureRootAndKickOff(match.matchId);
+    final context = identity.contextFor(match.matchId);
+    final homeTeam = MatchTeamId(match.teams.home.teamId);
+
+    final result = await composition.boundary.commitGoal(
+      context,
+      scoringTeamId: homeTeam,
+      captureIntentId: 'intent-goal-1',
+    );
+    expect(result, isA<DurableCommitSuccess>());
+
+    final stored = await db.getMatch(match.matchId);
+    expect(stored!.events, isEmpty);
+    expect(stored.score.home, 0);
+    expect(stored.score.away, 0);
+
+    final records = await composition.boundary.durableStore.readCommittedForMatch(
+      match.matchId,
+    );
+    expect(
+      records.where((r) => r.payload is GoalPayload),
+      hasLength(1),
+    );
+  });
+
+  test('failed D1 goal commit does not add a legacy goal event', () async {
+    final match = await seedMatch();
+    await ensureRootAndKickOff(match.matchId);
+    composition.boundary.durableStore.abortBeforeCommitForTest = () {
+      throw StateError('abort before commit');
+    };
+    final context = identity.contextFor(match.matchId);
+
+    final result = await composition.boundary.commitGoal(
+      context,
+      scoringTeamId: MatchTeamId(match.teams.away.teamId),
+      captureIntentId: 'intent-fail',
+    );
+    expect(result, isA<DurableCommitFailure>());
+
+    final stored = await db.getMatch(match.matchId);
+    expect(stored!.events, isEmpty);
+    expect(
+      await composition.boundary.durableStore.readCommittedForMatch(match.matchId),
+      hasLength(2),
+    );
+  });
+
+  test('known score maps MatchTeamIds from team bindings', () async {
+    final match = await seedMatch();
+    final context = identity.contextFor(match.matchId);
+    final homeTeam = MatchTeamId(match.teams.home.teamId);
+    final awayTeam = MatchTeamId(match.teams.away.teamId);
+
+    await composition.boundary.durableStore.commitGenerationOneAuthorityRoot(
+      GenerationOneAuthorityRoot(
+        matchId: match.matchId,
+        principalId: context.authorityPrincipalId,
+        deviceId: context.originDeviceId,
+      ),
+    );
+    await composition.boundary.captureAndCommit(
+      AuthoritativeCaptureCommand(
+        context: context,
+        recordKind: RecordKind.temporalFact,
+        payload: TemporalTransitionPayload(
+          semanticType: V1SemanticTypeCode.matchStarted,
+        ),
+        integrity: const IntegrityMetadata(evidenceRefs: ['ev-bootstrap']),
+      ),
+    );
+    await composition.boundary.commitGoal(
+      context,
+      scoringTeamId: homeTeam,
+      captureIntentId: 'intent-home',
+    );
+    await composition.boundary.commitGoal(
+      context,
+      scoringTeamId: awayTeam,
+      captureIntentId: 'intent-away',
+    );
+    await composition.boundary.commitGoal(
+      context,
+      scoringTeamId: awayTeam,
+      captureIntentId: 'intent-away-2',
+    );
+
+    final projection = await composition.boundary.readScoreProjection(
+      matchId: match.matchId,
+      evaluatedAuthorityGeneration: PhoneCaptureIdentity.initialAuthorityGeneration,
+      homeTeamId: homeTeam,
+      awayTeamId: awayTeam,
+    );
+    expect(projection, isA<KnownScore>());
+    final known = projection as KnownScore;
+    expect(known.goalsByTeam[homeTeam], 1);
+    expect(known.goalsByTeam[awayTeam], 2);
+  });
+
+  test('score without integrity evidence on all records stays unavailable', () async {
+    final match = await seedMatch();
+    await ensureRootAndKickOff(match.matchId);
+
+    final projection = await composition.boundary.readScoreProjection(
+      matchId: match.matchId,
+      evaluatedAuthorityGeneration: PhoneCaptureIdentity.initialAuthorityGeneration,
+      homeTeamId: MatchTeamId(match.teams.home.teamId),
+      awayTeamId: MatchTeamId(match.teams.away.teamId),
+    );
+    expect(projection, isA<ScoreUnavailable>());
+  });
+
+  test('live match page fails closed if legacy 0-0 scoreLine returns', () {
+    final page =
+        File('lib/features/live_match/live_match_page.dart').readAsStringSync();
+    expect(page, contains('readScoreProjection'));
+    expect(page, contains('commitGoal'));
+    expect(page, contains('projection is! KnownScore'));
+    expect(
+      page,
+      isNot(
+        contains(
+          'l10n.scoreLine(\n                  homeLabel(match, l10n),\n                  match.score.home',
+        ),
+      ),
+    );
+  });
+}

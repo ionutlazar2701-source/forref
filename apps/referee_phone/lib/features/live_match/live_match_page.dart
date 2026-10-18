@@ -14,6 +14,7 @@ import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dar
 import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_store.dart';
 import 'package:referee_phone/match_application/kick_off_authority.dart';
 import 'package:referee_phone/match_application/match_started_read_model.dart';
+import 'package:referee_phone/match/client_ids.dart';
 import 'package:referee_phone/match/new_match.dart';
 import 'package:referee_phone/routing/app_router.dart';
 
@@ -44,6 +45,7 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
       ActivePeriodElapsedProjection.unavailable;
   TemporalMatchProjection _temporal = TemporalMatchProjection.empty;
   MatchProjectionState? _projection;
+  ScoreProjection? _scoreProjection;
   List<MatchRecord> _records = const [];
   TemporalEvidence? _anchor;
   TemporalEvidence? _suspensionBoundary;
@@ -91,6 +93,7 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
     final boundary = scope.matchApplication;
     final identity = scope.captureIdentity;
     if (boundary == null || identity == null) return;
+    final match = _session?.match;
     final projection = await boundary.project(
       widget.matchId,
       evaluatedAuthorityGeneration:
@@ -141,6 +144,16 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
         records: records,
       );
     }
+    ScoreProjection? scoreProjection;
+    if (match != null) {
+      scoreProjection = await boundary.readScoreProjection(
+        matchId: widget.matchId,
+        evaluatedAuthorityGeneration:
+            identity.contextFor(widget.matchId).projectionAuthorityGeneration,
+        homeTeamId: MatchTeamId(match.teams.home.teamId),
+        awayTeamId: MatchTeamId(match.teams.away.teamId),
+      );
+    }
     if (!mounted) return;
     setState(() {
       _matchStarted = started.authoritativelyStarted;
@@ -151,6 +164,7 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
       _elapsed = elapsed;
       _temporal = temporal;
       _projection = projection;
+      _scoreProjection = scoreProjection;
       _records = records;
       _anchor = anchor;
       _suspensionBoundary = suspensionBoundary;
@@ -759,16 +773,11 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                     ),
                   ],
                 ),
-              Text(
-                l10n.scoreLine(
-                  homeLabel(match, l10n),
-                  match.score.home,
-                  match.score.away,
-                  awayLabel(match, l10n),
-                ),
-                style: Theme.of(context).textTheme.headlineMedium,
-                textAlign: TextAlign.center,
-              ),
+              ...() {
+                final headline = _buildScoreHeadline(context, match, l10n);
+                if (headline == null) return <Widget>[];
+                return [headline];
+              }(),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
@@ -821,12 +830,71 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                 onCancel: () => setState(() => _captureType = null),
                 onSave: (type, data) async {
                   setState(() => _captureType = null);
+                  final scope = AppScope.of(context);
+                  if (type == EventType.goal &&
+                      scope.matchApplication != null &&
+                      data.teamId != null) {
+                    final captureContext = await _captureContext(scope);
+                    if (captureContext == null) return;
+                    try {
+                      final result = await scope.matchApplication!.commitGoal(
+                        captureContext,
+                        scoringTeamId: MatchTeamId(data.teamId!),
+                        captureIntentId: clientId(),
+                      );
+                      if (result is DurableCommitSuccess) {
+                        await _refreshTemporal();
+                      }
+                    } catch (_) {
+                      // Goal not saved; no legacy fallback.
+                    }
+                    return;
+                  }
                   await session.saveEvent(type: type, data: data);
                 },
               ),
             ),
         ],
       ),
+    );
+  }
+
+  /// MATCH_MEMORY score: omit numerals when projection is not [KnownScore].
+  Widget? _buildScoreHeadline(
+    BuildContext context,
+    Match match,
+    AppLocalizations l10n,
+  ) {
+    final boundary = AppScope.of(context).matchApplication;
+    if (boundary == null) {
+      return Text(
+        l10n.scoreLine(
+          homeLabel(match, l10n),
+          match.score.home,
+          match.score.away,
+          awayLabel(match, l10n),
+        ),
+        style: Theme.of(context).textTheme.headlineMedium,
+        textAlign: TextAlign.center,
+      );
+    }
+    final projection = _scoreProjection;
+    if (projection == null || projection is! KnownScore) {
+      return null;
+    }
+    final homeId = MatchTeamId(match.teams.home.teamId);
+    final awayId = MatchTeamId(match.teams.away.teamId);
+    final homeScore = projection.goalsByTeam[homeId] ?? 0;
+    final awayScore = projection.goalsByTeam[awayId] ?? 0;
+    return Text(
+      l10n.scoreLine(
+        homeLabel(match, l10n),
+        homeScore,
+        awayScore,
+        awayLabel(match, l10n),
+      ),
+      style: Theme.of(context).textTheme.headlineMedium,
+      textAlign: TextAlign.center,
     );
   }
 
