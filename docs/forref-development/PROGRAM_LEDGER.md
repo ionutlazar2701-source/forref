@@ -99,3 +99,14 @@ One integration owner per wave for each of those groups. WAVE 0 changed none of 
 | LOCAL GATES | LOCAL GATE REQUIRED for real power-loss D1, device storage, platform restart, watch lifecycle, battery, physical watch reliability, and human referee trials. Not WAVE 0D blockers. Not certified. |
 | AUTHORITY GATES | Referee Domain Authority PASS. Architecture Foundation Closure PASS. Systems Simplicity Authority PASS. Mission Reliability Authority PASS. Product Command PENDING FINAL ACCEPTANCE. |
 | NEXT AUTHORIZED WAVE | None. WAVE 1 is HOLD — AWAITING FOUNDATION FREEZE SHA ACCEPTANCE. |
+
+## WAVE 0E
+
+| Field | Value |
+| --- | --- |
+| STATUS | HOLD. The named active files are aligned. Unbannered contradictions remain outside the authorized file list (`README.md`, `docs/ux-live-match.md`, `docs/ux-pre-post-match.md`, `docs/forref-execution/RESEARCH_TO_REPO_AUDIT.md`, `docs/forref-execution/DEPENDENCY_GRAPH.md`). Foundation Freeze SHA `e71fa24d2d22eb63952209170ec82e1b6eb4e954` is still not accepted. |
+| PARENT SHA | `e71fa24d2d22eb63952209170ec82e1b6eb4e954` |
+| BRANCH | `cursor/forref-wave0e-governance-30fd` |
+| TESTS | NONE. No CI PASS. |
+| WAVE 1 | HOLD — awaiting Product Command acceptance. |
+| CLASSIFICATION | [WAVE0E_GOVERNANCE.md](WAVE0E_GOVERNANCE.md) |
