@@ -63,8 +63,7 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
   }
 
   Future<void> _load() async {
-    final match =
-        await AppScope.of(context).database.getMatch(widget.matchId);
+    final match = await AppScope.of(context).database.getMatch(widget.matchId);
     if (!mounted || match == null) return;
     _session?.dispose();
     final session = MatchSession(
@@ -94,85 +93,95 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
     final identity = scope.captureIdentity;
     if (boundary == null || identity == null) return;
     final match = _session?.match;
-    final projection = await boundary.project(
-      widget.matchId,
-      evaluatedAuthorityGeneration:
-          identity.contextFor(widget.matchId).projectionAuthorityGeneration,
-    );
-    final records = await boundary.durableStore.readCommittedForMatch(
-      widget.matchId,
-    );
-    final started = MatchStartedReadModel.from(
-      projection: projection,
-      records: records,
-    );
-    final temporal = TemporalMatchProjection.derive(
-      projection: projection,
-      records: records,
-    );
-    final evidence = scope.temporalEvidence;
-    final anchorId = _periodAnchorId(records, temporal.activePeriod);
-    final anchor = evidence == null || anchorId == null
-        ? null
-        : await evidence.resolve(anchorId);
-    final suspensionId = _suspensionEvidenceId(records, temporal.activePeriod);
-    final suspensionBoundary = evidence == null || suspensionId == null
-        ? null
-        : await evidence.resolve(suspensionId);
-    final resumptionId = _resumptionEvidenceId(records, temporal.activePeriod);
-    final resumptionAnchor = evidence == null || resumptionId == null
-        ? null
-        : await evidence.resolve(resumptionId);
-    final recordedEvidence = await _resolveRecordedEvidence(evidence, records);
-    final current = evidence?.currentObservation();
-    final elapsed = deriveActivePeriodElapsed(
-      temporal: temporal,
-      projection: projection,
-      records: records,
-      anchor: anchor,
-      current: current,
-      suspensionBoundary: suspensionBoundary,
-      resumptionAnchor: resumptionAnchor,
-      recordedEvidence: recordedEvidence,
-    );
-    NormalMatchEndEligibility? terminalEligibility;
-    final matchCapture = scope.matchCaptureContext;
-    if (matchCapture != null && started.authoritativelyStarted) {
-      terminalEligibility = await assessStoredNormalMatchEndEligibility(
-        capture: matchCapture,
-        matchId: widget.matchId,
-        records: records,
-      );
-    }
-    ScoreProjection? scoreProjection;
-    if (match != null) {
-      scoreProjection = await boundary.readScoreProjection(
-        matchId: widget.matchId,
+    try {
+      final projection = await boundary.project(
+        widget.matchId,
         evaluatedAuthorityGeneration:
             identity.contextFor(widget.matchId).projectionAuthorityGeneration,
-        homeTeamId: MatchTeamId(match.teams.home.teamId),
-        awayTeamId: MatchTeamId(match.teams.away.teamId),
       );
+      final records = await boundary.durableStore.readCommittedForMatch(
+        widget.matchId,
+      );
+      final started = MatchStartedReadModel.from(
+        projection: projection,
+        records: records,
+      );
+      final temporal = TemporalMatchProjection.derive(
+        projection: projection,
+        records: records,
+      );
+      final evidence = scope.temporalEvidence;
+      final anchorId = _periodAnchorId(records, temporal.activePeriod);
+      final anchor = evidence == null || anchorId == null
+          ? null
+          : await evidence.resolve(anchorId);
+      final suspensionId =
+          _suspensionEvidenceId(records, temporal.activePeriod);
+      final suspensionBoundary = evidence == null || suspensionId == null
+          ? null
+          : await evidence.resolve(suspensionId);
+      final resumptionId =
+          _resumptionEvidenceId(records, temporal.activePeriod);
+      final resumptionAnchor = evidence == null || resumptionId == null
+          ? null
+          : await evidence.resolve(resumptionId);
+      final recordedEvidence =
+          await _resolveRecordedEvidence(evidence, records);
+      final current = evidence?.currentObservation();
+      final elapsed = deriveActivePeriodElapsed(
+        temporal: temporal,
+        projection: projection,
+        records: records,
+        anchor: anchor,
+        current: current,
+        suspensionBoundary: suspensionBoundary,
+        resumptionAnchor: resumptionAnchor,
+        recordedEvidence: recordedEvidence,
+      );
+      NormalMatchEndEligibility? terminalEligibility;
+      final matchCapture = scope.matchCaptureContext;
+      if (matchCapture != null && started.authoritativelyStarted) {
+        terminalEligibility = await assessStoredNormalMatchEndEligibility(
+          capture: matchCapture,
+          matchId: widget.matchId,
+          records: records,
+        );
+      }
+      ScoreProjection? scoreProjection;
+      if (match != null) {
+        scoreProjection = await boundary.readScoreProjection(
+          matchId: widget.matchId,
+          evaluatedAuthorityGeneration:
+              identity.contextFor(widget.matchId).projectionAuthorityGeneration,
+          homeTeamId: MatchTeamId(match.teams.home.teamId),
+          awayTeamId: MatchTeamId(match.teams.away.teamId),
+        );
+      }
+      if (!mounted) return;
+      setState(() {
+        _matchStarted = started.authoritativelyStarted;
+        _activePeriod = started.activePeriod;
+        _endedPeriod = temporal.endedPeriod;
+        _intervalActive = temporal.intervalActive;
+        _temporallyIncomplete = started.temporallyIncomplete;
+        _elapsed = elapsed;
+        _temporal = temporal;
+        _projection = projection;
+        _scoreProjection = scoreProjection;
+        _records = records;
+        _anchor = anchor;
+        _suspensionBoundary = suspensionBoundary;
+        _resumptionAnchor = resumptionAnchor;
+        _recordedEvidence = recordedEvidence;
+        _terminalEligibility = terminalEligibility;
+      });
+      _syncClockTicker();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _scoreProjection = const ScoreUnavailable();
+      });
     }
-    if (!mounted) return;
-    setState(() {
-      _matchStarted = started.authoritativelyStarted;
-      _activePeriod = started.activePeriod;
-      _endedPeriod = temporal.endedPeriod;
-      _intervalActive = temporal.intervalActive;
-      _temporallyIncomplete = started.temporallyIncomplete;
-      _elapsed = elapsed;
-      _temporal = temporal;
-      _projection = projection;
-      _scoreProjection = scoreProjection;
-      _records = records;
-      _anchor = anchor;
-      _suspensionBoundary = suspensionBoundary;
-      _resumptionAnchor = resumptionAnchor;
-      _recordedEvidence = recordedEvidence;
-      _terminalEligibility = terminalEligibility;
-    });
-    _syncClockTicker();
   }
 
   void _syncClockTicker() {
@@ -597,15 +606,14 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                         ? l10n.periodStartIncomplete
                         : '${periodLabel(match.currentState.periodId, l10n)}  ${matchStatusLabel(match, l10n)}';
     final terminalBlockedMessage = showTerminalBlockedReason(
-          eligibility: _terminalEligibility,
-          matchNormallyEnded: _temporal.matchNormallyEnded,
-          matchStarted: _matchStarted,
-        )
+      eligibility: _terminalEligibility,
+      matchNormallyEnded: _temporal.matchNormallyEnded,
+      matchStarted: _matchStarted,
+    )
         ? terminalEligibilityMessage(l10n, _terminalEligibility!)
         : null;
-    final legacyHalfTimeVisible = !_intervalActive &&
-        _endedPeriod == null &&
-        _activePeriod == null;
+    final legacyHalfTimeVisible =
+        !_intervalActive && _endedPeriod == null && _activePeriod == null;
     final recent = match.events.reversed.take(7).toList();
 
     return Scaffold(
@@ -642,8 +650,7 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                 Text(l10n.noActivePlayingPeriod),
               ] else if (_temporal.bothOrdinaryPeriodsEnded)
                 Text(l10n.noActivePlayingPeriod),
-              if (terminalBlockedMessage != null)
-                Text(terminalBlockedMessage),
+              if (terminalBlockedMessage != null) Text(terminalBlockedMessage),
               if (cutOverClock &&
                   !_intervalActive &&
                   _elapsed.continuity !=
@@ -884,8 +891,9 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
     }
     final homeId = MatchTeamId(match.teams.home.teamId);
     final awayId = MatchTeamId(match.teams.away.teamId);
-    final homeScore = projection.goalsByTeam[homeId] ?? 0;
-    final awayScore = projection.goalsByTeam[awayId] ?? 0;
+    final homeScore = projection.goalsByTeam[homeId];
+    final awayScore = projection.goalsByTeam[awayId];
+    if (homeScore == null || awayScore == null) return null;
     return Text(
       l10n.scoreLine(
         homeLabel(match, l10n),

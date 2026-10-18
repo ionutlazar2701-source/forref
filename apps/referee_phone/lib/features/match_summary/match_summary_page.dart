@@ -29,8 +29,7 @@ class _MatchSummaryPageState extends State<MatchSummaryPage> {
   }
 
   Future<void> _load() async {
-    final match =
-        await AppScope.of(context).database.getMatch(widget.matchId);
+    final match = await AppScope.of(context).database.getMatch(widget.matchId);
     if (!mounted || match == null) return;
     _session?.dispose();
     final session = MatchSession(
@@ -45,13 +44,17 @@ class _MatchSummaryPageState extends State<MatchSummaryPage> {
     final boundary = scope.matchApplication;
     final identity = scope.captureIdentity;
     if (boundary != null && identity != null) {
-      scoreProjection = await boundary.readScoreProjection(
-        matchId: widget.matchId,
-        evaluatedAuthorityGeneration:
-            PhoneCaptureIdentity.initialAuthorityGeneration,
-        homeTeamId: MatchTeamId(match.teams.home.teamId),
-        awayTeamId: MatchTeamId(match.teams.away.teamId),
-      );
+      try {
+        scoreProjection = await boundary.readScoreProjection(
+          matchId: widget.matchId,
+          evaluatedAuthorityGeneration:
+              PhoneCaptureIdentity.initialAuthorityGeneration,
+          homeTeamId: MatchTeamId(match.teams.home.teamId),
+          awayTeamId: MatchTeamId(match.teams.away.teamId),
+        );
+      } catch (_) {
+        scoreProjection = const ScoreUnavailable();
+      }
     }
     if (!mounted) return;
     setState(() {
@@ -70,8 +73,7 @@ class _MatchSummaryPageState extends State<MatchSummaryPage> {
     final session = _session;
     if (session == null) return;
     final l10n = AppLocalizations.of(context);
-    final incomplete =
-        session.validator.incompleteCount(session.match.events);
+    final incomplete = session.validator.incompleteCount(session.match.events);
     if (incomplete > 0) {
       final go = await showDialog<bool>(
         context: context,
@@ -111,7 +113,6 @@ class _MatchSummaryPageState extends State<MatchSummaryPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // PRODUCT PRESENTATION DELTA: summary omits score numerals when not KnownScore.
           if (_summaryScoreHeadline(context, match, l10n) != null)
             _summaryScoreHeadline(context, match, l10n)!,
           Text(matchStatusLabel(match, l10n)),
@@ -165,11 +166,14 @@ class _MatchSummaryPageState extends State<MatchSummaryPage> {
     }
     final homeId = MatchTeamId(match.teams.home.teamId);
     final awayId = MatchTeamId(match.teams.away.teamId);
+    final homeScore = projection.goalsByTeam[homeId];
+    final awayScore = projection.goalsByTeam[awayId];
+    if (homeScore == null || awayScore == null) return null;
     return Text(
       l10n.scoreLine(
         homeLabel(match, l10n),
-        projection.goalsByTeam[homeId] ?? 0,
-        projection.goalsByTeam[awayId] ?? 0,
+        homeScore,
+        awayScore,
         awayLabel(match, l10n),
       ),
       style: Theme.of(context).textTheme.headlineMedium,

@@ -75,7 +75,8 @@ void main() {
     expect(stored.score.home, 0);
     expect(stored.score.away, 0);
 
-    final records = await composition.boundary.durableStore.readCommittedForMatch(
+    final records =
+        await composition.boundary.durableStore.readCommittedForMatch(
       match.matchId,
     );
     expect(
@@ -102,7 +103,8 @@ void main() {
     final stored = await db.getMatch(match.matchId);
     expect(stored!.events, isEmpty);
     expect(
-      await composition.boundary.durableStore.readCommittedForMatch(match.matchId),
+      await composition.boundary.durableStore
+          .readCommittedForMatch(match.matchId),
       hasLength(2),
     );
   });
@@ -148,7 +150,8 @@ void main() {
 
     final projection = await composition.boundary.readScoreProjection(
       matchId: match.matchId,
-      evaluatedAuthorityGeneration: PhoneCaptureIdentity.initialAuthorityGeneration,
+      evaluatedAuthorityGeneration:
+          PhoneCaptureIdentity.initialAuthorityGeneration,
       homeTeamId: homeTeam,
       awayTeamId: awayTeam,
     );
@@ -177,13 +180,15 @@ void main() {
       captureIntentId: 'intent-stale-gen',
     );
     expect(result, isA<DurableCommitFailure>());
-    final records = await composition.boundary.durableStore.readCommittedForMatch(
+    final records =
+        await composition.boundary.durableStore.readCommittedForMatch(
       match.matchId,
     );
     expect(records.where((record) => record.payload is GoalPayload), isEmpty);
   });
 
-  test('kick-off with bound integrity and no goals is KnownScore 0-0', () async {
+  test('kick-off with bound integrity and no goals is KnownScore 0-0',
+      () async {
     final match = await seedMatch();
     await ensureRootAndKickOff(match.matchId);
     final homeTeam = MatchTeamId(match.teams.home.teamId);
@@ -191,7 +196,8 @@ void main() {
 
     final projection = await composition.boundary.readScoreProjection(
       matchId: match.matchId,
-      evaluatedAuthorityGeneration: PhoneCaptureIdentity.initialAuthorityGeneration,
+      evaluatedAuthorityGeneration:
+          PhoneCaptureIdentity.initialAuthorityGeneration,
       homeTeamId: homeTeam,
       awayTeamId: awayTeam,
     );
@@ -207,6 +213,7 @@ void main() {
     expect(page, contains('readScoreProjection'));
     expect(page, contains('commitGoal'));
     expect(page, contains('projection is! KnownScore'));
+    expect(page, contains('_scoreProjection = const ScoreUnavailable()'));
     expect(
       page,
       isNot(
@@ -215,5 +222,74 @@ void main() {
         ),
       ),
     );
+  });
+
+  test('saved Goal stays saved when score refresh cannot be proven', () async {
+    final match = await seedMatch();
+    await ensureRootAndKickOff(match.matchId);
+    final context = identity.contextFor(match.matchId);
+    final homeTeam = MatchTeamId(match.teams.home.teamId);
+    final awayTeam = MatchTeamId(match.teams.away.teamId);
+    final saved = await composition.boundary.commitGoal(
+      context,
+      scoringTeamId: homeTeam,
+      captureIntentId: 'intent-then-corrupt',
+    );
+    expect(saved, isA<DurableCommitSuccess>());
+    final goalId = (saved as DurableCommitSuccess).committedRecordId;
+
+    final before = await composition.boundary.readScoreProjection(
+      matchId: match.matchId,
+      evaluatedAuthorityGeneration:
+          PhoneCaptureIdentity.initialAuthorityGeneration,
+      homeTeamId: homeTeam,
+      awayTeamId: awayTeam,
+    );
+    expect(before, isA<KnownScore>());
+
+    final dbFile = File('${temp.path}/forref_match_memory/match_memory.sqlite');
+    final corrupt = await Process.run('python3', [
+      '-c',
+      '''
+import json, sqlite3, sys
+path, record_id = sys.argv[1], sys.argv[2]
+db = sqlite3.connect(path)
+row = db.execute(
+    "SELECT record_json FROM committed_match_records WHERE record_id = ?",
+    (record_id,),
+).fetchone()
+payload = json.loads(row[0])
+payload["payload"] = "not-an-object"
+db.execute(
+    "UPDATE committed_match_records SET record_json = ? WHERE record_id = ?",
+    (json.dumps(payload), record_id),
+)
+db.commit()
+print(db.execute(
+    "SELECT COUNT(*) FROM committed_match_records WHERE record_id = ?",
+    (record_id,),
+).fetchone()[0])
+''',
+      dbFile.path,
+      goalId,
+    ]);
+    expect(corrupt.exitCode, 0, reason: '${corrupt.stdout}${corrupt.stderr}');
+    expect(corrupt.stdout.toString().trim(), '1');
+
+    final after = await composition.boundary.readScoreProjection(
+      matchId: match.matchId,
+      evaluatedAuthorityGeneration:
+          PhoneCaptureIdentity.initialAuthorityGeneration,
+      homeTeamId: homeTeam,
+      awayTeamId: awayTeam,
+    );
+    expect(after, isA<ScoreUnavailable>());
+    expect(after, isNot(isA<KnownScore>()));
+
+    final legacy = await db.getMatch(match.matchId);
+    expect(
+        legacy!.events.where((event) => event.type == EventType.goal), isEmpty);
+    expect(legacy.score.home, 0);
+    expect(legacy.score.away, 0);
   });
 }
