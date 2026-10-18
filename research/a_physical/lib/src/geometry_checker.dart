@@ -57,7 +57,7 @@ class WatchHitGeometryChecker {
     }
 
     final gap = profile.interRegionGap;
-    if (gap == null || gap <= 0) {
+    if (gap == null || !gap.isFinite || gap <= 0) {
       return GeometryCheckResult.geometryInconsistent;
     }
 
@@ -70,20 +70,27 @@ class WatchHitGeometryChecker {
     }
 
     final clearance = profile.edgeClearance;
-    if (clearance == null) {
+    if (clearance == null || !clearance.isFinite || clearance < 0) {
       return GeometryCheckResult.geometryInconsistent;
     }
 
     final vw = profile.viewportWidth;
     final vh = profile.viewportHeight;
-    if (vw != null && vh != null) {
-      for (final region in regions) {
-        if (region.x < clearance ||
-            region.y < clearance ||
-            region.right > vw - clearance ||
-            region.bottom > vh - clearance) {
-          return GeometryCheckResult.geometryInconsistent;
-        }
+    if (vw == null ||
+        vh == null ||
+        !vw.isFinite ||
+        !vh.isFinite ||
+        vw <= 0 ||
+        vh <= 0) {
+      return GeometryCheckResult.geometryInconsistent;
+    }
+
+    for (final region in regions) {
+      if (region.x < clearance ||
+          region.y < clearance ||
+          region.right > vw - clearance ||
+          region.bottom > vh - clearance) {
+        return GeometryCheckResult.geometryInconsistent;
       }
     }
 

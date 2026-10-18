@@ -37,7 +37,8 @@ class WatchGeometryProfile {
   final WatchProfileStatus status;
   final List<HitRegion> regions;
 
-  /// Viewport used to validate edge clearance when non-null.
+  /// Viewport bounds. Both must be finite and positive before a profile
+  /// can be ready for a physical gate. A missing side is not a pass.
   final double? viewportWidth;
   final double? viewportHeight;
 

@@ -9,6 +9,7 @@
 
 - Pure-Dart geometry rules execute in CI: overlap detection, required regions, gap and edge-clearance checks, fail-closed matrix handling.
 - Uncertified candidate catalog never reaches `readyForPhysicalGate`.
+- `readyForPhysicalGate` requires a finite, positive viewport on both axes. A null, one-sided, NaN, or infinite viewport stays `geometryInconsistent`. This closed a fail-open found in independent review of `479957e`.
 
 ## What this run does **not** prove
 

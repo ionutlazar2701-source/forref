@@ -190,6 +190,59 @@ void main() {
       );
     });
 
+    test('missing or non-finite viewport is geometryInconsistent', () {
+      final base = _consistentMeasuredProfile();
+      for (final profile in [
+        WatchGeometryProfile(
+          deviceLabel: base.deviceLabel,
+          status: base.status,
+          operatorSuppliedMeasurement: true,
+          edgeClearance: base.edgeClearance,
+          interRegionGap: base.interRegionGap,
+          regions: base.regions,
+        ),
+        WatchGeometryProfile(
+          deviceLabel: base.deviceLabel,
+          status: base.status,
+          operatorSuppliedMeasurement: true,
+          edgeClearance: base.edgeClearance,
+          interRegionGap: base.interRegionGap,
+          viewportWidth: 30,
+          regions: base.regions,
+        ),
+        WatchGeometryProfile(
+          deviceLabel: base.deviceLabel,
+          status: base.status,
+          operatorSuppliedMeasurement: true,
+          edgeClearance: base.edgeClearance,
+          interRegionGap: base.interRegionGap,
+          viewportWidth: double.nan,
+          viewportHeight: double.nan,
+          regions: base.regions,
+        ),
+        WatchGeometryProfile(
+          deviceLabel: base.deviceLabel,
+          status: base.status,
+          operatorSuppliedMeasurement: true,
+          edgeClearance: base.edgeClearance,
+          interRegionGap: base.interRegionGap,
+          viewportWidth: double.infinity,
+          viewportHeight: double.infinity,
+          regions: base.regions,
+        ),
+      ]) {
+        expect(
+          checker.checkProfile(profile),
+          GeometryCheckResult.geometryInconsistent,
+          reason: profile.deviceLabel,
+        );
+        expect(
+          checker.checkMeasuredMatrix([profile]),
+          GeometryCheckResult.geometryInconsistent,
+        );
+      }
+    });
+
     test('negative edge clearance is geometryInconsistent', () {
       final profile = WatchGeometryProfile(
         deviceLabel: 'lab',
