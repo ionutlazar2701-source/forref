@@ -2,9 +2,9 @@
 
 Bounded contract for a future WAVE 1 implementation agent.
 
-WAVE 1: HOLD — AWAITING FOUNDATION FREEZE SHA ACCEPTANCE
+WAVE 1: LAUNCH NOW / IN EXECUTION
 
-Do not execute this contract until Product Command accepts the Foundation Freeze SHA. This file is not that acceptance. It is not an implementation design.
+Product Command accepted Foundation Freeze SHA `5772671a9674e00c372268047d5f54073610af22`. This file remains the bounded Goal and Score contract. It is not an implementation design. The status lines below record that acceptance. They do not change the sporting rules.
 
 Canonical summary: [FOUNDATION_FREEZE.md](FOUNDATION_FREEZE.md).
 
@@ -16,7 +16,7 @@ RELIABILITY: FROZEN CANDIDATE
 
 SIMPLICITY: FROZEN CANDIDATE
 
-PRODUCT COMMAND: PENDING FINAL ACCEPTANCE
+PRODUCT COMMAND: FOUNDATION FREEZE ACCEPTED
 
 ## Goal V1
 

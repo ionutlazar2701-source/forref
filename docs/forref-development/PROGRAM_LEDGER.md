@@ -12,11 +12,13 @@ RELIABILITY: FROZEN CANDIDATE
 
 SIMPLICITY: FROZEN CANDIDATE
 
-PRODUCT COMMAND: PENDING FINAL ACCEPTANCE
+PRODUCT COMMAND: FOUNDATION FREEZE ACCEPTED
 
-WAVE 1: HOLD — AWAITING FOUNDATION FREEZE SHA ACCEPTANCE
+WAVE 1: LAUNCH NOW / IN EXECUTION
 
-The older branch `cursor/forref-wave1-integration-30fd` is a previous test and harness wave. It is not V2 WAVE 1. V2 WAVE 1 means Goal and Score under [WAVE1_GOAL_SCORE_CONTRACT.md](WAVE1_GOAL_SCORE_CONTRACT.md), and it stays HOLD until Product Command accepts the Foundation Freeze SHA.
+Accepted Foundation SHA: `5772671a9674e00c372268047d5f54073610af22`.
+
+The older branch `cursor/forref-wave1-integration-30fd` is a previous test and harness wave. It is not V2 WAVE 1. V2 WAVE 1 is Goal and Score under [WAVE1_GOAL_SCORE_CONTRACT.md](WAVE1_GOAL_SCORE_CONTRACT.md) on `cursor/forref-wave1-goal-score-30fd`. WAVE 2 is not authorized.
 
 Specialist authority results below are the WAVE 0D inputs. They are not Product Command acceptance. Don and Tony hardware/human certification were not issued. LOCAL GATE REQUIRED remains for physical proof.
 
@@ -121,3 +123,14 @@ One integration owner per wave for each of those groups. WAVE 0 changed none of 
 | TESTS | NONE. No CI PASS. |
 | WAVE 1 | HOLD — AWAITING FOUNDATION FREEZE ACCEPTANCE. |
 | CLASSIFICATION | [WAVE0F_GOVERNANCE.md](WAVE0F_GOVERNANCE.md) |
+
+## WAVE 1
+
+| Field | Value |
+| --- | --- |
+| STATUS | LAUNCH NOW / IN EXECUTION. Product Command accepted the Foundation Freeze. |
+| ACCEPTED FOUNDATION SHA | `5772671a9674e00c372268047d5f54073610af22` |
+| EXECUTION BASE SHA | The commit that adds this section and [WAVE1_EXECUTION_MANIFEST.md](WAVE1_EXECUTION_MANIFEST.md). Implementation descends from that commit. |
+| BRANCH | `cursor/forref-wave1-goal-score-30fd` |
+| SCOPE | Authoritative Goal and trustworthy score only. WAVE 2 is not authorized. |
+| CONTRACT | [WAVE1_GOAL_SCORE_CONTRACT.md](WAVE1_GOAL_SCORE_CONTRACT.md). Foundation semantics are unchanged. |
