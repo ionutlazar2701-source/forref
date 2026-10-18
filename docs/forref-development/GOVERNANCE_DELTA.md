@@ -1,12 +1,10 @@
 # Governance delta
 
-Status: CONTRADICTION RECORDED — NOT APPLIED
+Status: APPLIED TO `AGENTS.md` IN WAVE 0D — OTHER COPIES UNTOUCHED
 
-No Founder PASS. No Match Authority PASS. No Don PASS. No Tony PASS.
+Product Command acceptance of the Foundation Freeze SHA is PENDING. This file is the historical contradiction record. The canonical operating model is the Device operating model section in `AGENTS.md`. Do not treat the quoted proposal below as a second current policy.
 
-This file quotes a proposed documentation delta. It does not edit `AGENTS.md`, `docs/architecture-authority.md`, `docs/platforms.md`, `docs/open-decisions.md`, `docs/product.md`, `docs/mvp-scope.md`, or `.cursor/rules/product-context.mdc`.
-
-Founder sign-off is REQUIRED before any of the proposed sentences replace current governance. This wave is not a PASS.
+WAVE 0D edited `AGENTS.md` only. It did not edit `docs/architecture-authority.md`, `docs/platforms.md`, `docs/open-decisions.md`, `docs/product.md`, `docs/mvp-scope.md`, or `.cursor/rules/product-context.mdc`. Those files can still show the superseded sentence "the phone is the product; the watch is an upgrade."
 
 Parent inspected: `32eded4e8d18fa0165bb170209afe9b3b0ee5e29`.
 Historical anchor, already an ancestor, not a reset target: `main` `919c9062d607f0af255ad368b8c6cb2658d6c85a`.

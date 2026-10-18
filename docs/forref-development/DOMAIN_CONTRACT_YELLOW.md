@@ -1,8 +1,8 @@
 # Domain contract — YELLOW_CARD
 
-Status: DRAFT — NOT FROZEN
+Status: HISTORICAL WAVE 0 DRAFT — not the canonical contract
 
-No Founder PASS. No Match Authority PASS. No Don PASS. No Tony PASS.
+Canonical statement: [FOUNDATION_FREEZE.md](FOUNDATION_FREEZE.md). Yellow implementation is outside WAVE 1. Product Command acceptance of the freeze SHA is still pending.
 
 Parent vocabulary has no `YELLOW_CARD` code. Disciplinary facet id exists and is not a cautions model.
 

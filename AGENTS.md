@@ -1,6 +1,24 @@
 # AGENTS.md
 
-Ref App is a football referee match app. The **phone is the product**; the watch is an upgrade. A referee with a cheap phone and no watch must complete a full match.
+Ref App is a football referee match app.
+
+## Device operating model
+
+The phone is FORREF's preparation, fallback and post-match surface and must remain capable of completing every supported match workflow without a watch.
+
+When a supported smartwatch is present, its platform profile is certified for the required match-critical capabilities, and MATCH READY has established that watch as the active capture authority, the smartwatch is the primary in-match instrument and must operate autonomously inside its certified capability envelope.
+
+A watch is not a cosmetic companion or presentation-only upgrade.
+
+New Match Core, domain and persistence work must remain device-neutral and must not encode permanent phone-only authority assumptions.
+
+Watch clients are native platform clients.
+
+This policy does not claim that any watch platform or device is already production-certified.
+
+No device may present match-critical Saved success without valid capture authority and the required certified local D1 contract.
+
+Implementation sequencing may exercise shared Match Core on the phone before watch clients are complete. Sequencing does not redefine the target product authority model.
 
 This repository is in **legacy cutover**: the Flutter shell is reusable; **`packages/match_core` is legacy** and must not define new Match Core semantics.
 
@@ -44,7 +62,7 @@ Non-negotiable for **new** Match Core work:
 
 ## Product invariants (still valid)
 
-- **Phone-first.** Build order: phone → Wear OS → watchOS → Garmin → Zepp last.
+- **Device model.** See Device operating model above. Implementation order may be phone → Wear OS → watchOS → Garmin → Zepp last. That order is sequencing, not a phone-only authority model.
 - **Offline-first.** Local save on the recording device; cloud is later replica, not capture gate.
 - **Phone stack:** Flutter + Drift + SQLite shell. **New** Match Core: pure Dart, no Flutter/Firebase.
 - **i18n:** RO + EN; English fallback; no hardcoded UI strings.
@@ -61,6 +79,7 @@ When the task touches these areas, read the named doc — not the full tree:
 - Platforms → [docs/platforms.md](docs/platforms.md)
 - Product identity → [docs/product.md](docs/product.md)
 - Open items → [docs/open-decisions.md](docs/open-decisions.md)
+- Foundation freeze candidate (Product Command acceptance pending; WAVE 1 not authorized) → [docs/forref-development/FOUNDATION_FREEZE.md](docs/forref-development/FOUNDATION_FREEZE.md)
 
 ## Open-decision protocol
 

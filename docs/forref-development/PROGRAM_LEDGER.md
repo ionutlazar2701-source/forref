@@ -1,10 +1,24 @@
 # Program ledger
 
-Status of this file: RECORD — NOT A PASS
+Status of this file: RECORD
 
-No Founder PASS. No Match Authority PASS. No Don PASS. No Tony PASS.
+Canonical contract: [FOUNDATION_FREEZE.md](FOUNDATION_FREEZE.md)
 
-The older branch `cursor/forref-wave1-integration-30fd` is a previous test and harness wave. It is not V2 WAVE 1. V2 WAVE 1 means Goal and Score as defined in the V2 research, and it stays HOLD.
+DOMAIN: FROZEN
+
+ARCHITECTURE: FROZEN CANDIDATE
+
+RELIABILITY: FROZEN CANDIDATE
+
+SIMPLICITY: FROZEN CANDIDATE
+
+PRODUCT COMMAND: PENDING FINAL ACCEPTANCE
+
+WAVE 1: HOLD — AWAITING FOUNDATION FREEZE SHA ACCEPTANCE
+
+The older branch `cursor/forref-wave1-integration-30fd` is a previous test and harness wave. It is not V2 WAVE 1. V2 WAVE 1 means Goal and Score under [WAVE1_GOAL_SCORE_CONTRACT.md](WAVE1_GOAL_SCORE_CONTRACT.md), and it stays HOLD until Product Command accepts the Foundation Freeze SHA.
+
+Specialist authority results below are the WAVE 0D inputs. They are not Product Command acceptance. Don and Tony hardware/human certification were not issued. LOCAL GATE REQUIRED remains for physical proof.
 
 ## WAVE 0
 
@@ -21,7 +35,7 @@ The older branch `cursor/forref-wave1-integration-30fd` is a previous test and h
 | HOLDS | Founder scope. Match Authority freeze. Visual design. Injury decision. Goal payload choice. Score known-zero predicate. Cautions "No" predicate. Enter-field semantic from PR #9. PR #9 store serializer. |
 | LOCAL GATES | LOCAL GATE REQUIRED. PHYSICAL DATA REQUIRED. HARDWARE EVIDENCE ABSENT. Power-loss D1 is not certified. No device was operated. |
 | AUTHORITY GATES | Founder sign-off REQUIRED and not issued. Match Authority freeze not issued. Don PASS not issued. REFEREE DATA REQUIRED. HUMAN EVIDENCE ABSENT. Tony PASS not issued. |
-| NEXT WAVE | V2 WAVE 1 (Goal+Score) is HOLD until an accepted WAVE 0 SHA is explicitly supplied by Product Command. Do not start it. `cursor/forref-wave1-integration-30fd` is not that wave. |
+| NEXT WAVE | Superseded as the next action by WAVE 0D. V2 WAVE 1 stays HOLD until Product Command accepts the Foundation Freeze SHA. |
 
 ## Exclusive integration-owner files observed on the parent
 
@@ -67,4 +81,21 @@ Localization:
 - `apps/referee_phone/lib/l10n/app_localizations_ro.dart`
 - `apps/referee_phone/lib/l10n/match_labels.dart`
 
-One integration owner per wave for each of those groups. This wave changed none of them.
+One integration owner per wave for each of those groups. WAVE 0 changed none of them. WAVE 0D changed none of them.
+
+## WAVE 0D
+
+| Field | Value |
+| --- | --- |
+| STATUS | Consolidation candidate. Product Command acceptance pending. |
+| PARENT SHA | `a15a1c2bfd3ead5fa1dd97647233c0394d1887ba` |
+| EXECUTION SHA | Recorded in [WAVE0_FINAL_HANDOFF.md](WAVE0_FINAL_HANDOFF.md) after the single WAVE 0D commit. |
+| BRANCH | `cursor/forref-wave0d-foundation-freeze-30fd` |
+| SUBAGENTS | None. Orchestrator consolidation only. |
+| OWNED FILES | `AGENTS.md` device-operating-model language. `docs/forref-development/` canonical pack and status banners. |
+| TESTS | NONE in WAVE 0D. No production source changed. No CI PASS claimed. |
+| ADVERSARIAL RESULT | Not a new sabotage pass. Parent diff check: production paths absent. |
+| KNOWN HOLDS | WAVE 1 implementation. Yellow, Cautions, Red, Substitution, Injury, participant registry, field-entry, watch capture, authority transfer. |
+| LOCAL GATES | LOCAL GATE REQUIRED for real power-loss D1, device storage, platform restart, watch lifecycle, battery, physical watch reliability, and human referee trials. Not WAVE 0D blockers. Not certified. |
+| AUTHORITY GATES | Referee Domain Authority PASS. Architecture Foundation Closure PASS. Systems Simplicity Authority PASS. Mission Reliability Authority PASS. Product Command PENDING FINAL ACCEPTANCE. |
+| NEXT AUTHORIZED WAVE | None. WAVE 1 is HOLD — AWAITING FOUNDATION FREEZE SHA ACCEPTANCE. |

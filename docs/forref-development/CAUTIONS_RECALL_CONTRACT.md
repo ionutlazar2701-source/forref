@@ -1,8 +1,8 @@
 # Cautions recall
 
-Status: DRAFT — NOT FROZEN
+Status: HISTORICAL WAVE 0 DRAFT — not the canonical contract
 
-No Founder PASS. No Match Authority PASS. No Don PASS. No Tony PASS.
+Canonical statement: [FOUNDATION_FREEZE.md](FOUNDATION_FREEZE.md). Product Command acceptance of that freeze SHA is still pending. WAVE 1 must not implement Cautions Recall.
 
 Cautions recall is a read model. It does not commit Match Records. It does not create yellow or red records.
 

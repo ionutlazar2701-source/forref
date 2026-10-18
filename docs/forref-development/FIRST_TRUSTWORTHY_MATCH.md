@@ -1,8 +1,8 @@
 # First Trustworthy Match
 
-Status: DRAFT — NOT FROZEN
+Status: HISTORICAL WAVE 0 DRAFT — not the canonical contract
 
-No Founder PASS. No Match Authority PASS. No Don PASS. No Tony PASS.
+Canonical statement: [FOUNDATION_FREEZE.md](FOUNDATION_FREEZE.md). Injury is out of FTM v1. Product Command acceptance of the freeze SHA is still pending. This file is not a second FTM contract.
 
 First Trustworthy Match (FTM) is a draft acceptance description for one phone match whose displayed sporting claims are rebuilt from immutable Match Records, with Saved only after durable commit. It is not a demo script, not a release certification, and not Watch Live Core.
 

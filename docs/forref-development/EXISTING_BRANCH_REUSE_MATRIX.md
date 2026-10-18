@@ -2,7 +2,7 @@
 
 Status: AUDIT — NOT A MERGE PLAN
 
-No Founder PASS. No Match Authority PASS. No Don PASS. No Tony PASS.
+This matrix is evidence from WAVE 0. It is not the Foundation Freeze. Canonical contracts are [FOUNDATION_FREEZE.md](FOUNDATION_FREEZE.md) and [WAVE1_GOAL_SCORE_CONTRACT.md](WAVE1_GOAL_SCORE_CONTRACT.md). Do not reuse a branch that represents unknown score as integer 0–0.
 
 No branch is cherry-picked. No pull request is merged. Green tests on an old branch are not contract correctness.
 
