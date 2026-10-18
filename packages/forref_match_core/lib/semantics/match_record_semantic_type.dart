@@ -33,6 +33,7 @@ enum V1SemanticTypeCode {
   temporalCorrection,
   correction,
   legalSupersession,
+  goal,
 }
 
 extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
@@ -49,6 +50,7 @@ extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
         V1SemanticTypeCode.temporalCorrection => 'TEMPORAL_CORRECTION',
         V1SemanticTypeCode.correction => 'CORRECTION',
         V1SemanticTypeCode.legalSupersession => 'LEGAL_SUPERSESSION',
+        V1SemanticTypeCode.goal => 'GOAL',
       };
 
   SemanticTypeCategory get category => switch (this) {
@@ -64,6 +66,7 @@ extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
         V1SemanticTypeCode.correction ||
         V1SemanticTypeCode.legalSupersession =>
           SemanticTypeCategory.correctionSupersession,
+        V1SemanticTypeCode.goal => SemanticTypeCategory.event,
       };
 
   static V1SemanticTypeCode? parseWire(String value) => switch (value) {
@@ -79,6 +82,7 @@ extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
         'TEMPORAL_CORRECTION' => V1SemanticTypeCode.temporalCorrection,
         'CORRECTION' => V1SemanticTypeCode.correction,
         'LEGAL_SUPERSESSION' => V1SemanticTypeCode.legalSupersession,
+        'GOAL' => V1SemanticTypeCode.goal,
         _ => null,
       };
 }
