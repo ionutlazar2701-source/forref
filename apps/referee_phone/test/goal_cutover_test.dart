@@ -187,6 +187,83 @@ void main() {
     expect(records.where((record) => record.payload is GoalPayload), isEmpty);
   });
 
+  test('Goal is denied when records exist without a generation-1 root',
+      () async {
+    final match = await seedMatch();
+    final context = identity.contextFor(match.matchId);
+    final homeTeam = MatchTeamId(match.teams.home.teamId);
+    final direct = composition.boundary.recordBuilder.build(
+      context: context,
+      recordKind: RecordKind.humanDetermination,
+      payload: GoalPayload(
+        scoringTeamId: homeTeam,
+        captureIntentId: 'intent-direct-store',
+      ),
+      integrity: const IntegrityMetadata(),
+    );
+    expect(
+      await composition.boundary.durableStore
+          .commitAtNextOriginSequence(direct),
+      isA<DurableCommitSuccess>(),
+    );
+
+    final denied = await composition.boundary.commitGoal(
+      context,
+      scoringTeamId: homeTeam,
+      captureIntentId: 'intent-after-missing-root',
+    );
+    expect(denied, isA<DurableCommitFailure>());
+    expect(
+      (denied as DurableCommitFailure).reason,
+      contains('generation-1 authority root missing'),
+    );
+    final records =
+        await composition.boundary.durableStore.readCommittedForMatch(
+      match.matchId,
+    );
+    expect(
+      records.where((record) => record.payload is GoalPayload),
+      hasLength(1),
+    );
+    expect(
+      await composition.boundary.durableStore
+          .readGenerationOneAuthorityRoot(match.matchId),
+      isNull,
+    );
+  });
+
+  test(
+      'Goal is denied when capture identity does not match the generation-1 root',
+      () async {
+    final match = await seedMatch();
+    await ensureRootAndKickOff(match.matchId);
+    final current = identity.contextFor(match.matchId);
+    final mismatched = CaptureContext(
+      matchId: current.matchId,
+      originDeviceId: 'other-device',
+      authorityScope: const MainRefereeScope(),
+      authorityPrincipalId: 'other-principal',
+      authorityGeneration: 1,
+      projectionAuthorityGeneration: current.projectionAuthorityGeneration,
+      activeCaptureDeviceId: 'other-device',
+    );
+    final denied = await composition.boundary.commitGoal(
+      mismatched,
+      scoringTeamId: MatchTeamId(match.teams.home.teamId),
+      captureIntentId: 'intent-mismatched-root',
+    );
+    expect(denied, isA<DurableCommitFailure>());
+    expect(
+      (denied as DurableCommitFailure).reason,
+      contains('generation-1 root does not match'),
+    );
+    final records =
+        await composition.boundary.durableStore.readCommittedForMatch(
+      match.matchId,
+    );
+    expect(records.where((record) => record.payload is GoalPayload), isEmpty);
+  });
+
   test('kick-off with bound integrity and no goals is KnownScore 0-0',
       () async {
     final match = await seedMatch();
