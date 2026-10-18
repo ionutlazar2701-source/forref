@@ -13,7 +13,7 @@ The attached report `FORREF_DEVELOPMENT_RESEARCH.md` is an execution-planning in
 | No second-yellow auto-red; match and shootout discipline stay distinct | FROZEN CONTRACT | `docs/mvp-scope.md` never-list. No shootout semantic in `V1SemanticTypeCode` |
 | Visual design, including watch screens, is undecided | BLOCKED | `docs/open-decisions.md`: do not draw screens or adapt to watch until asked |
 | Physical watch behavior cannot be certified in cloud | BLOCKED | `docs/local-gates.md`. Rental names in `docs/hardware-test-matrix.md` are candidates, not measurements |
-| WATCH CORE 002D-1 engineering PASS at `fda5af6eb9013e6c37b4455d70fb8f811c4b3962`, tree `research/watch_core_r1` | UNKNOWN / absent | `git cat-file` cannot resolve that SHA. No `research/watch_core_r1`. History on `origin/main` does not contain it |
+| WATCH CORE 002D-1 at `fda5af6eb9013e6c37b4455d70fb8f811c4b3962`, tree `research/watch_core_r1` | RESEARCH INSTRUMENT, NOT MERGED | Object exists on PR #12 at fda5af6, not merged, static research instrument, no Match Record commits, no human study, no hardware certification. It is not an ancestor of `origin/main` or of `32eded4`. It is not production software and not an engineering PASS |
 | 002D-1B evidence pack closed | VALIDATION PENDING | Report itself says pending. No pack in this repo. **EVIDENCE ACCESS HOLD** |
 | Central Instrument A (`PHASE → TIME → SCORE → CAPTURE / CAUTIONS`) is the validation baseline | DESIGN / DOMAIN APPROVED as a baseline, not production UX | Stated in the research report and in this run’s charter. No watch UI implements it |
 | Candidate C Score Sidecar | RESEARCH PROTOTYPE — absent | No C screens, no prototype path |
@@ -28,7 +28,7 @@ The attached report `FORREF_DEVELOPMENT_RESEARCH.md` is an execution-planning in
 
 ## Discrepancies
 
-1. The research treats watch prototypes and a 002D commit as the starting SHA. This repository’s HEAD is a phone Match Core foundation. Those SHAs and trees are not here.
+1. This repository’s HEAD is a phone Match Core foundation. The object `research/watch_core_r1` at `fda5af6eb9013e6c37b4455d70fb8f811c4b3962` exists on PR #12 at fda5af6, not merged, static research instrument, no Match Record commits, no human study, no hardware certification. It is not the starting SHA of this branch.
 2. “Foundation can be drafted in parallel” is not permission to publish Goal/Yellow/Red/Sub semantics. Those domain contracts are absent, so implementation stops at **DOMAIN CONTRACT REQUIRED**.
 3. Legacy phone capture (`apps/referee_phone/lib/features/live_match/capture_overlay.dart`) is not Watch Live Core.
 4. A green cloud suite is not physical-device, power-loss, or referee-study evidence.
@@ -36,4 +36,4 @@ The attached report `FORREF_DEVELOPMENT_RESEARCH.md` is an execution-planning in
 
 ## What was not treated as done
 
-Missing watch code, missing 002D sources, and missing event contracts were not filled in by assumption.
+Missing watch product code and missing event contracts were not filled in by assumption. The 002D tree was not copied into this HEAD. Object exists on PR #12 at fda5af6, not merged, static research instrument, no Match Record commits, no human study, no hardware certification.

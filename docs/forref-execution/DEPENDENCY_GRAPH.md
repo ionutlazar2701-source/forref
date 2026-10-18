@@ -17,8 +17,10 @@ FROZEN (already in repo)
         │    research/live_core_a protocol harness (no humans)
         │    research/a_physical geometry checker (no hardware pass)
         │
-        ├─ HOLD: 002D-1B evidence
-        │    needs commit fda5af6… or a replacement source snapshot
+        ├─ HOLD: 002D-1B human and hardware evidence
+        │    object exists on PR #12 at fda5af6, not merged,
+        │    static research instrument, no Match Record commits,
+        │    no human study, no hardware certification
         │
         ├─ HOLD: A-PHYSICAL certification
         │    LOCAL GATE REQUIRED — device matrix + measured hit regions
@@ -48,7 +50,7 @@ FROZEN (already in repo)
 | A-PHYSICAL certification | Named measured devices | `DEVICE MATRIX REQUIRED`, `LOCAL GATE REQUIRED` |
 | A-REFEREE scored study | Pre-registered thresholds; humans; 002D if the task is Recall depth | Do not invent thresholds or participant results |
 | C V2 | Visual-design decision | Do not draw production or prototype screens in this repo |
-| 002D-1B | Source at the cited SHA | `EVIDENCE ACCESS HOLD` |
+| 002D-1B | Object exists on PR #12 at fda5af6, not merged, static research instrument, no Match Record commits, no human study, no hardware certification | HUMAN EVIDENCE ABSENT. HARDWARE EVIDENCE ABSENT. Not merged |
 | Foundation freeze | Explicit architecture acceptance; no new sporting payload | `FOUNDATION DELTA REQUIRED` or remain draft |
 | Goal / Yellow / Red / Sub | Foundation SHA plus that event’s Minimum Irreversible Truth | `DOMAIN CONTRACT REQUIRED` |
 | Watch integration / saboteur | The four event SHAs plus Live Core A SHA | Do not start |

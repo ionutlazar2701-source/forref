@@ -14,7 +14,7 @@ Launch only work that cannot mutate Match Memory, invent sporting rules, draw wa
 | Geometry checker | WAVE NOW, then fix | Composer, then orchestrator | `research/a_physical` |
 | Independent review | After writers | Grok 4.7 | Geometry HOLD cleared by `6b53a8c` |
 | Watch Live Core UI | HOLD | — | Visual design open; no surface in repo |
-| 002D evidence closure | HOLD | — | Cited commit absent |
+| 002D evidence closure | HOLD | — | Object exists on PR #12 at fda5af6, not merged, static research instrument, no Match Record commits, no human study, no hardware certification |
 | Foundation freeze | HOLD | — | Would publish unapproved shared capture semantics |
 | Goal, Yellow, Red, Substitution | HOLD | — | Domain contracts absent |
 | Watch integration and product saboteur | HOLD | — | No integrated watch SHA |

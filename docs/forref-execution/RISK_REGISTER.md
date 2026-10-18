@@ -4,7 +4,7 @@
 | --- | --- | --- | --- | --- | --- |
 | R1 | High | Building Goal/Yellow/Red/Sub without a frozen capture contract forks authority | Architecture | Not started | Domain contracts still absent |
 | R2 | High | A confident score numeral without freshness and completeness | Match Core | Tests lock production score facet as untrusted | No Score Projection Trust contract |
-| R3 | High | 002D cited commit is not in this repo, so Recall evidence cannot be audited | Research | EVIDENCE ACCESS HOLD | Need the real tree or an admission that the SHA is elsewhere |
+| R3 | High | 002D-1B is not human or hardware evidence | Research | Object exists on PR #12 at fda5af6, not merged, static research instrument, no Match Record commits, no human study, no hardware certification. The missing-SHA claim is withdrawn | HUMAN EVIDENCE ABSENT. HARDWARE EVIDENCE ABSENT |
 | R4 | High | Cloud geometry or browser layout treated as wrist validation | Hardware | Checker cannot emit a certification token. Catalog stays `deviceMatrixRequired` | No measured hit regions, wake, rain, or battery |
 | R5 | High | Synthetic trials treated as referee evidence | Human factors | Harness states no participants; thresholds `unregistered`; cautions not 002D-scorable | No pre-registered gates, no cohort |
 | R6 | Medium | Viewport fail-open on `readyForPhysicalGate` | Geometry harness | Fixed in `6b53a8c` | Operator-supplied numbers can still be wrong; the checker only tests internal consistency |

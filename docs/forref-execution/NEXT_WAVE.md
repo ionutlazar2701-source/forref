@@ -6,7 +6,7 @@ Do not open the parallel event wave.
 
 | Package | Prerequisite |
 | --- | --- |
-| 002D-1B closure | The source snapshot for `fda5af6eb9013e6c37b4455d70fb8f811c4b3962`, or a written statement that the study instrument lives outside this repository |
+| 002D-1B closure | Object exists on PR #12 at fda5af6, not merged, static research instrument, no Match Record commits, no human study, no hardware certification. The missing-object claim is withdrawn. Closure still requires a human study and hardware evidence |
 | A-PHYSICAL | A device matrix with operator measurements. Cloud may only re-run `research/a_physical` |
 | A-REFEREE collection | Pre-registered thresholds, a protocol version accepted by Don, and real participants. The harness must stay frozen during collection |
 | C-SIDECAR | An explicit visual-design decision. Until then, do not draw screens |
