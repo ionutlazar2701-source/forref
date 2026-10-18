@@ -110,3 +110,14 @@ One integration owner per wave for each of those groups. WAVE 0 changed none of 
 | TESTS | NONE. No CI PASS. |
 | WAVE 1 | HOLD — awaiting Product Command acceptance. |
 | CLASSIFICATION | [WAVE0E_GOVERNANCE.md](WAVE0E_GOVERNANCE.md) |
+
+## WAVE 0F
+
+| Field | Value |
+| --- | --- |
+| STATUS | Governance reconciliation candidate. Product Command PENDING FINAL ACCEPTANCE. |
+| PARENT SHA | `78eba6fbbc012453f15ad123ff4298ad3b71c487` |
+| BRANCH | `cursor/forref-wave0f-governance-30fd` |
+| TESTS | NONE. No CI PASS. |
+| WAVE 1 | HOLD — AWAITING FOUNDATION FREEZE ACCEPTANCE. |
+| CLASSIFICATION | [WAVE0F_GOVERNANCE.md](WAVE0F_GOVERNANCE.md) |

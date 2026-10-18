@@ -1,15 +1,20 @@
 # Research claims versus repository evidence
 
+HISTORICAL EXECUTION AUDIT. Base inspected: `919c9062d607f0af255ad368b8c6cb2658d6c85a`. This file is not current governance authority. Current device operating model: [AGENTS.md](../../AGENTS.md) and [FOUNDATION_FREEZE.md](../forref-development/FOUNDATION_FREEZE.md).
+
 Audit date: 2026-10-18. Base inspected: `919c9062d607f0af255ad368b8c6cb2658d6c85a` (`main`, “Establish FORREF match authority and cloud execution foundation”).
 
 The attached report `FORREF_DEVELOPMENT_RESEARCH.md` is an execution-planning input. It does not override `AGENTS.md` or `docs/architecture-authority.md`.
+
+WAVE 0F split one combined row below. “Phone is the product; watch is later” was true at this baseline and is no longer a current FROZEN CONTRACT. “Flutter is not a watch client” remains in force. Other rows are the audit as written.
 
 ## Classification
 
 | Claim | Class | Repository evidence |
 | --- | --- | --- |
 | Match Memory is immutable records; projection is disposable; D1 before Saved; no LWW | FROZEN CONTRACT | `docs/architecture-authority.md` ADR-001–018. Code: `packages/forref_match_core`, `packages/forref_match_persistence` |
-| Phone is the product; watch is later; Flutter is not a watch client | FROZEN CONTRACT | `AGENTS.md`, `docs/mvp-scope.md`, `docs/platforms.md` |
+| Phone is the product; watch is later | SUPERSEDED GOVERNANCE / HISTORICAL BASELINE | True at this audited baseline in `AGENTS.md`, `docs/mvp-scope.md`, and `docs/platforms.md` as they stood then. Later accepted governance: [AGENTS.md](../../AGENTS.md) device operating model and [FOUNDATION_FREEZE.md](../forref-development/FOUNDATION_FREEZE.md). Not current governance. |
+| Flutter is not a watch client | FROZEN CONTRACT | Split out of the historical combined row above. Still stated in `AGENTS.md`. This half was not superseded. |
 | No second-yellow auto-red; match and shootout discipline stay distinct | FROZEN CONTRACT | `docs/mvp-scope.md` never-list. No shootout semantic in `V1SemanticTypeCode` |
 | Visual design, including watch screens, is undecided | BLOCKED | `docs/open-decisions.md`: do not draw screens or adapt to watch until asked |
 | Physical watch behavior cannot be certified in cloud | BLOCKED | `docs/local-gates.md`. Rental names in `docs/hardware-test-matrix.md` are candidates, not measurements |

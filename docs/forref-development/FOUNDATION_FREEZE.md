@@ -154,4 +154,4 @@ WAVE 0E aligned these active instructions with this operating model:
 - `docs/product.md`
 - `docs/mvp-scope.md`
 
-`docs/architecture-authority.md` was not edited. ADR-001 through ADR-018 stay in force. Product Command acceptance of the freeze SHA is still pending. WAVE 1 stays HOLD. Other unbannered files still contain the superseded device sentence or an Injury capture path. They were outside this wave's file list. The occurrence classification is [WAVE0E_GOVERNANCE.md](WAVE0E_GOVERNANCE.md).
+`docs/architecture-authority.md` was not edited. ADR-001 through ADR-018 stay in force. Product Command acceptance of the freeze SHA is still pending. WAVE 1 stays HOLD. WAVE 0F is a governance reconciliation candidate and does not change this freeze. The occurrence classification is [WAVE0F_GOVERNANCE.md](WAVE0F_GOVERNANCE.md). The WAVE 0E classification remains [WAVE0E_GOVERNANCE.md](WAVE0E_GOVERNANCE.md).

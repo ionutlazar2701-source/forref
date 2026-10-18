@@ -1,5 +1,7 @@
 # WAVE 0E governance reconciliation
 
+WAVE 0F closed the five active items named in the table below. This table is the WAVE 0E classification, not the current one. Current classification: [WAVE0F_GOVERNANCE.md](WAVE0F_GOVERNANCE.md).
+
 Parent: `e71fa24d2d22eb63952209170ec82e1b6eb4e954`
 
 The Foundation contracts were not reopened. WAVE 1 stays HOLD. Product Command has not accepted the Foundation Freeze SHA.
