@@ -1,8 +1,8 @@
 # Score projection and trust
 
-Status: DRAFT — NOT FROZEN
+Status: HISTORICAL WAVE 0 DRAFT — not the canonical contract
 
-No Founder PASS. No Match Authority PASS. No Don PASS. No Tony PASS.
+Canonical score statement: [WAVE1_GOAL_SCORE_CONTRACT.md](WAVE1_GOAL_SCORE_CONTRACT.md). Summary: [FOUNDATION_FREEZE.md](FOUNDATION_FREEZE.md). Product Command acceptance is still pending. This draft is not a second score contract. Where it names a fourth display state, the frozen states are only KnownScore, ScoreUnavailable and ScoreConflicted.
 
 ## Hard rules (verbatim)
 

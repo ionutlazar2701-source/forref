@@ -1,8 +1,8 @@
 # Correction and legal supersession
 
-Status: DRAFT — NOT FROZEN
+Status: HISTORICAL WAVE 0 DRAFT — not the canonical contract
 
-No Founder PASS. No Match Authority PASS. No Don PASS. No Tony PASS.
+Canonical statement: [FOUNDATION_FREEZE.md](FOUNDATION_FREEZE.md) and [WAVE1_GOAL_SCORE_CONTRACT.md](WAVE1_GOAL_SCORE_CONTRACT.md). Product Command acceptance of that freeze SHA is still pending.
 
 Parent already has `V1SemanticTypeCode.correction` and `V1SemanticTypeCode.legalSupersession`. Both require a target relationship. Both use `SemanticEffect.historicalInterpretation`. Both set `createsSportingState` to false. Their projection facet on the parent is coverage, not score and not disciplinary.
 

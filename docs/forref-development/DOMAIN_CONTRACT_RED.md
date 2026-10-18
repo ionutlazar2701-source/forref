@@ -1,8 +1,8 @@
 # Domain contract — RED_CARD
 
-Status: DRAFT — NOT FROZEN
+Status: HISTORICAL WAVE 0 DRAFT — not the canonical contract
 
-No Founder PASS. No Match Authority PASS. No Don PASS. No Tony PASS.
+Canonical statement: [FOUNDATION_FREEZE.md](FOUNDATION_FREEZE.md). Sending-off implementation is outside WAVE 1. Product Command acceptance of the freeze SHA is still pending.
 
 Parent vocabulary has no `RED_CARD` code. None of PR #2 through PR #10 adds a `RED_CARD` semantic type. That absence is not a red contract. It is evidence that sending-off has not been implemented in the new core.
 

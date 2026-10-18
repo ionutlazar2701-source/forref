@@ -1,8 +1,8 @@
 # Domain contract — GOAL
 
-Status: DRAFT — NOT FROZEN
+Status: HISTORICAL WAVE 0 DRAFT — not the canonical contract
 
-No Founder PASS. No Match Authority PASS. No Don PASS. No Tony PASS.
+Canonical Goal statement for a future WAVE 1: [WAVE1_GOAL_SCORE_CONTRACT.md](WAVE1_GOAL_SCORE_CONTRACT.md). Summary: [FOUNDATION_FREEZE.md](FOUNDATION_FREEZE.md). Product Command acceptance is still pending. This draft is not a second Goal contract.
 
 Parent vocabulary has no `GOAL` code. `V1SemanticTypeCode` does not include it. `createsSportingState` is false for every parent code. This draft does not add a code.
 

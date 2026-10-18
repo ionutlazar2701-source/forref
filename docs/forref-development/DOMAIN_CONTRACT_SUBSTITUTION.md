@@ -1,8 +1,8 @@
 # Domain contract — SUBSTITUTION
 
-Status: DRAFT — NOT FROZEN
+Status: HISTORICAL WAVE 0 DRAFT — not the canonical contract
 
-No Founder PASS. No Match Authority PASS. No Don PASS. No Tony PASS.
+Canonical statement: [FOUNDATION_FREEZE.md](FOUNDATION_FREEZE.md). Substitution implementation is outside WAVE 1. Product Command acceptance of the freeze SHA is still pending.
 
 Parent vocabulary has no substitution semantic type. PR #2 through PR #12 do not add one. On PR #10, substitution still opens the legacy capture overlay and `session.saveEvent`. That path is not this contract.
 

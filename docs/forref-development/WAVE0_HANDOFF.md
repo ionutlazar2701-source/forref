@@ -1,5 +1,7 @@
 # WAVE 0 handoff
 
+Historical packet. The consolidation packet is [WAVE0_FINAL_HANDOFF.md](WAVE0_FINAL_HANDOFF.md). The canonical contract is [FOUNDATION_FREEZE.md](FOUNDATION_FREEZE.md). Product Command has not accepted that SHA.
+
 STATUS: HOLD
 
 This is not a PASS. Founder scope is not signed off. Match Authority freeze is not issued. Don PASS is not issued. Tony PASS is not issued.
