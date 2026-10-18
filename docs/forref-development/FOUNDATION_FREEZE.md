@@ -147,11 +147,11 @@ No watch platform or device is production-certified by this freeze.
 
 The device operating model in `AGENTS.md` is the repository operating statement. Build order is sequencing. It does not encode the phone as permanent sporting authority.
 
-These files were not rewritten in WAVE 0D and may still contain the superseded sentence that the phone is the product and the watch is an upgrade:
+WAVE 0E aligned these active instructions with this operating model:
 
 - `.cursor/rules/product-context.mdc`
 - `docs/platforms.md`
 - `docs/product.md`
 - `docs/mvp-scope.md`
 
-`docs/architecture-authority.md` was not edited. ADR-001 through ADR-018 stay in force.
+`docs/architecture-authority.md` was not edited. ADR-001 through ADR-018 stay in force. Product Command acceptance of the freeze SHA is still pending. WAVE 1 stays HOLD. Other unbannered files still contain the superseded device sentence or an Injury capture path. They were outside this wave's file list. The occurrence classification is [WAVE0E_GOVERNANCE.md](WAVE0E_GOVERNANCE.md).

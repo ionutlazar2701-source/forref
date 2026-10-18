@@ -1,19 +1,19 @@
 # Governance delta
 
-Status: APPLIED TO `AGENTS.md` IN WAVE 0D — OTHER COPIES UNTOUCHED
+Status: HISTORICAL CONTRADICTION RECORD — not current policy
 
-Product Command acceptance of the Foundation Freeze SHA is PENDING. This file is the historical contradiction record. The canonical operating model is the Device operating model section in `AGENTS.md`. Do not treat the quoted proposal below as a second current policy.
+Product Command acceptance of the Foundation Freeze SHA is PENDING. This file records the contradiction inspected before WAVE 0D and WAVE 0E. The canonical operating model is the Device operating model section in `AGENTS.md`. Do not treat any sentence below as a second current policy. Do not apply the proposed-edits quotation. That quotation is not the wording adopted.
 
-WAVE 0D edited `AGENTS.md` only. It did not edit `docs/architecture-authority.md`, `docs/platforms.md`, `docs/open-decisions.md`, `docs/product.md`, `docs/mvp-scope.md`, or `.cursor/rules/product-context.mdc`. Those files can still show the superseded sentence "the phone is the product; the watch is an upgrade."
+WAVE 0D edited `AGENTS.md` only. The quotations below are the historical text inspected then. WAVE 0E later aligned `.cursor/rules/product-context.mdc`, `docs/product.md`, `docs/mvp-scope.md`, and `docs/platforms.md`. This file does not restate current policy.
 
 Parent inspected: `32eded4e8d18fa0165bb170209afe9b3b0ee5e29`.
 Historical anchor, already an ancestor, not a reset target: `main` `919c9062d607f0af255ad368b8c6cb2658d6c85a`.
 
 Planning input, not repository truth: `FORREF_DEVELOPMENT_MASTER_RESEARCH_V2_138b.md`, section `WAVE_0_AUTHORITY_CONTRACT_FREEZE`. Repository evidence overrides that file where they differ.
 
-## What the repository still says
+## What the repository said at the inspected parent
 
-These sentences are in force at the parent. They were not changed.
+These sentences were in the files at parent `32eded4e8d18fa0165bb170209afe9b3b0ee5e29`. They are evidence of that inspection. They are not in force after WAVE 0D and WAVE 0E.
 
 `AGENTS.md`:
 
@@ -68,9 +68,11 @@ No founder-signed charter file was found in the repository at the parent SHA. Th
 
 `docs/open-decisions.md` still lists visual design as open. Central Instrument A and Candidate C are therefore not a visual-design decision. `docs/forref-execution/RESEARCH_TO_REPO_AUDIT.md` already calls Central Instrument A a baseline rather than production UX, and calls Candidate C absent. That audit line was left in place.
 
-## Contradiction
+## Contradiction (WAVE 0 record)
 
-The repository tells agents that the phone is the product, the watch is an upgrade, the build order is phone then Wear OS then watchOS then Garmin then Zepp, and visual design is open.
+The two sections under this heading are the WAVE 0 analysis. They are not the operating model after WAVE 0D and WAVE 0E.
+
+At that inspection, the repository told agents that the phone is the product, the watch is an upgrade, the build order is phone then Wear OS then watchOS then Garmin then Zepp, and visual design is open.
 
 The V2 research and the previous Product Command charter tell agents that, when a watch is present, it is the primary instrument during the match, the phone is primary before and after, Central Instrument A is the validation baseline, Candidate C is only a challenger, and build order must not be read as sporting authority.
 
@@ -78,9 +80,11 @@ Both cannot be operational doctrine at once. An agent that follows `AGENTS.md` w
 
 A second, related scope contradiction sits beside it. `docs/product.md` and `docs/mvp-scope.md` include injury in the phone-complete match. The V2 First Trustworthy Match table leaves injury outside the drafted Goal / Yellow / Red / Substitution set and requires a founder decision: hide or disable injury for that match, or stop until an Injury contract exists. This wave does not choose. See `FIRST_TRUSTWORTHY_MATCH.md`.
 
-## Proposed edits (not applied)
+## Proposed edits (historical; not the adopted wording)
 
-Founder sign-off is REQUIRED. Until that sign-off is recorded by the founder in the canonical docs, the sentences below are a quotation, not instructions.
+The quotation below was not applied. WAVE 0D and WAVE 0E used the Device operating model in `AGENTS.md`, not this quotation. Do not apply it.
+
+Founder sign-off was required at the time of this draft. The sentences below remain a quotation, not instructions.
 
 Proposed replacement for the product-identity paragraph in `AGENTS.md` and for the matching sentences in `docs/product.md` and `.cursor/rules/product-context.mdc`:
 

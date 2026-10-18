@@ -1,6 +1,6 @@
 # WAVE 0 handoff
 
-Historical packet. The consolidation packet is [WAVE0_FINAL_HANDOFF.md](WAVE0_FINAL_HANDOFF.md). The canonical contract is [FOUNDATION_FREEZE.md](FOUNDATION_FREEZE.md). Product Command has not accepted that SHA.
+Historical packet. The consolidation packet is [WAVE0_FINAL_HANDOFF.md](WAVE0_FINAL_HANDOFF.md). The canonical contract is [FOUNDATION_FREEZE.md](FOUNDATION_FREEZE.md). Product Command has not accepted that SHA. Governance and Injury sentences later in this packet describe the repository before WAVE 0D and WAVE 0E. They are not current policy.
 
 STATUS: HOLD
 
