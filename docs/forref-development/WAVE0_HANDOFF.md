@@ -12,7 +12,8 @@ Branch: `cursor/forref-wave0-contract-freeze-30fd`
 Parent SHA: `32eded4e8d18fa0165bb170209afe9b3b0ee5e29`
 Historical anchor, ancestor of the parent, not a reset target: `919c9062d607f0af255ad368b8c6cb2658d6c85a`
 002D correction SHA: `35c10a20016d9955eee92f84f911ebd2c5a85374`
-EXECUTION SHA: the tip of this branch after the contract-pack commit. Read it with `git rev-parse HEAD`. The contract-pack commit cannot inline its own hash. A later stamp, if present, only records test evidence and that hash.
+Contract-pack SHA: `c157f14620160549cd4e4634935c4a9bfc3ecd2f`
+EXECUTION SHA: the tip of this branch, which is the commit that records the test result above the contract pack. Read it with `git rev-parse HEAD`. That tip does not change `packages/`.
 
 The older branch `cursor/forref-wave1-integration-30fd` is a previous test and harness wave. It added adversarial tests and research harnesses. It is not V2 WAVE 1. V2 WAVE 1 means Goal+Score in the V2 research sense.
 
@@ -54,7 +55,11 @@ Surgical edits:
 
 Command: `cd packages/forref_match_core && dart test`
 
-Result: pending in this draft of the handoff until the command is run on this tree. The committed handoff replaces this paragraph with the count, the SHA tested, and TEST EXECUTED PASS or TEST EXECUTED FAIL.
+SHA tested: `c157f14620160549cd4e4634935c4a9bfc3ecd2f` (contract-pack commit; the tree under `packages/` matches the parent).
+
+Count: 170 passed. Exit code 0.
+
+Label: TEST EXECUTED PASS.
 
 The test label does not authorize domain semantics. SQLite durability settings were not changed and were not weakened. No hardware result and no referee result was fabricated.
 

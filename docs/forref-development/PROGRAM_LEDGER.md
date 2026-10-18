@@ -12,11 +12,11 @@ The older branch `cursor/forref-wave1-integration-30fd` is a previous test and h
 | --- | --- |
 | STATUS | HOLD |
 | PARENT SHA | `32eded4e8d18fa0165bb170209afe9b3b0ee5e29` |
-| EXECUTION SHA | Tip of `cursor/forref-wave0-contract-freeze-30fd` after the contract-pack commit. 002D correction commit: `35c10a20016d9955eee92f84f911ebd2c5a85374`. The contract-pack hash is the parent of any later test-stamp commit and is recorded in `WAVE0_HANDOFF.md` once that commit exists. |
+| EXECUTION SHA | Contract pack `c157f14620160549cd4e4634935c4a9bfc3ecd2f`. 002D correction `35c10a20016d9955eee92f84f911ebd2c5a85374`. The tip that records this test line is the branch execution tip; read it with `git rev-parse HEAD` after that commit. |
 | BRANCH | `cursor/forref-wave0-contract-freeze-30fd` |
 | SUBAGENT | FORREF WAVE 0 domain/architecture reviewer. Requested model: grok-4.7-high. Actual model: Grok 4.7. |
 | OWNED FILES | `docs/forref-development/**`. Surgical factual corrections in `docs/forref-execution/` only where a missing-SHA claim for `fda5af6` or `research/watch_core_r1` was stated: `RESEARCH_TO_REPO_AUDIT.md`, `RISK_REGISTER.md`, `NEXT_WAVE.md`, `DEPENDENCY_GRAPH.md`, `WAVE_EXECUTION_PLAN.md`, `HANDOFF_RO.md`. |
-| TESTS | `cd packages/forref_match_core && dart test`. Result filled in `WAVE0_HANDOFF.md` after the run. Label is TEST EXECUTED PASS or TEST EXECUTED FAIL. That label does not authorize domain semantics. |
+| TESTS | `cd packages/forref_match_core && dart test` at `c157f14620160549cd4e4634935c4a9bfc3ecd2f`. 170 passed. Exit code 0. TEST EXECUTED PASS. That label does not authorize domain semantics. |
 | ADVERSARIAL RESULT | HOLD. Governance contradiction recorded and not applied. Domain contracts are drafts. Two goal forks conflict with each other and their integer `0–0` empty score conflicts with the score hard rule. Legacy injury, red, and substitution writers remain on the phone cutover line. No sporting-law invention. No authority PASS. |
 | HOLDS | Founder scope. Match Authority freeze. Visual design. Injury decision. Goal payload choice. Score known-zero predicate. Cautions "No" predicate. Enter-field semantic from PR #9. PR #9 store serializer. |
 | LOCAL GATES | LOCAL GATE REQUIRED. PHYSICAL DATA REQUIRED. HARDWARE EVIDENCE ABSENT. Power-loss D1 is not certified. No device was operated. |
