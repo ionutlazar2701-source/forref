@@ -332,7 +332,6 @@ void expectScoreUntrusted(MatchProjectionState projection, {String? reason}) {
     ProjectionTrust.untrusted,
     reason: reason,
   );
-  expect(score.trust, isNot(isA<int>()), reason: reason);
   expect(score.reason, isNot(contains(RegExp(r'\d'))), reason: reason);
 }
 
