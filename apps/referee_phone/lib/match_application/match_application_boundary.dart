@@ -130,7 +130,12 @@ final class MatchApplicationBoundary
     required MatchTeamId awayTeamId,
   }) async {
     final root = await _store.readGenerationOneAuthorityRoot(matchId);
-    final records = await _store.readCommittedForMatch(matchId);
+    final List<MatchRecord> records;
+    try {
+      records = await _store.readCommittedForMatch(matchId);
+    } on CommittedRecordQuarantineException {
+      return const ScoreUnavailable();
+    }
     final proof = root == null
         ? null
         : ScoreCompletenessProof(
@@ -180,7 +185,7 @@ final class MatchApplicationBoundary
         domainContractVersion: context.domainContractVersion,
         competitionRulesContext: context.competitionRulesContext,
       ),
-      integrity: const IntegrityMetadata(evidenceRefs: ['goal-capture']),
+      integrity: const IntegrityMetadata(),
     );
     return _store.commitAtNextOriginSequence(request);
   }

@@ -81,12 +81,14 @@ class _MatchesPageState extends State<MatchesPage> {
                       for (final match in section.matches)
                         ListTile(
                           title: Text(
-                            l10n.scoreLine(
-                              homeLabel(match, l10n),
-                              match.score.home,
-                              match.score.away,
-                              awayLabel(match, l10n),
-                            ),
+                            AppScope.of(context).matchApplication == null
+                                ? l10n.scoreLine(
+                                    homeLabel(match, l10n),
+                                    match.score.home,
+                                    match.score.away,
+                                    awayLabel(match, l10n),
+                                  )
+                                : '${homeLabel(match, l10n)} – ${awayLabel(match, l10n)}',
                           ),
                           subtitle: Text(matchStatusLabel(match, l10n)),
                           onTap: () => _open(match),

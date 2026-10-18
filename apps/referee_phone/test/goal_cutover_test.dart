@@ -158,17 +158,22 @@ void main() {
     expect(known.goalsByTeam[awayTeam], 2);
   });
 
-  test('score without integrity evidence on all records stays unavailable', () async {
+  test('kick-off with bound integrity and no goals is KnownScore 0-0', () async {
     final match = await seedMatch();
     await ensureRootAndKickOff(match.matchId);
+    final homeTeam = MatchTeamId(match.teams.home.teamId);
+    final awayTeam = MatchTeamId(match.teams.away.teamId);
 
     final projection = await composition.boundary.readScoreProjection(
       matchId: match.matchId,
       evaluatedAuthorityGeneration: PhoneCaptureIdentity.initialAuthorityGeneration,
-      homeTeamId: MatchTeamId(match.teams.home.teamId),
-      awayTeamId: MatchTeamId(match.teams.away.teamId),
+      homeTeamId: homeTeam,
+      awayTeamId: awayTeam,
     );
-    expect(projection, isA<ScoreUnavailable>());
+    expect(projection, isA<KnownScore>());
+    final known = projection as KnownScore;
+    expect(known.goalsByTeam[homeTeam], 0);
+    expect(known.goalsByTeam[awayTeam], 0);
   });
 
   test('live match page fails closed if legacy 0-0 scoreLine returns', () {
