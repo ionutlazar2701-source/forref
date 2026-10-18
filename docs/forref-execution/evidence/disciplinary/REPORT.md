@@ -32,6 +32,18 @@ Legacy phone capture (`apps/referee_phone/lib/features/live_match/capture_overla
 - No enum values were added.
 - No `lib/`, phone app, persistence, pubspec, or `tool/` edits.
 
+## Verification
+
+`fvm` is not on `PATH`. `.fvm/fvm_config.json` is present, so the suites used `dart test` (Dart 3.13.2). The confirming runs were on `7e705151b70040f769d296f56114fe7bffecb355` while the branch was `cursor/forref-wave1-disciplinary-gap-30fd`.
+
+- `packages/forref_match_core`: `dart test test/adversarial/disciplinary_scope_fail_closed_test.dart` — 7 passed.
+- `packages/match_core`: `dart test test/events/no_automatic_red_test.dart` — 1 passed.
+- `packages/forref_match_core`: tracked test files for this commit — 136 passed. A working-tree `dart test` on the same commit also passed (145) while an untracked `score_trust_fail_closed_test.dart` was present. That file is not part of this commit.
+- `packages/match_core`: `dart test` — 35 passed.
+- `dart analyze` on `packages/forref_match_core` — no issues. `packages/match_core` reports one pre-existing info in `lib/serialization/match_json.dart`, outside this change.
+
+Two yellow cards for the same player did not append a red card and did not change the score. No automatic red was observed. No HOLD.
+
 ## HOLD
 
-None on source inspection. The locking tests are the proof. If two yellows append a red, that test is the defect record and legacy `lib/` stays unchanged.
+None. Legacy `lib/` was not changed.
