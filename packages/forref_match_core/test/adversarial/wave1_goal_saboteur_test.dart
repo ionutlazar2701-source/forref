@@ -148,6 +148,7 @@ void main() {
           originSequence: 2,
           payload: TemporalTransitionPayload(
             semanticType: V1SemanticTypeCode.periodStarted,
+            period: const PeriodIdentity(index: 1),
           ),
           integrity: const IntegrityMetadata(evidenceRefs: ['ev-period']),
         );
