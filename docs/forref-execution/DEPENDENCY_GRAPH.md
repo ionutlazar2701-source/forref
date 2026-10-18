@@ -1,14 +1,21 @@
 # Dependency graph and authority gates
 
+HISTORICAL EXECUTION GRAPH — superseded for current sequencing by [PROGRAM_LEDGER.md](../forref-development/PROGRAM_LEDGER.md) and [FOUNDATION_FREEZE.md](../forref-development/FOUNDATION_FREEZE.md).
+
 Base: `919c9062d607f0af255ad368b8c6cb2658d6c85a`.
 
 ```text
-FROZEN (already in repo)
+FROZEN (already in repo at this audit)
   architecture-authority ADR-001–018
   D1-before-Saved
   v1 semantic vocabulary (temporal + correction/supersession)
   no auto-red
-  phone-first; no watch screens until visual design is decided
+  no watch screens until visual design is decided
+HISTORICAL BASELINE AT ORIGINAL AUDIT:
+  phone-first
+SUPERSEDED BY FOUNDATION DEVICE OPERATING MODEL:
+  phone complete fallback
+  certified active watch may be primary autonomous in-match authority
         │
         ├─ WAVE NOW (done on cursor/forref-wave1-integration-30fd)
         │    score fail-closed tests
