@@ -43,10 +43,6 @@ EffectiveGoalResolution resolveEffectiveGoals({
       .toList()
     ..sort((a, b) => a.recordId.compareTo(b.recordId));
 
-  if (_hasSupersessionCycle(recordsById)) {
-    return const EffectiveGoalUnavailable();
-  }
-
   final scoringTeamByGoal = <String, MatchTeamId>{};
   for (final goal in goalRecords) {
     final payload = goal.payload as GoalPayload;
@@ -59,75 +55,69 @@ EffectiveGoalResolution resolveEffectiveGoals({
             record.recordKind == RecordKind.correction &&
             record.payload is CorrectionPayload,
       )
-      .toList()
-    ..sort((a, b) => a.recordId.compareTo(b.recordId));
-
-  final correctionsByGoalTarget = <String, List<MatchRecord>>{};
-  for (final correction in correctionRecords) {
-    final targetId = _correctionTarget(correction);
-    if (targetId == null) {
-      return const EffectiveGoalUnavailable();
-    }
-    if (!scoringTeamByGoal.containsKey(targetId)) continue;
-    correctionsByGoalTarget.putIfAbsent(targetId, () => []).add(correction);
-  }
-  for (final corrections in correctionsByGoalTarget.values) {
-    final teams = corrections
-        .map(
-          (candidate) =>
-              (candidate.payload as CorrectionPayload).repairedScoringTeamId,
-        )
-        .whereType<MatchTeamId>()
-        .toSet();
-    if (teams.length > 1) {
-      return const EffectiveGoalConflicted();
-    }
-  }
-  for (final correction in correctionRecords) {
-    final targetId = _correctionTarget(correction);
-    if (targetId == null || !scoringTeamByGoal.containsKey(targetId)) {
-      continue;
-    }
-    final repaired =
-        (correction.payload as CorrectionPayload).repairedScoringTeamId;
-    if (repaired != null) {
-      scoringTeamByGoal[targetId] = repaired;
-    }
-  }
-
-  final goalActive = <String, bool>{
-    for (final goal in goalRecords) goal.recordId: true,
-  };
+      .toList();
 
   final supersessionRecords = recordsById.values
       .where((record) => record.recordKind == RecordKind.legalSupersession)
-      .toList()
-    ..sort((a, b) => a.recordId.compareTo(b.recordId));
+      .toList();
 
+  for (final correction in correctionRecords) {
+    final targetId = _correctionTarget(correction);
+    if (targetId == null || !recordsById.containsKey(targetId)) {
+      return const EffectiveGoalUnavailable();
+    }
+  }
   for (final supersession in supersessionRecords) {
     final targetId = _supersessionTarget(supersession);
-    if (targetId == null) {
+    if (targetId == null || !recordsById.containsKey(targetId)) {
       return const EffectiveGoalUnavailable();
     }
-    final target = recordsById[targetId];
-    if (target == null) {
+  }
+
+  final repairedTeamsByGoal = <String, Set<MatchTeamId>>{};
+  for (final correction in correctionRecords) {
+    final repaired =
+        (correction.payload as CorrectionPayload).repairedScoringTeamId;
+    if (repaired == null) continue;
+    final goalId = _ultimateGoalIdForRecord(
+      _correctionTarget(correction)!,
+      recordsById,
+    );
+    if (goalId == null) continue;
+    repairedTeamsByGoal.putIfAbsent(goalId, () => {}).add(repaired);
+  }
+  for (final entry in repairedTeamsByGoal.entries) {
+    if (entry.value.length > 1) {
+      return const EffectiveGoalConflicted();
+    }
+    scoringTeamByGoal[entry.key] = entry.value.first;
+  }
+
+  final supersessionIds = supersessionRecords.map((r) => r.recordId).toList();
+  final effectiveSupersessions = <String>{};
+  for (final id in supersessionIds) {
+    final effectiveness = _supersessionEffectiveness(
+      id,
+      recordsById: recordsById,
+      supersessionIds: supersessionIds,
+      memo: {},
+      visiting: {},
+    );
+    if (effectiveness == _SupersessionEffectiveness.cycle) {
       return const EffectiveGoalUnavailable();
     }
-    if (target.payload is GoalPayload) {
-      goalActive[targetId] = false;
-      continue;
-    }
-    if (target.recordKind == RecordKind.legalSupersession) {
-      final restoredGoalId = _goalVoidedBySupersession(recordsById, target);
-      if (restoredGoalId != null) {
-        goalActive[restoredGoalId] = true;
-      }
+    if (effectiveness == _SupersessionEffectiveness.effective) {
+      effectiveSupersessions.add(id);
     }
   }
 
   final effective = <EffectiveGoal>[];
   for (final goal in goalRecords) {
-    if (goalActive[goal.recordId] != true) continue;
+    final voided = effectiveSupersessions.any(
+      (supersessionId) =>
+          _supersessionTarget(recordsById[supersessionId]!) == goal.recordId,
+    );
+    if (voided) continue;
     effective.add(
       EffectiveGoal(
         goalRecordId: goal.recordId,
@@ -137,6 +127,73 @@ EffectiveGoalResolution resolveEffectiveGoals({
   }
   effective.sort((a, b) => a.goalRecordId.compareTo(b.goalRecordId));
   return EffectiveGoalSet(effective);
+}
+
+enum _SupersessionEffectiveness { effective, voided, cycle }
+
+/// A supersession is effective only when no effective supersession targets it.
+_SupersessionEffectiveness _supersessionEffectiveness(
+  String supersessionId, {
+  required Map<String, MatchRecord> recordsById,
+  required List<String> supersessionIds,
+  required Map<String, _SupersessionEffectiveness> memo,
+  required Set<String> visiting,
+}) {
+  final cached = memo[supersessionId];
+  if (cached != null) return cached;
+  if (visiting.contains(supersessionId)) {
+    return _SupersessionEffectiveness.cycle;
+  }
+  visiting.add(supersessionId);
+
+  for (final candidateId in supersessionIds) {
+    if (candidateId == supersessionId) continue;
+    final candidate = recordsById[candidateId]!;
+    final targetId = _supersessionTarget(candidate);
+    if (targetId != supersessionId) continue;
+    final candidateEffect = _supersessionEffectiveness(
+      candidateId,
+      recordsById: recordsById,
+      supersessionIds: supersessionIds,
+      memo: memo,
+      visiting: visiting,
+    );
+    if (candidateEffect == _SupersessionEffectiveness.cycle) {
+      visiting.remove(supersessionId);
+      return _SupersessionEffectiveness.cycle;
+    }
+    if (candidateEffect == _SupersessionEffectiveness.effective) {
+      visiting.remove(supersessionId);
+      memo[supersessionId] = _SupersessionEffectiveness.voided;
+      return _SupersessionEffectiveness.voided;
+    }
+  }
+
+  visiting.remove(supersessionId);
+  memo[supersessionId] = _SupersessionEffectiveness.effective;
+  return _SupersessionEffectiveness.effective;
+}
+
+String? _ultimateGoalIdForRecord(
+  String recordId,
+  Map<String, MatchRecord> recordsById,
+) {
+  final visiting = <String>{};
+  var current = recordId;
+  while (true) {
+    if (visiting.contains(current)) return null;
+    visiting.add(current);
+    final record = recordsById[current];
+    if (record == null) return null;
+    if (record.payload is GoalPayload) return current;
+    if (record.recordKind == RecordKind.correction) {
+      final next = _correctionTarget(record);
+      if (next == null) return null;
+      current = next;
+      continue;
+    }
+    return null;
+  }
 }
 
 String? _correctionTarget(MatchRecord record) {
@@ -151,44 +208,4 @@ String? _supersessionTarget(MatchRecord record) {
     if (link is LegalSupersessionTarget) return link.targetRecordId;
   }
   return null;
-}
-
-String? _goalVoidedBySupersession(
-  Map<String, MatchRecord> recordsById,
-  MatchRecord supersession,
-) {
-  final targetId = _supersessionTarget(supersession);
-  if (targetId == null) return null;
-  final target = recordsById[targetId];
-  if (target?.payload is GoalPayload) return targetId;
-  return null;
-}
-
-bool _hasSupersessionCycle(Map<String, MatchRecord> recordsById) {
-  final graph = <String, String>{};
-  for (final record in recordsById.values) {
-    if (record.recordKind != RecordKind.legalSupersession) continue;
-    final target = _supersessionTarget(record);
-    if (target == null) continue;
-    graph[record.recordId] = target;
-  }
-
-  final visiting = <String>{};
-  final visited = <String>{};
-
-  bool dfs(String node) {
-    if (visiting.contains(node)) return true;
-    if (visited.contains(node)) return false;
-    visiting.add(node);
-    final next = graph[node];
-    if (next != null && dfs(next)) return true;
-    visiting.remove(node);
-    visited.add(node);
-    return false;
-  }
-
-  for (final node in graph.keys) {
-    if (dfs(node)) return true;
-  }
-  return false;
 }

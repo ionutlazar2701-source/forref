@@ -11,13 +11,11 @@ final class ScoreCompletenessProof {
     required this.matchAuthorityMode,
     required this.teamBindings,
     required this.generationOneRoot,
-    required this.integrityAccepted,
   });
 
   final MatchAuthorityMode matchAuthorityMode;
   final List<MatchTeamBinding> teamBindings;
   final GenerationOneAuthorityRoot generationOneRoot;
-  final bool integrityAccepted;
 }
 
 /// Validates proof inputs and committed-record evidence for score completeness.
@@ -35,9 +33,6 @@ ScoreProofValidation validateScoreCompletenessProof({
     return const ScoreProofValidation.unavailable();
   }
   if (proof.matchAuthorityMode != MatchAuthorityMode.matchMemory) {
-    return const ScoreProofValidation.unavailable();
-  }
-  if (!proof.integrityAccepted) {
     return const ScoreProofValidation.unavailable();
   }
   if (proof.generationOneRoot.matchId != matchId) {
@@ -71,6 +66,9 @@ ScoreProofValidation validateScoreCompletenessProof({
   var sawGenerationOnePrincipal = false;
   for (final record in sortedRecords) {
     if (record.matchId != matchId) continue;
+    if (record.integrity.evidenceRefs.isEmpty) {
+      return const ScoreProofValidation.unavailable();
+    }
     if (record.originDeviceId == rootDevice) {
       sequences.add(record.originSequence);
     }

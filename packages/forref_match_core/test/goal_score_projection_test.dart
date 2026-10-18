@@ -22,7 +22,6 @@ void main() {
           principalId: principalId,
           deviceId: deviceId,
         ),
-        integrityAccepted: true,
       );
 
   ProjectionContext context({ScoreCompletenessProof? scoreProof}) =>
@@ -255,6 +254,86 @@ void main() {
       );
       expect(restored.scoreProjection, isA<KnownScore>());
       expect((restored.scoreProjection as KnownScore).goalsByTeam[teamA], 1);
+    });
+
+    test(
+      'supersession reversal restores goal when restore record id sorts before void',
+      () {
+        final goal = goalRecord(
+          recordId: 'goal-1',
+          captureIntentId: 'intent-1',
+          scoringTeam: teamA,
+        );
+        final voidGoal = MatchRecord(
+          recordId: 'ls-void',
+          matchId: matchId,
+          recordKind: RecordKind.legalSupersession,
+          schemaVersion: 1,
+          recordedAt: DateTime.utc(2026, 10, 2, 12, 3),
+          originDeviceId: deviceId,
+          originSequence: 3,
+          authorityContext: authority(),
+          relationships: const [
+            LegalSupersessionTarget(targetRecordId: 'goal-1'),
+          ],
+          payload: const LegalSupersessionPayload(),
+          integrity: const IntegrityMetadata(evidenceRefs: ['ev-void']),
+        );
+        final restoreVoid = MatchRecord(
+          recordId: 'ls-restore',
+          matchId: matchId,
+          recordKind: RecordKind.legalSupersession,
+          schemaVersion: 1,
+          recordedAt: DateTime.utc(2026, 10, 2, 12, 4),
+          originDeviceId: deviceId,
+          originSequence: 4,
+          authorityContext: authority(),
+          relationships: const [
+            LegalSupersessionTarget(targetRecordId: 'ls-void'),
+          ],
+          payload: const LegalSupersessionPayload(),
+          integrity: const IntegrityMetadata(evidenceRefs: ['ev-restore']),
+        );
+        expect('ls-restore'.compareTo('ls-void'), lessThan(0));
+
+        final records = [bootstrap(), goal, voidGoal, restoreVoid];
+        final projection = projector.projectRecords(
+          matchId: matchId,
+          records: records,
+          context: context(scoreProof: proof()),
+        );
+        expect(projection.scoreProjection, isA<KnownScore>());
+        expect((projection.scoreProjection as KnownScore).goalsByTeam[teamA], 1);
+
+        final permuted = projector.projectRecords(
+          matchId: matchId,
+          records: records.reversed.toList(),
+          context: context(scoreProof: proof()),
+        );
+        expect(permuted.scoreProjection, projection.scoreProjection);
+      },
+    );
+
+    test('empty integrity evidence on any record forces ScoreUnavailable', () {
+      final started = bootstrap();
+      final startedNoIntegrity = MatchRecord(
+        recordId: started.recordId,
+        matchId: started.matchId,
+        recordKind: started.recordKind,
+        schemaVersion: started.schemaVersion,
+        recordedAt: started.recordedAt,
+        originDeviceId: started.originDeviceId,
+        originSequence: started.originSequence,
+        authorityContext: started.authorityContext,
+        payload: started.payload,
+        integrity: const IntegrityMetadata(),
+      );
+      final projection = projector.projectRecords(
+        matchId: matchId,
+        records: [startedNoIntegrity],
+        context: context(scoreProof: proof()),
+      );
+      expect(projection.scoreProjection, isA<ScoreUnavailable>());
     });
 
     test('cycle yields unavailable score, not a numeral', () {
