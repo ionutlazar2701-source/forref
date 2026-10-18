@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WATCH CORE 002D research instrument</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <p id="boot-status">booting</p>
+  <div id="app"></div>
+  <script>
+    window.__researchErrors = [];
+    window.addEventListener('error', (event) => {
+      window.__researchErrors.push(String(event.message));
+      const status = document.querySelector('#boot-status');
+      if (status) status.textContent = `error: ${event.message}`;
+    });
+    window.addEventListener('unhandledrejection', (event) => {
+      window.__researchErrors.push(String(event.reason));
+      const status = document.querySelector('#boot-status');
+      if (status) status.textContent = `error: ${event.reason}`;
+    });
+  </script>
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
