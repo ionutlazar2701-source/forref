@@ -10,6 +10,7 @@ export 'authority_root.dart';
 export 'capture/capture_intent.dart';
 export 'capture/yellow_capture_intent.dart';
 export 'match_authority_mode.dart';
+export 'disciplinary_subject.dart';
 export 'match_participant.dart';
 export 'match_team.dart';
 export 'integrity.dart';
