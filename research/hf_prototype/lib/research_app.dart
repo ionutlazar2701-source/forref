@@ -140,6 +140,20 @@ class ResearchScaffold extends StatelessWidget {
                       },
                     ),
                     ActionChip(
+                      label: const Text('Match scope'),
+                      onPressed: () {
+                        controller.instrument.setScope(ResearchScope.match);
+                        controller.refresh();
+                      },
+                    ),
+                    ActionChip(
+                      label: const Text('Shoot-out scope'),
+                      onPressed: () {
+                        controller.instrument.setScope(ResearchScope.shootout);
+                        controller.refresh();
+                      },
+                    ),
+                    ActionChip(
                       label: const Text('Operator'),
                       onPressed: controller.openOperator,
                     ),
@@ -205,7 +219,9 @@ class CaptureColumn extends StatelessWidget {
               left: 16,
               top: 96,
               right: 16,
-              child: Text(instrument.commitLabel),
+              child: Text(
+                '${instrument.commitLabel} | ${instrument.scope.name} cautions ${instrument.focusSavedCautionCount}',
+              ),
             ),
             if (instrument.twoCautionsRecorded)
               const Positioned(
@@ -222,14 +238,41 @@ class CaptureColumn extends StatelessWidget {
             if (controller.page == ResearchPage.players ||
                 controller.page == ResearchPage.substitution)
               Positioned(
-                left: ResearchLayout.phone.roster.left,
-                top: ResearchLayout.phone.roster.top,
-                width: ResearchLayout.phone.roster.width,
-                height: ResearchLayout.phone.roster.height,
-                child: ListView(
+                left: 16,
+                top: 128,
+                right: 16,
+                child: Wrap(
+                  spacing: 4,
                   children: [
-                    for (final person in instrument.rankedRoster)
-                      Text('${person.shirtLabel} ${person.name} ${person.id}'),
+                    for (final person in instrument.rankedRoster) ...[
+                      Text(
+                        '${person.shirtLabel} ${person.name} ${person.presence.name}',
+                      ),
+                      if (controller.page == ResearchPage.substitution) ...[
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          onPressed: () {
+                            controller.instrument.selectOut(person.id);
+                            controller.refresh();
+                          },
+                          child: Text('Out ${person.id}'),
+                        ),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          onPressed: () {
+                            controller.instrument.selectIn(person.id);
+                            controller.refresh();
+                          },
+                          child: Text('In ${person.id}'),
+                        ),
+                      ],
+                    ],
                   ],
                 ),
               ),
@@ -242,7 +285,13 @@ class CaptureColumn extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     for (final official in instrument.officials)
-                      Text('${official.name} — ${official.roleLabel}'),
+                      TextButton(
+                        onPressed: () {
+                          controller.instrument.selectOfficial(official.id);
+                          controller.refresh();
+                        },
+                        child: Text('${official.name} — ${official.roleLabel}'),
+                      ),
                   ],
                 ),
               ),

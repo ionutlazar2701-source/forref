@@ -75,6 +75,40 @@ void main() {
     expect(find.text('Scenario'), findsOneWidget);
   });
 
+  testWidgets('shoot-out scope does not inherit the match caution count', (tester) async {
+    final controller = ResearchController();
+    await tester.pumpWidget(ResearchApp(controller: controller));
+    controller.load(ScenarioId.s18MatchToShootout);
+    await tester.pump();
+    expect(find.textContaining('match cautions 1'), findsOneWidget);
+    await tester.tap(find.text('Shoot-out scope'));
+    await tester.pump();
+    expect(find.textContaining('shootout cautions 0'), findsOneWidget);
+    expect(
+      controller.instrument.savedCautionCount(
+        'p-home-9',
+        SubjectKind.participant,
+        ResearchScope.match,
+      ),
+      1,
+    );
+  });
+
+  testWidgets('naming OUT and IN does not record the substitution', (tester) async {
+    final controller = ResearchController();
+    await tester.pumpWidget(ResearchApp(controller: controller));
+    controller.load(ScenarioId.s11SubstitutionOutFirst);
+    controller.show(ResearchPage.substitution);
+    await tester.pump();
+    await tester.tap(find.text('Out p-home-9'));
+    await tester.pump();
+    await tester.tap(find.text('In p-home-7'));
+    await tester.pump();
+    expect(controller.instrument.outId, 'p-home-9');
+    expect(controller.instrument.inId, 'p-home-7');
+    expect(controller.instrument.substitutionRecorded, isFalse);
+  });
+
   test('the prototype is outside production phone routing', () {
     final pubspec = File('pubspec.yaml').readAsStringSync();
     expect(pubspec, isNot(contains('forref_match_persistence')));
