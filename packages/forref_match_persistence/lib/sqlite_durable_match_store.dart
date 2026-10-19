@@ -159,10 +159,20 @@ final class SqliteDurableMatchStore
         scoring_team_id TEXT,
         participant_id TEXT,
         accounting_scope TEXT,
+        subject_kind TEXT,
+        subject_id TEXT,
         PRIMARY KEY (match_id, authority_scope, capture_intent_id)
       )
     ''');
     _ensureCaptureIntentSubjectColumns();
+    _db.execute('''
+      CREATE TABLE IF NOT EXISTS team_official_team_bindings (
+        match_id TEXT NOT NULL,
+        team_official_id TEXT NOT NULL,
+        team_id TEXT NOT NULL,
+        PRIMARY KEY (match_id, team_official_id)
+      )
+    ''');
     _db.execute('''
       CREATE TABLE IF NOT EXISTS generation_one_authority_roots (
         match_id TEXT PRIMARY KEY,
@@ -190,6 +200,65 @@ final class SqliteDurableMatchStore
         'ALTER TABLE capture_intent_admissions ADD COLUMN accounting_scope TEXT',
       );
     }
+    if (!names.contains('subject_kind')) {
+      _db.execute(
+        'ALTER TABLE capture_intent_admissions ADD COLUMN subject_kind TEXT',
+      );
+    }
+    if (!names.contains('subject_id')) {
+      _db.execute(
+        'ALTER TABLE capture_intent_admissions ADD COLUMN subject_id TEXT',
+      );
+    }
+  }
+
+  /// Durable team-official association. A second team for the same official conflicts.
+  Future<TeamBindingCommitResult> commitTeamOfficialTeamBinding(
+    TeamOfficialTeamBinding binding,
+  ) {
+    return _serialized(() async {
+      if (binding.matchId.isEmpty) {
+        return const TeamBindingCommitConflict('match id is empty');
+      }
+      _db.execute('BEGIN IMMEDIATE');
+      try {
+        final rows = _db.select(
+          '''
+          SELECT team_id FROM team_official_team_bindings
+          WHERE match_id = ? AND team_official_id = ?
+          ''',
+          [binding.matchId, binding.teamOfficialId.value],
+        );
+        if (rows.isNotEmpty) {
+          final stored = rows.first.columnAt(0) as String;
+          if (stored == binding.teamId.value) {
+            _commitTransaction();
+            return const TeamBindingCommitSuccess(idempotent: true);
+          }
+          _db.execute('ROLLBACK');
+          return const TeamBindingCommitConflict(
+            'team-official team binding conflicts',
+          );
+        }
+        _db.execute(
+          '''
+          INSERT INTO team_official_team_bindings (
+            match_id, team_official_id, team_id
+          ) VALUES (?, ?, ?)
+          ''',
+          [
+            binding.matchId,
+            binding.teamOfficialId.value,
+            binding.teamId.value,
+          ],
+        );
+        _commitTransaction();
+        return const TeamBindingCommitSuccess(idempotent: false);
+      } catch (error) {
+        _rollbackIfNeeded();
+        return TeamBindingCommitConflict('team binding aborted: $error');
+      }
+    });
   }
 
   void _requireIntegrity() {
@@ -653,6 +722,12 @@ final class SqliteDurableMatchStore
       if (rejected != null) {
         return rejected;
       }
+      final bindingRejected = _rejectTeamOfficialYellowWithoutBinding(
+        payload: payload,
+        matchId: matchId,
+        failureRecordId: failureRecordId,
+      );
+      if (bindingRejected != null) return bindingRejected;
       return null;
     }
 
@@ -695,6 +770,23 @@ final class SqliteDurableMatchStore
         authorityGeneration: generation,
         participantId: payload.participantId.value,
         accountingScope: payload.accountingScope.wireValue,
+        subjectKind: DisciplinarySubjectKind.participant.wireValue,
+        subjectId: payload.participantId.value,
+      );
+    }
+    if (payload is YellowCardPayloadV2) {
+      final subject = payload.disciplinarySubject;
+      return _AuthoritativeCaptureIntent(
+        captureIntentId: payload.captureIntentId,
+        semanticTypeWire: V1SemanticTypeCode.yellowCard.wireValue,
+        authorityPrincipalId: principalId,
+        authorityGeneration: generation,
+        participantId: subject is ParticipantDisciplinarySubject
+            ? subject.rawId
+            : null,
+        accountingScope: payload.accountingScope.wireValue,
+        subjectKind: subject.kind.wireValue,
+        subjectId: subject.rawId,
       );
     }
     if (payload is RefereeEnteredFieldPayload) {
@@ -777,8 +869,10 @@ final class SqliteDurableMatchStore
         authority_generation,
         scoring_team_id,
         participant_id,
-        accounting_scope
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        accounting_scope,
+        subject_kind,
+        subject_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ''',
       [
         record.matchId,
@@ -791,6 +885,8 @@ final class SqliteDurableMatchStore
         intent.scoringTeamId,
         intent.participantId,
         intent.accountingScope,
+        intent.subjectKind,
+        intent.subjectId,
       ],
     );
   }
@@ -809,7 +905,9 @@ final class SqliteDurableMatchStore
         authority_generation,
         scoring_team_id,
         participant_id,
-        accounting_scope
+        accounting_scope,
+        subject_kind,
+        subject_id
       FROM capture_intent_admissions
       WHERE match_id = ? AND authority_scope = ? AND capture_intent_id = ?
       ''',
@@ -825,6 +923,8 @@ final class SqliteDurableMatchStore
       scoringTeamId: row.columnAt(4) as String?,
       participantId: row.columnAt(5) as String?,
       accountingScope: row.columnAt(6) as String?,
+      subjectKind: row.columnAt(7) as String?,
+      subjectId: row.columnAt(8) as String?,
     );
   }
 
@@ -832,12 +932,71 @@ final class SqliteDurableMatchStore
     _StoredCaptureIntentAdmission stored,
     _AuthoritativeCaptureIntent requested,
   ) {
+    final storedSubject = _normalizedAdmissionSubject(
+      semanticTypeWire: stored.semanticTypeWire,
+      participantId: stored.participantId,
+      subjectKind: stored.subjectKind,
+      subjectId: stored.subjectId,
+    );
+    final requestedSubject = _normalizedAdmissionSubject(
+      semanticTypeWire: requested.semanticTypeWire,
+      participantId: requested.participantId,
+      subjectKind: requested.subjectKind,
+      subjectId: requested.subjectId,
+    );
     return stored.semanticTypeWire == requested.semanticTypeWire &&
         stored.authorityPrincipalId == requested.authorityPrincipalId &&
         stored.authorityGeneration == requested.authorityGeneration &&
         stored.scoringTeamId == requested.scoringTeamId &&
-        stored.participantId == requested.participantId &&
-        stored.accountingScope == requested.accountingScope;
+        stored.accountingScope == requested.accountingScope &&
+        storedSubject.kind == requestedSubject.kind &&
+        storedSubject.id == requestedSubject.id;
+  }
+
+  ({String? kind, String? id}) _normalizedAdmissionSubject({
+    required String semanticTypeWire,
+    required String? participantId,
+    required String? subjectKind,
+    required String? subjectId,
+  }) {
+    if (subjectKind != null || subjectId != null) {
+      return (kind: subjectKind, id: subjectId);
+    }
+    if (semanticTypeWire == V1SemanticTypeCode.yellowCard.wireValue &&
+        participantId != null) {
+      return (
+        kind: DisciplinarySubjectKind.participant.wireValue,
+        id: participantId,
+      );
+    }
+    return (kind: null, id: null);
+  }
+
+  DurableCommitResult? _rejectTeamOfficialYellowWithoutBinding({
+    required MatchRecordPayload payload,
+    required String matchId,
+    required String failureRecordId,
+  }) {
+    if (payload is! YellowCardPayloadV2) return null;
+    final subject = payload.disciplinarySubject;
+    if (subject is! TeamOfficialDisciplinarySubject) return null;
+    final rows = _db.select(
+      '''
+      SELECT team_id FROM team_official_team_bindings
+      WHERE match_id = ? AND team_official_id = ?
+      ''',
+      [matchId, subject.teamOfficialId.value],
+    );
+    if (rows.length != 1) {
+      _db.execute('ROLLBACK');
+      return DurableCommitFailure(
+        recordId: failureRecordId,
+        reason: rows.isEmpty
+            ? 'team-official team binding required'
+            : 'team-official team binding is ambiguous',
+      );
+    }
+    return null;
   }
 
   MatchRecord? _readById(String recordId) {
@@ -912,6 +1071,8 @@ final class _StoredCaptureIntentAdmission {
     required this.scoringTeamId,
     required this.participantId,
     required this.accountingScope,
+    required this.subjectKind,
+    required this.subjectId,
   });
 
   final String committedRecordId;
@@ -921,6 +1082,8 @@ final class _StoredCaptureIntentAdmission {
   final String? scoringTeamId;
   final String? participantId;
   final String? accountingScope;
+  final String? subjectKind;
+  final String? subjectId;
 }
 
 final class _AuthoritativeCaptureIntent {
@@ -932,6 +1095,8 @@ final class _AuthoritativeCaptureIntent {
     this.scoringTeamId,
     this.participantId,
     this.accountingScope,
+    this.subjectKind,
+    this.subjectId,
   });
 
   final String captureIntentId;
@@ -941,4 +1106,22 @@ final class _AuthoritativeCaptureIntent {
   final String? scoringTeamId;
   final String? participantId;
   final String? accountingScope;
+  final String? subjectKind;
+  final String? subjectId;
+}
+
+sealed class TeamBindingCommitResult {
+  const TeamBindingCommitResult();
+}
+
+final class TeamBindingCommitSuccess extends TeamBindingCommitResult {
+  const TeamBindingCommitSuccess({required this.idempotent});
+
+  final bool idempotent;
+}
+
+final class TeamBindingCommitConflict extends TeamBindingCommitResult {
+  const TeamBindingCommitConflict(this.reason);
+
+  final String reason;
 }

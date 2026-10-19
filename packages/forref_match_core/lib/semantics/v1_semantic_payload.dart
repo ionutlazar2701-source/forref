@@ -1,3 +1,4 @@
+import '../disciplinary_subject.dart';
 import '../match_participant.dart';
 import '../match_team.dart';
 import '../payload.dart';
@@ -205,6 +206,8 @@ final class CorrectionPayload extends V1SemanticPayload {
     this.repairedScoringTeamId,
     this.repairedParticipantId,
     this.repairedAccountingScope,
+    this.repairedDisciplinarySubject,
+    this.repairedDisciplinaryScope,
     super.domainContractVersion,
     super.competitionRulesContext,
   });
@@ -212,11 +215,17 @@ final class CorrectionPayload extends V1SemanticPayload {
   /// Required when this correction repairs a Goal; optional for other targets.
   final MatchTeamId? repairedScoringTeamId;
 
-  /// Required when this correction repairs a Yellow subject.
+  /// Required when this correction repairs a v1 Yellow participant.
   final MatchParticipantId? repairedParticipantId;
 
-  /// Required when this correction repairs a Yellow accounting scope.
+  /// Required when this correction repairs a v1 Yellow accounting scope.
   final DisciplinaryAccountingScope? repairedAccountingScope;
+
+  /// v2 subject repair. It does not rewrite the original Yellow record.
+  final DisciplinarySubjectRef? repairedDisciplinarySubject;
+
+  /// v2 scope repair. The same concept as [repairedAccountingScope].
+  final DisciplinaryAccountingScope? repairedDisciplinaryScope;
 
   @override
   V1SemanticTypeCode get semanticType => V1SemanticTypeCode.correction;
@@ -258,6 +267,38 @@ final class YellowCardPayload extends V1SemanticPayload {
 
   @override
   V1SemanticTypeCode get semanticType => V1SemanticTypeCode.yellowCard;
+
+  /// Historical participant Yellow. Stored bytes stay participant-only.
+  int get yellowSchemaVersion => yellowCardPayloadSchemaV1;
+}
+
+/// Additive Yellow schema. Team-official cautions use only this payload.
+final class YellowCardPayloadV2 extends V1SemanticPayload {
+  YellowCardPayloadV2({
+    required this.disciplinarySubject,
+    required this.accountingScope,
+    required this.captureIntentId,
+    this.participantSituationAtDetermination,
+    super.domainContractVersion,
+    super.competitionRulesContext,
+  }) : assert(captureIntentId.isNotEmpty),
+       assert(
+         disciplinarySubject is ParticipantDisciplinarySubject ||
+             participantSituationAtDetermination == null,
+         'participant situation is only legal for a participant subject',
+       );
+
+  final DisciplinarySubjectRef disciplinarySubject;
+  final DisciplinaryAccountingScope accountingScope;
+  final String captureIntentId;
+
+  /// Historical context for a participant subject. It is not identity.
+  final ParticipantSituation? participantSituationAtDetermination;
+
+  @override
+  V1SemanticTypeCode get semanticType => V1SemanticTypeCode.yellowCard;
+
+  int get yellowSchemaVersion => yellowCardPayloadSchemaV2;
 }
 
 /// Referee entered the field for match start.
@@ -286,4 +327,50 @@ final class LegalSupersessionPayload extends V1SemanticPayload {
 
   @override
   V1SemanticTypeCode get semanticType => V1SemanticTypeCode.legalSupersession;
+}
+
+/// Stored Yellow payload schema. Distinct from Match Record structural schema.
+const int yellowCardPayloadSchemaV1 = 1;
+
+/// Team-official Yellow and optional participant Yellow v2.
+const int yellowCardPayloadSchemaV2 = 2;
+
+/// True for historical v1 and additive v2 Yellow payloads.
+bool isYellowCardPayload(MatchRecordPayload payload) =>
+    payload is YellowCardPayload || payload is YellowCardPayloadV2;
+
+/// v1 stays participant-only. v2 carries [DisciplinarySubjectRef].
+int yellowCardPayloadSchemaVersion(MatchRecordPayload payload) {
+  if (payload is YellowCardPayload) return yellowCardPayloadSchemaV1;
+  if (payload is YellowCardPayloadV2) return yellowCardPayloadSchemaV2;
+  throw ArgumentError.value(payload, 'payload', 'not a Yellow payload');
+}
+
+/// Read-time subject. v1 normalizes to a participant subject.
+DisciplinarySubjectRef subjectOfYellowCard(MatchRecordPayload payload) {
+  if (payload is YellowCardPayload) {
+    return ParticipantDisciplinarySubject(payload.participantId);
+  }
+  if (payload is YellowCardPayloadV2) return payload.disciplinarySubject;
+  throw ArgumentError.value(payload, 'payload', 'not a Yellow payload');
+}
+
+DisciplinaryAccountingScope scopeOfYellowCard(MatchRecordPayload payload) {
+  if (payload is YellowCardPayload) return payload.accountingScope;
+  if (payload is YellowCardPayloadV2) return payload.accountingScope;
+  throw ArgumentError.value(payload, 'payload', 'not a Yellow payload');
+}
+
+String captureIntentOfYellowCard(MatchRecordPayload payload) {
+  if (payload is YellowCardPayload) return payload.captureIntentId;
+  if (payload is YellowCardPayloadV2) return payload.captureIntentId;
+  throw ArgumentError.value(payload, 'payload', 'not a Yellow payload');
+}
+
+ParticipantSituation? situationOfYellowCard(MatchRecordPayload payload) {
+  if (payload is YellowCardPayload) return payload.situationAtDetermination;
+  if (payload is YellowCardPayloadV2) {
+    return payload.participantSituationAtDetermination;
+  }
+  throw ArgumentError.value(payload, 'payload', 'not a Yellow payload');
 }

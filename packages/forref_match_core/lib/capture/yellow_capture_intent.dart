@@ -1,33 +1,60 @@
+import '../disciplinary_subject.dart';
 import '../match_participant.dart';
 import '../match_record.dart';
 import '../semantics/v1_semantic_payload.dart';
 import 'capture_intent.dart';
 
 /// Irreversible Yellow meaning bound to one [CaptureIntentKey].
+///
+/// Subject category is part of the meaning. A participant token and a
+/// team-official token do not match.
 final class YellowCaptureIntentMeaning {
-  const YellowCaptureIntentMeaning({
-    required this.participantId,
+  YellowCaptureIntentMeaning({
+    MatchParticipantId? participantId,
+    DisciplinarySubjectRef? disciplinarySubject,
     required this.accountingScope,
     required this.authorityPrincipalId,
     required this.authorityGeneration,
-  });
+  }) : disciplinarySubject = _subject(
+          participantId: participantId,
+          disciplinarySubject: disciplinarySubject,
+        );
 
-  final MatchParticipantId participantId;
+  final DisciplinarySubjectRef disciplinarySubject;
   final DisciplinaryAccountingScope accountingScope;
   final String authorityPrincipalId;
   final int authorityGeneration;
 
+  static DisciplinarySubjectRef _subject({
+    required MatchParticipantId? participantId,
+    required DisciplinarySubjectRef? disciplinarySubject,
+  }) {
+    final fromParticipant = participantId == null
+        ? null
+        : ParticipantDisciplinarySubject(participantId);
+    if (disciplinarySubject != null &&
+        fromParticipant != null &&
+        disciplinarySubject != fromParticipant) {
+      throw ArgumentError('Yellow subject category is ambiguous');
+    }
+    final subject = disciplinarySubject ?? fromParticipant;
+    if (subject == null) {
+      throw ArgumentError('Yellow capture intent requires a subject');
+    }
+    return subject;
+  }
+
   @override
   bool operator ==(Object other) =>
       other is YellowCaptureIntentMeaning &&
-      participantId == other.participantId &&
+      disciplinarySubject == other.disciplinarySubject &&
       accountingScope == other.accountingScope &&
       authorityPrincipalId == other.authorityPrincipalId &&
       authorityGeneration == other.authorityGeneration;
 
   @override
   int get hashCode => Object.hash(
-        participantId,
+        disciplinarySubject,
         accountingScope,
         authorityPrincipalId,
         authorityGeneration,
@@ -69,6 +96,7 @@ YellowCaptureIntentAdmission evaluateYellowCaptureIntentAdmission({
     final intentId = switch (payload) {
       GoalPayload() => payload.captureIntentId,
       YellowCardPayload() => payload.captureIntentId,
+      YellowCardPayloadV2() => payload.captureIntentId,
       RefereeEnteredFieldPayload() => payload.captureIntentId,
       _ => null,
     };
@@ -79,12 +107,12 @@ YellowCaptureIntentAdmission evaluateYellowCaptureIntentAdmission({
   }
   if (existing == null) return const YellowCaptureIntentFirstAdmission();
   final payload = existing.payload;
-  if (payload is! YellowCardPayload) {
+  if (!isYellowCardPayload(payload)) {
     return YellowCaptureIntentConflict(existingRecordId: existing.recordId);
   }
   final existingMeaning = YellowCaptureIntentMeaning(
-    participantId: payload.participantId,
-    accountingScope: payload.accountingScope,
+    disciplinarySubject: subjectOfYellowCard(payload),
+    accountingScope: scopeOfYellowCard(payload),
     authorityPrincipalId:
         existing.authorityContext?.principal?.principalId ?? '',
     authorityGeneration: existing.authorityContext?.generation?.value ?? 0,

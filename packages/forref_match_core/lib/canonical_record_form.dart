@@ -1,3 +1,4 @@
+import 'disciplinary_subject.dart';
 import 'authority.dart';
 import 'integrity.dart';
 import 'match_record.dart';
@@ -215,13 +216,14 @@ final class _PayloadSnapshot {
             'scoringTeamId': payload.scoringTeamId.value,
             'captureIntentId': payload.captureIntentId,
           },
-          if (payload is YellowCardPayload) ...{
-            'participantId': payload.participantId.value,
-            'accountingScope': payload.accountingScope.wireValue,
-            'captureIntentId': payload.captureIntentId,
-            if (payload.situationAtDetermination != null)
-              'situationAtDetermination':
-                  payload.situationAtDetermination!.name,
+          if (isYellowCardPayload(payload)) ...{
+            'yellowSchemaVersion': yellowCardPayloadSchemaVersion(payload),
+            'subjectKind': subjectOfYellowCard(payload).kind.wireValue,
+            'subjectId': subjectOfYellowCard(payload).rawId,
+            'accountingScope': scopeOfYellowCard(payload).wireValue,
+            'captureIntentId': captureIntentOfYellowCard(payload),
+            if (situationOfYellowCard(payload) != null)
+              'situationAtDetermination': situationOfYellowCard(payload)!.name,
           },
           if (payload is RefereeEnteredFieldPayload)
             'captureIntentId': payload.captureIntentId,
@@ -235,6 +237,16 @@ final class _PayloadSnapshot {
               payload.repairedAccountingScope != null)
             'repairedAccountingScope':
                 payload.repairedAccountingScope!.wireValue,
+          if (payload is CorrectionPayload &&
+              payload.repairedDisciplinarySubject != null) ...{
+            'repairedSubjectKind':
+                payload.repairedDisciplinarySubject!.kind.wireValue,
+            'repairedSubjectId': payload.repairedDisciplinarySubject!.rawId,
+          },
+          if (payload is CorrectionPayload &&
+              payload.repairedDisciplinaryScope != null)
+            'repairedDisciplinaryScope':
+                payload.repairedDisciplinaryScope!.wireValue,
           if (payload.domainContractVersion != null)
             'domainContractVersion': payload.domainContractVersion!.value,
           if (payload.competitionRulesContext != null)

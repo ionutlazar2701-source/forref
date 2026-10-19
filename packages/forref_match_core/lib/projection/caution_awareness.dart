@@ -1,3 +1,4 @@
+import '../disciplinary_subject.dart';
 import '../match_participant.dart';
 import '../match_record.dart';
 import '../semantics/v1_semantic_payload.dart';
@@ -46,10 +47,39 @@ final class CautionAwarenessConflicted extends CautionAwareness {
   const CautionAwarenessConflicted();
 }
 
-/// Positive caution answer. Incomplete evidence stays unavailable.
+/// Participant adapter. The subject key is [ParticipantDisciplinarySubject].
 CautionAwareness assessCautionAwareness({
   required String matchId,
   required MatchParticipantId participantId,
+  required DisciplinaryAccountingScope accountingScope,
+  required List<MatchRecord> records,
+  required ScoreCompletenessProof? proof,
+  required bool authorityConflict,
+  required bool correctionConflict,
+  required bool missingDependency,
+  required List<String> unsupportedSemanticRecordIds,
+  required List<String> missingDependencyTargets,
+}) {
+  return assessDisciplinaryAwareness(
+    matchId: matchId,
+    subject: ParticipantDisciplinarySubject(participantId),
+    accountingScope: accountingScope,
+    records: records,
+    proof: proof,
+    authorityConflict: authorityConflict,
+    correctionConflict: correctionConflict,
+    missingDependency: missingDependency,
+    unsupportedSemanticRecordIds: unsupportedSemanticRecordIds,
+    missingDependencyTargets: missingDependencyTargets,
+  );
+}
+
+/// One evaluator for a participant or a team official.
+///
+/// Opening this value appends no Match Records.
+CautionAwareness assessDisciplinaryAwareness({
+  required String matchId,
+  required DisciplinarySubjectRef subject,
   required DisciplinaryAccountingScope accountingScope,
   required List<MatchRecord> records,
   required ScoreCompletenessProof? proof,
@@ -93,7 +123,7 @@ CautionAwareness assessCautionAwareness({
   final yellows = (resolved as EffectiveYellowSet).yellows.where((yellow) {
     final record = recordsById[yellow.yellowRecordId]!;
     return record.matchId == matchId &&
-        yellow.participantId == participantId &&
+        yellow.subject == subject &&
         yellow.accountingScope == accountingScope;
   }).toList();
 

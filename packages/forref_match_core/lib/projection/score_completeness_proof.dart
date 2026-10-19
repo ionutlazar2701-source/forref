@@ -113,6 +113,7 @@ ScoreProofValidation validateScoreCompletenessProof({
 bool _generationOneCapture(Object payload) {
   return payload is GoalPayload ||
       payload is YellowCardPayload ||
+      payload is YellowCardPayloadV2 ||
       payload is RefereeEnteredFieldPayload;
 }
 
