@@ -9,6 +9,7 @@ export 'authority.dart';
 export 'authority_root.dart';
 export 'capture/capture_intent.dart';
 export 'match_authority_mode.dart';
+export 'match_participant.dart';
 export 'match_team.dart';
 export 'integrity.dart';
 export 'match_record.dart';
