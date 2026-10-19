@@ -155,13 +155,14 @@ CautionAwareness assessDisciplinaryAwareness({
   }
   final activeSendOffs = (sendOffResolution as EffectiveSendOffSet)
       .sendOffs
-      .where(
-        (sendOff) =>
+      .where((sendOff) {
+        final record = recordsById[sendOff.sendOffRecordId];
+        return record != null &&
+            record.matchId == matchId &&
             sendOff.legallyEffective &&
             sendOff.subject == subject &&
-            sendOff.scope == accountingScope,
-      )
-      .toList();
+            sendOff.scope == accountingScope;
+      }).toList();
   for (final sendOff in activeSendOffs) {
     if (sendOff.dependencyStatus == SendOffDependencyStatus.conflicted) {
       return const CautionAwarenessConflicted();
