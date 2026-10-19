@@ -4,6 +4,7 @@ import '../match_authority_mode.dart';
 import '../match_record.dart';
 import '../match_team.dart';
 import '../reference/reference_match_memory.dart';
+import '../semantics/v1_semantic_payload.dart';
 
 /// External positive inputs required before a [KnownScore] may be emitted.
 final class ScoreCompletenessProof {
@@ -62,20 +63,25 @@ ScoreProofValidation validateScoreCompletenessProof({
   }
 
   final rootDevice = proof.generationOneRoot.deviceId;
-  final sequences = <int>{};
+  final sequencesByOrigin = <String, Set<int>>{};
   var sawGenerationOnePrincipal = false;
   for (final record in sortedRecords) {
     if (record.matchId != matchId) continue;
     if (record.integrity.evidenceRefs.isEmpty) {
       return const ScoreProofValidation.unavailable();
     }
-    if (record.originDeviceId == rootDevice) {
-      sequences.add(record.originSequence);
+    if (record.payload is GoalPayload &&
+        record.authorityContext?.generation?.value != 1) {
+      return const ScoreProofValidation.unavailable();
     }
+    sequencesByOrigin
+        .putIfAbsent(record.originDeviceId, () => <int>{})
+        .add(record.originSequence);
     final authority = record.authorityContext;
     if (authority?.scope is MainRefereeScope &&
         authority?.generation?.value == 1 &&
-        authority?.principal?.principalId == proof.generationOneRoot.principalId) {
+        authority?.principal?.principalId ==
+            proof.generationOneRoot.principalId) {
       sawGenerationOnePrincipal = true;
     }
   }
@@ -84,13 +90,18 @@ ScoreProofValidation validateScoreCompletenessProof({
     return const ScoreProofValidation.unavailable();
   }
 
-  final frontier = _frontierFromSequences(
-    matchId: matchId,
-    originDeviceId: rootDevice,
-    sequences: sequences,
-  );
-  if (frontier.missingSequences.isNotEmpty) {
-    return const ScoreProofValidation.unavailable();
+  for (final origin in sequencesByOrigin.entries) {
+    if (origin.key != rootDevice) {
+      return const ScoreProofValidation.unavailable();
+    }
+    final frontier = _frontierFromSequences(
+      matchId: matchId,
+      originDeviceId: origin.key,
+      sequences: origin.value,
+    );
+    if (frontier.missingSequences.isNotEmpty) {
+      return const ScoreProofValidation.unavailable();
+    }
   }
   if (sortedRecords.isEmpty) {
     return const ScoreProofValidation.unavailable();

@@ -77,6 +77,16 @@ void main() {
     final file = File('${temp.path}/one-intent.sqlite');
     final store = SqliteDurableMatchStore.open(file);
     try {
+      expect(
+        await store.commitGenerationOneAuthorityRoot(
+          const GenerationOneAuthorityRoot(
+            matchId: matchId,
+            principalId: principalId,
+            deviceId: deviceId,
+          ),
+        ),
+        isA<GenerationOneRootCommitSuccess>(),
+      );
       final first = await store.commit(
         _goal(
           recordId: 'goal-1',
@@ -142,6 +152,16 @@ void main() {
       final left = SqliteDurableMatchStore.open(file);
       final right = SqliteDurableMatchStore.open(file);
       try {
+        expect(
+          await left.commitGenerationOneAuthorityRoot(
+            const GenerationOneAuthorityRoot(
+              matchId: matchId,
+              principalId: principalId,
+              deviceId: deviceId,
+            ),
+          ),
+          isA<GenerationOneRootCommitSuccess>(),
+        );
         final results = await Future.wait([
           left.commit(
             _goal(
@@ -183,6 +203,16 @@ void main() {
       final file = File('${temp.path}/conflict.sqlite');
       final store = SqliteDurableMatchStore.open(file);
       try {
+        expect(
+          await store.commitGenerationOneAuthorityRoot(
+            const GenerationOneAuthorityRoot(
+              matchId: matchId,
+              principalId: principalId,
+              deviceId: deviceId,
+            ),
+          ),
+          isA<GenerationOneRootCommitSuccess>(),
+        );
         expect(
           await store.commit(
             _goal(

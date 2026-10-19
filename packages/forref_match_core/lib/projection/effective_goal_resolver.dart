@@ -115,6 +115,16 @@ EffectiveGoalResolution resolveEffectiveGoals({
     }
   }
 
+  for (final supersessionId in effectiveSupersessions) {
+    final targetId = _supersessionTarget(recordsById[supersessionId]!);
+    final target = targetId == null ? null : recordsById[targetId];
+    if (target != null &&
+        target.recordKind == RecordKind.correction &&
+        target.payload is CorrectionPayload) {
+      return const EffectiveGoalUnavailable();
+    }
+  }
+
   final effective = <EffectiveGoal>[];
   for (final goal in goalRecords) {
     final voided = effectiveSupersessions.any(
@@ -183,7 +193,8 @@ final class _CorrectionWalk {
 
   const _CorrectionWalk.cycle() : this._(cycle: true);
 
-  const _CorrectionWalk.goal(String goalId) : this._(cycle: false, goalId: goalId);
+  const _CorrectionWalk.goal(String goalId)
+      : this._(cycle: false, goalId: goalId);
 
   const _CorrectionWalk.notAGoal() : this._(cycle: false);
 

@@ -1,6 +1,8 @@
 # FORREF — WAVE 1 GOAL + SCORE HANDOFF
 
-STATUS: PASS
+This file records the earlier WAVE 1 candidate. WAVE 1-SR returned SABOTEUR HOLD on that candidate. The repaired candidate is [WAVE1_REMEDIATION.md](WAVE1_REMEDIATION.md). Production behavior of the repair is `fa4a7976e153e7a0096aaad2958116a3a97f5bc1`.
+
+STATUS OF THIS CANDIDATE: historical evidence of `4e5fa663414b317f9bdfc05ccd7735bb07a71e90`. Current WAVE 1 status is the WAVE 1-R candidate.
 
 FOUNDATION SHA: `5772671a9674e00c372268047d5f54073610af22`
 
@@ -70,7 +72,7 @@ Yellow, cautions recall, red, second-caution dismissal, substitution, injury, pa
 | LEGACY SCORE FALLBACK | ABSENT |
 | INTEGRITY | PASS |
 | TEST MATRIX | 24/24 software PASS. Physical power loss remains LOCAL GATE REQUIRED on rows 01 and 20. |
-| SABOTEUR | Agent returned HOLD. Attack tests pass after `d31f1d1`. See [WAVE1_ADVERSARIAL_REPORT.md](WAVE1_ADVERSARIAL_REPORT.md). |
+| SABOTEUR | First agent returned HOLD. Attack tests passed after `d31f1d1`. WAVE 1-SR (`bc-d24753e2-94b9-55d2-a9ae-885aea2f9f12`) returned SABOTEUR HOLD on R1, R2, and R3. See [WAVE1_ADVERSARIAL_REPORT.md](WAVE1_ADVERSARIAL_REPORT.md) and [WAVE1_REMEDIATION.md](WAVE1_REMEDIATION.md). |
 | FOUNDATION DELTAS | NONE |
 | PRODUCT UX DELTAS | NONE. Unavailable and conflicted scores omit the numeral. The capture overlay still asks for a player; `commitGoal` does not require that player. |
 | ARCHITECTURE INVARIANTS | PASS |
