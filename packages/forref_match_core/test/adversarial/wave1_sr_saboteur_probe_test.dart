@@ -101,6 +101,48 @@ void main() {
     expect(score, isNot(KnownScore({teamA: 0, teamB: 0})));
   });
 
+  test('a contiguous foreign origin is not a KnownScore', () {
+    final score = project([
+      record(
+        recordId: 'started-1',
+        recordKind: RecordKind.temporalFact,
+        originSequence: 1,
+        payload: TemporalTransitionPayload(
+          semanticType: V1SemanticTypeCode.matchStarted,
+        ),
+      ),
+      record(
+        recordId: 'other-1',
+        recordKind: RecordKind.temporalFact,
+        originSequence: 1,
+        originDevice: otherDevice,
+        payload: TemporalTransitionPayload(
+          semanticType: V1SemanticTypeCode.periodStarted,
+          period: const PeriodIdentity(index: 1),
+        ),
+      ),
+    ]).scoreProjection;
+    expect(score, isA<ScoreUnavailable>(), reason: _describe(score));
+    expect(score, isNot(isA<KnownScore>()));
+  });
+
+  test('a complete root-only history can still be KnownScore 0-0', () {
+    final score = project([
+      record(
+        recordId: 'started-1',
+        recordKind: RecordKind.temporalFact,
+        originSequence: 1,
+        payload: TemporalTransitionPayload(
+          semanticType: V1SemanticTypeCode.matchStarted,
+        ),
+      ),
+    ]).scoreProjection;
+    expect(score, isA<KnownScore>());
+    final known = score as KnownScore;
+    expect(known.goalsByTeam[teamA], 0);
+    expect(known.goalsByTeam[teamB], 0);
+  });
+
   test('a generation-2 goal is not included in KnownScore', () {
     final score = project([
       record(
@@ -125,7 +167,9 @@ void main() {
     expect(score, isNot(isA<KnownScore>()), reason: _describe(score));
   });
 
-  test('superseding the correction that repaired a goal does not keep that team', () {
+  test(
+      'superseding the correction that repaired a goal does not keep that team',
+      () {
     final score = project([
       record(
         recordId: 'started-1',

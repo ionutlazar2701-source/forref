@@ -194,10 +194,9 @@ void main() {
     final homeTeam = MatchTeamId(match.teams.home.teamId);
     final direct = composition.boundary.recordBuilder.build(
       context: context,
-      recordKind: RecordKind.humanDetermination,
-      payload: GoalPayload(
-        scoringTeamId: homeTeam,
-        captureIntentId: 'intent-direct-store',
+      recordKind: RecordKind.temporalFact,
+      payload: TemporalTransitionPayload(
+        semanticType: V1SemanticTypeCode.matchStarted,
       ),
       integrity: const IntegrityMetadata(),
     );
@@ -223,7 +222,7 @@ void main() {
     );
     expect(
       records.where((record) => record.payload is GoalPayload),
-      hasLength(1),
+      isEmpty,
     );
     expect(
       await composition.boundary.durableStore

@@ -124,12 +124,16 @@ void main() {
             'goalIds=${records.where((item) => item.payload is GoalPayload).map((item) => item.recordId).toList()} '
             'score=${_describe(score)}',
       );
+      expect(records.where((item) => item.payload is GoalPayload), isEmpty);
+      expect(store.captureIntentAdmissionCount(matchId: matchId), 0);
     } finally {
       await store.close();
     }
   });
 
-  test('a stored sequence gap on a non-root origin does not yield KnownScore 0-0', () async {
+  test(
+      'a stored sequence gap on a non-root origin does not yield KnownScore 0-0',
+      () async {
     final store = SqliteDurableMatchStore.open(File('${temp.path}/gap.sqlite'));
     try {
       expect(

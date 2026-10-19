@@ -32,8 +32,7 @@ final class CommittedRecordQuarantineException implements Exception {
   final int decodedRecordCount;
 
   @override
-  String toString() =>
-      'CommittedRecordQuarantineException(matchId=$matchId, '
+  String toString() => 'CommittedRecordQuarantineException(matchId=$matchId, '
       'quarantinedRecordIds=$quarantinedRecordIds, '
       'decodedRecordCount=$decodedRecordCount)';
 }
@@ -43,13 +42,15 @@ sealed class GenerationOneRootCommitResult {
   const GenerationOneRootCommitResult();
 }
 
-final class GenerationOneRootCommitSuccess extends GenerationOneRootCommitResult {
+final class GenerationOneRootCommitSuccess
+    extends GenerationOneRootCommitResult {
   const GenerationOneRootCommitSuccess({this.diagnostics});
 
   final String? diagnostics;
 }
 
-final class GenerationOneRootCommitFailure extends GenerationOneRootCommitResult {
+final class GenerationOneRootCommitFailure
+    extends GenerationOneRootCommitResult {
   const GenerationOneRootCommitFailure({required this.reason});
 
   final String reason;
@@ -236,6 +237,7 @@ final class SqliteDurableMatchStore
     try {
       final admissionEarly = _captureIntentAdmissionBeforeInsert(
         matchId: request.matchId,
+        originDeviceId: request.originDeviceId,
         authorityContext: request.authorityContext,
         payload: request.payload,
         failureRecordId: request.recordId,
@@ -315,6 +317,7 @@ final class SqliteDurableMatchStore
 
     final admissionEarly = _captureIntentAdmissionBeforeInsert(
       matchId: record.matchId,
+      originDeviceId: record.originDeviceId,
       authorityContext: record.authorityContext,
       payload: record.payload,
       failureRecordId: record.recordId,
@@ -521,7 +524,8 @@ final class SqliteDurableMatchStore
         if (existing == root) {
           _commitTransaction();
           return const GenerationOneRootCommitSuccess(
-            diagnostics: 'idempotent-no-op; generation-1 root already committed',
+            diagnostics:
+                'idempotent-no-op; generation-1 root already committed',
           );
         }
         _db.execute('ROLLBACK');
@@ -594,6 +598,7 @@ final class SqliteDurableMatchStore
 
   DurableCommitResult? _captureIntentAdmissionBeforeInsert({
     required String matchId,
+    required String originDeviceId,
     required AuthorityContext? authorityContext,
     required MatchRecordPayload payload,
     required String failureRecordId,
@@ -607,7 +612,8 @@ final class SqliteDurableMatchStore
       _db.execute('ROLLBACK');
       return DurableCommitFailure(
         recordId: failureRecordId,
-        reason: 'capture-intent admission requires MAIN_REFEREE authority scope',
+        reason:
+            'capture-intent admission requires MAIN_REFEREE authority scope',
       );
     }
 
@@ -624,6 +630,15 @@ final class SqliteDurableMatchStore
       captureIntentId: payload.captureIntentId,
     );
     if (existing == null) {
+      final rejected = _rejectNewGoalAdmission(
+        matchId: matchId,
+        originDeviceId: originDeviceId,
+        authorityContext: authorityContext,
+        failureRecordId: failureRecordId,
+      );
+      if (rejected != null) {
+        return rejected;
+      }
       return null;
     }
 
@@ -638,10 +653,51 @@ final class SqliteDurableMatchStore
     _db.execute('ROLLBACK');
     return DurableCommitFailure(
       recordId: failureRecordId,
-      reason:
-          'idempotency conflict: capture intent ${payload.captureIntentId} '
+      reason: 'idempotency conflict: capture intent ${payload.captureIntentId} '
           'already bound to a different goal meaning',
     );
+  }
+
+  /// WAVE 1 admits a new Goal only under the generation-1 root.
+  ///
+  /// An already-bound capture intent is handled by the caller before this
+  /// check, so a same-command retry still returns the existing outcome.
+  DurableCommitResult? _rejectNewGoalAdmission({
+    required String matchId,
+    required String originDeviceId,
+    required AuthorityContext? authorityContext,
+    required String failureRecordId,
+  }) {
+    if (authorityContext?.generation?.value != 1) {
+      _db.execute('ROLLBACK');
+      return DurableCommitFailure(
+        recordId: failureRecordId,
+        reason: 'WAVE 1 Goal requires generation-1 capture authority',
+      );
+    }
+    final root = _readGenerationOneAuthorityRoot(matchId);
+    if (root == null) {
+      _db.execute('ROLLBACK');
+      return DurableCommitFailure(
+        recordId: failureRecordId,
+        reason: 'generation-1 authority root required before Goal admission',
+      );
+    }
+    if (authorityContext?.principal?.principalId != root.principalId) {
+      _db.execute('ROLLBACK');
+      return DurableCommitFailure(
+        recordId: failureRecordId,
+        reason: 'Goal principal does not match generation-1 authority root',
+      );
+    }
+    if (originDeviceId != root.deviceId) {
+      _db.execute('ROLLBACK');
+      return DurableCommitFailure(
+        recordId: failureRecordId,
+        reason: 'Goal origin device does not match generation-1 authority root',
+      );
+    }
+    return null;
   }
 
   void _insertCaptureIntentAdmissionLocked(MatchRecord record) {
@@ -758,7 +814,8 @@ final class SqliteDurableMatchStore
 
   Future<T> _serialized<T>(Future<T> Function() action) {
     final result = _queue.then((_) => action());
-    _queue = result.then((_) {}, onError: (Object error, StackTrace stackTrace) {});
+    _queue =
+        result.then((_) {}, onError: (Object error, StackTrace stackTrace) {});
     return result;
   }
 

@@ -19,9 +19,24 @@ void main() {
     }
   });
 
-  test('abortBeforeCommitForTest rolls back record and capture intent', () async {
+  Future<void> admitRoot(SqliteDurableMatchStore store) async {
+    expect(
+      await store.commitGenerationOneAuthorityRoot(
+        const GenerationOneAuthorityRoot(
+          matchId: 'match-1',
+          principalId: 'ref-1',
+          deviceId: 'dev-a',
+        ),
+      ),
+      isA<GenerationOneRootCommitSuccess>(),
+    );
+  }
+
+  test('abortBeforeCommitForTest rolls back record and capture intent',
+      () async {
     final file = File('${temp.path}/memory.sqlite');
     final store = SqliteDurableMatchStore.open(file);
+    await admitRoot(store);
     store.abortBeforeCommitForTest = () {
       throw StateError('abort before commit');
     };
@@ -40,9 +55,11 @@ void main() {
     await reopened.close();
   });
 
-  test('after DurableCommitSuccess close reopen keeps record and intent', () async {
+  test('after DurableCommitSuccess close reopen keeps record and intent',
+      () async {
     final file = File('${temp.path}/memory.sqlite');
     final store = SqliteDurableMatchStore.open(file);
+    await admitRoot(store);
     final record = _goal(recordId: 'goal-1', captureIntentId: 'intent-1');
     expect(await store.commit(record), isA<DurableCommitSuccess>());
     expect(store.captureIntentAdmissionCount(matchId: 'match-1'), 1);
@@ -54,9 +71,12 @@ void main() {
     await reopened.close();
   });
 
-  test('same capture intent retry returns original record id without second row', () async {
+  test(
+      'same capture intent retry returns original record id without second row',
+      () async {
     final file = File('${temp.path}/memory.sqlite');
     final store = SqliteDurableMatchStore.open(file);
+    await admitRoot(store);
     final first = _goal(recordId: 'goal-1', captureIntentId: 'intent-1');
     final firstOutcome = await store.commit(first);
     expect(firstOutcome, isA<DurableCommitSuccess>());
@@ -78,7 +98,9 @@ void main() {
   });
 
   test('conflicting scoring team on same intent fails with one row', () async {
-    final store = SqliteDurableMatchStore.open(File('${temp.path}/memory.sqlite'));
+    final store =
+        SqliteDurableMatchStore.open(File('${temp.path}/memory.sqlite'));
+    await admitRoot(store);
     expect(
       await store.commit(
         _goal(
@@ -108,14 +130,19 @@ void main() {
     await store.close();
   });
 
-  test('concurrent duplicate intent commits end with one admission row', () async {
-    final store = SqliteDurableMatchStore.open(File('${temp.path}/memory.sqlite'));
+  test('concurrent duplicate intent commits end with one admission row',
+      () async {
+    final store =
+        SqliteDurableMatchStore.open(File('${temp.path}/memory.sqlite'));
+    await admitRoot(store);
     final results = await Future.wait([
       store.commit(
-        _goal(recordId: 'goal-a', captureIntentId: 'intent-1', originSequence: 1),
+        _goal(
+            recordId: 'goal-a', captureIntentId: 'intent-1', originSequence: 1),
       ),
       store.commit(
-        _goal(recordId: 'goal-b', captureIntentId: 'intent-1', originSequence: 2),
+        _goal(
+            recordId: 'goal-b', captureIntentId: 'intent-1', originSequence: 2),
       ),
     ]);
 
@@ -127,29 +154,62 @@ void main() {
     await store.close();
   });
 
-  test('missing generation-1 root is not recreated when records exist', () async {
+  test('missing generation-1 root is not recreated when records exist',
+      () async {
     final file = File('${temp.path}/memory.sqlite');
     final store = SqliteDurableMatchStore.open(file);
     expect(
-      await store.commit(_goal(recordId: 'goal-1', captureIntentId: 'intent-1')),
+      await store.commit(
+        MatchRecord(
+          recordId: 'started-1',
+          matchId: 'match-1',
+          recordKind: RecordKind.temporalFact,
+          schemaVersion: 1,
+          recordedAt: DateTime.utc(2026, 10, 2, 12),
+          originDeviceId: 'dev-a',
+          originSequence: 1,
+          payload: TemporalTransitionPayload(
+            semanticType: V1SemanticTypeCode.matchStarted,
+          ),
+          integrity: const IntegrityMetadata(evidenceRefs: ['evidence-1']),
+          authorityContext: const AuthorityContext(
+            scope: v1AuthorityScope,
+            principal: AuthorityPrincipal(principalId: 'ref-1'),
+            generation: AuthorityGeneration(value: 1),
+          ),
+        ),
+      ),
       isA<DurableCommitSuccess>(),
     );
+    expect(
+      await store.commit(_goal(
+          recordId: 'goal-1', captureIntentId: 'intent-1', originSequence: 2)),
+      isA<DurableCommitFailure>(),
+    );
     expect(await store.readGenerationOneAuthorityRoot('match-1'), isNull);
+    expect(store.captureIntentAdmissionCount(matchId: 'match-1'), 0);
     await store.close();
 
     final reopened = SqliteDurableMatchStore.open(file);
     expect(await reopened.readGenerationOneAuthorityRoot('match-1'), isNull);
     expect(
       await reopened.commit(
-        _goal(recordId: 'goal-2', captureIntentId: 'intent-2', originSequence: 2),
+        _goal(
+            recordId: 'goal-2', captureIntentId: 'intent-2', originSequence: 2),
       ),
-      isA<DurableCommitSuccess>(),
+      isA<DurableCommitFailure>(),
     );
     expect(await reopened.readGenerationOneAuthorityRoot('match-1'), isNull);
+    expect(
+      (await reopened.readCommittedForMatch('match-1'))
+          .where((record) => record.payload is GoalPayload),
+      isEmpty,
+    );
     await reopened.close();
   });
 
-  test('generation-1 root commits before records and survives reopen', () async {
+  test('generation-1 root commits before records and survives reopen',
+      () async {
     final file = File('${temp.path}/memory.sqlite');
     final store = SqliteDurableMatchStore.open(file);
     const root = GenerationOneAuthorityRoot(
@@ -170,7 +230,8 @@ void main() {
   });
 
   test('second generation-1 root with different principal fails', () async {
-    final store = SqliteDurableMatchStore.open(File('${temp.path}/memory.sqlite'));
+    final store =
+        SqliteDurableMatchStore.open(File('${temp.path}/memory.sqlite'));
     expect(
       await store.commitGenerationOneAuthorityRoot(
         const GenerationOneAuthorityRoot(
@@ -195,7 +256,9 @@ void main() {
   test('corrupt json row remains and quarantine is reported on read', () async {
     final file = File('${temp.path}/memory.sqlite');
     final store = SqliteDurableMatchStore.open(file);
-    await store.commit(_goal(recordId: 'goal-good', captureIntentId: 'intent-1'));
+    await admitRoot(store);
+    await store
+        .commit(_goal(recordId: 'goal-good', captureIntentId: 'intent-1'));
     await store.commit(
       _goal(
         recordId: 'goal-bad',
@@ -206,10 +269,13 @@ void main() {
     await store.close();
 
     final db = sqlite3.open(file.path);
-    final raw = db.select(
-      'SELECT record_json FROM committed_match_records WHERE record_id = ?',
-      ['goal-bad'],
-    ).single.columnAt(0) as String;
+    final raw = db
+        .select(
+          'SELECT record_json FROM committed_match_records WHERE record_id = ?',
+          ['goal-bad'],
+        )
+        .single
+        .columnAt(0) as String;
     final json = jsonDecode(raw) as Map<String, Object?>;
     json['payload'] = 'not-an-object';
     db.execute(
@@ -219,7 +285,8 @@ void main() {
     db.close();
 
     final reopened = SqliteDurableMatchStore.open(file);
-    final snapshot = await reopened.readCommittedForMatchWithQuarantine('match-1');
+    final snapshot =
+        await reopened.readCommittedForMatchWithQuarantine('match-1');
     expect(snapshot.records.map((r) => r.recordId), ['goal-good']);
     expect(snapshot.quarantinedRecordIds, ['goal-bad']);
 
@@ -238,9 +305,14 @@ void main() {
     await reopened.close();
   });
 
-  test('commitAtNextOriginSequence idempotent intent does not allocate sequence', () async {
-    final store = SqliteDurableMatchStore.open(File('${temp.path}/memory.sqlite'));
-    final request = _goalRequest(recordId: 'goal-1', captureIntentId: 'intent-1');
+  test(
+      'commitAtNextOriginSequence idempotent intent does not allocate sequence',
+      () async {
+    final store =
+        SqliteDurableMatchStore.open(File('${temp.path}/memory.sqlite'));
+    await admitRoot(store);
+    final request =
+        _goalRequest(recordId: 'goal-1', captureIntentId: 'intent-1');
     expect(
       await store.commitAtNextOriginSequence(request),
       isA<DurableCommitSuccess>(),
