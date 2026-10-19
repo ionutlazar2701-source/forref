@@ -1,0 +1,13 @@
+name: hf_v2
+description: >
+  Non-production FORREF research instrument for Night Session III.
+  Simulated commit outcomes are not production D1 proof.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.0
