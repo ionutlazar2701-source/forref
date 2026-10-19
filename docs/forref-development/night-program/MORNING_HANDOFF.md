@@ -122,3 +122,5 @@ This night did not implement Injury, watch production UI, watch synchronization,
 B. RESOLVE DOMAIN HOLD BEFORE FURTHER INTEGRATION
 
 The completed banks can stand. The next integration step is blocked by the SEND_OFF payload, substitution eligibility, team-official identity, and the phone selection surface. Those are authority and product decisions, not further inferred code.
+
+Identitatea de participant, cartonașul galben pentru participant, modelul de lectură al avertismentelor și intrarea arbitrului pe teren stau singure și au trecut de sabotor. Trimiterea de pe teren, schimbarea și oficialul de echipă nu au un contract înghețat suficient, iar telefonul încă alege numărul de tricou. Următorul pas este o decizie de autoritate, nu încă un pod inventat.
