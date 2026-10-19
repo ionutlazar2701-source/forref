@@ -14,11 +14,11 @@ SIMPLICITY: FROZEN CANDIDATE
 
 PRODUCT COMMAND: FOUNDATION FREEZE ACCEPTED
 
-WAVE 1: LAUNCH NOW / IN EXECUTION
+WAVE 1: CANDIDATE PASS after WAVE 1-R. See the WAVE 1-R section. WAVE 2 remains HOLD.
 
 Accepted Foundation SHA: `5772671a9674e00c372268047d5f54073610af22`.
 
-The older branch `cursor/forref-wave1-integration-30fd` is a previous test and harness wave. It is not V2 WAVE 1. V2 WAVE 1 is Goal and Score under [WAVE1_GOAL_SCORE_CONTRACT.md](WAVE1_GOAL_SCORE_CONTRACT.md) on `cursor/forref-wave1-goal-score-30fd`. WAVE 2 is not authorized.
+The older branch `cursor/forref-wave1-integration-30fd` is a previous test and harness wave. It is not V2 WAVE 1. V2 WAVE 1 is Goal and Score under [WAVE1_GOAL_SCORE_CONTRACT.md](WAVE1_GOAL_SCORE_CONTRACT.md). The repaired candidate is `cursor/forref-wave1-r-remediation-30fd`. WAVE 2 is not authorized.
 
 Specialist authority results below are the WAVE 0D inputs. They are not Product Command acceptance. Don and Tony hardware/human certification were not issued. LOCAL GATE REQUIRED remains for physical proof.
 
@@ -128,15 +128,36 @@ One integration owner per wave for each of those groups. WAVE 0 changed none of 
 
 | Field | Value |
 | --- | --- |
-| STATUS | Software PASS on the implementation tip below. WAVE 2 is HOLD and is not authorized. |
+| STATUS | Historical candidate. WAVE 1-SR returned SABOTEUR HOLD. Current status is WAVE 1-R below. |
 | ACCEPTED FOUNDATION SHA | `5772671a9674e00c372268047d5f54073610af22` |
 | EXECUTION BASE SHA | `54d4de0215de208c7fea1d30cbbbeb9535f81efd` |
 | IMPLEMENTATION TIP | `4e5fa663414b317f9bdfc05ccd7735bb07a71e90` |
+| EVIDENCE TIP | `8cf72166a0d4c2173df4f4c6c90b8e99fc20b29c` |
 | BRANCH | `cursor/forref-wave1-goal-score-30fd` |
 | SCOPE | Authoritative Goal and trustworthy score only. |
 | CONTRACT | [WAVE1_GOAL_SCORE_CONTRACT.md](WAVE1_GOAL_SCORE_CONTRACT.md). Foundation semantics are unchanged. |
-| EVIDENCE | [WAVE1_HANDOFF.md](WAVE1_HANDOFF.md), [WAVE1_TEST_MATRIX.md](WAVE1_TEST_MATRIX.md), [WAVE1_ADVERSARIAL_REPORT.md](WAVE1_ADVERSARIAL_REPORT.md), [WAVE1_REUSE_REPORT.md](WAVE1_REUSE_REPORT.md) |
-| TESTS | `./tool/verify_cloud.sh` on `4e5fa663414b317f9bdfc05ccd7735bb07a71e90` PASSED. Core 194, persistence 42, phone 125. TEST EXECUTED PASS. Not CI PASS. |
-| SABOTEUR | Grok agent returned HOLD on `MainRefereeScope` identity equality. Fixed at `d31f1d1e7459649e62d01b73a42cb2f74d8e51a7`. Attack tests then passed. |
+| EVIDENCE | [WAVE1_HANDOFF.md](WAVE1_HANDOFF.md), [WAVE1_REUSE_REPORT.md](WAVE1_REUSE_REPORT.md). The matrix and adversarial report now describe the repaired candidate. |
+| TESTS | `./tool/verify_cloud.sh` on `4e5fa663414b317f9bdfc05ccd7735bb07a71e90` PASSED. Core 194, persistence 42, phone 125. TEST EXECUTED PASS. Not CI PASS. That run does not certify the repair. |
+| SABOTEUR | First Grok agent returned HOLD on `MainRefereeScope` identity equality. Fixed at `d31f1d1e7459649e62d01b73a42cb2f74d8e51a7`. WAVE 1-SR `bc-d24753e2-94b9-55d2-a9ae-885aea2f9f12` confirmed that fix and returned SABOTEUR HOLD on R1, R2, and R3. |
 | LOCAL GATES | LOCAL GATE REQUIRED. Physical power-loss, device storage, watch lifecycle, battery, and human referee validation remain uncertified. |
 | NEXT WAVE | WAVE 2 HOLD. Identity, Yellow, and Cautions are not started. |
+
+## WAVE 1-R
+
+| Field | Value |
+| --- | --- |
+| STATUS | CANDIDATE PASS. Independent post-fix saboteur issued SABOTEUR PASS. WAVE 2 remains HOLD. |
+| ACCEPTED FOUNDATION SHA | `5772671a9674e00c372268047d5f54073610af22` |
+| REMEDIATION BASE SHA | `8cf72166a0d4c2173df4f4c6c90b8e99fc20b29c` |
+| PRE-REMEDIATION PRODUCTION SHA | `4e5fa663414b317f9bdfc05ccd7735bb07a71e90` |
+| PRODUCTION SHA | `fa4a7976e153e7a0096aaad2958116a3a97f5bc1` |
+| BRANCH | `cursor/forref-wave1-r-remediation-30fd` |
+| SCOPE | Repair of R1 origin completeness, R2 generation-1 Goal admission and projection, and R3 superseded Goal correction. Goal and score only. |
+| CONTRACT | Existing Foundation and [WAVE1_GOAL_SCORE_CONTRACT.md](WAVE1_GOAL_SCORE_CONTRACT.md). No Foundation delta. |
+| EVIDENCE | [WAVE1_REMEDIATION.md](WAVE1_REMEDIATION.md), [WAVE1_TEST_MATRIX.md](WAVE1_TEST_MATRIX.md), [WAVE1_ADVERSARIAL_REPORT.md](WAVE1_ADVERSARIAL_REPORT.md) |
+| TESTS | `./tool/verify_cloud.sh` on `fa4a7976e153e7a0096aaad2958116a3a97f5bc1` PASSED. Exit 0. Core 199, persistence 44, phone 125. TEST EXECUTED PASS. Not CI PASS. |
+| SABOTEUR | Grok `bc-c6f50068-a8c3-5abe-a12b-e6d85562070d` reviewed `fa4a7976e153e7a0096aaad2958116a3a97f5bc1` and returned SABOTEUR PASS. Test-only attacks are `49dbfb73f26447bf4ed897062815d95d116cd612`. |
+| FOUNDATION DELTAS | NONE |
+| PRODUCT UX DELTAS | NONE |
+| LOCAL GATES | Unchanged. LOCAL GATE REQUIRED. HARDWARE EVIDENCE ABSENT. HUMAN EVIDENCE ABSENT. |
+| NEXT WAVE | WAVE 2 HOLD — NOT AUTHORIZED. |
