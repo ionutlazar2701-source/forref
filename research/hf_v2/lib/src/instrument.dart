@@ -20,6 +20,28 @@ final class _PointerTrack {
   bool consumed = false;
 }
 
+/// Identity frozen when a research action is activated.
+///
+/// Later team, subject, scope, or pair edits belong to the unfinished layer.
+/// They do not retarget a command that is already saving.
+final class _ActivatedCommand {
+  const _ActivatedCommand({
+    required this.kind,
+    required this.subjectId,
+    required this.subjectKind,
+    required this.scope,
+    required this.outId,
+    required this.inId,
+  });
+
+  final FinalActionKind kind;
+  final String? subjectId;
+  final SubjectKind? subjectKind;
+  final ResearchScope scope;
+  final String? outId;
+  final String? inId;
+}
+
 /// Deterministic research session.
 ///
 /// Pitch context, digital simulation, unfinished selection, and commit outcome
@@ -62,6 +84,7 @@ final class ResearchInstrument {
   SystemCommitKind commitKind = SystemCommitKind.idle;
   FinalActionKind? pendingAction;
   FinalActionKind? lastActivated;
+  _ActivatedCommand? _activated;
 
   final List<SavedCaution> cautions = [];
   final List<SavedSendOff> sendOffs = [];
@@ -248,6 +271,7 @@ final class ResearchInstrument {
     commitKind = fixture.initialCommit;
     pendingAction = null;
     lastActivated = null;
+    _activated = null;
     cautions
       ..clear()
       ..addAll(fixture.seededCautions);
@@ -482,13 +506,24 @@ final class ResearchInstrument {
 
   void resolveSimulatedCommit() {
     final pending = pendingAction;
-    if (commitKind != SystemCommitKind.saving || pending == null) return;
+    final command = _activated;
+    if (commitKind != SystemCommitKind.saving ||
+        pending == null ||
+        command == null ||
+        command.kind != pending) {
+      return;
+    }
     final outcome = _script[pending] ?? SimulatedScriptedOutcome.unknown;
     switch (outcome) {
       case SimulatedScriptedOutcome.success:
-        _applySuccess(pending);
-        commitKind = SystemCommitKind.saved;
-        _unknownAcknowledged = true;
+        final wrote = _applySuccess(command);
+        if (wrote) {
+          commitKind = SystemCommitKind.saved;
+          _unknownAcknowledged = true;
+        } else {
+          commitKind = SystemCommitKind.saveNotVerified;
+          _unknownAcknowledged = false;
+        }
       case SimulatedScriptedOutcome.failure:
         commitKind = SystemCommitKind.notSaved;
         _unknownAcknowledged = true;
@@ -503,6 +538,7 @@ final class ResearchInstrument {
         }
     }
     pendingAction = null;
+    _activated = null;
     _log(ResearchLogKind.simulatedCommitOutcome, '$pending:${commitKind.name}');
   }
 
@@ -511,6 +547,7 @@ final class ResearchInstrument {
     if (commitKind == SystemCommitKind.saving) {
       commitKind = SystemCommitKind.saveNotVerified;
       pendingAction = null;
+      _activated = null;
       _unknownAcknowledged = false;
       _open.clear();
       armedKind = null;
@@ -663,6 +700,14 @@ final class ResearchInstrument {
         : kind;
     pendingAction = kind;
     lastActivated = kind;
+    _activated = _ActivatedCommand(
+      kind: kind,
+      subjectId: selectedSubjectId,
+      subjectKind: selectedKind,
+      scope: scope,
+      outId: outId,
+      inId: inId,
+    );
     commitKind = SystemCommitKind.saving;
     yellowOffered = false;
     directSendOffOffered = false;
@@ -673,56 +718,71 @@ final class ResearchInstrument {
     _log(ResearchLogKind.simulatedCommitStarted, kind.name);
   }
 
-  void _applySuccess(FinalActionKind kind) {
-    final subjectId = selectedSubjectId;
-    final subjectKind = selectedKind;
-    switch (kind) {
+  /// Writes the command captured at activation. Returns false when that
+  /// snapshot cannot produce a record, and writes nothing in that case.
+  bool _applySuccess(_ActivatedCommand command) {
+    switch (command.kind) {
       case FinalActionKind.recordYellow:
-        if (subjectId == null || subjectKind == null) return;
+        final subjectId = command.subjectId;
+        final subjectKind = command.subjectKind;
+        if (subjectId == null || subjectKind == null) return false;
         cautions.add(
           SavedCaution(
             subjectId: subjectId,
             kind: subjectKind,
-            scope: scope,
+            scope: command.scope,
           ),
         );
-        if (savedCautionCount(subjectId, subjectKind, scope) >= 2) {
+        if (savedCautionCount(subjectId, subjectKind, command.scope) >= 2) {
           successorEstablished = true;
           _generation += 1;
           _successorGeneration = _generation;
           predecessorKind = FinalActionKind.recordYellow;
           armedKind = null;
         }
+        return true;
       case FinalActionKind.recordDirectSendOff:
-        if (subjectId == null || subjectKind == null) return;
+        final subjectId = command.subjectId;
+        final subjectKind = command.subjectKind;
+        if (subjectId == null || subjectKind == null) return false;
         sendOffs.add(
           SavedSendOff(
             subjectId: subjectId,
             kind: subjectKind,
-            scope: scope,
+            scope: command.scope,
             pathway: SendOffPathwayLabel.direct,
           ),
         );
+        return true;
       case FinalActionKind.recordSecondCautionSendOff:
-        if (subjectId == null || subjectKind == null) return;
+        final subjectId = command.subjectId;
+        final subjectKind = command.subjectKind;
+        if (subjectId == null || subjectKind == null) return false;
         sendOffs.add(
           SavedSendOff(
             subjectId: subjectId,
             kind: subjectKind,
-            scope: scope,
+            scope: command.scope,
             pathway: SendOffPathwayLabel.secondCaution,
           ),
         );
         successorEstablished = false;
+        return true;
       case FinalActionKind.recordSubstitution:
-        final out = outId;
-        final incoming = inId;
+        final out = command.outId;
+        final incoming = command.inId;
         final person = out == null ? null : _participant(out);
-        if (out == null || incoming == null || person == null) return;
+        if (out == null ||
+            incoming == null ||
+            out == incoming ||
+            person == null) {
+          return false;
+        }
         substitutions.add(
           SavedSubstitution(outId: out, inId: incoming, team: person.team),
         );
         substitutionStage = SubstitutionStage.saved;
+        return true;
     }
   }
 
