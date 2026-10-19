@@ -168,5 +168,27 @@ final class V1SemanticContract {
       createsSportingState: true,
       isDurableMatchState: false,
     ),
+    V1SemanticTypeCode.yellowCard: V1SemanticContract(
+      code: V1SemanticTypeCode.yellowCard,
+      requiredRecordKind: RecordKind.humanDetermination,
+      schemaVersion: schemaContractVersion,
+      category: SemanticTypeCategory.event,
+      projectionFacets: const [ProjectionFacet.coverage],
+      requiresTargetRelationship: false,
+      effect: SemanticEffect.historicalInterpretation,
+      createsSportingState: true,
+      isDurableMatchState: false,
+    ),
+    V1SemanticTypeCode.refereeEnteredFieldForMatchStart: V1SemanticContract(
+      code: V1SemanticTypeCode.refereeEnteredFieldForMatchStart,
+      requiredRecordKind: RecordKind.temporalFact,
+      schemaVersion: schemaContractVersion,
+      category: SemanticTypeCategory.authorityControl,
+      projectionFacets: const [ProjectionFacet.coverage],
+      requiresTargetRelationship: false,
+      effect: SemanticEffect.historicalInterpretation,
+      createsSportingState: false,
+      isDurableMatchState: false,
+    ),
   };
 }

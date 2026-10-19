@@ -162,4 +162,4 @@ One integration owner per wave for each of those groups. WAVE 0 changed none of 
 | FOUNDATION DELTAS | NONE |
 | PRODUCT UX DELTAS | NONE |
 | LOCAL GATES | Unchanged. LOCAL GATE REQUIRED. HARDWARE EVIDENCE ABSENT. HUMAN EVIDENCE ABSENT. |
-| NEXT WAVE | WAVE 2 HOLD — NOT AUTHORIZED. |
+| NEXT WAVE | Night program DAG. Identity, Yellow, and later banks are authorized only there. |
