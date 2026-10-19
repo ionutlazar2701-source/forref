@@ -1,6 +1,8 @@
+import '../disciplinary_subject.dart';
 import '../match_participant.dart';
 import '../match_record.dart';
 import '../semantics/v1_semantic_payload.dart';
+import 'effective_send_off_resolver.dart';
 import 'effective_yellow_resolver.dart';
 import 'score_completeness_proof.dart';
 
@@ -18,6 +20,7 @@ final class KnownStandingCaution extends CautionAwareness {
     required this.standingCount,
     required List<String> historicalYellowRecordIds,
     required List<String> standingYellowRecordIds,
+    required this.activeCautionSurface,
   })  : historicalYellowRecordIds =
             List.unmodifiable(historicalYellowRecordIds),
         standingYellowRecordIds = List.unmodifiable(standingYellowRecordIds);
@@ -26,16 +29,26 @@ final class KnownStandingCaution extends CautionAwareness {
   final List<String> historicalYellowRecordIds;
   final List<String> standingYellowRecordIds;
 
+  /// False when an effective explicit SEND_OFF removes future-caution membership.
+  ///
+  /// Historical caution ids stay on this value. This flag does not commit SEND_OFF.
+  final bool activeCautionSurface;
+
   /// Factual awareness only. This value does not commit SEND_OFF.
   bool get secondCautionSituation => standingCount >= 2;
 }
 
 final class KnownNoStandingCaution extends CautionAwareness {
-  KnownNoStandingCaution({required List<String> historicalYellowRecordIds})
-      : historicalYellowRecordIds =
+  KnownNoStandingCaution({
+    required List<String> historicalYellowRecordIds,
+    required this.activeCautionSurface,
+  }) : historicalYellowRecordIds =
             List.unmodifiable(historicalYellowRecordIds);
 
   final List<String> historicalYellowRecordIds;
+
+  /// False when an effective explicit SEND_OFF removes future-caution membership.
+  final bool activeCautionSurface;
 }
 
 final class CautionAwarenessUnavailable extends CautionAwareness {
@@ -46,10 +59,39 @@ final class CautionAwarenessConflicted extends CautionAwareness {
   const CautionAwarenessConflicted();
 }
 
-/// Positive caution answer. Incomplete evidence stays unavailable.
+/// Participant adapter. The subject key is [ParticipantDisciplinarySubject].
 CautionAwareness assessCautionAwareness({
   required String matchId,
   required MatchParticipantId participantId,
+  required DisciplinaryAccountingScope accountingScope,
+  required List<MatchRecord> records,
+  required ScoreCompletenessProof? proof,
+  required bool authorityConflict,
+  required bool correctionConflict,
+  required bool missingDependency,
+  required List<String> unsupportedSemanticRecordIds,
+  required List<String> missingDependencyTargets,
+}) {
+  return assessDisciplinaryAwareness(
+    matchId: matchId,
+    subject: ParticipantDisciplinarySubject(participantId),
+    accountingScope: accountingScope,
+    records: records,
+    proof: proof,
+    authorityConflict: authorityConflict,
+    correctionConflict: correctionConflict,
+    missingDependency: missingDependency,
+    unsupportedSemanticRecordIds: unsupportedSemanticRecordIds,
+    missingDependencyTargets: missingDependencyTargets,
+  );
+}
+
+/// One evaluator for a participant or a team official.
+///
+/// Opening this value appends no Match Records.
+CautionAwareness assessDisciplinaryAwareness({
+  required String matchId,
+  required DisciplinarySubjectRef subject,
   required DisciplinaryAccountingScope accountingScope,
   required List<MatchRecord> records,
   required ScoreCompletenessProof? proof,
@@ -66,13 +108,13 @@ CautionAwareness assessCautionAwareness({
       if (bySequence != 0) return bySequence;
       return a.recordId.compareTo(b.recordId);
     });
-  final proofCheck = validateScoreCompletenessProof(
+  final proofCheck = validateAuthoritativeHistoryCompleteness(
     matchId: matchId,
     sortedRecords: sorted,
-    proof: proof,
-    scoreAuthorityConflict: authorityConflict,
-    scoreCorrectionConflict: correctionConflict,
-    scoreMissingDependency: missingDependency,
+    evidence: proof,
+    authorityConflict: authorityConflict,
+    correctionConflict: correctionConflict,
+    missingDependency: missingDependency,
     unsupportedSemanticRecordIds: unsupportedSemanticRecordIds,
     missingDependencyTargets: missingDependencyTargets,
   );
@@ -93,7 +135,7 @@ CautionAwareness assessCautionAwareness({
   final yellows = (resolved as EffectiveYellowSet).yellows.where((yellow) {
     final record = recordsById[yellow.yellowRecordId]!;
     return record.matchId == matchId &&
-        yellow.participantId == participantId &&
+        yellow.subject == subject &&
         yellow.accountingScope == accountingScope;
   }).toList();
 
@@ -104,12 +146,43 @@ CautionAwareness assessCautionAwareness({
     for (final yellow in yellows)
       if (yellow.standing) yellow.yellowRecordId,
   ]..sort();
+  final sendOffResolution = resolveEffectiveSendOffs(recordsById: recordsById);
+  if (sendOffResolution is EffectiveSendOffConflicted) {
+    return const CautionAwarenessConflicted();
+  }
+  if (sendOffResolution is EffectiveSendOffUnavailable) {
+    return const CautionAwarenessUnavailable();
+  }
+  final activeSendOffs = (sendOffResolution as EffectiveSendOffSet)
+      .sendOffs
+      .where((sendOff) {
+        final record = recordsById[sendOff.sendOffRecordId];
+        return record != null &&
+            record.matchId == matchId &&
+            sendOff.legallyEffective &&
+            sendOff.subject == subject &&
+            sendOff.scope == accountingScope;
+      }).toList();
+  for (final sendOff in activeSendOffs) {
+    if (sendOff.dependencyStatus == SendOffDependencyStatus.conflicted) {
+      return const CautionAwarenessConflicted();
+    }
+    if (sendOff.dependencyStatus == SendOffDependencyStatus.unavailable) {
+      return const CautionAwarenessUnavailable();
+    }
+  }
+  final activeCautionSurface = activeSendOffs.isEmpty;
+
   if (standing.isEmpty) {
-    return KnownNoStandingCaution(historicalYellowRecordIds: historical);
+    return KnownNoStandingCaution(
+      historicalYellowRecordIds: historical,
+      activeCautionSurface: activeCautionSurface,
+    );
   }
   return KnownStandingCaution(
     standingCount: standing.length,
     historicalYellowRecordIds: historical,
     standingYellowRecordIds: standing,
+    activeCautionSurface: activeCautionSurface,
   );
 }

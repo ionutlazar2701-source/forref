@@ -16,7 +16,7 @@ PRODUCT COMMAND: FOUNDATION FREEZE ACCEPTED
 
 WAVE 1: ACCEPTED / CLOSED at production `fa4a7976e153e7a0096aaad2958116a3a97f5bc1`, evidence `6ec364cee2af78dc3f2f3d2c4110b95f4660f780`.
 
-WAVE 2+: The night program ran. Result is PARTIAL. See [night-program/MORNING_HANDOFF.md](night-program/MORNING_HANDOFF.md).
+WAVE 2+: Night program Phase I is PARTIAL. See [night-program/MORNING_HANDOFF.md](night-program/MORNING_HANDOFF.md). Phase II finished the remaining banks and the two disciplinary bridges. See [night-program/PHASE2_HANDOFF.md](night-program/PHASE2_HANDOFF.md). Phone authority cutover stays HOLD.
 
 Accepted Foundation SHA: `5772671a9674e00c372268047d5f54073610af22`.
 
@@ -163,3 +163,22 @@ One integration owner per wave for each of those groups. WAVE 0 changed none of 
 | PRODUCT UX DELTAS | NONE |
 | LOCAL GATES | Unchanged. LOCAL GATE REQUIRED. HARDWARE EVIDENCE ABSENT. HUMAN EVIDENCE ABSENT. |
 | NEXT WAVE | Night program DAG. Identity, Yellow, and later banks are authorized only there. |
+
+## Night program Phase II
+
+| Field | Value |
+| --- | --- |
+| STATUS | PASS for the authorized banks and bridges. Phone cutover HOLD. |
+| START EVIDENCE SHA | `f4bf48ffd397b1cd81cf2f40a08084aa49561b7e` |
+| EXECUTION BASE SHA | `f4bf48ffd397b1cd81cf2f40a08084aa49561b7e`. Descends from `09fa0bf39bbf7b1aecaef8aa56a780b8b1249f7c`. Library diff between those SHAs is empty. |
+| PRODUCTION SHA | `39a676b25682e2b6930b6d4f7f02340b55ae01a8` |
+| BRANCH | `cursor/forref-night-phase2-30fd` |
+| SCOPE | BANK G, BANK B2, BANK D, BANK E, status ↔ awareness, awareness ↔ SEND_OFF. |
+| TESTS | `./tool/verify_cloud.sh` PASSED. Exit 0. Core 347, persistence 88, phone 125. TEST EXECUTED PASS. Not CI PASS. |
+| EVIDENCE | [night-program/PHASE2_HANDOFF.md](night-program/PHASE2_HANDOFF.md), [night-program/PHASE2_ADVERSARIAL_REPORT.md](night-program/PHASE2_ADVERSARIAL_REPORT.md) |
+| SABOTEUR | Grok `bc-b4ae2960-049d-5a4d-921d-b09ea16902a0`. Third review PASS. No `lib/` edits by the reviewer. |
+| FOUNDATION DELTAS | NONE |
+| DOMAIN DELTAS | NONE |
+| PRODUCT UX DELTAS | PHONE PRODUCT / UX GATE REQUIRED |
+| LOCAL GATES | Unchanged. LOCAL GATE REQUIRED. |
+| NEXT WAVE | Phone product / UX authority gate. Not started. |

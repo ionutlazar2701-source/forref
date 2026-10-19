@@ -28,6 +28,34 @@ Analyzer-only production tip: `09fa0bf39bbf7b1aecaef8aa56a780b8b1249f7c`
 
 Saboteur tests: `cd6e2a952a7412cce8628f5bddf99f7e43bf459a`
 
-BANK D: HOLD. BANK E: HOLD. Phone cutover: HOLD. See [HOLD_PACKETS.md](HOLD_PACKETS.md).
+BANK D: HOLD at Phase I close. BANK E: HOLD at Phase I close. Phone cutover: HOLD. See [HOLD_PACKETS.md](HOLD_PACKETS.md).
 
 `./tool/verify_cloud.sh` on `09fa0bf39bbf7b1aecaef8aa56a780b8b1249f7c`: PASSED. Exit 0. Core 260, persistence 58, phone 125. TEST EXECUTED PASS. Not CI PASS.
+
+## Phase II
+
+START EVIDENCE SHA: `f4bf48ffd397b1cd81cf2f40a08084aa49561b7e`
+
+That SHA descends from `09fa0bf39bbf7b1aecaef8aa56a780b8b1249f7c`. Library diff `09fa0bf..f4bf48f` under `packages/**/lib` and `apps/**/lib` is empty.
+
+PHASE2_EXECUTION_BASE_SHA: `f4bf48ffd397b1cd81cf2f40a08084aa49561b7e`
+
+Branch: `cursor/forref-night-phase2-30fd`
+
+BANK G SHA: `87f8cce1e031b152614c9dc08fdae5d44152eb82`
+
+BANK B2 SHA: `0ff1ae4ec7cafac6d3d4e48347811dda07885ce8`
+
+BANK D SHA: `65cd62f94f4637541c6524f27e6f0024c50fbb15`
+
+BANK E SHA: `02a8e5737023a05f90126201ef485274e4d6d3f6`
+
+STATUS ↔ AWARENESS SHA: `eab493e9392da518c142255c0cc2a258ea53b5ec`
+
+AWARENESS ↔ SEND_OFF SHA: `39a676b25682e2b6930b6d4f7f02340b55ae01a8`
+
+Saboteur: Grok `bc-b4ae2960-049d-5a4d-921d-b09ea16902a0`. Final review PASS. Production edits by the reviewer: none.
+
+Phone cutover remains HOLD. Handoff: [PHASE2_HANDOFF.md](PHASE2_HANDOFF.md).
+
+`./tool/verify_cloud.sh` on `39a676b25682e2b6930b6d4f7f02340b55ae01a8`: PASSED. Exit 0. Core 347, persistence 88, phone 125. TEST EXECUTED PASS. Not CI PASS.

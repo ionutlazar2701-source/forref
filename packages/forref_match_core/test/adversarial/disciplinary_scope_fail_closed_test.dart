@@ -13,7 +13,6 @@ void main() {
       for (final wire in const [
         'YELLOW',
         'RED',
-        'SUBSTITUTION',
         'SHOOTOUT',
         'SECOND_YELLOW',
         'SHOOTOUT_CAUTION',
@@ -26,7 +25,9 @@ void main() {
       for (final code in V1SemanticTypeCode.values) {
         final contract = V1SemanticContract.byCode[code]!;
         if (code == V1SemanticTypeCode.goal ||
-            code == V1SemanticTypeCode.yellowCard) {
+            code == V1SemanticTypeCode.yellowCard ||
+            code == V1SemanticTypeCode.sendOff ||
+            code == V1SemanticTypeCode.substitution) {
           expect(contract.createsSportingState, isTrue, reason: code.wireValue);
         } else {
           expect(contract.createsSportingState, isFalse, reason: code.wireValue);
@@ -333,6 +334,20 @@ MatchRecordPayload _payloadFor(V1SemanticTypeCode code) {
     V1SemanticTypeCode.goal => GoalPayload(
       scoringTeamId: MatchTeamId('team-alpha'),
       captureIntentId: 'intent-1',
+    ),
+    V1SemanticTypeCode.substitution => SubstitutionPayload(
+      outgoingParticipantId: MatchParticipantId('person-a'),
+      incomingParticipantId: MatchParticipantId('person-b'),
+      teamId: MatchTeamId('team-alpha'),
+      captureIntentId: 'intent-sub',
+    ),
+    V1SemanticTypeCode.sendOff => SendOffPayload(
+      disciplinarySubject: ParticipantDisciplinarySubject(
+        MatchParticipantId('person-a'),
+      ),
+      disciplinaryScope: DisciplinaryAccountingScope.match,
+      pathway: SendOffPathway.direct,
+      captureIntentId: 'intent-send-off',
     ),
     V1SemanticTypeCode.yellowCard => YellowCardPayload(
       participantId: MatchParticipantId('person-a'),

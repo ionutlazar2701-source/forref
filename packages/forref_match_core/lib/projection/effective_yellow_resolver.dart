@@ -1,4 +1,4 @@
-import '../match_participant.dart';
+import '../disciplinary_subject.dart';
 import '../match_record.dart';
 import '../record_kind.dart';
 import '../semantics/v1_semantic_payload.dart';
@@ -8,15 +8,19 @@ import 'effective_goal_resolver.dart';
 final class EffectiveYellow {
   const EffectiveYellow({
     required this.yellowRecordId,
-    required this.participantId,
+    required this.subject,
     required this.accountingScope,
     required this.standing,
+    required this.yellowSchemaVersion,
   });
 
   final String yellowRecordId;
-  final MatchParticipantId participantId;
+  final DisciplinarySubjectRef subject;
   final DisciplinaryAccountingScope accountingScope;
   final bool standing;
+
+  /// 1 for a stored participant Yellow. 2 for an additive subject payload.
+  final int yellowSchemaVersion;
 }
 
 sealed class EffectiveYellowResolution {
@@ -45,16 +49,15 @@ EffectiveYellowResolution resolveEffectiveYellows({
   required Map<String, MatchRecord> recordsById,
 }) {
   final yellowRecords = recordsById.values
-      .where((record) => record.payload is YellowCardPayload)
+      .where((record) => isYellowCardPayload(record.payload))
       .toList()
     ..sort((a, b) => a.recordId.compareTo(b.recordId));
 
-  final participantByYellow = <String, MatchParticipantId>{};
+  final subjectByYellow = <String, DisciplinarySubjectRef>{};
   final scopeByYellow = <String, DisciplinaryAccountingScope>{};
   for (final yellow in yellowRecords) {
-    final payload = yellow.payload as YellowCardPayload;
-    participantByYellow[yellow.recordId] = payload.participantId;
-    scopeByYellow[yellow.recordId] = payload.accountingScope;
+    subjectByYellow[yellow.recordId] = subjectOfYellowCard(yellow.payload);
+    scopeByYellow[yellow.recordId] = scopeOfYellowCard(yellow.payload);
   }
 
   final correctionRecords = recordsById.values
@@ -81,32 +84,30 @@ EffectiveYellowResolution resolveEffectiveYellows({
     }
   }
 
-  final repairedParticipants = <String, Set<MatchParticipantId>>{};
+  final repairedSubjects = <String, Set<DisciplinarySubjectRef>>{};
   final repairedScopes = <String, Set<DisciplinaryAccountingScope>>{};
   for (final correction in correctionRecords) {
     final payload = correction.payload as CorrectionPayload;
-    if (payload.repairedParticipantId == null &&
-        payload.repairedAccountingScope == null) {
-      continue;
+    if (_yellowRepairFieldsConflict(payload)) {
+      return const EffectiveYellowConflicted();
     }
+    final repairedSubject = _repairedYellowSubject(payload);
+    final repairedScope = _repairedYellowScope(payload);
+    if (repairedSubject == null && repairedScope == null) continue;
     final walk = _walkToYellow(correctionTargetOf(correction)!, recordsById);
     if (walk.cycle) return const EffectiveYellowUnavailable();
     final yellowId = walk.yellowId;
     if (yellowId == null) continue;
-    if (payload.repairedParticipantId != null) {
-      repairedParticipants
-          .putIfAbsent(yellowId, () => {})
-          .add(payload.repairedParticipantId!);
+    if (repairedSubject != null) {
+      repairedSubjects.putIfAbsent(yellowId, () => {}).add(repairedSubject);
     }
-    if (payload.repairedAccountingScope != null) {
-      repairedScopes
-          .putIfAbsent(yellowId, () => {})
-          .add(payload.repairedAccountingScope!);
+    if (repairedScope != null) {
+      repairedScopes.putIfAbsent(yellowId, () => {}).add(repairedScope);
     }
   }
-  for (final entry in repairedParticipants.entries) {
+  for (final entry in repairedSubjects.entries) {
     if (entry.value.length > 1) return const EffectiveYellowConflicted();
-    participantByYellow[entry.key] = entry.value.first;
+    subjectByYellow[entry.key] = entry.value.first;
   }
   for (final entry in repairedScopes.entries) {
     if (entry.value.length > 1) return const EffectiveYellowConflicted();
@@ -153,9 +154,10 @@ EffectiveYellowResolution resolveEffectiveYellows({
     effective.add(
       EffectiveYellow(
         yellowRecordId: yellow.recordId,
-        participantId: participantByYellow[yellow.recordId]!,
+        subject: subjectByYellow[yellow.recordId]!,
         accountingScope: scopeByYellow[yellow.recordId]!,
         standing: !voided,
+        yellowSchemaVersion: yellowCardPayloadSchemaVersion(yellow.payload),
       ),
     );
   }
@@ -167,13 +169,38 @@ bool _correctionReachesYellow(
   MatchRecord correction,
   Map<String, MatchRecord> recordsById,
 ) {
-  final payload = correction.payload;
-  if (payload is CorrectionPayload &&
-      (payload.repairedParticipantId != null ||
-          payload.repairedAccountingScope != null)) {
+  if (_walkToYellow(correction.recordId, recordsById).yellowId != null) {
     return true;
   }
-  return _walkToYellow(correction.recordId, recordsById).yellowId != null;
+  final payload = correction.payload;
+  return payload is CorrectionPayload &&
+      (payload.repairedParticipantId != null ||
+          payload.repairedAccountingScope != null);
+}
+
+DisciplinarySubjectRef? _repairedYellowSubject(CorrectionPayload payload) {
+  final v1 = payload.repairedParticipantId == null
+      ? null
+      : ParticipantDisciplinarySubject(payload.repairedParticipantId!);
+  final v2 = payload.repairedDisciplinarySubject;
+  if (v1 != null && v2 != null && v1 != v2) return v1;
+  return v2 ?? v1;
+}
+
+bool _yellowRepairFieldsConflict(CorrectionPayload payload) {
+  final v1 = payload.repairedParticipantId == null
+      ? null
+      : ParticipantDisciplinarySubject(payload.repairedParticipantId!);
+  final v2 = payload.repairedDisciplinarySubject;
+  if (v1 != null && v2 != null && v1 != v2) return true;
+  final v1Scope = payload.repairedAccountingScope;
+  final v2Scope = payload.repairedDisciplinaryScope;
+  return v1Scope != null && v2Scope != null && v1Scope != v2Scope;
+}
+
+DisciplinaryAccountingScope? _repairedYellowScope(CorrectionPayload payload) {
+  if (_yellowRepairFieldsConflict(payload)) return null;
+  return payload.repairedDisciplinaryScope ?? payload.repairedAccountingScope;
 }
 
 final class _YellowWalk {
@@ -201,7 +228,7 @@ _YellowWalk _walkToYellow(
     visiting.add(current);
     final record = recordsById[current];
     if (record == null) return const _YellowWalk.notAYellow();
-    if (record.payload is YellowCardPayload) {
+    if (isYellowCardPayload(record.payload)) {
       return _YellowWalk.yellow(current);
     }
     if (record.recordKind == RecordKind.correction) {

@@ -6,9 +6,9 @@ import '../match_team.dart';
 import '../reference/reference_match_memory.dart';
 import '../semantics/v1_semantic_payload.dart';
 
-/// External positive inputs required before a [KnownScore] may be emitted.
-final class ScoreCompletenessProof {
-  const ScoreCompletenessProof({
+/// Domain-neutral history evidence. Score and discipline share this object.
+final class AuthoritativeHistoryEvidence {
+  const AuthoritativeHistoryEvidence({
     required this.matchAuthorityMode,
     required this.teamBindings,
     required this.generationOneRoot,
@@ -19,11 +19,65 @@ final class ScoreCompletenessProof {
   final GenerationOneAuthorityRoot generationOneRoot;
 }
 
-/// Validates proof inputs and committed-record evidence for score completeness.
+/// Score-facing adapter over [AuthoritativeHistoryEvidence].
+final class ScoreCompletenessProof extends AuthoritativeHistoryEvidence {
+  const ScoreCompletenessProof({
+    required super.matchAuthorityMode,
+    required super.teamBindings,
+    required super.generationOneRoot,
+  });
+}
+
+/// Score adapter. The proof body lives in [validateAuthoritativeHistoryCompleteness].
 ScoreProofValidation validateScoreCompletenessProof({
   required String matchId,
   required List<MatchRecord> sortedRecords,
   required ScoreCompletenessProof? proof,
+  required bool scoreAuthorityConflict,
+  required bool scoreCorrectionConflict,
+  required bool scoreMissingDependency,
+  required List<String> unsupportedSemanticRecordIds,
+  required List<String> missingDependencyTargets,
+}) {
+  return validateAuthoritativeHistoryCompleteness(
+    matchId: matchId,
+    sortedRecords: sortedRecords,
+    evidence: proof,
+    authorityConflict: scoreAuthorityConflict,
+    correctionConflict: scoreCorrectionConflict,
+    missingDependency: scoreMissingDependency,
+    unsupportedSemanticRecordIds: unsupportedSemanticRecordIds,
+    missingDependencyTargets: missingDependencyTargets,
+  );
+}
+
+/// One history-completeness proof for score and disciplinary awareness.
+ScoreProofValidation validateAuthoritativeHistoryCompleteness({
+  required String matchId,
+  required List<MatchRecord> sortedRecords,
+  required AuthoritativeHistoryEvidence? evidence,
+  required bool authorityConflict,
+  required bool correctionConflict,
+  required bool missingDependency,
+  required List<String> unsupportedSemanticRecordIds,
+  required List<String> missingDependencyTargets,
+}) {
+  return _validateHistory(
+    matchId: matchId,
+    sortedRecords: sortedRecords,
+    proof: evidence,
+    scoreAuthorityConflict: authorityConflict,
+    scoreCorrectionConflict: correctionConflict,
+    scoreMissingDependency: missingDependency,
+    unsupportedSemanticRecordIds: unsupportedSemanticRecordIds,
+    missingDependencyTargets: missingDependencyTargets,
+  );
+}
+
+ScoreProofValidation _validateHistory({
+  required String matchId,
+  required List<MatchRecord> sortedRecords,
+  required AuthoritativeHistoryEvidence? proof,
   required bool scoreAuthorityConflict,
   required bool scoreCorrectionConflict,
   required bool scoreMissingDependency,
@@ -113,6 +167,9 @@ ScoreProofValidation validateScoreCompletenessProof({
 bool _generationOneCapture(Object payload) {
   return payload is GoalPayload ||
       payload is YellowCardPayload ||
+      payload is YellowCardPayloadV2 ||
+      payload is SendOffPayload ||
+      payload is SubstitutionPayload ||
       payload is RefereeEnteredFieldPayload;
 }
 

@@ -1,3 +1,4 @@
+import 'disciplinary_subject.dart';
 import 'authority.dart';
 import 'integrity.dart';
 import 'match_record.dart';
@@ -215,13 +216,32 @@ final class _PayloadSnapshot {
             'scoringTeamId': payload.scoringTeamId.value,
             'captureIntentId': payload.captureIntentId,
           },
-          if (payload is YellowCardPayload) ...{
-            'participantId': payload.participantId.value,
-            'accountingScope': payload.accountingScope.wireValue,
+          if (isYellowCardPayload(payload)) ...{
+            'yellowSchemaVersion': yellowCardPayloadSchemaVersion(payload),
+            'subjectKind': subjectOfYellowCard(payload).kind.wireValue,
+            'subjectId': subjectOfYellowCard(payload).rawId,
+            'accountingScope': scopeOfYellowCard(payload).wireValue,
+            'captureIntentId': captureIntentOfYellowCard(payload),
+            if (situationOfYellowCard(payload) != null)
+              'situationAtDetermination': situationOfYellowCard(payload)!.name,
+          },
+          if (payload is SendOffPayload) ...{
+            'subjectKind': payload.disciplinarySubject.kind.wireValue,
+            'subjectId': payload.disciplinarySubject.rawId,
+            'accountingScope': payload.disciplinaryScope.wireValue,
+            'pathway': payload.pathway.wireValue,
             'captureIntentId': payload.captureIntentId,
-            if (payload.situationAtDetermination != null)
-              'situationAtDetermination':
-                  payload.situationAtDetermination!.name,
+            if (payload.firstStandingCautionRecordId != null)
+              'firstStandingCautionRecordId':
+                  payload.firstStandingCautionRecordId,
+            if (payload.secondCautionRecordId != null)
+              'secondCautionRecordId': payload.secondCautionRecordId,
+          },
+          if (payload is SubstitutionPayload) ...{
+            'outgoingParticipantId': payload.outgoingParticipantId.value,
+            'incomingParticipantId': payload.incomingParticipantId.value,
+            'teamId': payload.teamId.value,
+            'captureIntentId': payload.captureIntentId,
           },
           if (payload is RefereeEnteredFieldPayload)
             'captureIntentId': payload.captureIntentId,
@@ -235,6 +255,28 @@ final class _PayloadSnapshot {
               payload.repairedAccountingScope != null)
             'repairedAccountingScope':
                 payload.repairedAccountingScope!.wireValue,
+          if (payload is CorrectionPayload &&
+              payload.repairedDisciplinarySubject != null) ...{
+            'repairedSubjectKind':
+                payload.repairedDisciplinarySubject!.kind.wireValue,
+            'repairedSubjectId': payload.repairedDisciplinarySubject!.rawId,
+          },
+          if (payload is CorrectionPayload &&
+              payload.repairedDisciplinaryScope != null)
+            'repairedDisciplinaryScope':
+                payload.repairedDisciplinaryScope!.wireValue,
+          if (payload is CorrectionPayload &&
+              payload.repairedOutgoingParticipantId != null)
+            'repairedOutgoingParticipantId':
+                payload.repairedOutgoingParticipantId!.value,
+          if (payload is CorrectionPayload &&
+              payload.repairedIncomingParticipantId != null)
+            'repairedIncomingParticipantId':
+                payload.repairedIncomingParticipantId!.value,
+          if (payload is CorrectionPayload &&
+              payload.repairedSubstitutionTeamId != null)
+            'repairedSubstitutionTeamId':
+                payload.repairedSubstitutionTeamId!.value,
           if (payload.domainContractVersion != null)
             'domainContractVersion': payload.domainContractVersion!.value,
           if (payload.competitionRulesContext != null)

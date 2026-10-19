@@ -1,6 +1,14 @@
 # Hold packets
 
+Phase II closed the three domain holds below. The packets stay as the record of what blocked Phase I. Phone cutover is still open.
+
 ## TEAM_OFFICIAL_IDENTITY_DOMAIN
+
+STATUS: CLOSED by Phase II Product Command.
+
+Resolution: `MatchTeamOfficialId` plus `TeamOfficialDisciplinarySubject`. SHA `87f8cce1e031b152614c9dc08fdae5d44152eb82`.
+
+## TEAM_OFFICIAL_IDENTITY_DOMAIN — original packet
 
 DOMAIN: team-official disciplinary subject
 
@@ -16,6 +24,12 @@ BANK B label: PARTICIPANT-YELLOW BANK ONLY. It does not claim complete Yellow-do
 
 ## BANK D — SEND_OFF
 
+STATUS: CLOSED by Phase II Product Command.
+
+Resolution: explicit `SEND_OFF`, pathways `direct` and `secondCaution`, named Y1 and Y2 plus causal dependencies. SHA `65cd62f94f4637541c6524f27e6f0024c50fbb15`.
+
+## BANK D — SEND_OFF — original packet
+
 DOMAIN: explicit sending-off payload
 
 EXACT QUESTION: What is the minimum typed pathway vocabulary, and does a second-caution sending-off require links to prior Yellow records?
@@ -27,6 +41,12 @@ WHAT CONTINUED: Identity, participant Yellow, awareness, and field entry. Two st
 SMALLEST NEXT DECISION: Freeze a two-value pathway and whether prior-caution links are required, absent, or forbidden.
 
 ## BANK E — completed substitution
+
+STATUS: CLOSED by Phase II Product Command.
+
+Resolution: a completed substitution is the referee's finished transition. No competition profile is required to accept it. SHA `02a8e5737023a05f90126201ef485274e4d6d3f6`.
+
+## BANK E — completed substitution — original packet
 
 DOMAIN: lawful incoming entry
 
@@ -40,6 +60,8 @@ SMALLEST NEXT DECISION: Freeze the FTM eligibility profile, including the result
 
 ## PHONE AUTHORITY CUTOVER
 
+STATUS: HOLD. Phase II did not cut the phone over.
+
 DOMAIN: phone participant selection
 
 EXACT QUESTION: How does the referee select a `MatchParticipantId` before an authoritative Yellow commit?
@@ -52,6 +74,8 @@ SMALLEST NEXT DECISION: Approve a selection control that resolves a stable parti
 
 ## BRIDGES HELD WITH THEIR BANKS
 
-WAVE 9 status ↔ awareness: HOLD because BANK E is HOLD.
+Phase I held both bridges because BANK D and BANK E were HOLD.
 
-WAVE 10 awareness ↔ SEND_OFF: HOLD because BANK D is HOLD.
+Phase II raised those banks and then built the bridges. Status ↔ awareness PASS at `eab493e9392da518c142255c0cc2a258ea53b5ec`. Awareness ↔ SEND_OFF PASS at `39a676b25682e2b6930b6d4f7f02340b55ae01a8`.
+
+Phone authority cutover remains HOLD.

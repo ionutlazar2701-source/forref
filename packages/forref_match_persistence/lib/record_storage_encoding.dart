@@ -16,6 +16,9 @@ const _correctionType = 'v1-correction';
 const _legalSupersessionType = 'v1-legal-supersession';
 const _goalType = 'v1-goal';
 const _yellowCardType = 'v1-yellow-card';
+const _yellowCardV2Type = 'v2-yellow-card';
+const _sendOffType = 'v1-send-off';
+const _substitutionType = 'v1-substitution';
 const _refereeEnteredFieldType = 'v1-referee-entered-field';
 
 const _rootKeys = {
@@ -168,6 +171,33 @@ Map<String, Object?> _encodePayload(MatchRecordPayload payload) {
         if (payload.situationAtDetermination != null)
           'situationAtDetermination': payload.situationAtDetermination!.name,
       },
+      if (payload is YellowCardPayloadV2) ...{
+        'yellowSchemaVersion': payload.yellowSchemaVersion,
+        'subjectKind': payload.disciplinarySubject.kind.wireValue,
+        'subjectId': payload.disciplinarySubject.rawId,
+        'accountingScope': payload.accountingScope.wireValue,
+        'captureIntentId': payload.captureIntentId,
+        if (payload.participantSituationAtDetermination != null)
+          'situationAtDetermination':
+              payload.participantSituationAtDetermination!.name,
+      },
+      if (payload is SendOffPayload) ...{
+        'subjectKind': payload.disciplinarySubject.kind.wireValue,
+        'subjectId': payload.disciplinarySubject.rawId,
+        'accountingScope': payload.disciplinaryScope.wireValue,
+        'pathway': payload.pathway.wireValue,
+        'captureIntentId': payload.captureIntentId,
+        if (payload.firstStandingCautionRecordId != null)
+          'firstStandingCautionRecordId': payload.firstStandingCautionRecordId,
+        if (payload.secondCautionRecordId != null)
+          'secondCautionRecordId': payload.secondCautionRecordId,
+      },
+      if (payload is SubstitutionPayload) ...{
+        'outgoingParticipantId': payload.outgoingParticipantId.value,
+        'incomingParticipantId': payload.incomingParticipantId.value,
+        'teamId': payload.teamId.value,
+        'captureIntentId': payload.captureIntentId,
+      },
       if (payload is RefereeEnteredFieldPayload)
         'captureIntentId': payload.captureIntentId,
       if (payload is CorrectionPayload &&
@@ -179,6 +209,27 @@ Map<String, Object?> _encodePayload(MatchRecordPayload payload) {
       if (payload is CorrectionPayload &&
           payload.repairedAccountingScope != null)
         'repairedAccountingScope': payload.repairedAccountingScope!.wireValue,
+      if (payload is CorrectionPayload &&
+          payload.repairedDisciplinarySubject != null) ...{
+        'repairedSubjectKind':
+            payload.repairedDisciplinarySubject!.kind.wireValue,
+        'repairedSubjectId': payload.repairedDisciplinarySubject!.rawId,
+      },
+      if (payload is CorrectionPayload &&
+          payload.repairedDisciplinaryScope != null)
+        'repairedDisciplinaryScope':
+            payload.repairedDisciplinaryScope!.wireValue,
+      if (payload is CorrectionPayload &&
+          payload.repairedOutgoingParticipantId != null)
+        'repairedOutgoingParticipantId':
+            payload.repairedOutgoingParticipantId!.value,
+      if (payload is CorrectionPayload &&
+          payload.repairedIncomingParticipantId != null)
+        'repairedIncomingParticipantId':
+            payload.repairedIncomingParticipantId!.value,
+      if (payload is CorrectionPayload &&
+          payload.repairedSubstitutionTeamId != null)
+        'repairedSubstitutionTeamId': payload.repairedSubstitutionTeamId!.value,
     };
   }
   throw FormatException(
@@ -194,6 +245,9 @@ String _v1PayloadType(V1SemanticPayload payload) {
     LegalSupersessionPayload() => _legalSupersessionType,
     GoalPayload() => _goalType,
     YellowCardPayload() => _yellowCardType,
+    YellowCardPayloadV2() => _yellowCardV2Type,
+    SendOffPayload() => _sendOffType,
+    SubstitutionPayload() => _substitutionType,
     RefereeEnteredFieldPayload() => _refereeEnteredFieldType,
   };
 }
@@ -219,6 +273,9 @@ MatchRecordPayload _decodePayload(
       type == _legalSupersessionType ||
       type == _goalType ||
       type == _yellowCardType ||
+      type == _yellowCardV2Type ||
+      type == _sendOffType ||
+      type == _substitutionType ||
       type == _refereeEnteredFieldType) {
     if (storageEncoding != adapterLocalStorageEncoding) {
       throw FormatException(
@@ -246,6 +303,21 @@ MatchRecordPayload _decodePayload(
         'situationAtDetermination',
         'repairedParticipantId',
         'repairedAccountingScope',
+        'yellowSchemaVersion',
+        'subjectKind',
+        'subjectId',
+        'repairedSubjectKind',
+        'repairedSubjectId',
+        'repairedDisciplinaryScope',
+        'pathway',
+        'firstStandingCautionRecordId',
+        'secondCautionRecordId',
+        'outgoingParticipantId',
+        'incomingParticipantId',
+        'teamId',
+        'repairedOutgoingParticipantId',
+        'repairedIncomingParticipantId',
+        'repairedSubstitutionTeamId',
       },
       'typed payload',
     );
@@ -291,6 +363,20 @@ V1SemanticPayload _decodeV1Payload(
               _optionalParticipantId(payload['repairedParticipantId']),
           repairedAccountingScope:
               _optionalScope(payload['repairedAccountingScope']),
+          repairedDisciplinarySubject: _optionalSubject(
+            payload['repairedSubjectKind'],
+            payload['repairedSubjectId'],
+          ),
+          repairedDisciplinaryScope:
+              _optionalScope(payload['repairedDisciplinaryScope']),
+          repairedOutgoingParticipantId: _optionalParticipantId(
+            payload['repairedOutgoingParticipantId'],
+          ),
+          repairedIncomingParticipantId: _optionalParticipantId(
+            payload['repairedIncomingParticipantId'],
+          ),
+          repairedSubstitutionTeamId:
+              _optionalTeamId(payload['repairedSubstitutionTeamId']),
           domainContractVersion: domain,
           competitionRulesContext: rules,
         ),
@@ -316,17 +402,52 @@ V1SemanticPayload _decodeV1Payload(
     _yellowCardType => _exactCode(
         code,
         V1SemanticTypeCode.yellowCard,
-        () => YellowCardPayload(
-          participantId: MatchParticipantId(
-            _requiredString(payload, 'participantId'),
+        () {
+          if (payload.containsKey('subjectKind') ||
+              payload.containsKey('subjectId') ||
+              payload.containsKey('yellowSchemaVersion')) {
+            throw FormatException(
+              'v1 Yellow bytes cannot carry a v2 subject',
+            );
+          }
+          return YellowCardPayload(
+            participantId: MatchParticipantId(
+              _requiredString(payload, 'participantId'),
+            ),
+            accountingScope: _requiredScope(payload['accountingScope']),
+            captureIntentId: _requiredString(payload, 'captureIntentId'),
+            situationAtDetermination:
+                _optionalSituation(payload['situationAtDetermination']),
+            domainContractVersion: domain,
+            competitionRulesContext: rules,
+          );
+        },
+      ),
+    _yellowCardV2Type => _exactCode(
+        code,
+        V1SemanticTypeCode.yellowCard,
+        () => _decodeYellowV2(payload, domain, rules),
+      ),
+    _substitutionType => _exactCode(
+        code,
+        V1SemanticTypeCode.substitution,
+        () => SubstitutionPayload(
+          outgoingParticipantId: MatchParticipantId(
+            _requiredString(payload, 'outgoingParticipantId'),
           ),
-          accountingScope: _requiredScope(payload['accountingScope']),
+          incomingParticipantId: MatchParticipantId(
+            _requiredString(payload, 'incomingParticipantId'),
+          ),
+          teamId: MatchTeamId(_requiredString(payload, 'teamId')),
           captureIntentId: _requiredString(payload, 'captureIntentId'),
-          situationAtDetermination:
-              _optionalSituation(payload['situationAtDetermination']),
           domainContractVersion: domain,
           competitionRulesContext: rules,
         ),
+      ),
+    _sendOffType => _exactCode(
+        code,
+        V1SemanticTypeCode.sendOff,
+        () => _decodeSendOff(payload, domain, rules),
       ),
     _refereeEnteredFieldType => _exactCode(
         code,
@@ -361,6 +482,8 @@ TemporalTransitionPayload _temporalTransition(
     V1SemanticTypeCode.legalSupersession ||
     V1SemanticTypeCode.goal ||
     V1SemanticTypeCode.yellowCard ||
+    V1SemanticTypeCode.sendOff ||
+    V1SemanticTypeCode.substitution ||
     V1SemanticTypeCode.refereeEnteredFieldForMatchStart =>
       false,
   };
@@ -414,6 +537,100 @@ MatchTeamId? _optionalTeamId(Object? value) {
     throw FormatException('Stored repairedScoringTeamId is invalid');
   }
   return MatchTeamId(value);
+}
+
+SendOffPayload _decodeSendOff(
+  Map<String, Object?> payload,
+  DomainContractVersion? domain,
+  CompetitionRulesContext? rules,
+) {
+  final pathway = SendOffPathwayWire.parseWire(payload['pathway'] as String?);
+  if (pathway == null) {
+    throw FormatException('Stored SEND_OFF pathway is unresolved');
+  }
+  final first = payload['firstStandingCautionRecordId'] as String?;
+  final second = payload['secondCautionRecordId'] as String?;
+  if (pathway == SendOffPathway.direct) {
+    if (first != null || second != null) {
+      throw FormatException('DIRECT SEND_OFF cannot name caution records');
+    }
+  } else if (first == null ||
+      first.isEmpty ||
+      second == null ||
+      second.isEmpty ||
+      first == second) {
+    throw FormatException('SECOND_CAUTION SEND_OFF roles are incomplete');
+  }
+  return SendOffPayload(
+    disciplinarySubject: _requiredSubject(
+      payload['subjectKind'],
+      payload['subjectId'],
+    ),
+    disciplinaryScope: _requiredScope(payload['accountingScope']),
+    pathway: pathway,
+    captureIntentId: _requiredString(payload, 'captureIntentId'),
+    firstStandingCautionRecordId: first,
+    secondCautionRecordId: second,
+    domainContractVersion: domain,
+    competitionRulesContext: rules,
+  );
+}
+
+YellowCardPayloadV2 _decodeYellowV2(
+  Map<String, Object?> payload,
+  DomainContractVersion? domain,
+  CompetitionRulesContext? rules,
+) {
+  final schema = payload['yellowSchemaVersion'];
+  if (schema != yellowCardPayloadSchemaV2) {
+    throw FormatException('Yellow v2 schema is missing');
+  }
+  if (payload.containsKey('participantId')) {
+    throw FormatException('Yellow v2 does not store a bare participantId');
+  }
+  final subject = _requiredSubject(
+    payload['subjectKind'],
+    payload['subjectId'],
+  );
+  final situation = _optionalSituation(payload['situationAtDetermination']);
+  if (subject is! ParticipantDisciplinarySubject && situation != null) {
+    throw FormatException(
+      'participant situation is only legal for a participant subject',
+    );
+  }
+  return YellowCardPayloadV2(
+    disciplinarySubject: subject,
+    accountingScope: _requiredScope(payload['accountingScope']),
+    captureIntentId: _requiredString(payload, 'captureIntentId'),
+    participantSituationAtDetermination: situation,
+    domainContractVersion: domain,
+    competitionRulesContext: rules,
+  );
+}
+
+DisciplinarySubjectRef _requiredSubject(Object? kind, Object? rawId) {
+  final subject = _optionalSubject(kind, rawId);
+  if (subject == null) {
+    throw FormatException('Stored disciplinary subject is missing');
+  }
+  return subject;
+}
+
+DisciplinarySubjectRef? _optionalSubject(Object? kind, Object? rawId) {
+  if (kind == null && rawId == null) return null;
+  if (kind is! String || rawId is! String) {
+    throw FormatException('Stored disciplinary subject is invalid');
+  }
+  final parsedKind = DisciplinarySubjectKindWire.parseWire(kind);
+  if (parsedKind == null || rawId.isEmpty) {
+    throw FormatException('Stored disciplinary subject is invalid');
+  }
+  return switch (parsedKind) {
+    DisciplinarySubjectKind.participant =>
+      ParticipantDisciplinarySubject(MatchParticipantId(rawId)),
+    DisciplinarySubjectKind.teamOfficial =>
+      TeamOfficialDisciplinarySubject(MatchTeamOfficialId(rawId)),
+  };
 }
 
 MatchParticipantId? _optionalParticipantId(Object? value) {

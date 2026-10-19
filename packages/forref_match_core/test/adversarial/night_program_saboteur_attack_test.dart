@@ -284,13 +284,15 @@ void main() {
       expect(projection.scoreProjection, isA<KnownScore>());
 
       const forbidden = {
-        'SEND_OFF',
         'RED',
         'SECOND_YELLOW',
         'RED_CARD',
         'SECOND_YELLOW_CARD',
       };
-      expect(V1SemanticTypeCodeWire.parseWire('SEND_OFF'), isNull);
+      expect(
+        V1SemanticTypeCodeWire.parseWire('SEND_OFF'),
+        V1SemanticTypeCode.sendOff,
+      );
       expect(V1SemanticTypeCodeWire.parseWire('RED'), isNull);
       expect(V1SemanticTypeCodeWire.parseWire('SECOND_YELLOW'), isNull);
       expect(V1SemanticTypeCodeWire.parseWire('YELLOW_CARD'), V1SemanticTypeCode.yellowCard);
@@ -563,14 +565,16 @@ void main() {
   });
 
   group('BANK D', () {
-    test('SEND_OFF cannot be parsed', () {
-      expect(V1SemanticTypeCodeWire.parseWire('SEND_OFF'), isNull);
+    test('RED wires stay unregistered after SEND_OFF exists', () {
+      expect(
+        V1SemanticTypeCodeWire.parseWire('SEND_OFF'),
+        V1SemanticTypeCode.sendOff,
+      );
       expect(V1SemanticTypeCodeWire.parseWire('RED'), isNull);
       expect(V1SemanticTypeCodeWire.parseWire('SECOND_YELLOW'), isNull);
       expect(V1SemanticTypeCodeWire.parseWire('RED_CARD'), isNull);
       expect(V1SemanticTypeCodeWire.parseWire('send_off'), isNull);
       for (final code in V1SemanticTypeCode.values) {
-        expect(code.wireValue, isNot('SEND_OFF'));
         expect(code.wireValue, isNot('RED'));
         expect(code.wireValue, isNot('SECOND_YELLOW'));
       }
@@ -578,13 +582,17 @@ void main() {
   });
 
   group('BANK E', () {
-    test('SUBSTITUTION cannot be parsed', () {
-      expect(V1SemanticTypeCodeWire.parseWire('SUBSTITUTION'), isNull);
+    test('preparation wires stay unregistered after SUBSTITUTION exists', () {
+      expect(
+        V1SemanticTypeCodeWire.parseWire('SUBSTITUTION'),
+        V1SemanticTypeCode.substitution,
+      );
       expect(V1SemanticTypeCodeWire.parseWire('SUBSTITUTE'), isNull);
       expect(V1SemanticTypeCodeWire.parseWire('SUBSTITUTED'), isNull);
       expect(V1SemanticTypeCodeWire.parseWire('COMPLETED_SUBSTITUTION'), isNull);
       for (final code in V1SemanticTypeCode.values) {
-        expect(code.wireValue, isNot('SUBSTITUTION'));
+        expect(code.wireValue, isNot('SUBSTITUTE'));
+        expect(code.wireValue, isNot('COMPLETED_SUBSTITUTION'));
       }
       expect(
         V1SemanticTypeCodeWire.parseWire(ParticipantSituation.substitute.name),
