@@ -1,4 +1,3 @@
-import '../authority.dart';
 import '../match_participant.dart';
 import '../match_record.dart';
 import '../semantics/v1_semantic_payload.dart';
