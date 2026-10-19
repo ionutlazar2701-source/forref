@@ -182,3 +182,22 @@ One integration owner per wave for each of those groups. WAVE 0 changed none of 
 | PRODUCT UX DELTAS | PHONE PRODUCT / UX GATE REQUIRED |
 | LOCAL GATES | Unchanged. LOCAL GATE REQUIRED. |
 | NEXT WAVE | Phone product / UX authority gate. Not started. |
+
+## Night Session III
+
+| Field | Value |
+| --- | --- |
+| STATUS | PASS for the research instrument. Phone cutover HOLD. Production engineering not authorized. |
+| START EVIDENCE SHA | `0c691a8b7d6f76e044ef91709150b4cede9ac6d8` |
+| EXECUTION BASE SHA | `0c691a8b7d6f76e044ef91709150b4cede9ac6d8`. Descends from `39a676b25682e2b6930b6d4f7f02340b55ae01a8`. |
+| PRODUCTION AUTHORITY BASELINE | `39a676b25682e2b6930b6d4f7f02340b55ae01a8`. Production authority behavior changed: NO. |
+| BRANCH | `cursor/forref-night-hf-prototype-30fd` |
+| SCOPE | Isolated research prototype, V2 interaction state, final-action safety, recovery evidence map, scenarios, human-validation pack. No production recovery. No phone cutover. |
+| TESTS | `./tool/verify_cloud.sh` PASSED. Exit 0. Core 347, persistence 92, phone 125. Research `hf_v2` 48 passed. Research shell 8 passed. TEST EXECUTED PASS. Not CI PASS. |
+| EVIDENCE | [night-session-iii/SESSION_III_HANDOFF.md](night-session-iii/SESSION_III_HANDOFF.md), [night-session-iii/SESSION_III_ADVERSARIAL_REPORT.md](night-session-iii/SESSION_III_ADVERSARIAL_REPORT.md) |
+| SABOTEUR | Grok `bc-2032ba8f-2da1-57fc-b9c1-e20342f6ee06`. First review HOLD on in-flight identity. Repair `b8bf57d45d6812f9659d1945c64e0e53d7b41bc4`. Second review PASS. No production edits by the reviewer. |
+| FOUNDATION DELTAS | NONE |
+| DOMAIN DELTAS | NONE |
+| HUMAN EVIDENCE | NONE. Founder pilot not run. |
+| LOCAL GATES | Unchanged. LOCAL GATE REQUIRED. |
+| NEXT | Founder diagnostic pilot only. Not a decisive human-performance sample. |
