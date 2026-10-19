@@ -1286,6 +1286,60 @@ void main() {
       expect(answer.standingCount, 1);
     });
 
+    test(
+        'another match yellows do not close this match surface through SEND_OFF',
+        () {
+      final records = [
+        bootstrap(),
+        sendOff(
+          recordId: 'so-1',
+          originSequence: 2,
+          subject: participant,
+          pathway: SendOffPathway.secondCaution,
+          first: 'y1',
+          second: 'y2',
+          intent: 'intent-send',
+        ),
+        yellow(
+          recordId: 'y1',
+          originSequence: 1,
+          recordMatchId: otherMatchId,
+          intent: 'intent-1',
+        ),
+        yellow(
+          recordId: 'y2',
+          originSequence: 2,
+          recordMatchId: otherMatchId,
+          intent: 'intent-2',
+        ),
+      ];
+      final score = validateScoreCompletenessProof(
+        matchId: matchId,
+        sortedRecords: records,
+        proof: proof(),
+        scoreAuthorityConflict: false,
+        scoreCorrectionConflict: false,
+        scoreMissingDependency: false,
+        unsupportedSemanticRecordIds: const [],
+        missingDependencyTargets: const [],
+      );
+      expect(score.ready, isTrue, reason: 'other-match yellows are not a gap');
+      final answer = awareness(records, participant);
+      final surface = switch (answer) {
+        KnownStandingCaution known => known.activeCautionSurface,
+        KnownNoStandingCaution known => known.activeCautionSurface,
+        _ => null,
+      };
+      expect(surface, isNot(false));
+      if (answer is KnownStandingCaution || answer is KnownNoStandingCaution) {
+        final historical = answer is KnownStandingCaution
+            ? answer.historicalYellowRecordIds
+            : (answer as KnownNoStandingCaution).historicalYellowRecordIds;
+        expect(historical, isNot(contains('y1')));
+        expect(historical, isNot(contains('y2')));
+      }
+    });
+
     test('an official send-off does not close the participant surface', () {
       final records = [
         bootstrap(),

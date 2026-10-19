@@ -241,6 +241,9 @@ SendOffDependencyStatus _dependencyStatus({
   final y1 = recordsById[first];
   final y2 = recordsById[second];
   if (y1 == null || y2 == null) return SendOffDependencyStatus.unavailable;
+  if (y1.matchId != sendOff.matchId || y2.matchId != sendOff.matchId) {
+    return SendOffDependencyStatus.unavailable;
+  }
   if (!isYellowCardPayload(y1.payload) || !isYellowCardPayload(y2.payload)) {
     return SendOffDependencyStatus.unavailable;
   }
