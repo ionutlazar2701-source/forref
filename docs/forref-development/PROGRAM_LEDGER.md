@@ -16,7 +16,7 @@ PRODUCT COMMAND: FOUNDATION FREEZE ACCEPTED
 
 WAVE 1: ACCEPTED / CLOSED at production `fa4a7976e153e7a0096aaad2958116a3a97f5bc1`, evidence `6ec364cee2af78dc3f2f3d2c4110b95f4660f780`.
 
-WAVE 2+: AUTHORIZED ONLY THROUGH the night-program DAG in [night-program/NIGHT_PROGRAM_LEDGER.md](night-program/NIGHT_PROGRAM_LEDGER.md).
+WAVE 2+: The night program ran. Result is PARTIAL. See [night-program/MORNING_HANDOFF.md](night-program/MORNING_HANDOFF.md).
 
 Accepted Foundation SHA: `5772671a9674e00c372268047d5f54073610af22`.
 
