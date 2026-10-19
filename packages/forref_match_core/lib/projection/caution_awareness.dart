@@ -2,6 +2,7 @@ import '../disciplinary_subject.dart';
 import '../match_participant.dart';
 import '../match_record.dart';
 import '../semantics/v1_semantic_payload.dart';
+import 'effective_send_off_resolver.dart';
 import 'effective_yellow_resolver.dart';
 import 'score_completeness_proof.dart';
 
@@ -19,6 +20,7 @@ final class KnownStandingCaution extends CautionAwareness {
     required this.standingCount,
     required List<String> historicalYellowRecordIds,
     required List<String> standingYellowRecordIds,
+    required this.activeCautionSurface,
   })  : historicalYellowRecordIds =
             List.unmodifiable(historicalYellowRecordIds),
         standingYellowRecordIds = List.unmodifiable(standingYellowRecordIds);
@@ -27,16 +29,26 @@ final class KnownStandingCaution extends CautionAwareness {
   final List<String> historicalYellowRecordIds;
   final List<String> standingYellowRecordIds;
 
+  /// False when an effective explicit SEND_OFF removes future-caution membership.
+  ///
+  /// Historical caution ids stay on this value. This flag does not commit SEND_OFF.
+  final bool activeCautionSurface;
+
   /// Factual awareness only. This value does not commit SEND_OFF.
   bool get secondCautionSituation => standingCount >= 2;
 }
 
 final class KnownNoStandingCaution extends CautionAwareness {
-  KnownNoStandingCaution({required List<String> historicalYellowRecordIds})
-      : historicalYellowRecordIds =
+  KnownNoStandingCaution({
+    required List<String> historicalYellowRecordIds,
+    required this.activeCautionSurface,
+  }) : historicalYellowRecordIds =
             List.unmodifiable(historicalYellowRecordIds);
 
   final List<String> historicalYellowRecordIds;
+
+  /// False when an effective explicit SEND_OFF removes future-caution membership.
+  final bool activeCautionSurface;
 }
 
 final class CautionAwarenessUnavailable extends CautionAwareness {
@@ -134,12 +146,42 @@ CautionAwareness assessDisciplinaryAwareness({
     for (final yellow in yellows)
       if (yellow.standing) yellow.yellowRecordId,
   ]..sort();
+  final sendOffResolution = resolveEffectiveSendOffs(recordsById: recordsById);
+  if (sendOffResolution is EffectiveSendOffConflicted) {
+    return const CautionAwarenessConflicted();
+  }
+  if (sendOffResolution is EffectiveSendOffUnavailable) {
+    return const CautionAwarenessUnavailable();
+  }
+  final activeSendOffs = (sendOffResolution as EffectiveSendOffSet)
+      .sendOffs
+      .where(
+        (sendOff) =>
+            sendOff.legallyEffective &&
+            sendOff.subject == subject &&
+            sendOff.scope == accountingScope,
+      )
+      .toList();
+  for (final sendOff in activeSendOffs) {
+    if (sendOff.dependencyStatus == SendOffDependencyStatus.conflicted) {
+      return const CautionAwarenessConflicted();
+    }
+    if (sendOff.dependencyStatus == SendOffDependencyStatus.unavailable) {
+      return const CautionAwarenessUnavailable();
+    }
+  }
+  final activeCautionSurface = activeSendOffs.isEmpty;
+
   if (standing.isEmpty) {
-    return KnownNoStandingCaution(historicalYellowRecordIds: historical);
+    return KnownNoStandingCaution(
+      historicalYellowRecordIds: historical,
+      activeCautionSurface: activeCautionSurface,
+    );
   }
   return KnownStandingCaution(
     standingCount: standing.length,
     historicalYellowRecordIds: historical,
     standingYellowRecordIds: standing,
+    activeCautionSurface: activeCautionSurface,
   );
 }
