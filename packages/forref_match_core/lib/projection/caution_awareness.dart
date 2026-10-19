@@ -96,13 +96,13 @@ CautionAwareness assessDisciplinaryAwareness({
       if (bySequence != 0) return bySequence;
       return a.recordId.compareTo(b.recordId);
     });
-  final proofCheck = validateScoreCompletenessProof(
+  final proofCheck = validateAuthoritativeHistoryCompleteness(
     matchId: matchId,
     sortedRecords: sorted,
-    proof: proof,
-    scoreAuthorityConflict: authorityConflict,
-    scoreCorrectionConflict: correctionConflict,
-    scoreMissingDependency: missingDependency,
+    evidence: proof,
+    authorityConflict: authorityConflict,
+    correctionConflict: correctionConflict,
+    missingDependency: missingDependency,
     unsupportedSemanticRecordIds: unsupportedSemanticRecordIds,
     missingDependencyTargets: missingDependencyTargets,
   );
