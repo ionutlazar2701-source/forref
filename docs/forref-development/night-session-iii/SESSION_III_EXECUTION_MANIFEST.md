@@ -82,3 +82,31 @@ Stop a path on production leakage, accidental successor authority, false certain
 ## Expected morning output
 
 A research instrument with deterministic state, fresh-input safety, a truthful recovery map, 19 scenarios, and a moderator pack. Founder pilot is not run. Phone cutover stays HOLD. Production engineering stays unauthorized.
+
+## Completion record
+
+N24_SHA: `320ceab9c661e8b81e6dfb7ac93a9e288ea0db09`
+
+BANK_H_SHA: `1d1bee95c8ae9467ec88dcc92ed87df2120eaac0`
+
+BANK_I_SHA: `b8bf57d45d6812f9659d1945c64e0e53d7b41bc4`
+
+BANK_J_SHA: `956809dbbb2624d394e46f8db604e42f2d4f537a`
+
+BANK_K_SHA: `ef8df4844fa0d87a0d0fb238d29cfc9920b0d677`
+
+BANK_L_SHA: `37f8fb37c4bd046d7a51c7f6871192a916616e3c`
+
+BANK_M_SHA: `1d1bee95c8ae9467ec88dcc92ed87df2120eaac0`
+
+BRIDGE_1_SHA: `1d1bee95c8ae9467ec88dcc92ed87df2120eaac0`
+
+BRIDGE_2_SHA: `b8bf57d45d6812f9659d1945c64e0e53d7b41bc4`
+
+BRIDGE_3_SHA: `1d1bee95c8ae9467ec88dcc92ed87df2120eaac0`
+
+BRIDGE_4_SHA: `37f8fb37c4bd046d7a51c7f6871192a916616e3c`
+
+BRIDGE_5_SHA: `1d1bee95c8ae9467ec88dcc92ed87df2120eaac0`
+
+The in-flight identity repair is `b8bf57d45d6812f9659d1945c64e0e53d7b41bc4`. The saboteur attacks are `9a3becc640bd54485b457c3d3c17ef045d904491`. Production libraries were not edited. The morning record is [SESSION_III_HANDOFF.md](SESSION_III_HANDOFF.md).

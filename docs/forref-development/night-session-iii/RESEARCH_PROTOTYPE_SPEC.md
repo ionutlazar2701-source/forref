@@ -46,3 +46,9 @@ Changing team clears a subject from the other team. Home 14 and Away 14 are diff
 Match and shoot-out cautions are stored apart.
 
 OUT alone, IN alone, and a named pair do not become a substitution until Record substitution succeeds.
+
+## In-flight command
+
+When a final action is activated, the instrument freezes the subject, the subject kind, the scope, and the OUT/IN pair. A later team change, a later subject tap, a scope change, or a new IN selection stays on the unfinished layer. The simulated result writes only the frozen command.
+
+`SIMULATED SAVED` is reported only when that write appends a record. A scripted success that cannot append a record stays `SAVE NOT VERIFIED` and stores nothing. A scripted failure stays `NOT SAVED` and stores nothing. An unknown script stays `SAVE NOT VERIFIED` and stores nothing.
