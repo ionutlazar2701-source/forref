@@ -31,6 +31,7 @@ void main() {
           'GOAL',
           'YELLOW_CARD',
           'SEND_OFF',
+          'SUBSTITUTION',
           'REFEREE_ENTERED_FIELD_FOR_MATCH_START',
         },
       );
@@ -44,7 +45,8 @@ void main() {
         if (code == V1SemanticTypeCode.goal) continue;
         final contract = V1SemanticContract.byCode[code]!;
         if (code == V1SemanticTypeCode.yellowCard ||
-            code == V1SemanticTypeCode.sendOff) {
+            code == V1SemanticTypeCode.sendOff ||
+            code == V1SemanticTypeCode.substitution) {
           expect(contract.createsSportingState, isTrue, reason: code.wireValue);
         } else {
           expect(contract.createsSportingState, isFalse, reason: code.wireValue);
@@ -473,6 +475,17 @@ MatchRecord _subjectRecord(V1SemanticTypeCode code) {
         payload: GoalPayload(
           scoringTeamId: MatchTeamId('team-alpha'),
           captureIntentId: 'intent-1',
+        ),
+      ),
+    V1SemanticTypeCode.substitution => _record(
+        recordId: 'subject',
+        originSequence: 2,
+        recordKind: RecordKind.humanDetermination,
+        payload: SubstitutionPayload(
+          outgoingParticipantId: MatchParticipantId('person-a'),
+          incomingParticipantId: MatchParticipantId('person-b'),
+          teamId: MatchTeamId('team-alpha'),
+          captureIntentId: 'intent-sub',
         ),
       ),
     V1SemanticTypeCode.sendOff => _record(

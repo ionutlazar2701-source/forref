@@ -164,6 +164,9 @@ final class SqliteDurableMatchStore
         pathway TEXT,
         first_caution_record_id TEXT,
         second_caution_record_id TEXT,
+        outgoing_participant_id TEXT,
+        incoming_participant_id TEXT,
+        substitution_team_id TEXT,
         PRIMARY KEY (match_id, authority_scope, capture_intent_id)
       )
     ''');
@@ -174,6 +177,14 @@ final class SqliteDurableMatchStore
         team_official_id TEXT NOT NULL,
         team_id TEXT NOT NULL,
         PRIMARY KEY (match_id, team_official_id)
+      )
+    ''');
+    _db.execute('''
+      CREATE TABLE IF NOT EXISTS participant_team_bindings (
+        match_id TEXT NOT NULL,
+        participant_id TEXT NOT NULL,
+        team_id TEXT NOT NULL,
+        PRIMARY KEY (match_id, participant_id)
       )
     ''');
     _db.execute('''
@@ -228,6 +239,66 @@ final class SqliteDurableMatchStore
         'ALTER TABLE capture_intent_admissions ADD COLUMN second_caution_record_id TEXT',
       );
     }
+    if (!names.contains('outgoing_participant_id')) {
+      _db.execute(
+        'ALTER TABLE capture_intent_admissions ADD COLUMN outgoing_participant_id TEXT',
+      );
+    }
+    if (!names.contains('incoming_participant_id')) {
+      _db.execute(
+        'ALTER TABLE capture_intent_admissions ADD COLUMN incoming_participant_id TEXT',
+      );
+    }
+    if (!names.contains('substitution_team_id')) {
+      _db.execute(
+        'ALTER TABLE capture_intent_admissions ADD COLUMN substitution_team_id TEXT',
+      );
+    }
+  }
+
+  /// Durable participant-team association used to admit a completed substitution.
+  Future<TeamBindingCommitResult> commitParticipantTeamBinding(
+    MatchParticipantTeamBinding binding,
+  ) {
+    return _serialized(() async {
+      if (binding.matchId.isEmpty) {
+        return const TeamBindingCommitConflict('match id is empty');
+      }
+      _db.execute('BEGIN IMMEDIATE');
+      try {
+        final rows = _db.select(
+          '''
+          SELECT team_id FROM participant_team_bindings
+          WHERE match_id = ? AND participant_id = ?
+          ''',
+          [binding.matchId, binding.participantId.value],
+        );
+        if (rows.isNotEmpty) {
+          final stored = rows.first.columnAt(0) as String;
+          if (stored == binding.teamId.value) {
+            _commitTransaction();
+            return const TeamBindingCommitSuccess(idempotent: true);
+          }
+          _db.execute('ROLLBACK');
+          return const TeamBindingCommitConflict(
+            'participant team binding conflicts',
+          );
+        }
+        _db.execute(
+          '''
+          INSERT INTO participant_team_bindings (
+            match_id, participant_id, team_id
+          ) VALUES (?, ?, ?)
+          ''',
+          [binding.matchId, binding.participantId.value, binding.teamId.value],
+        );
+        _commitTransaction();
+        return const TeamBindingCommitSuccess(idempotent: false);
+      } catch (error) {
+        _rollbackIfNeeded();
+        return TeamBindingCommitConflict('team binding aborted: $error');
+      }
+    });
   }
 
   /// Durable team-official association. A second team for the same official conflicts.
@@ -746,6 +817,12 @@ final class SqliteDurableMatchStore
         failureRecordId: failureRecordId,
       );
       if (bindingRejected != null) return bindingRejected;
+      final substitutionRejected = _rejectSubstitutionWithoutTeamProof(
+        payload: payload,
+        matchId: matchId,
+        failureRecordId: failureRecordId,
+      );
+      if (substitutionRejected != null) return substitutionRejected;
       return null;
     }
 
@@ -825,6 +902,17 @@ final class SqliteDurableMatchStore
         secondCautionRecordId: payload.secondCautionRecordId,
       );
     }
+    if (payload is SubstitutionPayload) {
+      return _AuthoritativeCaptureIntent(
+        captureIntentId: payload.captureIntentId,
+        semanticTypeWire: V1SemanticTypeCode.substitution.wireValue,
+        authorityPrincipalId: principalId,
+        authorityGeneration: generation,
+        outgoingParticipantId: payload.outgoingParticipantId.value,
+        incomingParticipantId: payload.incomingParticipantId.value,
+        substitutionTeamId: payload.teamId.value,
+      );
+    }
     if (payload is RefereeEnteredFieldPayload) {
       return _AuthoritativeCaptureIntent(
         captureIntentId: payload.captureIntentId,
@@ -879,6 +967,46 @@ final class SqliteDurableMatchStore
     return null;
   }
 
+  DurableCommitResult? _rejectSubstitutionWithoutTeamProof({
+    required MatchRecordPayload payload,
+    required String matchId,
+    required String failureRecordId,
+  }) {
+    if (payload is! SubstitutionPayload) return null;
+    final bindings = _readParticipantTeamBindings(matchId);
+    final admission = evaluateSubstitutionAdmission(
+      matchId: matchId,
+      payload: payload,
+      bindings: bindings,
+    );
+    if (admission is SubstitutionAdmitted) return null;
+    _db.execute('ROLLBACK');
+    return DurableCommitFailure(
+      recordId: failureRecordId,
+      reason: admission is SubstitutionRejected
+          ? admission.reason
+          : 'substitution rejected',
+    );
+  }
+
+  List<MatchParticipantTeamBinding> _readParticipantTeamBindings(String matchId) {
+    final rows = _db.select(
+      '''
+      SELECT participant_id, team_id FROM participant_team_bindings
+      WHERE match_id = ?
+      ''',
+      [matchId],
+    );
+    return [
+      for (final row in rows)
+        MatchParticipantTeamBinding(
+          matchId: matchId,
+          participantId: MatchParticipantId(row.columnAt(0) as String),
+          teamId: MatchTeamId(row.columnAt(1) as String),
+        ),
+    ];
+  }
+
   void _insertCaptureIntentAdmissionLocked(MatchRecord record) {
     final intent = _authoritativeCaptureIntent(
       record.payload,
@@ -910,8 +1038,11 @@ final class SqliteDurableMatchStore
         subject_id,
         pathway,
         first_caution_record_id,
-        second_caution_record_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        second_caution_record_id,
+        outgoing_participant_id,
+        incoming_participant_id,
+        substitution_team_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ''',
       [
         record.matchId,
@@ -929,6 +1060,9 @@ final class SqliteDurableMatchStore
         intent.pathway,
         intent.firstCautionRecordId,
         intent.secondCautionRecordId,
+        intent.outgoingParticipantId,
+        intent.incomingParticipantId,
+        intent.substitutionTeamId,
       ],
     );
   }
@@ -952,7 +1086,10 @@ final class SqliteDurableMatchStore
         subject_id,
         pathway,
         first_caution_record_id,
-        second_caution_record_id
+        second_caution_record_id,
+        outgoing_participant_id,
+        incoming_participant_id,
+        substitution_team_id
       FROM capture_intent_admissions
       WHERE match_id = ? AND authority_scope = ? AND capture_intent_id = ?
       ''',
@@ -973,6 +1110,9 @@ final class SqliteDurableMatchStore
       pathway: row.columnAt(9) as String?,
       firstCautionRecordId: row.columnAt(10) as String?,
       secondCautionRecordId: row.columnAt(11) as String?,
+      outgoingParticipantId: row.columnAt(12) as String?,
+      incomingParticipantId: row.columnAt(13) as String?,
+      substitutionTeamId: row.columnAt(14) as String?,
     );
   }
 
@@ -1001,7 +1141,10 @@ final class SqliteDurableMatchStore
         storedSubject.id == requestedSubject.id &&
         stored.pathway == requested.pathway &&
         stored.firstCautionRecordId == requested.firstCautionRecordId &&
-        stored.secondCautionRecordId == requested.secondCautionRecordId;
+        stored.secondCautionRecordId == requested.secondCautionRecordId &&
+        stored.outgoingParticipantId == requested.outgoingParticipantId &&
+        stored.incomingParticipantId == requested.incomingParticipantId &&
+        stored.substitutionTeamId == requested.substitutionTeamId;
   }
 
   ({String? kind, String? id}) _normalizedAdmissionSubject({
@@ -1130,6 +1273,9 @@ final class _StoredCaptureIntentAdmission {
     required this.pathway,
     required this.firstCautionRecordId,
     required this.secondCautionRecordId,
+    required this.outgoingParticipantId,
+    required this.incomingParticipantId,
+    required this.substitutionTeamId,
   });
 
   final String committedRecordId;
@@ -1144,6 +1290,9 @@ final class _StoredCaptureIntentAdmission {
   final String? pathway;
   final String? firstCautionRecordId;
   final String? secondCautionRecordId;
+  final String? outgoingParticipantId;
+  final String? incomingParticipantId;
+  final String? substitutionTeamId;
 }
 
 final class _AuthoritativeCaptureIntent {
@@ -1160,6 +1309,9 @@ final class _AuthoritativeCaptureIntent {
     this.pathway,
     this.firstCautionRecordId,
     this.secondCautionRecordId,
+    this.outgoingParticipantId,
+    this.incomingParticipantId,
+    this.substitutionTeamId,
   });
 
   final String captureIntentId;
@@ -1174,6 +1326,9 @@ final class _AuthoritativeCaptureIntent {
   final String? pathway;
   final String? firstCautionRecordId;
   final String? secondCautionRecordId;
+  final String? outgoingParticipantId;
+  final String? incomingParticipantId;
+  final String? substitutionTeamId;
 }
 
 sealed class TeamBindingCommitResult {

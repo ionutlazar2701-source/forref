@@ -164,6 +164,7 @@ final class TemporalTransitionPayload extends V1SemanticPayload {
       V1SemanticTypeCode.goal ||
       V1SemanticTypeCode.yellowCard ||
       V1SemanticTypeCode.sendOff ||
+      V1SemanticTypeCode.substitution ||
       V1SemanticTypeCode.refereeEnteredFieldForMatchStart =>
         false,
     };
@@ -209,6 +210,9 @@ final class CorrectionPayload extends V1SemanticPayload {
     this.repairedAccountingScope,
     this.repairedDisciplinarySubject,
     this.repairedDisciplinaryScope,
+    this.repairedOutgoingParticipantId,
+    this.repairedIncomingParticipantId,
+    this.repairedSubstitutionTeamId,
     super.domainContractVersion,
     super.competitionRulesContext,
   });
@@ -227,6 +231,10 @@ final class CorrectionPayload extends V1SemanticPayload {
 
   /// v2 scope repair. The same concept as [repairedAccountingScope].
   final DisciplinaryAccountingScope? repairedDisciplinaryScope;
+
+  final MatchParticipantId? repairedOutgoingParticipantId;
+  final MatchParticipantId? repairedIncomingParticipantId;
+  final MatchTeamId? repairedSubstitutionTeamId;
 
   @override
   V1SemanticTypeCode get semanticType => V1SemanticTypeCode.correction;
@@ -366,6 +374,27 @@ final class SendOffPayload extends V1SemanticPayload {
 
   @override
   V1SemanticTypeCode get semanticType => V1SemanticTypeCode.sendOff;
+}
+
+/// Completed substitution. Preparation is not this record.
+final class SubstitutionPayload extends V1SemanticPayload {
+  SubstitutionPayload({
+    required this.outgoingParticipantId,
+    required this.incomingParticipantId,
+    required this.teamId,
+    required this.captureIntentId,
+    super.domainContractVersion,
+    super.competitionRulesContext,
+  }) : assert(captureIntentId.isNotEmpty),
+       assert(outgoingParticipantId != incomingParticipantId);
+
+  final MatchParticipantId outgoingParticipantId;
+  final MatchParticipantId incomingParticipantId;
+  final MatchTeamId teamId;
+  final String captureIntentId;
+
+  @override
+  V1SemanticTypeCode get semanticType => V1SemanticTypeCode.substitution;
 }
 
 /// Referee entered the field for match start.

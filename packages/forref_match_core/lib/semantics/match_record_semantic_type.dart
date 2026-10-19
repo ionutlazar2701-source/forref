@@ -36,6 +36,7 @@ enum V1SemanticTypeCode {
   goal,
   yellowCard,
   sendOff,
+  substitution,
   refereeEnteredFieldForMatchStart,
 }
 
@@ -56,6 +57,7 @@ extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
         V1SemanticTypeCode.goal => 'GOAL',
         V1SemanticTypeCode.yellowCard => 'YELLOW_CARD',
         V1SemanticTypeCode.sendOff => 'SEND_OFF',
+        V1SemanticTypeCode.substitution => 'SUBSTITUTION',
         V1SemanticTypeCode.refereeEnteredFieldForMatchStart =>
           'REFEREE_ENTERED_FIELD_FOR_MATCH_START',
       };
@@ -76,6 +78,7 @@ extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
         V1SemanticTypeCode.goal => SemanticTypeCategory.event,
         V1SemanticTypeCode.yellowCard => SemanticTypeCategory.event,
         V1SemanticTypeCode.sendOff => SemanticTypeCategory.event,
+        V1SemanticTypeCode.substitution => SemanticTypeCategory.event,
         V1SemanticTypeCode.refereeEnteredFieldForMatchStart =>
           SemanticTypeCategory.authorityControl,
       };
@@ -96,6 +99,7 @@ extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
         'GOAL' => V1SemanticTypeCode.goal,
         'YELLOW_CARD' => V1SemanticTypeCode.yellowCard,
         'SEND_OFF' => V1SemanticTypeCode.sendOff,
+        'SUBSTITUTION' => V1SemanticTypeCode.substitution,
         'REFEREE_ENTERED_FIELD_FOR_MATCH_START' =>
           V1SemanticTypeCode.refereeEnteredFieldForMatchStart,
         _ => null,

@@ -115,6 +115,7 @@ bool _generationOneCapture(Object payload) {
       payload is YellowCardPayload ||
       payload is YellowCardPayloadV2 ||
       payload is SendOffPayload ||
+      payload is SubstitutionPayload ||
       payload is RefereeEnteredFieldPayload;
 }
 

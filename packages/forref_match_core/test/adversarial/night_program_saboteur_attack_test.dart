@@ -582,13 +582,17 @@ void main() {
   });
 
   group('BANK E', () {
-    test('SUBSTITUTION cannot be parsed', () {
-      expect(V1SemanticTypeCodeWire.parseWire('SUBSTITUTION'), isNull);
+    test('preparation wires stay unregistered after SUBSTITUTION exists', () {
+      expect(
+        V1SemanticTypeCodeWire.parseWire('SUBSTITUTION'),
+        V1SemanticTypeCode.substitution,
+      );
       expect(V1SemanticTypeCodeWire.parseWire('SUBSTITUTE'), isNull);
       expect(V1SemanticTypeCodeWire.parseWire('SUBSTITUTED'), isNull);
       expect(V1SemanticTypeCodeWire.parseWire('COMPLETED_SUBSTITUTION'), isNull);
       for (final code in V1SemanticTypeCode.values) {
-        expect(code.wireValue, isNot('SUBSTITUTION'));
+        expect(code.wireValue, isNot('SUBSTITUTE'));
+        expect(code.wireValue, isNot('COMPLETED_SUBSTITUTION'));
       }
       expect(
         V1SemanticTypeCodeWire.parseWire(ParticipantSituation.substitute.name),

@@ -237,6 +237,12 @@ final class _PayloadSnapshot {
             if (payload.secondCautionRecordId != null)
               'secondCautionRecordId': payload.secondCautionRecordId,
           },
+          if (payload is SubstitutionPayload) ...{
+            'outgoingParticipantId': payload.outgoingParticipantId.value,
+            'incomingParticipantId': payload.incomingParticipantId.value,
+            'teamId': payload.teamId.value,
+            'captureIntentId': payload.captureIntentId,
+          },
           if (payload is RefereeEnteredFieldPayload)
             'captureIntentId': payload.captureIntentId,
           if (payload is CorrectionPayload &&
@@ -259,6 +265,18 @@ final class _PayloadSnapshot {
               payload.repairedDisciplinaryScope != null)
             'repairedDisciplinaryScope':
                 payload.repairedDisciplinaryScope!.wireValue,
+          if (payload is CorrectionPayload &&
+              payload.repairedOutgoingParticipantId != null)
+            'repairedOutgoingParticipantId':
+                payload.repairedOutgoingParticipantId!.value,
+          if (payload is CorrectionPayload &&
+              payload.repairedIncomingParticipantId != null)
+            'repairedIncomingParticipantId':
+                payload.repairedIncomingParticipantId!.value,
+          if (payload is CorrectionPayload &&
+              payload.repairedSubstitutionTeamId != null)
+            'repairedSubstitutionTeamId':
+                payload.repairedSubstitutionTeamId!.value,
           if (payload.domainContractVersion != null)
             'domainContractVersion': payload.domainContractVersion!.value,
           if (payload.competitionRulesContext != null)

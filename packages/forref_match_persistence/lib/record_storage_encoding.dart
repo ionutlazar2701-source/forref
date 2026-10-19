@@ -18,6 +18,7 @@ const _goalType = 'v1-goal';
 const _yellowCardType = 'v1-yellow-card';
 const _yellowCardV2Type = 'v2-yellow-card';
 const _sendOffType = 'v1-send-off';
+const _substitutionType = 'v1-substitution';
 const _refereeEnteredFieldType = 'v1-referee-entered-field';
 
 const _rootKeys = {
@@ -191,6 +192,12 @@ Map<String, Object?> _encodePayload(MatchRecordPayload payload) {
         if (payload.secondCautionRecordId != null)
           'secondCautionRecordId': payload.secondCautionRecordId,
       },
+      if (payload is SubstitutionPayload) ...{
+        'outgoingParticipantId': payload.outgoingParticipantId.value,
+        'incomingParticipantId': payload.incomingParticipantId.value,
+        'teamId': payload.teamId.value,
+        'captureIntentId': payload.captureIntentId,
+      },
       if (payload is RefereeEnteredFieldPayload)
         'captureIntentId': payload.captureIntentId,
       if (payload is CorrectionPayload &&
@@ -212,6 +219,17 @@ Map<String, Object?> _encodePayload(MatchRecordPayload payload) {
           payload.repairedDisciplinaryScope != null)
         'repairedDisciplinaryScope':
             payload.repairedDisciplinaryScope!.wireValue,
+      if (payload is CorrectionPayload &&
+          payload.repairedOutgoingParticipantId != null)
+        'repairedOutgoingParticipantId':
+            payload.repairedOutgoingParticipantId!.value,
+      if (payload is CorrectionPayload &&
+          payload.repairedIncomingParticipantId != null)
+        'repairedIncomingParticipantId':
+            payload.repairedIncomingParticipantId!.value,
+      if (payload is CorrectionPayload &&
+          payload.repairedSubstitutionTeamId != null)
+        'repairedSubstitutionTeamId': payload.repairedSubstitutionTeamId!.value,
     };
   }
   throw FormatException(
@@ -229,6 +247,7 @@ String _v1PayloadType(V1SemanticPayload payload) {
     YellowCardPayload() => _yellowCardType,
     YellowCardPayloadV2() => _yellowCardV2Type,
     SendOffPayload() => _sendOffType,
+    SubstitutionPayload() => _substitutionType,
     RefereeEnteredFieldPayload() => _refereeEnteredFieldType,
   };
 }
@@ -256,6 +275,7 @@ MatchRecordPayload _decodePayload(
       type == _yellowCardType ||
       type == _yellowCardV2Type ||
       type == _sendOffType ||
+      type == _substitutionType ||
       type == _refereeEnteredFieldType) {
     if (storageEncoding != adapterLocalStorageEncoding) {
       throw FormatException(
@@ -292,6 +312,12 @@ MatchRecordPayload _decodePayload(
         'pathway',
         'firstStandingCautionRecordId',
         'secondCautionRecordId',
+        'outgoingParticipantId',
+        'incomingParticipantId',
+        'teamId',
+        'repairedOutgoingParticipantId',
+        'repairedIncomingParticipantId',
+        'repairedSubstitutionTeamId',
       },
       'typed payload',
     );
@@ -343,6 +369,14 @@ V1SemanticPayload _decodeV1Payload(
           ),
           repairedDisciplinaryScope:
               _optionalScope(payload['repairedDisciplinaryScope']),
+          repairedOutgoingParticipantId: _optionalParticipantId(
+            payload['repairedOutgoingParticipantId'],
+          ),
+          repairedIncomingParticipantId: _optionalParticipantId(
+            payload['repairedIncomingParticipantId'],
+          ),
+          repairedSubstitutionTeamId:
+              _optionalTeamId(payload['repairedSubstitutionTeamId']),
           domainContractVersion: domain,
           competitionRulesContext: rules,
         ),
@@ -394,6 +428,22 @@ V1SemanticPayload _decodeV1Payload(
         V1SemanticTypeCode.yellowCard,
         () => _decodeYellowV2(payload, domain, rules),
       ),
+    _substitutionType => _exactCode(
+        code,
+        V1SemanticTypeCode.substitution,
+        () => SubstitutionPayload(
+          outgoingParticipantId: MatchParticipantId(
+            _requiredString(payload, 'outgoingParticipantId'),
+          ),
+          incomingParticipantId: MatchParticipantId(
+            _requiredString(payload, 'incomingParticipantId'),
+          ),
+          teamId: MatchTeamId(_requiredString(payload, 'teamId')),
+          captureIntentId: _requiredString(payload, 'captureIntentId'),
+          domainContractVersion: domain,
+          competitionRulesContext: rules,
+        ),
+      ),
     _sendOffType => _exactCode(
         code,
         V1SemanticTypeCode.sendOff,
@@ -433,6 +483,7 @@ TemporalTransitionPayload _temporalTransition(
     V1SemanticTypeCode.goal ||
     V1SemanticTypeCode.yellowCard ||
     V1SemanticTypeCode.sendOff ||
+    V1SemanticTypeCode.substitution ||
     V1SemanticTypeCode.refereeEnteredFieldForMatchStart =>
       false,
   };
