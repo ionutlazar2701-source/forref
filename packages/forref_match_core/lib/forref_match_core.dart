@@ -20,6 +20,7 @@ export 'ports.dart';
 export 'projection/deterministic_match_projector.dart';
 export 'projection/caution_awareness.dart';
 export 'projection/effective_goal_resolver.dart';
+export 'projection/effective_send_off_resolver.dart';
 export 'projection/effective_yellow_resolver.dart';
 export 'projection/match_projection_state.dart';
 export 'projection/score_completeness_proof.dart';

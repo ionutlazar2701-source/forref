@@ -97,6 +97,7 @@ YellowCaptureIntentAdmission evaluateYellowCaptureIntentAdmission({
       GoalPayload() => payload.captureIntentId,
       YellowCardPayload() => payload.captureIntentId,
       YellowCardPayloadV2() => payload.captureIntentId,
+      SendOffPayload() => payload.captureIntentId,
       RefereeEnteredFieldPayload() => payload.captureIntentId,
       _ => null,
     };

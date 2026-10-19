@@ -179,6 +179,17 @@ final class V1SemanticContract {
       createsSportingState: true,
       isDurableMatchState: false,
     ),
+    V1SemanticTypeCode.sendOff: V1SemanticContract(
+      code: V1SemanticTypeCode.sendOff,
+      requiredRecordKind: RecordKind.humanDetermination,
+      schemaVersion: schemaContractVersion,
+      category: SemanticTypeCategory.event,
+      projectionFacets: [ProjectionFacet.coverage],
+      requiresTargetRelationship: false,
+      effect: SemanticEffect.historicalInterpretation,
+      createsSportingState: true,
+      isDurableMatchState: false,
+    ),
     V1SemanticTypeCode.refereeEnteredFieldForMatchStart: V1SemanticContract(
       code: V1SemanticTypeCode.refereeEnteredFieldForMatchStart,
       requiredRecordKind: RecordKind.temporalFact,

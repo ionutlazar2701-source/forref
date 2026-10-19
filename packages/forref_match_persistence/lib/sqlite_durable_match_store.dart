@@ -161,6 +161,9 @@ final class SqliteDurableMatchStore
         accounting_scope TEXT,
         subject_kind TEXT,
         subject_id TEXT,
+        pathway TEXT,
+        first_caution_record_id TEXT,
+        second_caution_record_id TEXT,
         PRIMARY KEY (match_id, authority_scope, capture_intent_id)
       )
     ''');
@@ -208,6 +211,21 @@ final class SqliteDurableMatchStore
     if (!names.contains('subject_id')) {
       _db.execute(
         'ALTER TABLE capture_intent_admissions ADD COLUMN subject_id TEXT',
+      );
+    }
+    if (!names.contains('pathway')) {
+      _db.execute(
+        'ALTER TABLE capture_intent_admissions ADD COLUMN pathway TEXT',
+      );
+    }
+    if (!names.contains('first_caution_record_id')) {
+      _db.execute(
+        'ALTER TABLE capture_intent_admissions ADD COLUMN first_caution_record_id TEXT',
+      );
+    }
+    if (!names.contains('second_caution_record_id')) {
+      _db.execute(
+        'ALTER TABLE capture_intent_admissions ADD COLUMN second_caution_record_id TEXT',
       );
     }
   }
@@ -789,6 +807,24 @@ final class SqliteDurableMatchStore
         subjectId: subject.rawId,
       );
     }
+    if (payload is SendOffPayload) {
+      final subject = payload.disciplinarySubject;
+      return _AuthoritativeCaptureIntent(
+        captureIntentId: payload.captureIntentId,
+        semanticTypeWire: V1SemanticTypeCode.sendOff.wireValue,
+        authorityPrincipalId: principalId,
+        authorityGeneration: generation,
+        participantId: subject is ParticipantDisciplinarySubject
+            ? subject.rawId
+            : null,
+        accountingScope: payload.disciplinaryScope.wireValue,
+        subjectKind: subject.kind.wireValue,
+        subjectId: subject.rawId,
+        pathway: payload.pathway.wireValue,
+        firstCautionRecordId: payload.firstStandingCautionRecordId,
+        secondCautionRecordId: payload.secondCautionRecordId,
+      );
+    }
     if (payload is RefereeEnteredFieldPayload) {
       return _AuthoritativeCaptureIntent(
         captureIntentId: payload.captureIntentId,
@@ -871,8 +907,11 @@ final class SqliteDurableMatchStore
         participant_id,
         accounting_scope,
         subject_kind,
-        subject_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        subject_id,
+        pathway,
+        first_caution_record_id,
+        second_caution_record_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ''',
       [
         record.matchId,
@@ -887,6 +926,9 @@ final class SqliteDurableMatchStore
         intent.accountingScope,
         intent.subjectKind,
         intent.subjectId,
+        intent.pathway,
+        intent.firstCautionRecordId,
+        intent.secondCautionRecordId,
       ],
     );
   }
@@ -907,7 +949,10 @@ final class SqliteDurableMatchStore
         participant_id,
         accounting_scope,
         subject_kind,
-        subject_id
+        subject_id,
+        pathway,
+        first_caution_record_id,
+        second_caution_record_id
       FROM capture_intent_admissions
       WHERE match_id = ? AND authority_scope = ? AND capture_intent_id = ?
       ''',
@@ -925,6 +970,9 @@ final class SqliteDurableMatchStore
       accountingScope: row.columnAt(6) as String?,
       subjectKind: row.columnAt(7) as String?,
       subjectId: row.columnAt(8) as String?,
+      pathway: row.columnAt(9) as String?,
+      firstCautionRecordId: row.columnAt(10) as String?,
+      secondCautionRecordId: row.columnAt(11) as String?,
     );
   }
 
@@ -950,7 +998,10 @@ final class SqliteDurableMatchStore
         stored.scoringTeamId == requested.scoringTeamId &&
         stored.accountingScope == requested.accountingScope &&
         storedSubject.kind == requestedSubject.kind &&
-        storedSubject.id == requestedSubject.id;
+        storedSubject.id == requestedSubject.id &&
+        stored.pathway == requested.pathway &&
+        stored.firstCautionRecordId == requested.firstCautionRecordId &&
+        stored.secondCautionRecordId == requested.secondCautionRecordId;
   }
 
   ({String? kind, String? id}) _normalizedAdmissionSubject({
@@ -977,8 +1028,11 @@ final class SqliteDurableMatchStore
     required String matchId,
     required String failureRecordId,
   }) {
-    if (payload is! YellowCardPayloadV2) return null;
-    final subject = payload.disciplinarySubject;
+    final DisciplinarySubjectRef? subject = switch (payload) {
+      YellowCardPayloadV2() => payload.disciplinarySubject,
+      SendOffPayload() => payload.disciplinarySubject,
+      _ => null,
+    };
     if (subject is! TeamOfficialDisciplinarySubject) return null;
     final rows = _db.select(
       '''
@@ -1073,6 +1127,9 @@ final class _StoredCaptureIntentAdmission {
     required this.accountingScope,
     required this.subjectKind,
     required this.subjectId,
+    required this.pathway,
+    required this.firstCautionRecordId,
+    required this.secondCautionRecordId,
   });
 
   final String committedRecordId;
@@ -1084,6 +1141,9 @@ final class _StoredCaptureIntentAdmission {
   final String? accountingScope;
   final String? subjectKind;
   final String? subjectId;
+  final String? pathway;
+  final String? firstCautionRecordId;
+  final String? secondCautionRecordId;
 }
 
 final class _AuthoritativeCaptureIntent {
@@ -1097,6 +1157,9 @@ final class _AuthoritativeCaptureIntent {
     this.accountingScope,
     this.subjectKind,
     this.subjectId,
+    this.pathway,
+    this.firstCautionRecordId,
+    this.secondCautionRecordId,
   });
 
   final String captureIntentId;
@@ -1108,6 +1171,9 @@ final class _AuthoritativeCaptureIntent {
   final String? accountingScope;
   final String? subjectKind;
   final String? subjectId;
+  final String? pathway;
+  final String? firstCautionRecordId;
+  final String? secondCautionRecordId;
 }
 
 sealed class TeamBindingCommitResult {

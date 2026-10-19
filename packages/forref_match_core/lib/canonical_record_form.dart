@@ -225,6 +225,18 @@ final class _PayloadSnapshot {
             if (situationOfYellowCard(payload) != null)
               'situationAtDetermination': situationOfYellowCard(payload)!.name,
           },
+          if (payload is SendOffPayload) ...{
+            'subjectKind': payload.disciplinarySubject.kind.wireValue,
+            'subjectId': payload.disciplinarySubject.rawId,
+            'accountingScope': payload.disciplinaryScope.wireValue,
+            'pathway': payload.pathway.wireValue,
+            'captureIntentId': payload.captureIntentId,
+            if (payload.firstStandingCautionRecordId != null)
+              'firstStandingCautionRecordId':
+                  payload.firstStandingCautionRecordId,
+            if (payload.secondCautionRecordId != null)
+              'secondCautionRecordId': payload.secondCautionRecordId,
+          },
           if (payload is RefereeEnteredFieldPayload)
             'captureIntentId': payload.captureIntentId,
           if (payload is CorrectionPayload &&

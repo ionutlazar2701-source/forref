@@ -284,13 +284,15 @@ void main() {
       expect(projection.scoreProjection, isA<KnownScore>());
 
       const forbidden = {
-        'SEND_OFF',
         'RED',
         'SECOND_YELLOW',
         'RED_CARD',
         'SECOND_YELLOW_CARD',
       };
-      expect(V1SemanticTypeCodeWire.parseWire('SEND_OFF'), isNull);
+      expect(
+        V1SemanticTypeCodeWire.parseWire('SEND_OFF'),
+        V1SemanticTypeCode.sendOff,
+      );
       expect(V1SemanticTypeCodeWire.parseWire('RED'), isNull);
       expect(V1SemanticTypeCodeWire.parseWire('SECOND_YELLOW'), isNull);
       expect(V1SemanticTypeCodeWire.parseWire('YELLOW_CARD'), V1SemanticTypeCode.yellowCard);
@@ -563,14 +565,16 @@ void main() {
   });
 
   group('BANK D', () {
-    test('SEND_OFF cannot be parsed', () {
-      expect(V1SemanticTypeCodeWire.parseWire('SEND_OFF'), isNull);
+    test('RED wires stay unregistered after SEND_OFF exists', () {
+      expect(
+        V1SemanticTypeCodeWire.parseWire('SEND_OFF'),
+        V1SemanticTypeCode.sendOff,
+      );
       expect(V1SemanticTypeCodeWire.parseWire('RED'), isNull);
       expect(V1SemanticTypeCodeWire.parseWire('SECOND_YELLOW'), isNull);
       expect(V1SemanticTypeCodeWire.parseWire('RED_CARD'), isNull);
       expect(V1SemanticTypeCodeWire.parseWire('send_off'), isNull);
       for (final code in V1SemanticTypeCode.values) {
-        expect(code.wireValue, isNot('SEND_OFF'));
         expect(code.wireValue, isNot('RED'));
         expect(code.wireValue, isNot('SECOND_YELLOW'));
       }

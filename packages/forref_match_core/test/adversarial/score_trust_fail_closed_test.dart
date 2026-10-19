@@ -30,6 +30,7 @@ void main() {
           'LEGAL_SUPERSESSION',
           'GOAL',
           'YELLOW_CARD',
+          'SEND_OFF',
           'REFEREE_ENTERED_FIELD_FOR_MATCH_START',
         },
       );
@@ -42,7 +43,8 @@ void main() {
       for (final code in V1SemanticTypeCode.values) {
         if (code == V1SemanticTypeCode.goal) continue;
         final contract = V1SemanticContract.byCode[code]!;
-        if (code == V1SemanticTypeCode.yellowCard) {
+        if (code == V1SemanticTypeCode.yellowCard ||
+            code == V1SemanticTypeCode.sendOff) {
           expect(contract.createsSportingState, isTrue, reason: code.wireValue);
         } else {
           expect(contract.createsSportingState, isFalse, reason: code.wireValue);
@@ -471,6 +473,19 @@ MatchRecord _subjectRecord(V1SemanticTypeCode code) {
         payload: GoalPayload(
           scoringTeamId: MatchTeamId('team-alpha'),
           captureIntentId: 'intent-1',
+        ),
+      ),
+    V1SemanticTypeCode.sendOff => _record(
+        recordId: 'subject',
+        originSequence: 2,
+        recordKind: RecordKind.humanDetermination,
+        payload: SendOffPayload(
+          disciplinarySubject: ParticipantDisciplinarySubject(
+            MatchParticipantId('person-a'),
+          ),
+          disciplinaryScope: DisciplinaryAccountingScope.match,
+          pathway: SendOffPathway.direct,
+          captureIntentId: 'intent-send-off',
         ),
       ),
     V1SemanticTypeCode.yellowCard => _record(

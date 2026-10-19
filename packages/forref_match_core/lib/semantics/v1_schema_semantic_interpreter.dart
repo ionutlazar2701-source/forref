@@ -46,6 +46,7 @@ final class V1SchemaSemanticInterpreter implements SchemaSemanticInterpreter {
     return switch (code) {
       V1SemanticTypeCode.goal => payload is GoalPayload,
       V1SemanticTypeCode.yellowCard => isYellowCardPayload(payload),
+      V1SemanticTypeCode.sendOff => payload is SendOffPayload,
       V1SemanticTypeCode.refereeEnteredFieldForMatchStart =>
         payload is RefereeEnteredFieldPayload,
       V1SemanticTypeCode.correction => payload is CorrectionPayload,

@@ -163,6 +163,7 @@ final class TemporalTransitionPayload extends V1SemanticPayload {
       V1SemanticTypeCode.legalSupersession ||
       V1SemanticTypeCode.goal ||
       V1SemanticTypeCode.yellowCard ||
+      V1SemanticTypeCode.sendOff ||
       V1SemanticTypeCode.refereeEnteredFieldForMatchStart =>
         false,
     };
@@ -299,6 +300,72 @@ final class YellowCardPayloadV2 extends V1SemanticPayload {
   V1SemanticTypeCode get semanticType => V1SemanticTypeCode.yellowCard;
 
   int get yellowSchemaVersion => yellowCardPayloadSchemaV2;
+}
+
+/// Explicit sending-off pathway. Count is not a pathway.
+enum SendOffPathway {
+  direct,
+  secondCaution,
+}
+
+extension SendOffPathwayWire on SendOffPathway {
+  String get wireValue => switch (this) {
+        SendOffPathway.direct => 'DIRECT',
+        SendOffPathway.secondCaution => 'SECOND_CAUTION',
+      };
+
+  static SendOffPathway? parseWire(String? value) => switch (value) {
+        'DIRECT' => SendOffPathway.direct,
+        'SECOND_CAUTION' => SendOffPathway.secondCaution,
+        _ => null,
+      };
+}
+
+/// Explicit referee sending-off. Two Yellow records do not construct this.
+final class SendOffPayload extends V1SemanticPayload {
+  SendOffPayload({
+    required this.disciplinarySubject,
+    required this.disciplinaryScope,
+    required this.pathway,
+    required this.captureIntentId,
+    this.firstStandingCautionRecordId,
+    this.secondCautionRecordId,
+    super.domainContractVersion,
+    super.competitionRulesContext,
+  }) : assert(captureIntentId.isNotEmpty),
+       assert(
+         _rolesMatch(
+           pathway: pathway,
+           firstStandingCautionRecordId: firstStandingCautionRecordId,
+           secondCautionRecordId: secondCautionRecordId,
+         ),
+       );
+
+  final DisciplinarySubjectRef disciplinarySubject;
+  final DisciplinaryAccountingScope disciplinaryScope;
+  final SendOffPathway pathway;
+  final String captureIntentId;
+  final String? firstStandingCautionRecordId;
+  final String? secondCautionRecordId;
+
+  static bool _rolesMatch({
+    required SendOffPathway pathway,
+    required String? firstStandingCautionRecordId,
+    required String? secondCautionRecordId,
+  }) {
+    if (pathway == SendOffPathway.direct) {
+      return firstStandingCautionRecordId == null &&
+          secondCautionRecordId == null;
+    }
+    return firstStandingCautionRecordId != null &&
+        firstStandingCautionRecordId.isNotEmpty &&
+        secondCautionRecordId != null &&
+        secondCautionRecordId.isNotEmpty &&
+        firstStandingCautionRecordId != secondCautionRecordId;
+  }
+
+  @override
+  V1SemanticTypeCode get semanticType => V1SemanticTypeCode.sendOff;
 }
 
 /// Referee entered the field for match start.
