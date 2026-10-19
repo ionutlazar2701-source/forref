@@ -14,7 +14,9 @@ SIMPLICITY: FROZEN CANDIDATE
 
 PRODUCT COMMAND: FOUNDATION FREEZE ACCEPTED
 
-WAVE 1: CANDIDATE PASS after WAVE 1-R. See the WAVE 1-R section. WAVE 2 remains HOLD.
+WAVE 1: ACCEPTED / CLOSED at production `fa4a7976e153e7a0096aaad2958116a3a97f5bc1`, evidence `6ec364cee2af78dc3f2f3d2c4110b95f4660f780`.
+
+WAVE 2+: The night program ran. Result is PARTIAL. See [night-program/MORNING_HANDOFF.md](night-program/MORNING_HANDOFF.md).
 
 Accepted Foundation SHA: `5772671a9674e00c372268047d5f54073610af22`.
 
@@ -146,7 +148,7 @@ One integration owner per wave for each of those groups. WAVE 0 changed none of 
 
 | Field | Value |
 | --- | --- |
-| STATUS | CANDIDATE PASS. Independent post-fix saboteur issued SABOTEUR PASS. WAVE 2 remains HOLD. |
+| STATUS | ACCEPTED / CLOSED. Independent post-fix saboteur issued SABOTEUR PASS. Later waves are authorized only through the night program. |
 | ACCEPTED FOUNDATION SHA | `5772671a9674e00c372268047d5f54073610af22` |
 | REMEDIATION BASE SHA | `8cf72166a0d4c2173df4f4c6c90b8e99fc20b29c` |
 | PRE-REMEDIATION PRODUCTION SHA | `4e5fa663414b317f9bdfc05ccd7735bb07a71e90` |
@@ -160,4 +162,4 @@ One integration owner per wave for each of those groups. WAVE 0 changed none of 
 | FOUNDATION DELTAS | NONE |
 | PRODUCT UX DELTAS | NONE |
 | LOCAL GATES | Unchanged. LOCAL GATE REQUIRED. HARDWARE EVIDENCE ABSENT. HUMAN EVIDENCE ABSENT. |
-| NEXT WAVE | WAVE 2 HOLD — NOT AUTHORIZED. |
+| NEXT WAVE | Night program DAG. Identity, Yellow, and later banks are authorized only there. |

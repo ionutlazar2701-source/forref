@@ -25,7 +25,8 @@ void main() {
 
       for (final code in V1SemanticTypeCode.values) {
         final contract = V1SemanticContract.byCode[code]!;
-        if (code == V1SemanticTypeCode.goal) {
+        if (code == V1SemanticTypeCode.goal ||
+            code == V1SemanticTypeCode.yellowCard) {
           expect(contract.createsSportingState, isTrue, reason: code.wireValue);
         } else {
           expect(contract.createsSportingState, isFalse, reason: code.wireValue);
@@ -330,9 +331,16 @@ MatchRecordPayload _payloadFor(V1SemanticTypeCode code) {
         period: const PeriodIdentity(index: 1),
       ),
     V1SemanticTypeCode.goal => GoalPayload(
-        scoringTeamId: MatchTeamId('team-alpha'),
-        captureIntentId: 'intent-1',
-      ),
+      scoringTeamId: MatchTeamId('team-alpha'),
+      captureIntentId: 'intent-1',
+    ),
+    V1SemanticTypeCode.yellowCard => YellowCardPayload(
+      participantId: MatchParticipantId('person-a'),
+      accountingScope: DisciplinaryAccountingScope.match,
+      captureIntentId: 'intent-yellow',
+    ),
+    V1SemanticTypeCode.refereeEnteredFieldForMatchStart =>
+      RefereeEnteredFieldPayload(captureIntentId: 'intent-field'),
   };
 }
 

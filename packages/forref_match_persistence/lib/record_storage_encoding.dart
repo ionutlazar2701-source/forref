@@ -15,6 +15,8 @@ const _temporalCorrectionType = 'v1-temporal-correction';
 const _correctionType = 'v1-correction';
 const _legalSupersessionType = 'v1-legal-supersession';
 const _goalType = 'v1-goal';
+const _yellowCardType = 'v1-yellow-card';
+const _refereeEnteredFieldType = 'v1-referee-entered-field';
 
 const _rootKeys = {
   'storageEncoding',
@@ -159,9 +161,24 @@ Map<String, Object?> _encodePayload(MatchRecordPayload payload) {
         'scoringTeamId': payload.scoringTeamId.value,
         'captureIntentId': payload.captureIntentId,
       },
+      if (payload is YellowCardPayload) ...{
+        'participantId': payload.participantId.value,
+        'accountingScope': payload.accountingScope.wireValue,
+        'captureIntentId': payload.captureIntentId,
+        if (payload.situationAtDetermination != null)
+          'situationAtDetermination': payload.situationAtDetermination!.name,
+      },
+      if (payload is RefereeEnteredFieldPayload)
+        'captureIntentId': payload.captureIntentId,
       if (payload is CorrectionPayload &&
           payload.repairedScoringTeamId != null)
         'repairedScoringTeamId': payload.repairedScoringTeamId!.value,
+      if (payload is CorrectionPayload &&
+          payload.repairedParticipantId != null)
+        'repairedParticipantId': payload.repairedParticipantId!.value,
+      if (payload is CorrectionPayload &&
+          payload.repairedAccountingScope != null)
+        'repairedAccountingScope': payload.repairedAccountingScope!.wireValue,
     };
   }
   throw FormatException(
@@ -176,6 +193,8 @@ String _v1PayloadType(V1SemanticPayload payload) {
     CorrectionPayload() => _correctionType,
     LegalSupersessionPayload() => _legalSupersessionType,
     GoalPayload() => _goalType,
+    YellowCardPayload() => _yellowCardType,
+    RefereeEnteredFieldPayload() => _refereeEnteredFieldType,
   };
 }
 
@@ -198,7 +217,9 @@ MatchRecordPayload _decodePayload(
       type == _temporalCorrectionType ||
       type == _correctionType ||
       type == _legalSupersessionType ||
-      type == _goalType) {
+      type == _goalType ||
+      type == _yellowCardType ||
+      type == _refereeEnteredFieldType) {
     if (storageEncoding != adapterLocalStorageEncoding) {
       throw FormatException(
         'Typed payload is missing adapter storage encoding',
@@ -220,6 +241,11 @@ MatchRecordPayload _decodePayload(
         'scoringTeamId',
         'captureIntentId',
         'repairedScoringTeamId',
+        'participantId',
+        'accountingScope',
+        'situationAtDetermination',
+        'repairedParticipantId',
+        'repairedAccountingScope',
       },
       'typed payload',
     );
@@ -259,7 +285,12 @@ V1SemanticPayload _decodeV1Payload(
         code,
         V1SemanticTypeCode.correction,
         () => CorrectionPayload(
-          repairedScoringTeamId: _optionalTeamId(payload['repairedScoringTeamId']),
+          repairedScoringTeamId:
+              _optionalTeamId(payload['repairedScoringTeamId']),
+          repairedParticipantId:
+              _optionalParticipantId(payload['repairedParticipantId']),
+          repairedAccountingScope:
+              _optionalScope(payload['repairedAccountingScope']),
           domainContractVersion: domain,
           competitionRulesContext: rules,
         ),
@@ -277,6 +308,30 @@ V1SemanticPayload _decodeV1Payload(
         V1SemanticTypeCode.goal,
         () => GoalPayload(
           scoringTeamId: MatchTeamId(_requiredString(payload, 'scoringTeamId')),
+          captureIntentId: _requiredString(payload, 'captureIntentId'),
+          domainContractVersion: domain,
+          competitionRulesContext: rules,
+        ),
+      ),
+    _yellowCardType => _exactCode(
+        code,
+        V1SemanticTypeCode.yellowCard,
+        () => YellowCardPayload(
+          participantId: MatchParticipantId(
+            _requiredString(payload, 'participantId'),
+          ),
+          accountingScope: _requiredScope(payload['accountingScope']),
+          captureIntentId: _requiredString(payload, 'captureIntentId'),
+          situationAtDetermination:
+              _optionalSituation(payload['situationAtDetermination']),
+          domainContractVersion: domain,
+          competitionRulesContext: rules,
+        ),
+      ),
+    _refereeEnteredFieldType => _exactCode(
+        code,
+        V1SemanticTypeCode.refereeEnteredFieldForMatchStart,
+        () => RefereeEnteredFieldPayload(
           captureIntentId: _requiredString(payload, 'captureIntentId'),
           domainContractVersion: domain,
           competitionRulesContext: rules,
@@ -304,7 +359,9 @@ TemporalTransitionPayload _temporalTransition(
     V1SemanticTypeCode.temporalCorrection ||
     V1SemanticTypeCode.correction ||
     V1SemanticTypeCode.legalSupersession ||
-    V1SemanticTypeCode.goal =>
+    V1SemanticTypeCode.goal ||
+    V1SemanticTypeCode.yellowCard ||
+    V1SemanticTypeCode.refereeEnteredFieldForMatchStart =>
       false,
   };
   if (!isTransition) {
@@ -357,6 +414,45 @@ MatchTeamId? _optionalTeamId(Object? value) {
     throw FormatException('Stored repairedScoringTeamId is invalid');
   }
   return MatchTeamId(value);
+}
+
+MatchParticipantId? _optionalParticipantId(Object? value) {
+  if (value == null) return null;
+  if (value is! String || value.isEmpty) {
+    throw FormatException('Stored repairedParticipantId is invalid');
+  }
+  return MatchParticipantId(value);
+}
+
+DisciplinaryAccountingScope _requiredScope(Object? value) {
+  final scope = _optionalScope(value);
+  if (scope == null) {
+    throw FormatException('Stored accounting scope is unresolved');
+  }
+  return scope;
+}
+
+DisciplinaryAccountingScope? _optionalScope(Object? value) {
+  if (value == null) return null;
+  if (value is! String) {
+    throw FormatException('Stored accounting scope is invalid');
+  }
+  final scope = DisciplinaryAccountingScopeWire.parseWire(value);
+  if (scope == null) {
+    throw FormatException('Stored accounting scope is unresolved');
+  }
+  return scope;
+}
+
+ParticipantSituation? _optionalSituation(Object? value) {
+  if (value == null) return null;
+  if (value is! String) {
+    throw FormatException('Stored situation is invalid');
+  }
+  for (final situation in ParticipantSituation.values) {
+    if (situation.name == value) return situation;
+  }
+  throw FormatException('Stored situation is invalid');
 }
 
 T _exactCode<T>(

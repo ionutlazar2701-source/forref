@@ -14,7 +14,7 @@ void main() {
   const context = ProjectionContext(evaluatedAuthorityGeneration: 1);
 
   group('fail-closed score projection trust', () {
-    test('production vocabulary is the eleven v1 codes including GOAL', () {
+    test('production vocabulary includes GOAL and the night-program codes', () {
       expect(
         V1SemanticTypeCode.values.map((code) => code.wireValue).toSet(),
         {
@@ -29,6 +29,8 @@ void main() {
           'CORRECTION',
           'LEGAL_SUPERSESSION',
           'GOAL',
+          'YELLOW_CARD',
+          'REFEREE_ENTERED_FIELD_FOR_MATCH_START',
         },
       );
       expect(V1SemanticTypeCodeWire.parseWire('GOAL'), V1SemanticTypeCode.goal);
@@ -40,7 +42,11 @@ void main() {
       for (final code in V1SemanticTypeCode.values) {
         if (code == V1SemanticTypeCode.goal) continue;
         final contract = V1SemanticContract.byCode[code]!;
-        expect(contract.createsSportingState, isFalse, reason: code.wireValue);
+        if (code == V1SemanticTypeCode.yellowCard) {
+          expect(contract.createsSportingState, isTrue, reason: code.wireValue);
+        } else {
+          expect(contract.createsSportingState, isFalse, reason: code.wireValue);
+        }
         expect(
           contract.projectionFacets,
           isNot(contains(ProjectionFacet.score)),
@@ -416,7 +422,9 @@ List<MatchRecord> _historyFor(V1SemanticTypeCode code) {
     V1SemanticTypeCode.temporalCorrection ||
     V1SemanticTypeCode.correction ||
     V1SemanticTypeCode.legalSupersession ||
-    V1SemanticTypeCode.goal =>
+    V1SemanticTypeCode.goal ||
+    V1SemanticTypeCode.yellowCard ||
+    V1SemanticTypeCode.refereeEnteredFieldForMatchStart =>
       [
         _transition(recordId: 'fact-1', code: V1SemanticTypeCode.matchStarted),
         subject,
@@ -464,6 +472,22 @@ MatchRecord _subjectRecord(V1SemanticTypeCode code) {
           scoringTeamId: MatchTeamId('team-alpha'),
           captureIntentId: 'intent-1',
         ),
+      ),
+    V1SemanticTypeCode.yellowCard => _record(
+        recordId: 'subject',
+        originSequence: 2,
+        recordKind: RecordKind.humanDetermination,
+        payload: YellowCardPayload(
+          participantId: MatchParticipantId('person-a'),
+          accountingScope: DisciplinaryAccountingScope.match,
+          captureIntentId: 'intent-yellow',
+        ),
+      ),
+    V1SemanticTypeCode.refereeEnteredFieldForMatchStart => _record(
+        recordId: 'subject',
+        originSequence: 2,
+        recordKind: RecordKind.temporalFact,
+        payload: RefereeEnteredFieldPayload(captureIntentId: 'intent-field'),
       ),
   };
 }

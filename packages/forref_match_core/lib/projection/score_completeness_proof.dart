@@ -70,7 +70,7 @@ ScoreProofValidation validateScoreCompletenessProof({
     if (record.integrity.evidenceRefs.isEmpty) {
       return const ScoreProofValidation.unavailable();
     }
-    if (record.payload is GoalPayload &&
+    if (_generationOneCapture(record.payload) &&
         record.authorityContext?.generation?.value != 1) {
       return const ScoreProofValidation.unavailable();
     }
@@ -108,6 +108,12 @@ ScoreProofValidation validateScoreCompletenessProof({
   }
 
   return ScoreProofValidation.ready(teamIds: bindings.toList());
+}
+
+bool _generationOneCapture(Object payload) {
+  return payload is GoalPayload ||
+      payload is YellowCardPayload ||
+      payload is RefereeEnteredFieldPayload;
 }
 
 final class ScoreProofValidation {

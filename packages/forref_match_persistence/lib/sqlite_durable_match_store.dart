@@ -157,9 +157,12 @@ final class SqliteDurableMatchStore
         authority_principal_id TEXT NOT NULL,
         authority_generation INTEGER NOT NULL,
         scoring_team_id TEXT,
+        participant_id TEXT,
+        accounting_scope TEXT,
         PRIMARY KEY (match_id, authority_scope, capture_intent_id)
       )
     ''');
+    _ensureCaptureIntentSubjectColumns();
     _db.execute('''
       CREATE TABLE IF NOT EXISTS generation_one_authority_roots (
         match_id TEXT PRIMARY KEY,
@@ -171,6 +174,23 @@ final class SqliteDurableMatchStore
   }
 
   static const _mainRefereeScopeWire = 'MAIN_REFEREE';
+
+  void _ensureCaptureIntentSubjectColumns() {
+    final rows = _db.select('PRAGMA table_info(capture_intent_admissions)');
+    final names = <String>{
+      for (final row in rows) row.columnAt(1) as String,
+    };
+    if (!names.contains('participant_id')) {
+      _db.execute(
+        'ALTER TABLE capture_intent_admissions ADD COLUMN participant_id TEXT',
+      );
+    }
+    if (!names.contains('accounting_scope')) {
+      _db.execute(
+        'ALTER TABLE capture_intent_admissions ADD COLUMN accounting_scope TEXT',
+      );
+    }
+  }
 
   void _requireIntegrity() {
     final rows = _db.select('PRAGMA integrity_check');
@@ -603,7 +623,8 @@ final class SqliteDurableMatchStore
     required MatchRecordPayload payload,
     required String failureRecordId,
   }) {
-    if (payload is! GoalPayload) {
+    final intent = _authoritativeCaptureIntent(payload, authorityContext);
+    if (intent == null) {
       return null;
     }
 
@@ -617,17 +638,10 @@ final class SqliteDurableMatchStore
       );
     }
 
-    final meaning = CaptureIntentMeaning(
-      semanticType: V1SemanticTypeCode.goal,
-      authorityPrincipalId: authorityContext?.principal?.principalId ?? '',
-      authorityGeneration: authorityContext?.generation?.value ?? 0,
-      scoringTeamId: payload.scoringTeamId,
-    );
-
     final existing = _readCaptureIntentAdmissionLocked(
       matchId: matchId,
       authorityScopeWire: _mainRefereeScopeWire,
-      captureIntentId: payload.captureIntentId,
+      captureIntentId: intent.captureIntentId,
     );
     if (existing == null) {
       final rejected = _rejectNewGoalAdmission(
@@ -642,7 +656,7 @@ final class SqliteDurableMatchStore
       return null;
     }
 
-    if (_admissionMeaningMatches(existing, meaning)) {
+    if (_admissionMeaningMatches(existing, intent)) {
       _commitTransaction();
       return DurableCommitSuccess(
         committedRecordId: existing.committedRecordId,
@@ -653,9 +667,46 @@ final class SqliteDurableMatchStore
     _db.execute('ROLLBACK');
     return DurableCommitFailure(
       recordId: failureRecordId,
-      reason: 'idempotency conflict: capture intent ${payload.captureIntentId} '
+      reason: 'idempotency conflict: capture intent ${intent.captureIntentId} '
           'already bound to a different goal meaning',
     );
+  }
+
+  _AuthoritativeCaptureIntent? _authoritativeCaptureIntent(
+    MatchRecordPayload payload,
+    AuthorityContext? authorityContext,
+  ) {
+    final principalId = authorityContext?.principal?.principalId ?? '';
+    final generation = authorityContext?.generation?.value ?? 0;
+    if (payload is GoalPayload) {
+      return _AuthoritativeCaptureIntent(
+        captureIntentId: payload.captureIntentId,
+        semanticTypeWire: V1SemanticTypeCode.goal.wireValue,
+        authorityPrincipalId: principalId,
+        authorityGeneration: generation,
+        scoringTeamId: payload.scoringTeamId.value,
+      );
+    }
+    if (payload is YellowCardPayload) {
+      return _AuthoritativeCaptureIntent(
+        captureIntentId: payload.captureIntentId,
+        semanticTypeWire: V1SemanticTypeCode.yellowCard.wireValue,
+        authorityPrincipalId: principalId,
+        authorityGeneration: generation,
+        participantId: payload.participantId.value,
+        accountingScope: payload.accountingScope.wireValue,
+      );
+    }
+    if (payload is RefereeEnteredFieldPayload) {
+      return _AuthoritativeCaptureIntent(
+        captureIntentId: payload.captureIntentId,
+        semanticTypeWire:
+            V1SemanticTypeCode.refereeEnteredFieldForMatchStart.wireValue,
+        authorityPrincipalId: principalId,
+        authorityGeneration: generation,
+      );
+    }
+    return null;
   }
 
   /// WAVE 1 admits a new Goal only under the generation-1 root.
@@ -701,8 +752,11 @@ final class SqliteDurableMatchStore
   }
 
   void _insertCaptureIntentAdmissionLocked(MatchRecord record) {
-    final payload = record.payload;
-    if (payload is! GoalPayload) {
+    final intent = _authoritativeCaptureIntent(
+      record.payload,
+      record.authorityContext,
+    );
+    if (intent == null) {
       return;
     }
     final scope = record.authorityContext?.scope;
@@ -721,18 +775,22 @@ final class SqliteDurableMatchStore
         semantic_type_wire,
         authority_principal_id,
         authority_generation,
-        scoring_team_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        scoring_team_id,
+        participant_id,
+        accounting_scope
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ''',
       [
         record.matchId,
         _mainRefereeScopeWire,
-        payload.captureIntentId,
+        intent.captureIntentId,
         record.recordId,
-        V1SemanticTypeCode.goal.wireValue,
-        record.authorityContext?.principal?.principalId ?? '',
-        record.authorityContext?.generation?.value ?? 0,
-        payload.scoringTeamId.value,
+        intent.semanticTypeWire,
+        intent.authorityPrincipalId,
+        intent.authorityGeneration,
+        intent.scoringTeamId,
+        intent.participantId,
+        intent.accountingScope,
       ],
     );
   }
@@ -749,7 +807,9 @@ final class SqliteDurableMatchStore
         semantic_type_wire,
         authority_principal_id,
         authority_generation,
-        scoring_team_id
+        scoring_team_id,
+        participant_id,
+        accounting_scope
       FROM capture_intent_admissions
       WHERE match_id = ? AND authority_scope = ? AND capture_intent_id = ?
       ''',
@@ -763,17 +823,21 @@ final class SqliteDurableMatchStore
       authorityPrincipalId: row.columnAt(2) as String,
       authorityGeneration: row.columnAt(3) as int,
       scoringTeamId: row.columnAt(4) as String?,
+      participantId: row.columnAt(5) as String?,
+      accountingScope: row.columnAt(6) as String?,
     );
   }
 
   bool _admissionMeaningMatches(
     _StoredCaptureIntentAdmission stored,
-    CaptureIntentMeaning requested,
+    _AuthoritativeCaptureIntent requested,
   ) {
-    return stored.semanticTypeWire == requested.semanticType.wireValue &&
+    return stored.semanticTypeWire == requested.semanticTypeWire &&
         stored.authorityPrincipalId == requested.authorityPrincipalId &&
         stored.authorityGeneration == requested.authorityGeneration &&
-        stored.scoringTeamId == requested.scoringTeamId.value;
+        stored.scoringTeamId == requested.scoringTeamId &&
+        stored.participantId == requested.participantId &&
+        stored.accountingScope == requested.accountingScope;
   }
 
   MatchRecord? _readById(String recordId) {
@@ -846,6 +910,8 @@ final class _StoredCaptureIntentAdmission {
     required this.authorityPrincipalId,
     required this.authorityGeneration,
     required this.scoringTeamId,
+    required this.participantId,
+    required this.accountingScope,
   });
 
   final String committedRecordId;
@@ -853,4 +919,26 @@ final class _StoredCaptureIntentAdmission {
   final String authorityPrincipalId;
   final int authorityGeneration;
   final String? scoringTeamId;
+  final String? participantId;
+  final String? accountingScope;
+}
+
+final class _AuthoritativeCaptureIntent {
+  const _AuthoritativeCaptureIntent({
+    required this.captureIntentId,
+    required this.semanticTypeWire,
+    required this.authorityPrincipalId,
+    required this.authorityGeneration,
+    this.scoringTeamId,
+    this.participantId,
+    this.accountingScope,
+  });
+
+  final String captureIntentId;
+  final String semanticTypeWire;
+  final String authorityPrincipalId;
+  final int authorityGeneration;
+  final String? scoringTeamId;
+  final String? participantId;
+  final String? accountingScope;
 }

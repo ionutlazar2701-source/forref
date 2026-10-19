@@ -120,7 +120,8 @@ EffectiveGoalResolution resolveEffectiveGoals({
     final target = targetId == null ? null : recordsById[targetId];
     if (target != null &&
         target.recordKind == RecordKind.correction &&
-        target.payload is CorrectionPayload) {
+        target.payload is CorrectionPayload &&
+        _correctionReachesGoal(target, recordsById)) {
       return const EffectiveGoalUnavailable();
     }
   }
@@ -223,6 +224,63 @@ _CorrectionWalk _walkCorrectionChain(
     return const _CorrectionWalk.notAGoal();
   }
 }
+
+bool _correctionReachesGoal(
+  MatchRecord correction,
+  Map<String, MatchRecord> recordsById,
+) {
+  final payload = correction.payload;
+  if (payload is CorrectionPayload && payload.repairedScoringTeamId != null) {
+    return true;
+  }
+  final walk = _walkCorrectionChain(correction.recordId, recordsById);
+  return walk.goalId != null;
+}
+
+/// Shared target readers for the one correction and supersession resolver.
+String? correctionTargetOf(MatchRecord record) => _correctionTarget(record);
+
+/// Shared target readers for the one correction and supersession resolver.
+String? legalSupersessionTargetOf(MatchRecord record) =>
+    _supersessionTarget(record);
+
+/// One supersession-effectiveness walk. Callers must not keep a second copy.
+RelationshipSupersessionEffectiveness relationshipSupersessionEffectiveness(
+  String supersessionId, {
+  required Map<String, MatchRecord> recordsById,
+  required List<String> supersessionIds,
+  required Map<String, RelationshipSupersessionEffectiveness> memo,
+  required Set<String> visiting,
+}) {
+  final localMemo = <String, _SupersessionEffectiveness>{};
+  final result = _supersessionEffectiveness(
+    supersessionId,
+    recordsById: recordsById,
+    supersessionIds: supersessionIds,
+    memo: localMemo,
+    visiting: visiting,
+  );
+  for (final entry in localMemo.entries) {
+    memo[entry.key] = switch (entry.value) {
+      _SupersessionEffectiveness.effective =>
+        RelationshipSupersessionEffectiveness.effective,
+      _SupersessionEffectiveness.voided =>
+        RelationshipSupersessionEffectiveness.voided,
+      _SupersessionEffectiveness.cycle =>
+        RelationshipSupersessionEffectiveness.cycle,
+    };
+  }
+  return switch (result) {
+    _SupersessionEffectiveness.effective =>
+      RelationshipSupersessionEffectiveness.effective,
+    _SupersessionEffectiveness.voided =>
+      RelationshipSupersessionEffectiveness.voided,
+    _SupersessionEffectiveness.cycle =>
+      RelationshipSupersessionEffectiveness.cycle,
+  };
+}
+
+enum RelationshipSupersessionEffectiveness { effective, voided, cycle }
 
 String? _correctionTarget(MatchRecord record) {
   for (final link in record.relationships) {

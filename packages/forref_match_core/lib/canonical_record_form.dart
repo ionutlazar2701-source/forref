@@ -215,9 +215,26 @@ final class _PayloadSnapshot {
             'scoringTeamId': payload.scoringTeamId.value,
             'captureIntentId': payload.captureIntentId,
           },
+          if (payload is YellowCardPayload) ...{
+            'participantId': payload.participantId.value,
+            'accountingScope': payload.accountingScope.wireValue,
+            'captureIntentId': payload.captureIntentId,
+            if (payload.situationAtDetermination != null)
+              'situationAtDetermination':
+                  payload.situationAtDetermination!.name,
+          },
+          if (payload is RefereeEnteredFieldPayload)
+            'captureIntentId': payload.captureIntentId,
           if (payload is CorrectionPayload &&
               payload.repairedScoringTeamId != null)
             'repairedScoringTeamId': payload.repairedScoringTeamId!.value,
+          if (payload is CorrectionPayload &&
+              payload.repairedParticipantId != null)
+            'repairedParticipantId': payload.repairedParticipantId!.value,
+          if (payload is CorrectionPayload &&
+              payload.repairedAccountingScope != null)
+            'repairedAccountingScope':
+                payload.repairedAccountingScope!.wireValue,
           if (payload.domainContractVersion != null)
             'domainContractVersion': payload.domainContractVersion!.value,
           if (payload.competitionRulesContext != null)

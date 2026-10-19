@@ -1,3 +1,4 @@
+import '../match_participant.dart';
 import '../match_team.dart';
 import '../payload.dart';
 import 'match_record_semantic_type.dart';
@@ -159,7 +160,9 @@ final class TemporalTransitionPayload extends V1SemanticPayload {
       V1SemanticTypeCode.temporalCorrection ||
       V1SemanticTypeCode.correction ||
       V1SemanticTypeCode.legalSupersession ||
-      V1SemanticTypeCode.goal =>
+      V1SemanticTypeCode.goal ||
+      V1SemanticTypeCode.yellowCard ||
+      V1SemanticTypeCode.refereeEnteredFieldForMatchStart =>
         false,
     };
   }
@@ -177,15 +180,43 @@ final class TemporalCorrectionPayload extends V1SemanticPayload {
 }
 
 /// Historical correction. The corrected record remains in Match Memory.
+/// Explicit caution ledger. Unresolved scope has no value and cannot be stored.
+enum DisciplinaryAccountingScope {
+  match,
+  shootout,
+}
+
+extension DisciplinaryAccountingScopeWire on DisciplinaryAccountingScope {
+  String get wireValue => switch (this) {
+        DisciplinaryAccountingScope.match => 'MATCH',
+        DisciplinaryAccountingScope.shootout => 'SHOOTOUT',
+      };
+
+  static DisciplinaryAccountingScope? parseWire(String? value) =>
+      switch (value) {
+        'MATCH' => DisciplinaryAccountingScope.match,
+        'SHOOTOUT' => DisciplinaryAccountingScope.shootout,
+        _ => null,
+      };
+}
+
 final class CorrectionPayload extends V1SemanticPayload {
   const CorrectionPayload({
     this.repairedScoringTeamId,
+    this.repairedParticipantId,
+    this.repairedAccountingScope,
     super.domainContractVersion,
     super.competitionRulesContext,
   });
 
   /// Required when this correction repairs a Goal; optional for other targets.
   final MatchTeamId? repairedScoringTeamId;
+
+  /// Required when this correction repairs a Yellow subject.
+  final MatchParticipantId? repairedParticipantId;
+
+  /// Required when this correction repairs a Yellow accounting scope.
+  final DisciplinaryAccountingScope? repairedAccountingScope;
 
   @override
   V1SemanticTypeCode get semanticType => V1SemanticTypeCode.correction;
@@ -205,6 +236,45 @@ final class GoalPayload extends V1SemanticPayload {
 
   @override
   V1SemanticTypeCode get semanticType => V1SemanticTypeCode.goal;
+}
+
+/// Authoritative administered caution. Intention is not this record.
+final class YellowCardPayload extends V1SemanticPayload {
+  YellowCardPayload({
+    required this.participantId,
+    required this.accountingScope,
+    required this.captureIntentId,
+    this.situationAtDetermination,
+    super.domainContractVersion,
+    super.competitionRulesContext,
+  }) : assert(captureIntentId.isNotEmpty);
+
+  final MatchParticipantId participantId;
+  final DisciplinaryAccountingScope accountingScope;
+  final String captureIntentId;
+
+  /// Historical context. It is not [participantId].
+  final ParticipantSituation? situationAtDetermination;
+
+  @override
+  V1SemanticTypeCode get semanticType => V1SemanticTypeCode.yellowCard;
+}
+
+/// Referee entered the field for match start.
+///
+/// This is not MATCH_STARTED and not PERIOD_STARTED.
+final class RefereeEnteredFieldPayload extends V1SemanticPayload {
+  RefereeEnteredFieldPayload({
+    required this.captureIntentId,
+    super.domainContractVersion,
+    super.competitionRulesContext,
+  }) : assert(captureIntentId.isNotEmpty);
+
+  final String captureIntentId;
+
+  @override
+  V1SemanticTypeCode get semanticType =>
+      V1SemanticTypeCode.refereeEnteredFieldForMatchStart;
 }
 
 /// Legal supersession. The superseded record remains in Match Memory.
