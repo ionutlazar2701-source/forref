@@ -32,8 +32,8 @@ void main() {
     final instrument = ResearchInstrument()..loadScenario(ScenarioId.s05Y2SendOffContinuation);
     final opening = instrument.behaviorSignature;
     instrument.offerRecordYellow();
-    instrument.pointerDown(pointerId: 1, x: 20, y: 530);
-    instrument.pointerUp(pointerId: 1, x: 20, y: 530);
+    instrument.pointerDown(pointerId: 1, x: 20, y: 190);
+    instrument.pointerUp(pointerId: 1, x: 20, y: 190);
     instrument.resolveSimulatedCommit();
     expect(instrument.twoCautionsRecorded, isTrue);
     instrument.reset();
@@ -45,7 +45,7 @@ void main() {
   test('a research action writes no production flag', () {
     final instrument = ResearchInstrument()..loadScenario(ScenarioId.s01YellowNoPrior);
     instrument.offerRecordYellow();
-    _tap(instrument, 20, 530);
+    _tap(instrument, 20, 190);
     instrument.resolveSimulatedCommit();
     expect(instrument.commitKind, SystemCommitKind.saved);
     expect(instrument.commitLabel, contains('not production D1'));

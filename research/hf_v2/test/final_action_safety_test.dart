@@ -4,9 +4,9 @@ import 'package:test/test.dart';
 void main() {
   test('A rapid double tap at the yellow position records yellow only', () {
     final instrument = _ready();
-    _tap(instrument, 20, 530);
+    _tap(instrument, 20, 190);
     instrument.resolveSimulatedCommit();
-    _tap(instrument, 20, 530, pointerId: 2);
+    _tap(instrument, 20, 190, pointerId: 2);
     instrument.resolveSimulatedCommit();
     expect(instrument.twoCautionsRecorded, isTrue);
     expect(instrument.sendOffs, isEmpty);
@@ -14,54 +14,54 @@ void main() {
 
   test('B pointer down, held commit, release does not send off', () {
     final instrument = _ready();
-    instrument.pointerDown(pointerId: 1, x: 20, y: 530);
+    instrument.pointerDown(pointerId: 1, x: 20, y: 190);
     instrument.commitCapturedActionWhileHeld(1);
     instrument.resolveSimulatedCommit();
     expect(instrument.twoCautionsRecorded, isTrue);
-    instrument.pointerUp(pointerId: 1, x: 20, y: 530);
+    instrument.pointerUp(pointerId: 1, x: 20, y: 190);
     instrument.resolveSimulatedCommit();
     expect(instrument.sendOffs, isEmpty);
   });
 
   test('C delayed release does not activate the successor', () {
     final instrument = _ready();
-    instrument.pointerDown(pointerId: 1, x: 20, y: 530);
+    instrument.pointerDown(pointerId: 1, x: 20, y: 190);
     instrument.commitCapturedActionWhileHeld(1);
     instrument.resolveSimulatedCommit();
-    instrument.pointerUp(pointerId: 1, x: 80, y: 540);
+    instrument.pointerUp(pointerId: 1, x: 80, y: 190);
     expect(instrument.sendOffs, isEmpty);
   });
 
   test('D press, transition, release does not activate the successor', () {
     final instrument = _ready();
-    instrument.pointerDown(pointerId: 1, x: 20, y: 530);
+    instrument.pointerDown(pointerId: 1, x: 20, y: 190);
     instrument.commitCapturedActionWhileHeld(1);
     instrument.resolveSimulatedCommit();
     expect(instrument.sendOffContinuationVisible, isTrue);
     expect(instrument.armedKind, isNull);
-    instrument.pointerUp(pointerId: 1, x: 210, y: 530);
+    instrument.pointerUp(pointerId: 1, x: 230, y: 190);
     expect(instrument.sendOffs, isEmpty);
   });
 
   test('E a second tap on the old yellow location is not a send-off', () {
     final instrument = _ready();
-    _tap(instrument, 30, 540);
+    _tap(instrument, 30, 190);
     instrument.resolveSimulatedCommit();
-    _tap(instrument, 30, 540, pointerId: 2);
+    _tap(instrument, 30, 190, pointerId: 2);
     expect(instrument.lastActivated, FinalActionKind.recordYellow);
     expect(instrument.sendOffs, isEmpty);
   });
 
   test('F a carried second pointer does not activate send-off', () {
     final instrument = _ready();
-    instrument.pointerDown(pointerId: 1, x: 20, y: 530);
-    instrument.pointerDown(pointerId: 2, x: 220, y: 530);
+    instrument.pointerDown(pointerId: 1, x: 20, y: 190);
+    instrument.pointerDown(pointerId: 2, x: 230, y: 190);
     instrument.commitCapturedActionWhileHeld(1);
     instrument.resolveSimulatedCommit();
-    instrument.pointerDown(pointerId: 3, x: 220, y: 530);
-    instrument.pointerUp(pointerId: 3, x: 220, y: 530);
-    instrument.pointerUp(pointerId: 2, x: 220, y: 530);
-    instrument.pointerUp(pointerId: 1, x: 20, y: 530);
+    instrument.pointerDown(pointerId: 3, x: 230, y: 190);
+    instrument.pointerUp(pointerId: 3, x: 230, y: 190);
+    instrument.pointerUp(pointerId: 2, x: 230, y: 190);
+    instrument.pointerUp(pointerId: 1, x: 20, y: 190);
     instrument.resolveSimulatedCommit();
     expect(instrument.twoCautionsRecorded, isTrue);
     expect(instrument.sendOffs, isEmpty);
@@ -69,9 +69,9 @@ void main() {
 
   test('G focus loss does not activate a new authority action', () {
     final instrument = _ready();
-    instrument.pointerDown(pointerId: 1, x: 20, y: 530);
+    instrument.pointerDown(pointerId: 1, x: 20, y: 190);
     instrument.focusLost();
-    instrument.pointerUp(pointerId: 1, x: 20, y: 530);
+    instrument.pointerUp(pointerId: 1, x: 20, y: 190);
     expect(instrument.commitKind, SystemCommitKind.idle);
     expect(instrument.cautions, hasLength(1));
     expect(instrument.sendOffs, isEmpty);
@@ -79,21 +79,21 @@ void main() {
 
   test('H relayout does not fire a stale successor target', () {
     final instrument = _ready();
-    instrument.pointerDown(pointerId: 1, x: 20, y: 530);
+    instrument.pointerDown(pointerId: 1, x: 20, y: 190);
     instrument.relayout(
       const ResearchLayout(
-        yellow: ResearchRect(16, 520, 140, 48),
-        sendOff: ResearchRect(16, 520, 140, 48),
-        substitution: ResearchRect(16, 440, 200, 48),
-        roster: ResearchRect(16, 120, 320, 280),
+        yellow: ResearchRect(16, 180, 150, 48),
+        sendOff: ResearchRect(16, 180, 150, 48),
+        substitution: ResearchRect(16, 250, 200, 48),
+        roster: ResearchRect(16, 8, 320, 150),
       ),
     );
-    instrument.pointerUp(pointerId: 1, x: 20, y: 530);
+    instrument.pointerUp(pointerId: 1, x: 20, y: 190);
     instrument.resolveSimulatedCommit();
     expect(instrument.twoCautionsRecorded, isTrue);
     expect(instrument.sendOffs, isEmpty);
-    instrument.pointerDown(pointerId: 2, x: 20, y: 530);
-    instrument.pointerUp(pointerId: 2, x: 20, y: 530);
+    instrument.pointerDown(pointerId: 2, x: 20, y: 190);
+    instrument.pointerUp(pointerId: 2, x: 20, y: 190);
     expect(instrument.sendOffs, isEmpty);
   });
 
@@ -122,9 +122,9 @@ void main() {
     instrument.selectParticipant('p-home-9');
     expect(instrument.sendOffs, isEmpty);
     instrument.offerDirectSendOff();
-    instrument.pointerDown(pointerId: 1, x: 210, y: 530);
+    instrument.pointerDown(pointerId: 1, x: 230, y: 190);
     instrument.focusLost();
-    instrument.pointerUp(pointerId: 1, x: 210, y: 530);
+    instrument.pointerUp(pointerId: 1, x: 230, y: 190);
     expect(instrument.sendOffs, isEmpty);
   });
 
@@ -143,7 +143,7 @@ void main() {
 
   test('becoming visible does not activate send-off', () {
     final instrument = _ready();
-    _tap(instrument, 20, 530);
+    _tap(instrument, 20, 190);
     instrument.resolveSimulatedCommit();
     expect(instrument.sendOffContinuationVisible, isTrue);
     expect(instrument.armedKind, isNull);

@@ -50,8 +50,8 @@ void main() {
       sink: (_) => throw StateError('log down'),
     )..loadScenario(ScenarioId.s01YellowNoPrior);
     instrument.offerRecordYellow();
-    instrument.pointerDown(pointerId: 1, x: 20, y: 530);
-    instrument.pointerUp(pointerId: 1, x: 20, y: 530);
+    instrument.pointerDown(pointerId: 1, x: 20, y: 190);
+    instrument.pointerUp(pointerId: 1, x: 20, y: 190);
     instrument.resolveSimulatedCommit();
     expect(instrument.commitKind, SystemCommitKind.saved);
     expect(instrument.cautions, hasLength(1));
@@ -87,8 +87,8 @@ void main() {
         SimulatedScriptedOutcome.failure,
       );
     instrument.offerRecordYellow();
-    instrument.pointerDown(pointerId: 1, x: 20, y: 530);
-    instrument.pointerUp(pointerId: 1, x: 20, y: 530);
+    instrument.pointerDown(pointerId: 1, x: 20, y: 190);
+    instrument.pointerUp(pointerId: 1, x: 20, y: 190);
     instrument.resolveSimulatedCommit();
     expect(instrument.commitKind, SystemCommitKind.notSaved);
     expect(instrument.commitLabel, contains('known simulated failure'));

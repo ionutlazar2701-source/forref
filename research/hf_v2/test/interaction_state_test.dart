@@ -111,7 +111,7 @@ void main() {
   test('save not verified is not not-saved, and interruption creates no authority', () {
     final unknown = _load(ScenarioId.s16SaveNotVerified);
     unknown.offerRecordYellow();
-    _tap(unknown, 20, 530);
+    _tap(unknown, 20, 190);
     unknown.resolveSimulatedCommit();
     expect(unknown.commitKind, SystemCommitKind.saveNotVerified);
     expect(unknown.commitKind, isNot(SystemCommitKind.notSaved));
@@ -123,7 +123,7 @@ void main() {
 
     final interrupted = _load(ScenarioId.s15InterruptWhileSaving);
     interrupted.offerRecordYellow();
-    _tap(interrupted, 20, 530);
+    _tap(interrupted, 20, 190);
     expect(interrupted.commitKind, SystemCommitKind.saving);
     interrupted.interrupt();
     expect(interrupted.commitKind, SystemCommitKind.saveNotVerified);
@@ -143,7 +143,7 @@ void main() {
   test('direct send-off does not borrow the prior yellow', () {
     final instrument = _load(ScenarioId.s08DirectRedWithPriorYellow);
     instrument.offerDirectSendOff();
-    _tap(instrument, 210, 530);
+    _tap(instrument, 230, 190);
     instrument.resolveSimulatedCommit();
     expect(instrument.sendOffs.single.pathway, SendOffPathwayLabel.direct);
     expect(instrument.cautions, hasLength(1));
@@ -189,6 +189,6 @@ void _tap(ResearchInstrument instrument, double x, double y, {int pointerId = 1}
 
 void _saveYellow(ResearchInstrument instrument) {
   instrument.offerRecordYellow();
-  _tap(instrument, 20, 530);
+  _tap(instrument, 20, 190);
   instrument.resolveSimulatedCommit();
 }

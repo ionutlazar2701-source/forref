@@ -86,10 +86,10 @@ final class ResearchLayout {
   });
 
   static const phone = ResearchLayout(
-    yellow: ResearchRect(16, 520, 140, 48),
-    sendOff: ResearchRect(200, 520, 160, 48),
-    substitution: ResearchRect(16, 440, 200, 48),
-    roster: ResearchRect(16, 120, 320, 280),
+    yellow: ResearchRect(16, 180, 150, 48),
+    sendOff: ResearchRect(220, 180, 160, 48),
+    substitution: ResearchRect(16, 250, 200, 48),
+    roster: ResearchRect(16, 8, 320, 150),
   );
 
   final ResearchRect yellow;

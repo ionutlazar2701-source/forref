@@ -1,0 +1,92 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:hf_prototype/research_app.dart';
+import 'package:hf_v2/hf_v2.dart';
+
+void main() {
+  testWidgets('the shell launches as a research prototype', (tester) async {
+    await tester.pumpWidget(ResearchApp(controller: ResearchController()));
+    expect(find.text('FORREF RESEARCH PROTOTYPE'), findsOneWidget);
+    expect(find.byKey(const Key('research-capture')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('research-capture')),
+        matching: find.text('Scenario'),
+      ),
+      findsNothing,
+    );
+  });
+
+  testWidgets('a repeat tap on yellow does not record a sending-off', (tester) async {
+    final controller = ResearchController();
+    await tester.pumpWidget(ResearchApp(controller: controller));
+    controller.load(ScenarioId.s07RapidRepeatAfterY2);
+    controller.show(ResearchPage.yellow);
+    await tester.pump();
+
+    await tester.tap(find.text('Record yellow'));
+    await tester.pump();
+    expect(find.text('Two cautions recorded'), findsOneWidget);
+    expect(find.text('Sending-off recorded'), findsNothing);
+
+    final yellow = tester.getRect(find.text('Record yellow'));
+    final sendOff = tester.getRect(find.text('Record sending-off'));
+    expect(yellow.overlaps(sendOff), isFalse);
+
+    await tester.tapAt(yellow.center);
+    await tester.pump();
+    expect(find.text('Sending-off recorded'), findsNothing);
+    expect(controller.instrument.sendOffs, isEmpty);
+    expect(controller.instrument.productionMatchMemoryWrites, isFalse);
+  });
+
+  testWidgets('rebuild keeps the research signature', (tester) async {
+    final controller = ResearchController();
+    await tester.pumpWidget(ResearchApp(controller: controller));
+    controller.load(ScenarioId.s02YellowOnePrior);
+    await tester.pump();
+    final signature = controller.instrument.behaviorSignature;
+    await tester.pumpWidget(ResearchApp(controller: controller));
+    await tester.pump();
+    expect(controller.instrument.behaviorSignature, signature);
+  });
+
+  testWidgets('team change invalidates Home 14', (tester) async {
+    final controller = ResearchController();
+    await tester.pumpWidget(ResearchApp(controller: controller));
+    controller.load(ScenarioId.s09Home14ThenAway14);
+    await tester.pump();
+    expect(find.textContaining('p-home-14'), findsOneWidget);
+    await tester.tap(find.text('Away'));
+    await tester.pump();
+    expect(find.textContaining('invalidated'), findsOneWidget);
+    expect(controller.instrument.selectedParticipantId, isNull);
+  });
+
+  testWidgets('operator controls replace the capture column', (tester) async {
+    final controller = ResearchController();
+    await tester.pumpWidget(ResearchApp(controller: controller));
+    await tester.tap(find.text('Operator'));
+    await tester.pump();
+    expect(find.byKey(const Key('research-capture')), findsNothing);
+    expect(find.byKey(const Key('research-operator')), findsOneWidget);
+    expect(find.text('Scenario'), findsOneWidget);
+  });
+
+  test('the prototype is outside production phone routing', () {
+    final pubspec = File('pubspec.yaml').readAsStringSync();
+    expect(pubspec, isNot(contains('forref_match_persistence')));
+    expect(pubspec, isNot(contains('forref_match_core')));
+    final phone = Directory('../../apps/referee_phone/lib');
+    final hits = <String>[];
+    for (final entity in phone.listSync(recursive: true)) {
+      if (entity is! File || !entity.path.endsWith('.dart')) continue;
+      if (entity.readAsStringSync().contains('hf_prototype')) {
+        hits.add(entity.path);
+      }
+    }
+    expect(hits, isEmpty);
+  });
+}
