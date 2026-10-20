@@ -8,7 +8,8 @@ import 'package:hf_v2/hf_v2.dart';
 void main() {
   testWidgets('the shell launches as a research prototype', (tester) async {
     await tester.pumpWidget(ResearchApp(controller: ResearchController()));
-    expect(find.text('FORREF RESEARCH PROTOTYPE'), findsOneWidget);
+    expect(find.text('FORREF SIMULATOR LAB'), findsOneWidget);
+    expect(find.text('RESEARCH / NON-PRODUCTION'), findsOneWidget);
     expect(find.byKey(const Key('research-capture')), findsOneWidget);
     expect(
       find.descendant(
@@ -65,14 +66,22 @@ void main() {
     expect(controller.instrument.selectedParticipantId, isNull);
   });
 
-  testWidgets('operator controls replace the capture column', (tester) async {
+  testWidgets('scenario controls stay off the device stage', (tester) async {
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
-    await tester.tap(find.text('Operator'));
+    expect(find.text('Scenario'), findsNothing);
+    await tester.tap(find.text('Inspection'));
     await tester.pump();
-    expect(find.byKey(const Key('research-capture')), findsNothing);
+    expect(find.byKey(const Key('research-capture')), findsOneWidget);
     expect(find.byKey(const Key('research-operator')), findsOneWidget);
     expect(find.text('Scenario'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('research-capture')),
+        matching: find.text('Scenario'),
+      ),
+      findsNothing,
+    );
   });
 
   testWidgets('shoot-out scope does not inherit the match caution count', (tester) async {
@@ -100,8 +109,10 @@ void main() {
     controller.load(ScenarioId.s11SubstitutionOutFirst);
     controller.show(ResearchPage.substitution);
     await tester.pump();
+    await tester.ensureVisible(find.text('Out p-home-9'));
     await tester.tap(find.text('Out p-home-9'));
     await tester.pump();
+    await tester.ensureVisible(find.text('In p-home-7'));
     await tester.tap(find.text('In p-home-7'));
     await tester.pump();
     expect(controller.instrument.outId, 'p-home-9');
@@ -113,12 +124,15 @@ void main() {
     final pubspec = File('pubspec.yaml').readAsStringSync();
     expect(pubspec, isNot(contains('forref_match_persistence')));
     expect(pubspec, isNot(contains('forref_match_core')));
+    expect(pubspec, contains('simulator_geometry'));
+    expect(pubspec, contains('hf_v2'));
     final phone = Directory('../../apps/referee_phone/lib');
     final hits = <String>[];
     for (final entity in phone.listSync(recursive: true)) {
       if (entity is! File || !entity.path.endsWith('.dart')) continue;
-      if (entity.readAsStringSync().contains('hf_prototype')) {
-        hits.add(entity.path);
+      final text = entity.readAsStringSync();
+      for (final token in ['hf_prototype', 'hf_v2', 'simulator_geometry']) {
+        if (text.contains(token)) hits.add('${entity.path}: $token');
       }
     }
     expect(hits, isEmpty);

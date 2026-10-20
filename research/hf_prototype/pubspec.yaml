@@ -1,6 +1,6 @@
 name: hf_prototype
 description: >
-  Non-production FORREF research prototype. Not the referee phone app.
+  Non-production FORREF Simulator Lab. Not the referee phone app.
   Simulated Saved is not production D1 proof.
 version: 0.1.0
 publish_to: none
@@ -13,6 +13,8 @@ dependencies:
     sdk: flutter
   hf_v2:
     path: ../hf_v2
+  simulator_geometry:
+    path: ../simulator_geometry
 
 dev_dependencies:
   flutter_test:
