@@ -12,7 +12,9 @@ IMPLEMENTATION SHA:
 2dc00f368e1a9590644e751e35797a1075b4fe57
 
 FINAL RESEARCH SHA:
-The commit that adds this handoff is the research tip for the documents. A commit cannot contain its own hash. After this file is committed, the branch tip of `cursor/forref-simulator-night-01` is the final research SHA. The session report names that tip.
+c2c88353654f826a2a3375b67a07bd8062d3b758
+
+That commit contains this handoff. The following commit only writes this hash into the file, because a commit cannot contain its own hash. Research behavior is the tree at `c2c8835`.
 
 PRODUCTION AUTHORITY BASELINE:
 39a676b25682e2b6930b6d4f7f02340b55ae01a8
