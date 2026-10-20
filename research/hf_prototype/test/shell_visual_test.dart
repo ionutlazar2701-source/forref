@@ -41,6 +41,7 @@ void main() {
       final inspection = shot.$1.startsWith('05');
       await tester.pumpWidget(
         MaterialApp(
+          theme: ThemeData(fontFamily: 'Roboto'),
           home: RepaintBoundary(
             key: const Key('shell-boundary'),
             child: ColoredBox(

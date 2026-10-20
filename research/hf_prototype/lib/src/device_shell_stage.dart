@@ -64,17 +64,38 @@ class _DeviceShellStageState extends State<DeviceShellStage> {
           viewport: viewport,
           stamp: widget.stamp,
         );
+    final name = _shortName(widget.profile);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          manifest.caption,
+          name,
           key: Key('shell-caption-${manifest.profileId}'),
-          style: const TextStyle(color: LabColors.navy, fontSize: 11, height: 1.25),
+          style: const TextStyle(
+            color: LabColors.navy,
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            fontFamily: 'Roboto',
+          ),
+        ),
+        Text(
+          'Fidelity: schematic · not measured · not certified',
+          style: const TextStyle(
+            color: LabColors.navy,
+            fontSize: 14,
+            fontFamily: 'Roboto',
+          ),
         ),
         Text(
           manifest.apertureEvidence,
-          style: const TextStyle(color: LabColors.steel, fontSize: 10, height: 1.2),
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: LabColors.steel,
+            fontSize: 12,
+            height: 1.25,
+            fontFamily: 'Roboto',
+          ),
         ),
         const SizedBox(height: 6),
         Expanded(
@@ -149,46 +170,48 @@ class DiagnosticViewport extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const style = TextStyle(
+      color: LabColors.navy,
+      fontSize: 13,
+      height: 1.2,
+      fontFamily: 'Roboto',
+    );
     return ColoredBox(
       color: LabColors.softWhite,
       child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              manifest.profileId,
+              textAlign: TextAlign.center,
+              style: style.copyWith(fontSize: 16, fontWeight: FontWeight.w700),
+            ),
+            const Text('DIAGNOSTIC VIEWPORT', textAlign: TextAlign.center, style: style),
+            const Text('Runtime: Research', textAlign: TextAlign.center, style: style),
+            Text(
+              'Fidelity: ${manifest.fidelity.name}',
+              textAlign: TextAlign.center,
+              style: style,
+            ),
+            Text(viewport.safeAreaLabel, textAlign: TextAlign.center, style: style),
+            Text(
+              viewport.basisLabel,
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: style.copyWith(color: LabColors.steel, fontSize: 11),
+            ),
+            if (stamp.isNotEmpty)
               Text(
-                manifest.profileId,
-                style: const TextStyle(color: LabColors.navy, fontSize: 16, fontWeight: FontWeight.w700),
+                stamp,
+                textAlign: TextAlign.center,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+                style: style.copyWith(color: LabColors.steel, fontSize: 11),
               ),
-              const Text(
-                'DIAGNOSTIC VIEWPORT',
-                style: TextStyle(color: LabColors.navy, fontSize: 12),
-              ),
-              Text(
-                'Runtime: Research',
-                style: const TextStyle(color: LabColors.navy, fontSize: 11),
-              ),
-              Text(
-                'Fidelity: ${manifest.fidelity.name}',
-                style: const TextStyle(color: LabColors.navy, fontSize: 11),
-              ),
-              Text(
-                viewport.safeAreaLabel,
-                style: const TextStyle(color: LabColors.navy, fontSize: 11),
-              ),
-              Text(
-                viewport.basisLabel,
-                style: const TextStyle(color: LabColors.steel, fontSize: 10),
-              ),
-              if (stamp.isNotEmpty)
-                Text(
-                  stamp,
-                  style: const TextStyle(color: LabColors.steel, fontSize: 10),
-                ),
-            ],
-          ),
+          ],
         ),
       ),
     );
@@ -315,6 +338,14 @@ class _ShellPainter extends CustomPainter {
     return oldDelegate.manifest.profileId != manifest.profileId ||
         oldDelegate.fit.scale != fit.scale;
   }
+}
+
+String _shortName(DeviceProfileV2 profile) {
+  final manufacturer = profile.identity.manufacturer.value ?? 'Unknown manufacturer';
+  final model = profile.identity.model.value ?? profile.identity.profileId;
+  final variant = profile.identity.variant.value;
+  if (variant == null) return '$manufacturer $model';
+  return '$manufacturer $model $variant';
 }
 
 Color _bodyColor(DeviceShellManifest manifest) {

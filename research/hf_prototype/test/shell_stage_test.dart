@@ -18,7 +18,7 @@ void main() {
       expect(find.text(profile.identity.profileId), findsOneWidget);
       expect(find.text('DIAGNOSTIC VIEWPORT'), findsOneWidget);
       expect(find.text('SAFE AREA UNKNOWN'), findsOneWidget);
-      expect(find.textContaining('Not certified'), findsOneWidget);
+      expect(find.textContaining('not certified'), findsOneWidget);
     }
   });
 
