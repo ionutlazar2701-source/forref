@@ -57,6 +57,8 @@ void main() {
       'apple-watch-series9-45',
       'garmin-approach-s60',
     ]);
+    expect(factualProfileById('huawei-watch-gt4-46')?.identity.variant.value, '46 mm');
+    expect(factualProfileById('not-a-device'), isNull);
     for (final profile in factualSeedProfiles) {
       expect(profile.display.safeArea.status, FactStatus.unknown);
       expect(profile.display.safeArea.value, isNull);

@@ -13,6 +13,14 @@ final List<DeviceProfileV2> factualSeedProfiles = [
   garminApproachS60,
 ];
 
+/// Selects a seed profile by id. Manufacturer is not a code branch.
+DeviceProfileV2? factualProfileById(String profileId) {
+  for (final profile in factualSeedProfiles) {
+    if (profile.identity.profileId == profileId) return profile;
+  }
+  return null;
+}
+
 final DeviceProfileV2 amazfitGts4 = _load(_amazfit);
 final DeviceProfileV2 huaweiWatchGt446 = _load(_huawei);
 final DeviceProfileV2 appleWatchSeries945 = _load(_apple);
