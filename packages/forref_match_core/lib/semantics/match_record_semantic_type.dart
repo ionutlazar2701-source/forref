@@ -33,6 +33,11 @@ enum V1SemanticTypeCode {
   temporalCorrection,
   correction,
   legalSupersession,
+  goal,
+  yellowCard,
+  sendOff,
+  substitution,
+  refereeEnteredFieldForMatchStart,
 }
 
 extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
@@ -49,6 +54,12 @@ extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
         V1SemanticTypeCode.temporalCorrection => 'TEMPORAL_CORRECTION',
         V1SemanticTypeCode.correction => 'CORRECTION',
         V1SemanticTypeCode.legalSupersession => 'LEGAL_SUPERSESSION',
+        V1SemanticTypeCode.goal => 'GOAL',
+        V1SemanticTypeCode.yellowCard => 'YELLOW_CARD',
+        V1SemanticTypeCode.sendOff => 'SEND_OFF',
+        V1SemanticTypeCode.substitution => 'SUBSTITUTION',
+        V1SemanticTypeCode.refereeEnteredFieldForMatchStart =>
+          'REFEREE_ENTERED_FIELD_FOR_MATCH_START',
       };
 
   SemanticTypeCategory get category => switch (this) {
@@ -64,6 +75,12 @@ extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
         V1SemanticTypeCode.correction ||
         V1SemanticTypeCode.legalSupersession =>
           SemanticTypeCategory.correctionSupersession,
+        V1SemanticTypeCode.goal => SemanticTypeCategory.event,
+        V1SemanticTypeCode.yellowCard => SemanticTypeCategory.event,
+        V1SemanticTypeCode.sendOff => SemanticTypeCategory.event,
+        V1SemanticTypeCode.substitution => SemanticTypeCategory.event,
+        V1SemanticTypeCode.refereeEnteredFieldForMatchStart =>
+          SemanticTypeCategory.authorityControl,
       };
 
   static V1SemanticTypeCode? parseWire(String value) => switch (value) {
@@ -79,6 +96,12 @@ extension V1SemanticTypeCodeWire on V1SemanticTypeCode {
         'TEMPORAL_CORRECTION' => V1SemanticTypeCode.temporalCorrection,
         'CORRECTION' => V1SemanticTypeCode.correction,
         'LEGAL_SUPERSESSION' => V1SemanticTypeCode.legalSupersession,
+        'GOAL' => V1SemanticTypeCode.goal,
+        'YELLOW_CARD' => V1SemanticTypeCode.yellowCard,
+        'SEND_OFF' => V1SemanticTypeCode.sendOff,
+        'SUBSTITUTION' => V1SemanticTypeCode.substitution,
+        'REFEREE_ENTERED_FIELD_FOR_MATCH_START' =>
+          V1SemanticTypeCode.refereeEnteredFieldForMatchStart,
         _ => null,
       };
 }
