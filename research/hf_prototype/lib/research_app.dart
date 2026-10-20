@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hf_v2/hf_v2.dart';
 import 'package:simulator_geometry/simulator_geometry.dart';
 
+import 'src/device_shell_stage.dart';
 import 'src/device_stage.dart';
 import 'src/lab_bridge.dart';
 import 'src/lab_theme.dart';
@@ -35,6 +36,8 @@ class ResearchController extends ChangeNotifier {
   HostDisplayEvidence hostEvidence = HostDisplayEvidence.unknown;
   String? importMessage;
   bool importAccepted = false;
+  bool deviceShellVisible = false;
+  String shellProfileId = 'amazfit-gts4';
 
   final List<DeviceProfile> catalog = [...starterProfiles];
   DeviceProfile activeProfile = illustrativePhonePortrait;
@@ -96,6 +99,21 @@ class ResearchController extends ChangeNotifier {
 
   void setHostEvidence(HostDisplayEvidence evidence) {
     hostEvidence = evidence;
+    notifyListeners();
+  }
+
+  void openDeviceShell(String profileId) {
+    if (factualProfileById(profileId) == null) return;
+    instrument.cancelOpenInputForDeviceChange(profileId);
+    deviceShellVisible = true;
+    shellProfileId = profileId;
+    notifyListeners();
+  }
+
+  void closeDeviceShell() {
+    if (!deviceShellVisible) return;
+    instrument.cancelOpenInputForDeviceChange(activeProfile.profileId);
+    deviceShellVisible = false;
     notifyListeners();
   }
 
@@ -420,6 +438,17 @@ class _StageRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final shell = factualProfileById(controller.shellProfileId);
+    if (controller.deviceShellVisible && shell != null) {
+      return DeviceShellStage(
+        key: ValueKey(shell.identity.profileId),
+        profile: shell,
+        onPointerCancel: (pointerId) {
+          controller.instrument.pointerCancel(pointerId: pointerId);
+          controller.refresh();
+        },
+      );
+    }
     final profiles = controller.presentation == LabPresentation.single
         ? [controller.activeProfile]
         : starterProfiles;
@@ -526,6 +555,15 @@ class _ContextStrip extends StatelessWidget {
             ActionChip(
               label: Text(shortProfileLabel(profile)),
               onPressed: () => controller.selectProfile(profile.profileId),
+            ),
+          ActionChip(
+            label: const Text('Geometry stage'),
+            onPressed: controller.closeDeviceShell,
+          ),
+          for (final profile in factualSeedProfiles)
+            ActionChip(
+              label: Text(_factualChipLabel(profile)),
+              onPressed: () => controller.openDeviceShell(profile.identity.profileId),
             ),
           ActionChip(
             label: Text(
@@ -792,4 +830,11 @@ class _TraceStrip extends StatelessWidget {
       ),
     );
   }
+}
+
+String _factualChipLabel(DeviceProfileV2 profile) {
+  final model = profile.identity.model.value ?? profile.identity.profileId;
+  final variant = profile.identity.variant.value;
+  if (variant == null) return model;
+  return '$model $variant';
 }
