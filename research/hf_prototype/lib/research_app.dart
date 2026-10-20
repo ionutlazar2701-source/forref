@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart' hide ActivateIntent;
 import 'package:hf_v2/hf_v2.dart';
+import 'dart:io';
+
 import 'package:simulator_geometry/simulator_geometry.dart';
 import 'package:simulator_hf_bridge/simulator_hf_bridge.dart';
 import 'package:simulator_presentation/simulator_presentation.dart';
+import 'package:simulator_sandbox/simulator_sandbox.dart';
 import 'package:watch_reference_ui/watch_reference_ui.dart';
 
 import 'src/device_shell_stage.dart';
@@ -44,6 +47,10 @@ class ResearchController extends ChangeNotifier {
   String shellProfileId = 'amazfit-gts4';
   int inputEpoch = 0;
   String evidenceStamp = '';
+  bool sandboxVisible = false;
+  SandboxSession? sandboxSession;
+  SandboxCaptureReport? sandboxReport;
+  Directory? _sandboxRoot;
 
   final List<DeviceProfile> catalog = [...starterProfiles];
   DeviceProfile activeProfile = illustrativePhonePortrait;
@@ -121,6 +128,75 @@ class ResearchController extends ChangeNotifier {
 
   Future<void> dispatchWatch(WatchIntent intent) async {
     await watchRuntime.dispatch(intent);
+    notifyListeners();
+  }
+
+  void showJournalSnapshot({
+    required String headline,
+    required String detail,
+    required List<String> lines,
+  }) {
+    sandboxVisible = true;
+    sandboxReport = null;
+    journalHeadline = headline;
+    journalDetail = detail;
+    journalLines = lines;
+    notifyListeners();
+  }
+
+  String? journalHeadline;
+  String? journalDetail;
+  List<String> journalLines = const [];
+
+  Future<void> showSandbox() async {
+    sandboxVisible = true;
+    if (sandboxSession == null) {
+      _sandboxRoot = await Directory.systemTemp.createTemp('forref-sim-lab-');
+      sandboxSession = await SandboxSession.open(
+        simulatorRoot: _sandboxRoot!,
+        sessionId: 'lab-session01',
+      );
+    }
+    notifyListeners();
+  }
+
+  Future<void> commitSandboxYellow() async {
+    await showSandbox();
+    sandboxReport = await sandboxSession!.commitYellow(
+      captureIntentId: 'sim-intent-lab-yellow',
+      participantId: sandboxParticipantId,
+    );
+    notifyListeners();
+  }
+
+  Future<void> abortSandboxYellow() async {
+    await showSandbox();
+    sandboxSession!.failNextCommit();
+    sandboxReport = await sandboxSession!.commitYellow(
+      captureIntentId: 'sim-intent-lab-abort',
+      participantId: sandboxParticipantId,
+    );
+    notifyListeners();
+  }
+
+  Future<void> reopenSandbox() async {
+    final root = _sandboxRoot;
+    if (root == null || sandboxSession == null) return;
+    await sandboxSession!.close();
+    sandboxSession = await SandboxSession.open(
+      simulatorRoot: root,
+      sessionId: 'lab-session01',
+    );
+    final stored = await sandboxSession!.readBack('sim-yellow-sim-intent-lab-yellow');
+    sandboxSession!.journal.observe(
+      JournalEventKind.recordReadBack,
+      stored == null ? 'missing after reopen' : 'reopen ${stored.recordId}',
+    );
+    final ids = await sandboxSession!.rebuildProjection();
+    sandboxSession!.journal.observe(
+      JournalEventKind.projectionRebuilt,
+      'reopen ${ids.join(',')}',
+    );
     notifyListeners();
   }
 
@@ -426,6 +502,7 @@ class _FocusBody extends StatelessWidget {
         Expanded(child: _StageRow(controller: controller)),
         _ContextStrip(controller: controller),
         _SelectionStrip(controller: controller),
+        if (controller.sandboxVisible) _SandboxJournal(controller: controller),
       ],
     );
   }
@@ -610,6 +687,24 @@ class _ContextStrip extends StatelessWidget {
             label: const Text('Geometry stage'),
             onPressed: controller.closeDeviceShell,
           ),
+          ActionChip(
+            label: const Text('Integration sandbox'),
+            onPressed: controller.showSandbox,
+          ),
+          if (controller.sandboxVisible) ...[
+            ActionChip(
+              label: const Text('Sandbox yellow'),
+              onPressed: controller.commitSandboxYellow,
+            ),
+            ActionChip(
+              label: const Text('Sandbox abort'),
+              onPressed: controller.abortSandboxYellow,
+            ),
+            ActionChip(
+              label: const Text('Sandbox reopen'),
+              onPressed: controller.reopenSandbox,
+            ),
+          ],
           if (controller.deviceShellVisible) ...[
             const Text(
               'Command Lab',
@@ -887,6 +982,69 @@ class _TraceStrip extends StatelessWidget {
               style: const TextStyle(fontSize: 11, color: LabColors.navy),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _SandboxJournal extends StatelessWidget {
+  const _SandboxJournal({required this.controller});
+
+  final ResearchController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final report = controller.sandboxReport;
+    final journal = controller.sandboxSession?.journal.entries ?? const [];
+    final seeded = controller.journalLines;
+    return SizedBox(
+      height: 240,
+      child: DecoratedBox(
+        key: const Key('event-journal'),
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: LabColors.navy)),
+          color: Color(0xFFF8FAFC),
+        ),
+        child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          children: [
+            Text(
+              controller.journalHeadline ??
+                  (report == null
+                      ? 'Event Journal · Integration Sandbox · no capture yet'
+                      : 'Event Journal · ${report.label} · ${report.measurementLabel}'),
+              style: const TextStyle(
+                color: LabColors.navy,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
+            ),
+            if (controller.evidenceStamp.isNotEmpty)
+              Text(
+                controller.evidenceStamp,
+                style: const TextStyle(color: LabColors.steel, fontSize: 11),
+              ),
+            if (controller.journalDetail != null)
+              Text(
+                controller.journalDetail!,
+                style: const TextStyle(color: LabColors.navy, fontSize: 12),
+              ),
+            if (report != null)
+              Text(
+                'intent ${report.captureIntentId} record ${report.recordId ?? '-'} '
+                'bytes ${report.encodedBytes} file ${report.fileBytesBefore}->${report.fileBytesAfter} '
+                'records ${report.recordCount}',
+                style: const TextStyle(color: LabColors.navy, fontSize: 12),
+              ),
+            for (final line in seeded)
+              Text(line, style: const TextStyle(color: LabColors.navy, fontSize: 11)),
+            for (final entry in journal)
+              Text(
+                '${entry.sequence} ${entry.kind.name} ${entry.detail}',
+                style: const TextStyle(color: LabColors.navy, fontSize: 11),
+              ),
+          ],
+        ),
       ),
     );
   }

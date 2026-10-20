@@ -21,6 +21,8 @@ dependencies:
     path: ../simulator_presentation
   watch_reference_ui:
     path: ../watch_reference_ui
+  simulator_sandbox:
+    path: ../simulator_sandbox
 
 dev_dependencies:
   flutter_test:
