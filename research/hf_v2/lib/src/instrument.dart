@@ -886,6 +886,8 @@ final class ResearchInstrument {
       teamContext: teamContext,
       scope: scope,
       selectionKind: selectionKind,
+      yellowOffered: yellowOffered,
+      directSendOffOffered: directSendOffOffered,
       selectedSubjectId: selectedSubjectId,
       selectedSubjectKind: selectedKind,
       outId: outId,

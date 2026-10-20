@@ -39,6 +39,8 @@ final class ResearchTruthSnapshot {
     required this.teamContext,
     required this.scope,
     required this.selectionKind,
+    required this.yellowOffered,
+    required this.directSendOffOffered,
     required this.selectedSubjectId,
     required this.selectedSubjectKind,
     required this.outId,
@@ -70,6 +72,8 @@ final class ResearchTruthSnapshot {
   final TeamContextKind teamContext;
   final ResearchScope scope;
   final SubjectSelectionKind selectionKind;
+  final bool yellowOffered;
+  final bool directSendOffOffered;
   final String? selectedSubjectId;
   final SubjectKind? selectedSubjectKind;
   final String? outId;
