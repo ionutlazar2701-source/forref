@@ -3,6 +3,7 @@
 /// A loaded profile is not platform proof and not a FORREF certification.
 library;
 
+export 'src/catalog_v2.dart';
 export 'src/evidence.dart';
 export 'src/geometry.dart';
 export 'src/layout.dart';
