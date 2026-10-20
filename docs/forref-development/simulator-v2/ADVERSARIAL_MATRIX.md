@@ -21,6 +21,11 @@ Implementer checks are not an independent review.
 | Manufacturer branch in geometry | S2.0 | Source scan found none |
 | Shell and aperture mismatch | S2.1 | Aperture is a separate bounds and clip. Profile safe area stays unknown |
 | Bezel touch | S2.1 | Bezel, strap, and round-case corner do not hit the aperture. Widget bezel tap does not press the child |
-| Y2 stale touch to send-off inside the watch UI | S2.2 | not run |
+| Y2 stale touch to send-off inside the watch UI | S2.2 | Second-caution send-off from the watch writes nothing before a successor |
+| Focus loss during the yellow press | S2.2 | The press does not freeze or record a yellow |
+| Device change during a press | S2.2 | The route stays live and no caution is written |
+| In-flight Home 14 retargeted after a watch yellow | S2.2 | Frozen subject stays `p-home-14` |
+| Frozen OUT 9 / IN 7 changed from the watch flow | S2.2 | Frozen pair stays. No substitution record |
+| Device switch after a simulated yellow | S2.2 | Caution count stays 1 |
 | Duplicate capture / false journal success | S2.3 | not run |
 | Sandbox database alias | S2.3 | not run |

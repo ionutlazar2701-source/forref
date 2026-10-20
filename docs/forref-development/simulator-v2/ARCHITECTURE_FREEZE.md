@@ -1,6 +1,6 @@
 # Simulator Lab V2 architecture freeze
 
-Status: S2.0 implemented. Later waves are not started in this document's implementation claims.
+Status: S2.0, S2.1, and S2.2 are implemented. S2.3 and S2.4 are not started in this document's implementation claims.
 
 ## Authority
 
@@ -10,7 +10,7 @@ Exactly one writable Match Authority. This program does not add a second writer.
 
 Phone authority cutover: HOLD.
 
-The Flutter watch reference app, when it exists, is a simulator reference. It is not the production SwiftUI, Wear Compose, Connect IQ, Zepp OS, or Huawei wearable binary.
+`research/watch_reference_ui` is the Flutter FORREF Watch Reference App used inside Simulator Lab. It is not the production SwiftUI, Wear Compose, Connect IQ, Zepp OS, or Huawei wearable binary.
 
 ## Package DAG
 
@@ -27,14 +27,15 @@ research/simulator_hf_bridge
 
 `simulator_geometry` and `simulator_presentation` do not depend on each other. The bridge depends on both and on `hf_v2`. `hf_v2` does not depend on the bridge.
 
+`research/watch_reference_ui` depends on Flutter and `simulator_presentation`. It does not depend on `hf_v2`.
+
+`research/hf_prototype` mounts `WatchReferenceApp` inside `DeviceShellStage` when a factual shell is open. The geometry stage remains available and still draws the Night I sporting targets so those tests stay intact. That stage is not the V2 device shell.
+
 Not yet created:
 
-- `research/watch_reference_ui`
 - `research/simulator_sandbox`
 
-`research/hf_prototype` can open a factual shell. The child is still the diagnostic viewport. The watch reference app is not mounted.
-
-Production packages do not depend on research packages. Research packages do not depend on `forref_match_core` or `forref_match_persistence` in S2.0.
+Production packages do not depend on research packages. Research packages do not depend on `forref_match_core` or `forref_match_persistence`.
 
 ## Layers
 
