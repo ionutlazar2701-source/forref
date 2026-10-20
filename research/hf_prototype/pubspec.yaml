@@ -15,6 +15,12 @@ dependencies:
     path: ../hf_v2
   simulator_geometry:
     path: ../simulator_geometry
+  simulator_hf_bridge:
+    path: ../simulator_hf_bridge
+  simulator_presentation:
+    path: ../simulator_presentation
+  watch_reference_ui:
+    path: ../watch_reference_ui
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide ActivateIntent;
 import 'package:hf_v2/hf_v2.dart';
 import 'package:simulator_geometry/simulator_geometry.dart';
+import 'package:simulator_hf_bridge/simulator_hf_bridge.dart';
+import 'package:simulator_presentation/simulator_presentation.dart';
+import 'package:watch_reference_ui/watch_reference_ui.dart';
 
 import 'src/device_shell_stage.dart';
 import 'src/device_stage.dart';
@@ -20,12 +23,13 @@ enum LabPresentation { single, comparison }
 class ResearchController extends ChangeNotifier {
   ResearchController({ResearchInstrument? instrument})
       : instrument = instrument ?? ResearchInstrument() {
-    this.instrument.loadScenario(ScenarioId.s01YellowNoPrior);
+    watchRuntime = HfPresentationRuntime(instrument: this.instrument);
     _applyActiveLayout();
     this.instrument.noteProfileSelected(activeProfile.profileId);
   }
 
   final ResearchInstrument instrument;
+  late final HfPresentationRuntime watchRuntime;
   ResearchPage page = ResearchPage.live;
   LabMode mode = LabMode.focus;
   LabPresentation presentation = LabPresentation.single;
@@ -38,6 +42,8 @@ class ResearchController extends ChangeNotifier {
   bool importAccepted = false;
   bool deviceShellVisible = false;
   String shellProfileId = 'amazfit-gts4';
+  int inputEpoch = 0;
+  String evidenceStamp = '';
 
   final List<DeviceProfile> catalog = [...starterProfiles];
   DeviceProfile activeProfile = illustrativePhonePortrait;
@@ -103,15 +109,37 @@ class ResearchController extends ChangeNotifier {
   }
 
   void openDeviceShell(String profileId) {
-    if (factualProfileById(profileId) == null) return;
+    final profile = factualProfileById(profileId);
+    if (profile == null) return;
+    inputEpoch += 1;
     instrument.cancelOpenInputForDeviceChange(profileId);
+    watchRuntime.bindProfile(profile);
     deviceShellVisible = true;
     shellProfileId = profileId;
     notifyListeners();
   }
 
+  Future<void> dispatchWatch(WatchIntent intent) async {
+    await watchRuntime.dispatch(intent);
+    notifyListeners();
+  }
+
+  Future<void> operatorHome14Yellow() async {
+    await watchRuntime.dispatch(
+      const SelectParticipantIntent('p-home-14', origin: IntentOrigin.operatorFixture),
+    );
+    await watchRuntime.dispatch(
+      const OfferYellowIntent(origin: IntentOrigin.operatorFixture),
+    );
+    await watchRuntime.dispatch(
+      const ActivateIntent(PresentationAction.yellow, origin: IntentOrigin.operatorFixture),
+    );
+    notifyListeners();
+  }
+
   void closeDeviceShell() {
     if (!deviceShellVisible) return;
+    inputEpoch += 1;
     instrument.cancelOpenInputForDeviceChange(activeProfile.profileId);
     deviceShellVisible = false;
     notifyListeners();
@@ -203,6 +231,7 @@ class ResearchController extends ChangeNotifier {
   }
 
   void focusLost() {
+    inputEpoch += 1;
     instrument.focusLost();
     notifyListeners();
   }
@@ -440,13 +469,34 @@ class _StageRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final shell = factualProfileById(controller.shellProfileId);
     if (controller.deviceShellVisible && shell != null) {
-      return DeviceShellStage(
-        key: ValueKey(shell.identity.profileId),
-        profile: shell,
-        onPointerCancel: (pointerId) {
-          controller.instrument.pointerCancel(pointerId: pointerId);
-          controller.refresh();
-        },
+      final viewport = viewportContextFor(shell);
+      final trace = controller.watchRuntime.intentTrace;
+      final lastTrace = trace.isEmpty
+          ? 'Intent trace: none'
+          : '${trace.last.originLabel} ${trace.last.intentName}';
+      return Column(
+        children: [
+          Text(lastTrace, key: const Key('intent-origin-trace')),
+          Expanded(
+            child: DeviceShellStage(
+              key: ValueKey(shell.identity.profileId),
+              profile: shell,
+              stamp: controller.evidenceStamp,
+              onPointerCancel: (pointerId) {
+                controller.instrument.pointerCancel(pointerId: pointerId);
+                controller.refresh();
+              },
+              child: WatchReferenceApp(
+                state: controller.watchRuntime.watchState,
+                degradedLabel: viewport.usesNativeLogicalViewport ? null : viewport.basisLabel,
+                inputEpoch: controller.inputEpoch,
+                onIntent: (intent) {
+                  controller.dispatchWatch(intent);
+                },
+              ),
+            ),
+          ),
+        ],
       );
     }
     final profiles = controller.presentation == LabPresentation.single
@@ -560,6 +610,16 @@ class _ContextStrip extends StatelessWidget {
             label: const Text('Geometry stage'),
             onPressed: controller.closeDeviceShell,
           ),
+          if (controller.deviceShellVisible) ...[
+            const Text(
+              'Command Lab',
+              style: TextStyle(color: LabColors.navy, fontWeight: FontWeight.w700),
+            ),
+            ActionChip(
+              label: const Text('Operator fixture: yellow Home 14'),
+              onPressed: controller.operatorHome14Yellow,
+            ),
+          ],
           for (final profile in factualSeedProfiles)
             ActionChip(
               label: Text(_factualChipLabel(profile)),

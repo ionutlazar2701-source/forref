@@ -145,6 +145,20 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
+  simulator_hf_bridge:
+    dependency: "direct main"
+    description:
+      path: "../simulator_hf_bridge"
+      relative: true
+    source: path
+    version: "0.1.0"
+  simulator_presentation:
+    dependency: "direct main"
+    description:
+      path: "../simulator_presentation"
+      relative: true
+    source: path
+    version: "0.1.0"
   sky_engine:
     dependency: transitive
     description: flutter
@@ -214,6 +228,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "15.4.0"
+  watch_reference_ui:
+    dependency: "direct main"
+    description:
+      path: "../watch_reference_ui"
+      relative: true
+    source: path
+    version: "0.1.0"
 sdks:
   dart: ">=3.11.0-0 <4.0.0"
   flutter: ">=3.18.0-18.0.pre.54"

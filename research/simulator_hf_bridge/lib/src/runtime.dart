@@ -99,14 +99,20 @@ final class HfPresentationRuntime implements SimulatorPresentationRuntime {
         _instrument.selectIn(participantId);
         _route = WatchRoute.substitutionFlow;
       case ActivateIntent(:final action):
-        _instrument.accessibilityInvoke(switch (action) {
-          PresentationAction.yellow => FinalActionKind.recordYellow,
-          PresentationAction.directSendOff =>
-            FinalActionKind.recordDirectSendOff,
-          PresentationAction.secondCautionSendOff =>
-            FinalActionKind.recordSecondCautionSendOff,
-          PresentationAction.substitution => FinalActionKind.recordSubstitution,
-        });
+        switch (action) {
+          case PresentationAction.yellow:
+            _instrument.offerRecordYellow();
+            _instrument.accessibilityInvoke(FinalActionKind.recordYellow);
+          case PresentationAction.directSendOff:
+            _instrument.offerDirectSendOff();
+            _instrument.accessibilityInvoke(FinalActionKind.recordDirectSendOff);
+          case PresentationAction.secondCautionSendOff:
+            _instrument.accessibilityInvoke(
+              FinalActionKind.recordSecondCautionSendOff,
+            );
+          case PresentationAction.substitution:
+            _instrument.accessibilityInvoke(FinalActionKind.recordSubstitution);
+        }
       case ResolveSimulatedCommitIntent():
         _instrument.resolveSimulatedCommit();
       case AcknowledgeUnknownIntent():

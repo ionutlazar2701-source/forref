@@ -97,6 +97,18 @@ class _DeviceShellStageState extends State<DeviceShellStage> {
             fontFamily: 'Roboto',
           ),
         ),
+        if (widget.child != null && widget.stamp.isNotEmpty)
+          Text(
+            widget.stamp,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: LabColors.steel,
+              fontSize: 11,
+              height: 1.25,
+              fontFamily: 'Roboto',
+            ),
+          ),
         const SizedBox(height: 6),
         Expanded(
           child: LayoutBuilder(
