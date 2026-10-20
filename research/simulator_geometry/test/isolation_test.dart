@@ -44,7 +44,13 @@ void main() {
     for (final entity in phone.listSync(recursive: true)) {
       if (entity is! File || !entity.path.endsWith('.dart')) continue;
       final text = entity.readAsStringSync();
-      for (final token in ['simulator_geometry', 'hf_prototype', 'hf_v2']) {
+      for (final token in [
+        'simulator_geometry',
+        'simulator_presentation',
+        'simulator_hf_bridge',
+        'hf_prototype',
+        'hf_v2',
+      ]) {
         if (text.contains(token)) hits.add('${entity.path}: $token');
       }
     }
