@@ -9,4 +9,5 @@ export 'src/geometry.dart';
 export 'src/layout.dart';
 export 'src/profile.dart';
 export 'src/profile_v2.dart';
+export 'src/shell.dart';
 export 'src/viewport_v2.dart';
