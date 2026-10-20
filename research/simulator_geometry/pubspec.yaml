@@ -1,0 +1,14 @@
+name: simulator_geometry
+description: >
+  Pure-Dart device profiles, geometry, and calibration for the FORREF
+  research simulator. Illustrative fixtures are not hardware certification.
+  This package does not write Match Memory.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.0

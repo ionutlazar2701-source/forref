@@ -1,0 +1,24 @@
+name: watch_reference_ui
+description: >
+  FORREF Watch Reference App for Simulator Lab. Flutter presentation only.
+  This is not a production watchOS, Wear OS, Connect IQ, Zepp OS, or
+  Huawei wearable binary.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  simulator_presentation:
+    path: ../simulator_presentation
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true

@@ -120,7 +120,14 @@ void main() {
       ((await store.getById('rec-1'))!.payload as StructuredPayload).fields['v'],
       1,
     );
-    expect(store.tableNames(), ['committed_match_records']);
+    expect(
+      store.tableNames(),
+      containsAll([
+        'capture_intent_admissions',
+        'committed_match_records',
+        'generation_one_authority_roots',
+      ]),
+    );
     await store.close();
   });
 
@@ -128,11 +135,25 @@ void main() {
     final file = File('${temp.path}/memory.sqlite');
     final store = SqliteDurableMatchStore.open(file);
     await store.commit(_record(recordId: 'rec-1', originSequence: 1));
-    expect(store.tableNames(), ['committed_match_records']);
+    expect(
+      store.tableNames(),
+      containsAll([
+        'capture_intent_admissions',
+        'committed_match_records',
+        'generation_one_authority_roots',
+      ]),
+    );
     await store.close();
 
     final reopened = SqliteDurableMatchStore.open(file);
-    expect(reopened.tableNames(), ['committed_match_records']);
+    expect(
+      reopened.tableNames(),
+      containsAll([
+        'capture_intent_admissions',
+        'committed_match_records',
+        'generation_one_authority_roots',
+      ]),
+    );
     expect(await reopened.readCommittedForMatch('match-1'), hasLength(1));
     await reopened.close();
   });

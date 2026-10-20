@@ -1,0 +1,33 @@
+name: hf_prototype
+description: >
+  Non-production FORREF Simulator Lab. Not the referee phone app.
+  Simulated Saved is not production D1 proof.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  hf_v2:
+    path: ../hf_v2
+  simulator_geometry:
+    path: ../simulator_geometry
+  simulator_hf_bridge:
+    path: ../simulator_hf_bridge
+  simulator_presentation:
+    path: ../simulator_presentation
+  watch_reference_ui:
+    path: ../watch_reference_ui
+  simulator_sandbox:
+    path: ../simulator_sandbox
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true

@@ -5,9 +5,14 @@ import '../ports.dart';
 import '../record_kind.dart';
 import '../relationships.dart';
 import 'match_projection_state.dart';
+import 'effective_goal_resolver.dart';
 import 'projection_context.dart';
 import 'projection_semantics_resolver.dart';
 import 'projection_trust.dart';
+import 'score_completeness_proof.dart';
+import 'score_projection.dart';
+import '../match_team.dart';
+import '../semantics/v1_semantic_payload.dart';
 
 /// Rebuilds [MatchProjectionState] from committed records only.
 ///
@@ -140,7 +145,7 @@ final class DeterministicMatchProjector {
       conflictNotes: conflictNotes,
     );
 
-    final facetTrust = <String, FacetTrust>{
+    var facetTrust = <String, FacetTrust>{
       for (final facet in context.trackedFacets)
         facet: FacetTrust(
           facetId: facet,
@@ -153,16 +158,116 @@ final class DeterministicMatchProjector {
         ),
     };
 
+    final scoreCauses = facetCauses[ProjectionFacet.score] ?? {};
+    final appliesProductionScore = context.scoreCompletenessProof != null ||
+        sorted.any((record) => record.payload is GoalPayload);
+    final scoreProjection = appliesProductionScore
+        ? _deriveScoreProjection(
+            matchId: matchId,
+            sortedRecords: sorted,
+            recordsById: byId,
+            context: context,
+            scoreAuthorityConflict:
+                scoreCauses.contains(_TrustCause.authorityConflict),
+            scoreCorrectionConflict:
+                scoreCauses.contains(_TrustCause.correctionConflict),
+            scoreMissingDependency:
+                scoreCauses.contains(_TrustCause.missingDependency),
+            unsupportedSemanticRecordIds: unsupportedSemanticRecordIds,
+            missingDependencyTargets: missingDependencyTargets.toSet().toList()
+              ..sort(),
+          )
+        : const ScoreUnavailable();
+
+    if (appliesProductionScore &&
+        context.trackedFacets.contains(ProjectionFacet.score)) {
+      final scoreTrust = switch (scoreProjection) {
+        KnownScore() => ProjectionTrust.trusted,
+        ScoreConflicted() => ProjectionTrust.conflicted,
+        ScoreUnavailable() => ProjectionTrust.untrusted,
+      };
+      final scoreReason = switch (scoreProjection) {
+        KnownScore() =>
+          'explicit semantic support with complete non-conflicted evidence',
+        ScoreConflicted() => 'contradictory authoritative corrections',
+        ScoreUnavailable() => _resolveReason(
+            facetCauses[ProjectionFacet.score] ?? {},
+            ProjectionFacet.score,
+          ) ??
+            'score completeness proof not satisfied',
+      };
+      facetTrust = Map<String, FacetTrust>.from(facetTrust);
+      facetTrust[ProjectionFacet.score] = FacetTrust(
+        facetId: ProjectionFacet.score,
+        trust: scoreTrust,
+        reason: scoreReason,
+      );
+    }
+
     return MatchProjectionState(
       matchId: matchId,
       evaluatedAuthorityGeneration: context.evaluatedAuthorityGeneration,
       facetTrust: facetTrust,
+      scoreProjection: scoreProjection,
       committedRecordIds: [for (final record in sorted) record.recordId],
       missingDependencyTargets: missingDependencyTargets.toSet().toList()
         ..sort(),
       conflictNotes: conflictNotes,
       unsupportedSemanticRecordIds: unsupportedSemanticRecordIds,
     );
+  }
+
+  ScoreProjection _deriveScoreProjection({
+    required String matchId,
+    required List<MatchRecord> sortedRecords,
+    required Map<String, MatchRecord> recordsById,
+    required ProjectionContext context,
+    required bool scoreAuthorityConflict,
+    required bool scoreCorrectionConflict,
+    required bool scoreMissingDependency,
+    required List<String> unsupportedSemanticRecordIds,
+    required List<String> missingDependencyTargets,
+  }) {
+    if (!context.trackedFacets.contains(ProjectionFacet.score)) {
+      return const ScoreUnavailable();
+    }
+
+    final effective = resolveEffectiveGoals(recordsById: recordsById);
+    if (effective is EffectiveGoalConflicted) {
+      return const ScoreConflicted();
+    }
+    if (effective is EffectiveGoalUnavailable) {
+      return const ScoreUnavailable();
+    }
+    final effectiveGoals = (effective as EffectiveGoalSet).goals;
+
+    final proofCheck = validateScoreCompletenessProof(
+      matchId: matchId,
+      sortedRecords: sortedRecords,
+      proof: context.scoreCompletenessProof,
+      scoreAuthorityConflict: scoreAuthorityConflict,
+      scoreCorrectionConflict: scoreCorrectionConflict,
+      scoreMissingDependency: scoreMissingDependency,
+      unsupportedSemanticRecordIds: unsupportedSemanticRecordIds,
+      missingDependencyTargets: missingDependencyTargets,
+    );
+    if (proofCheck.conflicted) {
+      return const ScoreConflicted();
+    }
+    if (!proofCheck.ready) {
+      return const ScoreUnavailable();
+    }
+
+    final tallies = <MatchTeamId, int>{
+      for (final team in proofCheck.teamIds) team: 0,
+    };
+    for (final goal in effectiveGoals) {
+      if (!tallies.containsKey(goal.scoringTeamId)) {
+        return const ScoreUnavailable();
+      }
+      tallies[goal.scoringTeamId] = tallies[goal.scoringTeamId]! + 1;
+    }
+    return KnownScore(tallies);
   }
 
   static int _deterministicOrder(MatchRecord a, MatchRecord b) {

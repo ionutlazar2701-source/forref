@@ -4,6 +4,7 @@ import '../relationships.dart';
 import 'match_record_semantic_type.dart';
 import 'schema_semantic_interpreter.dart';
 import 'v1_semantic_contract.dart';
+import 'v1_semantic_payload.dart';
 
 /// Frozen v1 semantic interpretation table.
 ///
@@ -24,6 +25,7 @@ final class V1SchemaSemanticInterpreter implements SchemaSemanticInterpreter {
     final contract = V1SemanticContract.byCode[identity.code];
     if (contract == null) return null;
     if (record.recordKind != contract.requiredRecordKind) return null;
+    if (!_payloadMatchesIdentity(record, identity.code)) return null;
 
     final targetId = _targetRecordId(record, identity.code);
     final missingTarget = contract.requiresTargetRelationship && targetId == null;
@@ -34,6 +36,33 @@ final class V1SchemaSemanticInterpreter implements SchemaSemanticInterpreter {
       missingRequiredRelationship: missingTarget,
       requiredTargetRecordId: targetId,
     );
+  }
+
+  static bool _payloadMatchesIdentity(
+    MatchRecord record,
+    V1SemanticTypeCode code,
+  ) {
+    final payload = record.payload;
+    return switch (code) {
+      V1SemanticTypeCode.goal => payload is GoalPayload,
+      V1SemanticTypeCode.yellowCard => isYellowCardPayload(payload),
+      V1SemanticTypeCode.sendOff => payload is SendOffPayload,
+      V1SemanticTypeCode.substitution => payload is SubstitutionPayload,
+      V1SemanticTypeCode.refereeEnteredFieldForMatchStart =>
+        payload is RefereeEnteredFieldPayload,
+      V1SemanticTypeCode.correction => payload is CorrectionPayload,
+      V1SemanticTypeCode.temporalCorrection => payload is TemporalCorrectionPayload,
+      V1SemanticTypeCode.legalSupersession => payload is LegalSupersessionPayload,
+      V1SemanticTypeCode.matchStarted ||
+      V1SemanticTypeCode.periodStarted ||
+      V1SemanticTypeCode.periodEnded ||
+      V1SemanticTypeCode.temporarySuspensionStarted ||
+      V1SemanticTypeCode.temporarySuspensionEnded ||
+      V1SemanticTypeCode.matchAbandoned ||
+      V1SemanticTypeCode.matchEnded =>
+        payload is TemporalTransitionPayload &&
+            payload.semanticType == code,
+    };
   }
 
   static String? _targetRecordId(MatchRecord record, V1SemanticTypeCode code) {

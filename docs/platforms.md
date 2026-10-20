@@ -2,9 +2,11 @@
 
 Where the app runs, in which order, and which devices are not a product surface.
 
-## Build order (frozen)
+## Build order (implementation sequencing)
 
-1. **Phone app (Flutter, Android + iOS)** — real budget compatibility: no watch required
+This order is how clients are built. It does not make the phone the permanent in-match authority. It does not make a watch a presentation-only upgrade. A supported watch, once its platform profile is certified and MATCH READY has established it as the active capture authority, may operate as the autonomous in-match instrument under [forref-development/FOUNDATION_FREEZE.md](forref-development/FOUNDATION_FREEZE.md). No watch is production-certified by this page. WAVE 1 remains HOLD.
+
+1. **Phone app (Flutter, Android + iOS)** — accessibility: the supported workflow must not require a watch
 2. **Wear OS native** — largest Android watch set, including used Galaxy Watch 4/5/6 (~80–150€)
 3. **watchOS** — so Refsix is not alone on Apple
 4. **Garmin Connect IQ** — battery life; separate language (Monkey C)

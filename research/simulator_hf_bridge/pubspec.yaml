@@ -1,0 +1,21 @@
+name: simulator_hf_bridge
+description: >
+  Maps the FORREF research instrument onto the simulator presentation
+  contract. The instrument remains the research writer.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  hf_v2:
+    path: ../hf_v2
+  simulator_geometry:
+    path: ../simulator_geometry
+  simulator_presentation:
+    path: ../simulator_presentation
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.0
