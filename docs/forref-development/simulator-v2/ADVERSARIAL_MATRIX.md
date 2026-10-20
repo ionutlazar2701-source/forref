@@ -27,5 +27,9 @@ Implementer checks are not an independent review.
 | In-flight Home 14 retargeted after a watch yellow | S2.2 | Frozen subject stays `p-home-14` |
 | Frozen OUT 9 / IN 7 changed from the watch flow | S2.2 | Frozen pair stays. No substitution record |
 | Device switch after a simulated yellow | S2.2 | Caution count stays 1 |
-| Duplicate capture / false journal success | S2.3 | not run |
-| Sandbox database alias | S2.3 | not run |
+| Duplicate capture / false journal success | S2.3 | Same intent returns the existing record and does not use the fresh committed label |
+| Sandbox database alias | S2.3 | Relative roots, `..`, and `:memory:` are refused |
+| Commit abort before COMMIT | S2.3 | Label is SANDBOX COMMIT FAILED and the yellow row is absent |
+| Journal failure after commit | S2.3 | The record remains readable |
+| Journal deletion | S2.3 | Clearing the journal leaves the record |
+| Reopen and projection rebuild | S2.3 | The same file rebuilds a projection that contains the record id |

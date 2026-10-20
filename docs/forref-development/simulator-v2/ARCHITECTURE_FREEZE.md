@@ -1,6 +1,6 @@
 # Simulator Lab V2 architecture freeze
 
-Status: S2.0, S2.1, and S2.2 are implemented. S2.3 and S2.4 are not started in this document's implementation claims.
+Status: S2.0 through S2.3 are implemented. S2.4 is not started.
 
 ## Authority
 
@@ -31,11 +31,9 @@ research/simulator_hf_bridge
 
 `research/hf_prototype` mounts `WatchReferenceApp` inside `DeviceShellStage` when a factual shell is open. The geometry stage remains available and still draws the Night I sporting targets so those tests stay intact. That stage is not the V2 device shell.
 
-Not yet created:
+`research/simulator_sandbox` is the only research package that depends on `forref_match_core` and `forref_match_persistence`. It does not modify them.
 
-- `research/simulator_sandbox`
-
-Production packages do not depend on research packages. Research packages do not depend on `forref_match_core` or `forref_match_persistence`.
+Production packages do not depend on research packages.
 
 ## Layers
 
