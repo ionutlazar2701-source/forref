@@ -6,8 +6,8 @@ Night I evidence is unchanged. Windows application launch observed by the founde
 
 | Wave | Status | Tip at implementation | Notes |
 | --- | --- | --- | --- |
-| S2.0 | PASS | `50709edf81d92fadb277c2ee96376afadfefc7f9` | Catalog and presentation runtime. Shell UI not started. |
-| S2.1 | not started | | Prerequisite met. |
+| S2.0 | PASS | `805b3db51f05563e5fb0b151bce38406575a2328` | Catalog and presentation runtime. |
+| S2.1 | PASS | `69775730b6362d89033e25552c586e26ba963837` | Schematic shells. Diagnostic child, not the watch app. |
 | S2.2 | not started | | |
 | S2.3 | not started | | |
 | S2.4 | not started | | |

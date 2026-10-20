@@ -19,8 +19,8 @@ Implementer checks are not an independent review.
 | Unavailable prior caution shown as known none | S2.0 | Stays unavailable |
 | Profile bind appends a record | S2.0 | Caution count unchanged |
 | Manufacturer branch in geometry | S2.0 | Source scan found none |
-| Shell and aperture mismatch | S2.1 | not run |
-| Bezel touch | S2.1 | not run |
+| Shell and aperture mismatch | S2.1 | Aperture is a separate bounds and clip. Profile safe area stays unknown |
+| Bezel touch | S2.1 | Bezel, strap, and round-case corner do not hit the aperture. Widget bezel tap does not press the child |
 | Y2 stale touch to send-off inside the watch UI | S2.2 | not run |
 | Duplicate capture / false journal success | S2.3 | not run |
 | Sandbox database alias | S2.3 | not run |

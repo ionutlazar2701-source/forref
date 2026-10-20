@@ -32,7 +32,7 @@ Not yet created:
 - `research/watch_reference_ui`
 - `research/simulator_sandbox`
 
-`research/hf_prototype` remains the Night I composition root. It does not yet mount schema v2 shells.
+`research/hf_prototype` can open a factual shell. The child is still the diagnostic viewport. The watch reference app is not mounted.
 
 Production packages do not depend on research packages. Research packages do not depend on `forref_match_core` or `forref_match_persistence` in S2.0.
 
