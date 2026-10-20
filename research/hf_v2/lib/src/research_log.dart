@@ -20,6 +20,16 @@ enum ResearchLogKind {
   userCorrection,
   scenarioCompleted,
   scenarioAbandoned,
+  profileSelected,
+  activeDeviceChanged,
+  pointerDown,
+  pointerUp,
+  pointerCancelled,
+  focusLost,
+  frozenCommand,
+  researchRecordAppended,
+  layoutChanged,
+  inputRejected,
 }
 
 final class ResearchLogEvent {
@@ -27,11 +37,15 @@ final class ResearchLogEvent {
     required this.kind,
     required this.scenarioId,
     required this.detail,
+    required this.sequence,
   });
 
   final ResearchLogKind kind;
   final String scenarioId;
   final String detail;
+
+  /// Monotonic research sequence. Not a wall-clock timestamp.
+  final int sequence;
 }
 
 typedef ResearchLogSink = void Function(ResearchLogEvent event);

@@ -2,6 +2,7 @@ import 'model.dart';
 import 'recovery_claim.dart';
 import 'research_log.dart';
 import 'scenarios.dart';
+import 'snapshot.dart';
 
 final class _PointerTrack {
   _PointerTrack({
@@ -55,6 +56,7 @@ final class ResearchInstrument {
   bool loggingEnabled;
   final ResearchLogSink? _sink;
   final List<ResearchLogEvent> _events = [];
+  int _sequence = 0;
 
   ScenarioId scenarioId = ScenarioId.s01YellowNoPrior;
   String pitchTruth = '';
@@ -292,6 +294,7 @@ final class ResearchInstrument {
     predecessorKind = fixture.predecessorKind;
     _unknownAcknowledged = commitKind != SystemCommitKind.saveNotVerified;
     _events.clear();
+    _sequence = 0;
     _log(ResearchLogKind.scenarioStarted, id.name);
     _log(ResearchLogKind.priorCautionShown, priorCautionLabel);
     _log(ResearchLogKind.surfaceEntered, 'live');
@@ -443,6 +446,7 @@ final class ResearchInstrument {
     required double x,
     required double y,
   }) {
+    _log(ResearchLogKind.pointerDown, '$pointerId@${_point(x, y)}');
     final captured = _capture(x, y);
     _open[pointerId] = _PointerTrack(
       pointerId: pointerId,
@@ -462,6 +466,7 @@ final class ResearchInstrument {
     required double x,
     required double y,
   }) {
+    _log(ResearchLogKind.pointerUp, '$pointerId@${_point(x, y)}');
     final track = _open.remove(pointerId);
     armedKind = _nextArmed();
     if (track == null || track.consumed || track.captured == null) return;
@@ -475,6 +480,7 @@ final class ResearchInstrument {
   void pointerCancel({required int pointerId}) {
     _open.remove(pointerId);
     armedKind = _nextArmed();
+    _log(ResearchLogKind.pointerCancelled, '$pointerId');
   }
 
   /// Completes the action captured by a pointer that is still down.
@@ -489,12 +495,34 @@ final class ResearchInstrument {
   }
 
   void focusLost() {
+    _log(ResearchLogKind.focusLost, 'open:${_open.length}');
     _open.clear();
     armedKind = null;
   }
 
-  void relayout(ResearchLayout next) {
+  void relayout(ResearchLayout next, {String detail = 'relayout'}) {
     layout = next;
+    _log(ResearchLogKind.layoutChanged, detail);
+  }
+
+  /// Drops an open pointer sequence when the active device changes.
+  ///
+  /// Does not resolve a commit and does not append a research record.
+  void cancelOpenInputForDeviceChange(String profileId) {
+    final open = _open.length;
+    _open.clear();
+    armedKind = null;
+    _generation += 1;
+    _log(ResearchLogKind.pointerCancelled, 'device-change:open=$open');
+    _log(ResearchLogKind.activeDeviceChanged, profileId);
+  }
+
+  void noteProfileSelected(String profileId) {
+    _log(ResearchLogKind.profileSelected, profileId);
+  }
+
+  void noteInputRejected(String reason) {
+    _log(ResearchLogKind.inputRejected, reason);
   }
 
   void accessibilityInvoke(FinalActionKind kind) {
@@ -715,6 +743,7 @@ final class ResearchInstrument {
       substitutionStage = SubstitutionStage.saving;
     }
     _log(ResearchLogKind.finalActionActivated, kind.name);
+    _log(ResearchLogKind.frozenCommand, _frozenDetail(_activated!));
     _log(ResearchLogKind.simulatedCommitStarted, kind.name);
   }
 
@@ -740,6 +769,7 @@ final class ResearchInstrument {
           predecessorKind = FinalActionKind.recordYellow;
           armedKind = null;
         }
+        _logAppended(command, 'cautions:${cautions.length}');
         return true;
       case FinalActionKind.recordDirectSendOff:
         final subjectId = command.subjectId;
@@ -753,6 +783,7 @@ final class ResearchInstrument {
             pathway: SendOffPathwayLabel.direct,
           ),
         );
+        _logAppended(command, 'sendOffs:${sendOffs.length}');
         return true;
       case FinalActionKind.recordSecondCautionSendOff:
         final subjectId = command.subjectId;
@@ -767,6 +798,7 @@ final class ResearchInstrument {
           ),
         );
         successorEstablished = false;
+        _logAppended(command, 'sendOffs:${sendOffs.length}');
         return true;
       case FinalActionKind.recordSubstitution:
         final out = command.outId;
@@ -782,8 +814,16 @@ final class ResearchInstrument {
           SavedSubstitution(outId: out, inId: incoming, team: person.team),
         );
         substitutionStage = SubstitutionStage.saved;
+        _logAppended(command, 'substitutions:${substitutions.length}');
         return true;
     }
+  }
+
+  void _logAppended(_ActivatedCommand command, String collection) {
+    _log(
+      ResearchLogKind.researchRecordAppended,
+      '${command.kind.name}|$collection|subject:${command.subjectId ?? '-'}|scope:${command.scope.name}|out:${command.outId ?? '-'}|in:${command.inId ?? '-'}',
+    );
   }
 
   FinalActionKind? _nextArmed() {
@@ -807,16 +847,81 @@ final class ResearchInstrument {
     return null;
   }
 
+  int get activePointerCount => _open.length;
+
+  bool get freshInputEligible =>
+      commitKind == SystemCommitKind.idle &&
+      _unknownAcknowledged &&
+      _open.isEmpty &&
+      armedKind == null &&
+      _activated == null;
+
+  ActivatedCommandSnapshot? get inFlightCommand {
+    final command = _activated;
+    if (command == null || commitKind != SystemCommitKind.saving) return null;
+    return ActivatedCommandSnapshot(
+      kind: command.kind,
+      subjectId: command.subjectId,
+      subjectKind: command.subjectKind,
+      scope: command.scope,
+      outId: command.outId,
+      inId: command.inId,
+    );
+  }
+
+  ResearchTruthSnapshot get snapshot {
+    return ResearchTruthSnapshot(
+      scenarioId: scenarioId.name,
+      pitchTruth: pitchTruth,
+      expectedDigitalTruth: expectedDigitalTruth,
+      expectedUnfinishedTruth: expectedUnfinishedTruth,
+      p0Failure: p0Failure,
+      priorCaution: priorCaution,
+      priorCautionLabel: priorCautionLabel,
+      cautions: List.unmodifiable([...cautions]),
+      sendOffs: List.unmodifiable([...sendOffs]),
+      substitutions: List.unmodifiable([...substitutions]),
+      roster: List.unmodifiable([...roster]),
+      officials: List.unmodifiable([...officials]),
+      teamContext: teamContext,
+      scope: scope,
+      selectionKind: selectionKind,
+      selectedSubjectId: selectedSubjectId,
+      selectedSubjectKind: selectedKind,
+      outId: outId,
+      inId: inId,
+      substitutionStage: substitutionStage,
+      inFlight: inFlightCommand,
+      commitKind: commitKind,
+      commitLabel: commitLabel,
+      armedKind: armedKind,
+      predecessorKind: predecessorKind,
+      successorEstablished: successorEstablished,
+      activePointerCount: activePointerCount,
+      freshInputEligible: freshInputEligible,
+      simulatedRecoveryDisclaimer: simulatedRecoveryDisclaimer,
+    );
+  }
+
+  String _point(double x, double y) =>
+      '${x.toStringAsFixed(2)},${y.toStringAsFixed(2)}';
+
+  String _frozenDetail(_ActivatedCommand command) {
+    return '${command.kind.name}|subject:${command.subjectId ?? '-'}|kind:${command.subjectKind?.name ?? '-'}|scope:${command.scope.name}|out:${command.outId ?? '-'}|in:${command.inId ?? '-'}';
+  }
+
   void _log(ResearchLogKind kind, String detail) {
     if (!loggingEnabled) return;
     final event = ResearchLogEvent(
       kind: kind,
       scenarioId: scenarioId.name,
       detail: detail,
+      sequence: _sequence + 1,
     );
     try {
       _sink?.call(event);
       _events.add(event);
+      _sequence += 1;
     } catch (_) {
       // A broken research log must not change the interaction.
     }

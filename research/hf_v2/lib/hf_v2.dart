@@ -6,5 +6,7 @@ library;
 export 'src/instrument.dart';
 export 'src/model.dart';
 export 'src/recovery_claim.dart';
+export 'src/replay.dart';
 export 'src/research_log.dart';
 export 'src/scenarios.dart';
+export 'src/snapshot.dart';
