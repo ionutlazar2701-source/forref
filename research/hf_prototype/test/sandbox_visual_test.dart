@@ -42,7 +42,8 @@ void main() {
     await tester.pumpWidget(ResearchApp(controller: controller));
 
     void show(String headline, String detail, List<String> lines) {
-      controller.showJournalSnapshot(headline: headline, detail: detail, lines: lines);
+      controller.showJournalSnapshot(
+          headline: headline, detail: detail, lines: lines);
     }
 
     show(
@@ -91,12 +92,15 @@ Future<void> _capture(WidgetTester tester, String name) async {
     return data!.buffer.asUint8List();
   });
   final targets = <Directory>[
-    Directory('${Directory.systemTemp.path}${Platform.pathSeparator}forref-sim-v2'),
+    Directory(
+        '${Directory.systemTemp.path}${Platform.pathSeparator}forref-sim-v2'),
     Directory('/opt/cursor/artifacts'),
   ];
   for (final directory in targets) {
-    if (directory.path == '/opt/cursor/artifacts' && !directory.existsSync()) continue;
+    if (directory.path == '/opt/cursor/artifacts' && !directory.existsSync())
+      continue;
     directory.createSync(recursive: true);
-    File('${directory.path}${Platform.pathSeparator}$name.png').writeAsBytesSync(bytes!);
+    File('${directory.path}${Platform.pathSeparator}$name.png')
+        .writeAsBytesSync(bytes!);
   }
 }

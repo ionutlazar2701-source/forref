@@ -5,16 +5,18 @@ import 'package:hf_v2/hf_v2.dart';
 import 'package:simulator_presentation/simulator_presentation.dart';
 import 'package:watch_reference_ui/watch_reference_ui.dart';
 
+import 'lab_support.dart';
+
 void main() {
-  testWidgets('the watch reference app runs inside the selected shell', (tester) async {
+  testWidgets('the watch reference app runs inside the selected shell',
+      (tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() async {
       await tester.binding.setSurfaceSize(null);
     });
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
-    await tester.tap(find.text('GTS 4'));
-    await tester.pump();
+    await selectDevice(tester, 'amazfit-gts4');
     expect(find.text('DIAGNOSTIC VIEWPORT'), findsNothing);
     expect(find.byType(WatchReferenceApp), findsOneWidget);
     expect(find.text('Capture'), findsOneWidget);
@@ -45,41 +47,49 @@ void main() {
     expect(controller.instrument.snapshot.sendOffs, isEmpty);
     expect(find.textContaining('ACTUAL WATCH UI INTERACTION'), findsWidgets);
 
-    await tester.tap(find.text('Series 9 45 mm'));
-    await tester.pump();
+    await selectDevice(tester, 'apple-watch-series9-45');
     expect(controller.instrument.snapshot.cautions, hasLength(1));
-    expect(controller.watchRuntime.watchState.profileId, 'apple-watch-series9-45');
+    expect(
+        controller.watchRuntime.watchState.profileId, 'apple-watch-series9-45');
     expect(find.byType(WatchReferenceApp), findsOneWidget);
   });
 
-  testWidgets('operator fixture yellow is labeled separately from the watch ui', (tester) async {
+  testWidgets('operator fixture yellow is labeled separately from the watch ui',
+      (tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() async {
       await tester.binding.setSurfaceSize(null);
     });
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
-    await tester.tap(find.text('GT 4 46 mm'));
-    await tester.pump();
+    await selectDevice(tester, 'huawei-watch-gt4-46');
+    await openWorkspace(tester, LabWorkspace.commandLab);
     await tester.tap(find.text('Operator fixture: yellow Home 14'));
     await tester.pump();
-    expect(find.textContaining('OPERATOR FIXTURE ACTION'), findsOneWidget);
+    final trace =
+        tester.widget<Text>(find.byKey(const Key('intent-origin-trace')));
+    expect(trace.data, contains('OPERATOR FIXTURE ACTION'));
+    expect(trace.data, isNot(contains('ACTUAL WATCH UI INTERACTION')));
+    expect(controller.watchRuntime.intentTrace.last.origin,
+        IntentOrigin.operatorFixture);
     expect(controller.instrument.snapshot.inFlight?.subjectId, 'p-home-14');
     expect(controller.instrument.snapshot.sendOffs, isEmpty);
     controller.instrument.setTeam(ResearchTeamSide.away);
     await tester.pump();
-    expect(controller.watchRuntime.watchState.frozenCommand?.subjectId, 'p-home-14');
+    expect(controller.watchRuntime.watchState.frozenCommand?.subjectId,
+        'p-home-14');
   });
 
-  testWidgets('second-caution send-off from the watch does not fire before a successor', (tester) async {
+  testWidgets(
+      'second-caution send-off from the watch does not fire before a successor',
+      (tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() async {
       await tester.binding.setSurfaceSize(null);
     });
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
-    await tester.tap(find.text('GTS 4'));
-    await tester.pump();
+    await selectDevice(tester, 'amazfit-gts4');
     await tester.tap(find.text('Capture'));
     await tester.pump();
     await tester.tap(find.text('Sending-off'));
@@ -92,15 +102,15 @@ void main() {
     expect(controller.instrument.snapshot.inFlight, isNull);
   });
 
-  testWidgets('focus loss during the yellow press does not record it', (tester) async {
+  testWidgets('focus loss during the yellow press does not record it',
+      (tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() async {
       await tester.binding.setSurfaceSize(null);
     });
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
-    await tester.tap(find.text('S60'));
-    await tester.pump();
+    await selectDevice(tester, 'garmin-approach-s60');
     await tester.tap(find.text('Capture'));
     await tester.pump();
     await tester.tap(find.text('Yellow'));
@@ -116,15 +126,15 @@ void main() {
     expect(controller.instrument.snapshot.inFlight, isNull);
   });
 
-  testWidgets('a frozen substitution pair does not follow a later in-selection', (tester) async {
+  testWidgets('a frozen substitution pair does not follow a later in-selection',
+      (tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() async {
       await tester.binding.setSurfaceSize(null);
     });
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
-    await tester.tap(find.text('GTS 4'));
-    await tester.pump();
+    await selectDevice(tester, 'amazfit-gts4');
     await tester.tap(find.text('Capture'));
     await tester.pump();
     await tester.tap(find.text('Substitution'));
@@ -159,14 +169,14 @@ void main() {
     });
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
-    await tester.tap(find.text('GTS 4'));
-    await tester.pump();
-    final gesture = await tester.startGesture(tester.getCenter(find.text('Capture')));
-    await tester.tap(find.text('GT 4 46 mm'));
-    await tester.pump();
+    await selectDevice(tester, 'amazfit-gts4');
+    final gesture =
+        await tester.startGesture(tester.getCenter(find.text('Capture')));
+    await selectDevice(tester, 'huawei-watch-gt4-46');
     await gesture.up();
     await tester.pump();
-    expect(controller.watchRuntime.watchState.navigation.route, WatchRoute.liveCore);
+    expect(controller.watchRuntime.watchState.navigation.route,
+        WatchRoute.liveCore);
     expect(controller.instrument.snapshot.cautions, isEmpty);
     expect(controller.watchRuntime.watchState.profileId, 'huawei-watch-gt4-46');
   });

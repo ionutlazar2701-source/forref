@@ -7,6 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hf_prototype/research_app.dart';
 import 'package:simulator_presentation/simulator_presentation.dart';
 
+import 'lab_support.dart';
+
 Future<void> _loadReadableFonts() async {
   const regularPath = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
   const boldPath = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
@@ -22,7 +24,8 @@ Future<void> _loadReadableFonts() async {
 }
 
 void main() {
-  testWidgets('capture the watch reference app inside the shells', (tester) async {
+  testWidgets('capture the watch reference app inside the shells',
+      (tester) async {
     await _loadReadableFonts();
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() async {
@@ -36,8 +39,7 @@ void main() {
 
     controller.evidenceStamp = stamp('amazfit-gts4', 's01YellowNoPrior');
     await tester.pumpWidget(ResearchApp(controller: controller));
-    await tester.tap(find.text('GTS 4'));
-    await tester.pump();
+    await selectDevice(tester, 'amazfit-gts4');
     await _capture(tester, '06-watch-live');
 
     await tester.tap(find.text('Capture'));
@@ -47,19 +49,22 @@ void main() {
     await _capture(tester, '07-yellow-flow');
 
     await controller.dispatchWatch(
-      const OpenRouteIntent(WatchRoute.sendOffFlow, origin: IntentOrigin.watchUi),
+      const OpenRouteIntent(WatchRoute.sendOffFlow,
+          origin: IntentOrigin.watchUi),
     );
     await tester.pump();
     await _capture(tester, '08-y2-sendoff-separated');
 
     await controller.dispatchWatch(
-      const OpenRouteIntent(WatchRoute.substitutionFlow, origin: IntentOrigin.watchUi),
+      const OpenRouteIntent(WatchRoute.substitutionFlow,
+          origin: IntentOrigin.watchUi),
     );
     await tester.pump();
     await _capture(tester, '09-substitution');
 
     await controller.dispatchWatch(
-      const OpenRouteIntent(WatchRoute.yellowFlow, origin: IntentOrigin.watchUi),
+      const OpenRouteIntent(WatchRoute.yellowFlow,
+          origin: IntentOrigin.watchUi),
     );
     await tester.pump();
     final home14 = find.text('home 14 · p-home-14');
@@ -74,16 +79,16 @@ void main() {
     await tester.ensureVisible(resolve);
     await tester.tap(resolve);
     await tester.pump();
-    controller.evidenceStamp = stamp('apple-watch-series9-45', 's01YellowNoPrior');
-    await tester.tap(find.text('Series 9 45 mm'));
-    await tester.pump();
+    controller.evidenceStamp =
+        stamp('apple-watch-series9-45', 's01YellowNoPrior');
+    await selectDevice(tester, 'apple-watch-series9-45');
     await _capture(tester, '10-device-switch-same-state');
 
     final commands = ResearchController()
       ..evidenceStamp = stamp('huawei-watch-gt4-46', 's01YellowNoPrior');
     await tester.pumpWidget(ResearchApp(controller: commands));
-    await tester.tap(find.text('GT 4 46 mm'));
-    await tester.pump();
+    await selectDevice(tester, 'huawei-watch-gt4-46');
+    await openWorkspace(tester, LabWorkspace.commandLab);
     await tester.tap(find.text('Operator fixture: yellow Home 14'));
     await tester.pump();
     await _capture(tester, '11-command-lab');
@@ -107,12 +112,15 @@ Future<void> _capture(WidgetTester tester, String name) async {
     return data!.buffer.asUint8List();
   });
   final targets = <Directory>[
-    Directory('${Directory.systemTemp.path}${Platform.pathSeparator}forref-sim-v2'),
+    Directory(
+        '${Directory.systemTemp.path}${Platform.pathSeparator}forref-sim-v2'),
     Directory('/opt/cursor/artifacts'),
   ];
   for (final directory in targets) {
-    if (directory.path == '/opt/cursor/artifacts' && !directory.existsSync()) continue;
+    if (directory.path == '/opt/cursor/artifacts' && !directory.existsSync())
+      continue;
     directory.createSync(recursive: true);
-    File('${directory.path}${Platform.pathSeparator}$name.png').writeAsBytesSync(bytes!);
+    File('${directory.path}${Platform.pathSeparator}$name.png')
+        .writeAsBytesSync(bytes!);
   }
 }

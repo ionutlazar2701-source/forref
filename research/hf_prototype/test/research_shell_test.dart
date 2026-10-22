@@ -4,12 +4,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hf_prototype/research_app.dart';
 import 'package:hf_v2/hf_v2.dart';
+import 'package:watch_reference_ui/watch_reference_ui.dart';
+
+import 'lab_support.dart';
 
 void main() {
   testWidgets('the shell launches as a research prototype', (tester) async {
-    await tester.pumpWidget(ResearchApp(controller: ResearchController()));
-    expect(find.text('FORREF SIMULATOR LAB'), findsOneWidget);
+    final controller = await pumpLab(tester);
+    expect(find.text('FORREF'), findsOneWidget);
+    expect(find.text('SIM LAB'), findsOneWidget);
     expect(find.text('RESEARCH / NON-PRODUCTION'), findsOneWidget);
+    // The device is the hero: the factual shell and the reference UI are the
+    // first thing on screen. The Night I geometry stage is an advanced route.
+    expect(controller.workspace, LabWorkspace.focus);
+    expect(controller.inspectorOpen, isFalse);
+    expect(find.byType(WatchReferenceApp), findsOneWidget);
+    expect(find.byKey(const Key('research-capture')), findsNothing);
+    expect(find.text('Scenario'), findsNothing);
+    expect(find.text('SCENARIO'), findsNothing);
+    expect(find.byKey(const Key('research-operator')), findsNothing);
+
+    controller.openGeometryStage();
+    await tester.pump();
     expect(find.byKey(const Key('research-capture')), findsOneWidget);
     expect(
       find.descendant(
@@ -20,12 +36,14 @@ void main() {
     );
   });
 
-  testWidgets('a repeat tap on yellow does not record a sending-off', (tester) async {
-    final controller = ResearchController();
-    await tester.pumpWidget(ResearchApp(controller: controller));
+  testWidgets('a repeat tap on yellow does not record a sending-off',
+      (tester) async {
+    final controller = await pumpLab(tester);
+    controller.openGeometryStage();
     controller.load(ScenarioId.s07RapidRepeatAfterY2);
     controller.show(ResearchPage.yellow);
     await tester.pump();
+    await openInspectorTab(tester, InspectorSection.truth);
 
     await tester.tap(find.text('Record yellow'));
     await tester.pump();
@@ -55,44 +73,55 @@ void main() {
   });
 
   testWidgets('team change invalidates Home 14', (tester) async {
-    final controller = ResearchController();
-    await tester.pumpWidget(ResearchApp(controller: controller));
+    final controller = await pumpLab(tester);
     controller.load(ScenarioId.s09Home14ThenAway14);
     await tester.pump();
-    expect(find.textContaining('p-home-14'), findsOneWidget);
-    await tester.tap(find.text('Away'));
+    await openWorkspace(tester, LabWorkspace.commandLab);
+    await openInspectorTab(tester, InspectorSection.truth);
+    expect(inTruthInspector(find.textContaining('p-home-14')), findsOneWidget);
+    await tester.tap(find.text('Team: Away'));
     await tester.pump();
-    expect(find.textContaining('invalidated'), findsOneWidget);
+    expect(
+        inTruthInspector(find.textContaining('invalidated')), findsOneWidget);
     expect(controller.instrument.selectedParticipantId, isNull);
   });
 
   testWidgets('scenario controls stay off the device stage', (tester) async {
-    final controller = ResearchController();
-    await tester.pumpWidget(ResearchApp(controller: controller));
-    expect(find.text('Scenario'), findsNothing);
-    await tester.tap(find.text('Inspection'));
-    await tester.pump();
-    expect(find.byKey(const Key('research-capture')), findsOneWidget);
+    await pumpLab(tester);
+    expect(find.text('SCENARIO'), findsNothing);
+    await openWorkspace(tester, LabWorkspace.commandLab);
+    expect(find.byKey(const Key('command-stage')), findsOneWidget);
     expect(find.byKey(const Key('research-operator')), findsOneWidget);
-    expect(find.text('Scenario'), findsOneWidget);
+    expect(find.text('SCENARIO'), findsOneWidget);
     expect(
       find.descendant(
-        of: find.byKey(const Key('research-capture')),
-        matching: find.text('Scenario'),
+        of: find.byKey(const Key('command-stage')),
+        matching: find.text('SCENARIO'),
+      ),
+      findsNothing,
+    );
+    expect(
+      find.descendant(
+        of: find.byType(WatchReferenceApp),
+        matching: find.byKey(const Key('scenario-dropdown')),
       ),
       findsNothing,
     );
   });
 
-  testWidgets('shoot-out scope does not inherit the match caution count', (tester) async {
-    final controller = ResearchController();
-    await tester.pumpWidget(ResearchApp(controller: controller));
+  testWidgets('shoot-out scope does not inherit the match caution count',
+      (tester) async {
+    final controller = await pumpLab(tester);
     controller.load(ScenarioId.s18MatchToShootout);
     await tester.pump();
-    expect(find.textContaining('match cautions 1'), findsOneWidget);
-    await tester.tap(find.text('Shoot-out scope'));
+    await openWorkspace(tester, LabWorkspace.commandLab);
+    await openInspectorTab(tester, InspectorSection.truth);
+    expect(inTruthInspector(find.textContaining('match cautions 1')),
+        findsOneWidget);
+    await tester.tap(find.text('Scope: shoot-out'));
     await tester.pump();
-    expect(find.textContaining('shootout cautions 0'), findsOneWidget);
+    expect(inTruthInspector(find.textContaining('shootout cautions 0')),
+        findsOneWidget);
     expect(
       controller.instrument.savedCautionCount(
         'p-home-9',
@@ -103,9 +132,10 @@ void main() {
     );
   });
 
-  testWidgets('naming OUT and IN does not record the substitution', (tester) async {
-    final controller = ResearchController();
-    await tester.pumpWidget(ResearchApp(controller: controller));
+  testWidgets('naming OUT and IN does not record the substitution',
+      (tester) async {
+    final controller = await pumpLab(tester);
+    controller.openGeometryStage();
     controller.load(ScenarioId.s11SubstitutionOutFirst);
     controller.show(ResearchPage.substitution);
     await tester.pump();

@@ -35,6 +35,8 @@ void main() {
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
     await tester.pump();
+    controller.openGeometryStage();
+    await tester.pump();
     await _capture(tester, '01-phone-focus');
 
     controller.selectProfile(illustrativeRoundWatch.profileId);
@@ -46,16 +48,19 @@ void main() {
     await _capture(tester, '03-rectangular-watch-focus');
 
     controller.selectProfile(illustrativePhonePortrait.profileId);
-    controller.setPresentation(LabPresentation.comparison);
+    controller.closeGeometryStage();
+    controller.setWorkspace(LabWorkspace.compare);
     await tester.pump();
     await _capture(tester, '04-comparison');
 
-    controller.setPresentation(LabPresentation.single);
-    controller.setMode(LabMode.inspection);
+    controller.setWorkspace(LabWorkspace.commandLab);
+    controller.openInspector(InspectorSection.truth);
     await tester.pump();
     await _capture(tester, '05-inspection');
 
-    controller.setMode(LabMode.focus);
+    controller.closeInspector();
+    controller.setWorkspace(LabWorkspace.focus);
+    controller.openGeometryStage();
     controller.load(ScenarioId.s07RapidRepeatAfterY2);
     controller.show(ResearchPage.yellow);
     await tester.pump();

@@ -11,7 +11,8 @@ void main() {
           home: SizedBox(
             width: 420,
             height: 640,
-            child: DeviceShellStage(profile: profile, stamp: 'test'),
+            child: DeviceShellStage(
+                profile: profile, stamp: 'test', showEvidenceCaption: true),
           ),
         ),
       );
@@ -48,14 +49,16 @@ void main() {
     await tester.tap(find.text('INSIDE'));
     await tester.pump();
     expect(pressed, 1);
-    await tester.tapAt(tester.getTopLeft(find.byKey(const Key('shell-paint'))) + const Offset(4, 4));
+    await tester.tapAt(tester.getTopLeft(find.byKey(const Key('shell-paint'))) +
+        const Offset(4, 4));
     await tester.pump();
     expect(pressed, 1);
     expect(rejected, isNotEmpty);
     expect(rejected, isNot(contains(ShellSurface.aperture)));
   });
 
-  testWidgets('switching shell profile cancels an open pointer', (tester) async {
+  testWidgets('switching shell profile cancels an open pointer',
+      (tester) async {
     final cancelled = <int>[];
     var profile = huaweiWatchGt446;
     late StateSetter setState;
@@ -82,7 +85,8 @@ void main() {
         ),
       ),
     );
-    final gesture = await tester.startGesture(tester.getCenter(find.text('INSIDE')));
+    final gesture =
+        await tester.startGesture(tester.getCenter(find.text('INSIDE')));
     setState(() => profile = appleWatchSeries945);
     await tester.pump();
     expect(cancelled, isNotEmpty);

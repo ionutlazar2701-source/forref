@@ -3,11 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hf_prototype/research_app.dart';
 import 'package:hf_v2/hf_v2.dart';
 import 'package:simulator_geometry/simulator_geometry.dart';
+import 'package:watch_reference_ui/watch_reference_ui.dart';
 
 void main() {
-  testWidgets('painted yellow target matches the instrument rectangle', (tester) async {
+  testWidgets('painted yellow target matches the instrument rectangle',
+      (tester) async {
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
+    controller.openGeometryStage();
     controller.show(ResearchPage.yellow);
     await tester.pump();
 
@@ -19,7 +22,8 @@ void main() {
       stageHeight: stage.height,
       requested: CalibrationMode.fit,
     );
-    final mapped = view.transform.toStageRect(const DeviceRect(16, 180, 150, 48));
+    final mapped =
+        view.transform.toStageRect(const DeviceRect(16, 180, 150, 48));
     expect(painted.left, closeTo(stage.left + mapped.left, 1));
     expect(painted.top, closeTo(stage.top + mapped.top, 1));
     expect(painted.width, closeTo(mapped.width, 1));
@@ -31,9 +35,11 @@ void main() {
   testWidgets('C profile switch cancels an open pointer', (tester) async {
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
+    controller.openGeometryStage();
     controller.show(ResearchPage.yellow);
     await tester.pump();
-    final gesture = await tester.startGesture(tester.getCenter(find.text('Record yellow')));
+    final gesture =
+        await tester.startGesture(tester.getCenter(find.text('Record yellow')));
     await tester.pump();
     await tester.tap(find.text('Round watch'));
     await tester.pump();
@@ -44,9 +50,11 @@ void main() {
     expect(controller.instrument.sendOffs, isEmpty);
   });
 
-  testWidgets('D a round-watch corner does not activate a target', (tester) async {
+  testWidgets('D a round-watch corner does not activate a target',
+      (tester) async {
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
+    controller.openGeometryStage();
     controller.selectProfile(illustrativeRoundWatch.profileId);
     controller.show(ResearchPage.yellow);
     await tester.pump();
@@ -61,6 +69,7 @@ void main() {
   testWidgets('E F G held resolution keeps the frozen command', (tester) async {
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
+    controller.openGeometryStage();
     controller.setHold(true);
     controller.load(ScenarioId.s09Home14ThenAway14);
     controller.show(ResearchPage.yellow);
@@ -120,9 +129,11 @@ void main() {
     expect(controller.instrument.substitutions.single.outId, 'p-home-9');
   });
 
-  testWidgets('H unknown outcome is not saved and not a known failure', (tester) async {
+  testWidgets('H unknown outcome is not saved and not a known failure',
+      (tester) async {
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
+    controller.openGeometryStage();
     controller.load(ScenarioId.s16SaveNotVerified);
     controller.show(ResearchPage.yellow);
     await tester.pump();
@@ -130,7 +141,8 @@ void main() {
     await tester.pump();
     expect(find.textContaining('SAVE NOT VERIFIED'), findsWidgets);
     expect(find.textContaining('SIMULATED SAVED'), findsNothing);
-    expect(find.textContaining('NOT SAVED — known simulated failure'), findsNothing);
+    expect(find.textContaining('NOT SAVED — known simulated failure'),
+        findsNothing);
     expect(controller.instrument.cautions, isEmpty);
     expect(controller.instrument.snapshot.freshInputEligible, isFalse);
   });
@@ -138,6 +150,7 @@ void main() {
   testWidgets('I unknown touch is not treated as supported', (tester) async {
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
+    controller.openGeometryStage();
     controller.importProfile(_touch('unknown'));
     await tester.pump();
     expect(controller.activeProfile.touchClaimedSupported, isFalse);
@@ -151,29 +164,35 @@ void main() {
     await tester.tap(find.text('Record yellow'));
     await tester.pump();
     expect(controller.instrument.cautions, hasLength(1));
-    expect(controller.activeProfile.capability(InputChannel.touchscreen), CapabilityStatus.unknown);
+    expect(controller.activeProfile.capability(InputChannel.touchscreen),
+        CapabilityStatus.unknown);
   });
 
-  testWidgets('J rebuild, resize, inspection, and comparison write nothing', (tester) async {
+  testWidgets('J rebuild, resize, inspection, and comparison write nothing',
+      (tester) async {
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
     final before = controller.instrument.cautions.length;
+    final signature = controller.instrument.behaviorSignature;
     await tester.pumpWidget(ResearchApp(controller: controller));
     await tester.pump();
-    controller.setMode(LabMode.inspection);
-    controller.setPresentation(LabPresentation.comparison);
+    controller.openInspector(InspectorSection.truth);
+    controller.setWorkspace(LabWorkspace.compare);
     await tester.binding.setSurfaceSize(const Size(1100, 700));
+    await tester.pump();
     await tester.pump();
     expect(controller.instrument.cautions, hasLength(before));
     expect(controller.instrument.sendOffs, isEmpty);
-    expect(find.text('READ ONLY'), findsWidgets);
-    expect(find.text('ACTIVE'), findsOneWidget);
+    expect(controller.instrument.behaviorSignature, signature);
+    expect(find.text('READ ONLY'), findsOneWidget);
+    expect(find.text('ACTIVE INPUT'), findsOneWidget);
     addTearDown(() => tester.binding.setSurfaceSize(null));
   });
 
   testWidgets('O a certified import is rejected', (tester) async {
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
+    controller.openGeometryStage();
     final before = controller.activeProfile.profileId;
     controller.importProfile(
       _touch('supported').replaceAll(
@@ -188,9 +207,11 @@ void main() {
     expect(find.text('FORREF CERTIFIED'), findsNothing);
   });
 
-  testWidgets('P physical calibration without evidence stays uncalibrated', (tester) async {
+  testWidgets('P physical calibration without evidence stays uncalibrated',
+      (tester) async {
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
+    controller.openGeometryStage();
     controller.setCalibration(CalibrationMode.physical1to1);
     await tester.pump();
     expect(find.text('Calibration: NOT CALIBRATED'), findsOneWidget);
@@ -202,6 +223,7 @@ void main() {
   testWidgets('layout not fit hides action targets', (tester) async {
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
+    controller.openGeometryStage();
     controller.importProfile(_tinyRound);
     controller.show(ResearchPage.yellow);
     await tester.pump();
@@ -210,12 +232,15 @@ void main() {
     expect(controller.instrument.cautions, isEmpty);
   });
 
-  testWidgets('K L M N focus, direct pathway, officials, and roles', (tester) async {
+  testWidgets('K L M N focus, direct pathway, officials, and roles',
+      (tester) async {
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
+    controller.openGeometryStage();
     controller.show(ResearchPage.yellow);
     await tester.pump();
-    final gesture = await tester.startGesture(tester.getCenter(find.text('Record yellow')));
+    final gesture =
+        await tester.startGesture(tester.getCenter(find.text('Record yellow')));
     controller.focusLost();
     await tester.pump();
     await gesture.up();
@@ -227,7 +252,8 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('Record sending-off'));
     await tester.pump();
-    expect(controller.instrument.sendOffs.single.pathway, SendOffPathwayLabel.direct);
+    expect(controller.instrument.sendOffs.single.pathway,
+        SendOffPathwayLabel.direct);
     expect(controller.instrument.cautions, hasLength(1));
 
     controller.load(ScenarioId.s10SimilarOfficials);
@@ -256,19 +282,28 @@ void main() {
     expect(controller.instrument.substitutionRecorded, isFalse);
   });
 
-  testWidgets('comparison keeps one history and one active surface', (tester) async {
+  testWidgets('comparison keeps one history and one active surface',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
-    controller.setPresentation(LabPresentation.comparison);
-    controller.show(ResearchPage.yellow);
+    controller.setWorkspace(LabWorkspace.compare);
     await tester.pump();
-    expect(find.text('Record yellow'), findsWidgets);
-    expect(find.byKey(const Key('research-capture')), findsOneWidget);
+    // Two factual shells, one presentation runtime, one hf_v2 history.
+    expect(find.byType(WatchReferenceApp), findsNWidgets(2));
+    expect(find.text('ACTIVE INPUT'), findsOneWidget);
+    expect(find.text('READ ONLY'), findsOneWidget);
+    expect(controller.compareInputOwnerId, controller.shellProfileId);
     final before = controller.instrument.cautions.length;
-    await tester.tap(find.text('Rectangular watch'));
+    final secondary = controller.compareProfileId;
+    await tester.tap(find.byKey(Key('compare-make-active-$secondary')));
     await tester.pump();
+    expect(controller.compareInputOwnerId, secondary);
+    expect(find.text('ACTIVE INPUT'), findsOneWidget);
+    expect(find.text('READ ONLY'), findsOneWidget);
     expect(controller.instrument.cautions, hasLength(before));
-    expect(controller.activeProfile.profileId, 'illustrative-rectangular-watch');
+    expect(controller.instrument.sendOffs, isEmpty);
   });
 }
 
