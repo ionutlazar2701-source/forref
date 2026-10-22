@@ -18,6 +18,7 @@ class DeviceShellStage extends StatefulWidget {
     this.stamp = '',
     this.onPointerCancel,
     this.onRejected,
+    this.showEvidenceCaption = false,
   });
 
   final DeviceProfileV2 profile;
@@ -26,6 +27,10 @@ class DeviceShellStage extends StatefulWidget {
   final String stamp;
   final void Function(int pointerId)? onPointerCancel;
   final void Function(ShellSurface surface)? onRejected;
+
+  /// Night I / S2.1 diagnostic caption above the shell. The John V1 lab keeps
+  /// this evidence in the Device Evidence inspector instead.
+  final bool showEvidenceCaption;
 
   @override
   State<DeviceShellStage> createState() => _DeviceShellStageState();
@@ -68,56 +73,63 @@ class _DeviceShellStageState extends State<DeviceShellStage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          name,
-          key: Key('shell-caption-${manifest.profileId}'),
-          style: const TextStyle(
-            color: LabColors.navy,
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            fontFamily: 'Roboto',
-          ),
-        ),
-        Text(
-          'Fidelity: schematic · not measured · not certified',
-          style: const TextStyle(
-            color: LabColors.navy,
-            fontSize: 14,
-            fontFamily: 'Roboto',
-          ),
-        ),
-        Text(
-          manifest.apertureEvidence,
-          maxLines: 3,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: LabColors.steel,
-            fontSize: 12,
-            height: 1.25,
-            fontFamily: 'Roboto',
-          ),
-        ),
-        if (widget.child != null && widget.stamp.isNotEmpty)
+        if (widget.showEvidenceCaption) ...[
           Text(
-            widget.stamp,
+            name,
+            key: Key('shell-caption-${manifest.profileId}'),
+            style: const TextStyle(
+              color: LabColors.navy,
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'Roboto',
+            ),
+          ),
+          Text(
+            'Fidelity: schematic · not measured · not certified',
+            style: const TextStyle(
+              color: LabColors.navy,
+              fontSize: 14,
+              fontFamily: 'Roboto',
+            ),
+          ),
+          Text(
+            manifest.apertureEvidence,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: LabColors.steel,
-              fontSize: 11,
+              fontSize: 12,
               height: 1.25,
               fontFamily: 'Roboto',
             ),
           ),
-        const SizedBox(height: 6),
+          if (widget.child != null && widget.stamp.isNotEmpty)
+            Text(
+              widget.stamp,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: LabColors.steel,
+                fontSize: 11,
+                height: 1.25,
+                fontFamily: 'Roboto',
+              ),
+            ),
+          const SizedBox(height: 6),
+        ],
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final fitted = _fit(manifest, constraints.maxWidth, constraints.maxHeight);
+              final fitted =
+                  _fit(manifest, constraints.maxWidth, constraints.maxHeight);
               return Listener(
                 behavior: HitTestBehavior.translucent,
-                onPointerDown: (event) => _track(event.localPosition, event.pointer, fitted, down: true),
-                onPointerUp: (event) => _track(event.localPosition, event.pointer, fitted, down: false),
+                onPointerDown: (event) => _track(
+                    event.localPosition, event.pointer, fitted,
+                    down: true),
+                onPointerUp: (event) => _track(
+                    event.localPosition, event.pointer, fitted,
+                    down: false),
                 onPointerCancel: (event) {
                   _pointers.remove(event.pointer);
                   widget.onPointerCancel?.call(event.pointer);
@@ -131,8 +143,10 @@ class _DeviceShellStageState extends State<DeviceShellStage> {
                       ),
                     ),
                     Positioned(
-                      left: fitted.originX + manifest.aperture.left * fitted.scale,
-                      top: fitted.originY + manifest.aperture.top * fitted.scale,
+                      left: fitted.originX +
+                          manifest.aperture.left * fitted.scale,
+                      top:
+                          fitted.originY + manifest.aperture.top * fitted.scale,
                       width: manifest.aperture.width * fitted.scale,
                       height: manifest.aperture.height * fitted.scale,
                       child: ClipPath(
@@ -154,7 +168,8 @@ class _DeviceShellStageState extends State<DeviceShellStage> {
     );
   }
 
-  void _track(Offset local, int pointerId, _ShellFit fitted, {required bool down}) {
+  void _track(Offset local, int pointerId, _ShellFit fitted,
+      {required bool down}) {
     if (!down) {
       _pointers.remove(pointerId);
       return;
@@ -200,14 +215,17 @@ class DiagnosticViewport extends StatelessWidget {
               textAlign: TextAlign.center,
               style: style.copyWith(fontSize: 16, fontWeight: FontWeight.w700),
             ),
-            const Text('DIAGNOSTIC VIEWPORT', textAlign: TextAlign.center, style: style),
-            const Text('Runtime: Research', textAlign: TextAlign.center, style: style),
+            const Text('DIAGNOSTIC VIEWPORT',
+                textAlign: TextAlign.center, style: style),
+            const Text('Runtime: Research',
+                textAlign: TextAlign.center, style: style),
             Text(
               'Fidelity: ${manifest.fidelity.name}',
               textAlign: TextAlign.center,
               style: style,
             ),
-            Text(viewport.safeAreaLabel, textAlign: TextAlign.center, style: style),
+            Text(viewport.safeAreaLabel,
+                textAlign: TextAlign.center, style: style),
             Text(
               viewport.basisLabel,
               textAlign: TextAlign.center,
@@ -253,7 +271,8 @@ _ShellFit _fit(DeviceShellManifest manifest, double width, double height) {
   if (!width.isFinite || !height.isFinite || width <= 0 || height <= 0) {
     return const _ShellFit(scale: 1, originX: 0, originY: 0);
   }
-  final scale = math.min(width / manifest.canvasWidth, height / manifest.canvasHeight);
+  final scale =
+      math.min(width / manifest.canvasWidth, height / manifest.canvasHeight);
   final drawnW = manifest.canvasWidth * scale;
   final drawnH = manifest.canvasHeight * scale;
   return _ShellFit(
@@ -274,7 +293,8 @@ class _ApertureClipper extends CustomClipper<Path> {
     return switch (manifest.clip) {
       ScreenShape.round => Path()..addOval(rect),
       ScreenShape.rectangle => Path()..addRect(rect),
-      ScreenShape.roundedRectangle => Path()..addRRect(
+      ScreenShape.roundedRectangle => Path()
+        ..addRRect(
           RRect.fromRectAndRadius(
             rect,
             Radius.circular(_scaledRadius(size)),
@@ -305,19 +325,22 @@ class _ShellPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final body = _rect(manifest.body);
     final paint = Paint()..color = _bodyColor(manifest);
-    if (manifest.clip == ScreenShape.round && manifest.canvasUnit.startsWith('millimetre')) {
+    if (manifest.clip == ScreenShape.round &&
+        manifest.canvasUnit.startsWith('millimetre')) {
       canvas.drawOval(body, paint);
     } else if (manifest.canvasUnit.contains('plate')) {
       final stroke = Paint()
         ..color = LabColors.steel
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2;
-      canvas.drawRRect(RRect.fromRectAndRadius(body, const Radius.circular(8)), stroke);
+      canvas.drawRRect(
+          RRect.fromRectAndRadius(body, const Radius.circular(8)), stroke);
     } else {
       final radius = manifest.cornerRadius == null
           ? 10.0
           : manifest.cornerRadius! * fit.scale + 6;
-      canvas.drawRRect(RRect.fromRectAndRadius(body, Radius.circular(radius)), paint);
+      canvas.drawRRect(
+          RRect.fromRectAndRadius(body, Radius.circular(radius)), paint);
     }
     final strapPaint = Paint()..color = const Color(0xFF6E6258);
     for (final strap in manifest.straps) {
@@ -353,7 +376,8 @@ class _ShellPainter extends CustomPainter {
 }
 
 String _shortName(DeviceProfileV2 profile) {
-  final manufacturer = profile.identity.manufacturer.value ?? 'Unknown manufacturer';
+  final manufacturer =
+      profile.identity.manufacturer.value ?? 'Unknown manufacturer';
   final model = profile.identity.model.value ?? profile.identity.profileId;
   final variant = profile.identity.variant.value;
   if (variant == null) return '$manufacturer $model';
@@ -363,6 +387,7 @@ String _shortName(DeviceProfileV2 profile) {
 Color _bodyColor(DeviceShellManifest manifest) {
   if (manifest.canvasUnit.contains('plate')) return const Color(0xFFE8EEF4);
   if (manifest.clip == ScreenShape.round) return const Color(0xFF1C1F24);
-  if (manifest.canvasUnit.contains('not millimetres')) return const Color(0xFF2C333A);
+  if (manifest.canvasUnit.contains('not millimetres'))
+    return const Color(0xFF2C333A);
   return const Color(0xFFE4DDD4);
 }
