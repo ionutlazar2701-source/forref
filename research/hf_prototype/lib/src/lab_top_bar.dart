@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../research_app.dart';
 import 'device_selector.dart';
+import 'lab_assets.dart';
 import 'lab_theme.dart';
 
 /// Calm persistent app bar. Context only: match, device, runtime, inspector.
@@ -39,11 +40,11 @@ class LabTopBar extends StatelessWidget {
                     child: Row(
                       children: [
                         if (!compact) ...[
-                          const Flexible(
+                          Flexible(
                             child: _ContextPill(
                               key: Key('top-match'),
                               label: 'MATCH',
-                              value: researchMatchTitle,
+                              value: controller.matchTitle,
                             ),
                           ),
                           const SizedBox(width: LabMetrics.tight),
@@ -79,19 +80,31 @@ class _Brand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(labBrand, style: LabText.onNavyStrong),
-        Text(
-          labBrandSub,
-          style: TextStyle(
-            color: LabColors.softWhite,
-            fontSize: 10,
-            letterSpacing: 1.6,
-            height: 1.2,
-          ),
+        Image.asset(
+          LabAssets.logo,
+          key: const Key('sim-lab-logo'),
+          height: 28,
+          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+        ),
+        const SizedBox(width: 8),
+        const Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(labBrand, style: LabText.onNavyStrong),
+            Text(
+              labBrandSub,
+              style: TextStyle(
+                color: LabColors.softWhite,
+                fontSize: 10,
+                letterSpacing: 1.6,
+                height: 1.2,
+              ),
+            ),
+          ],
         ),
       ],
     );

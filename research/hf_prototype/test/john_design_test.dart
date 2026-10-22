@@ -25,7 +25,7 @@ void main() {
       expect(find.byKey(const Key('focus-stage')), findsOneWidget);
       // Calm chrome: match, device, runtime, inspector control, identity.
       expect(find.byKey(const Key('top-match')), findsOneWidget);
-      expect(find.text('Research Match'), findsOneWidget);
+      expect(find.text('Research Match'), findsWidgets);
       expect(find.byKey(const Key('device-summary')), findsOneWidget);
       expect(find.text('Research'), findsOneWidget);
       expect(find.text('RESEARCH / NON-PRODUCTION'), findsOneWidget);
@@ -215,9 +215,9 @@ void main() {
     testWidgets('Yellow from the watch is SIMULATED SAVED and never sandbox D1', (tester) async {
       final controller = await pumpLab(tester, size: const Size(1440, 900));
       await selectDevice(tester, 'amazfit-gts4');
-      await tester.tap(find.text('Capture'));
+      await tapWatch(tester, 'Capture');
       await tester.pump();
-      await tester.tap(find.text('Yellow'));
+      await tapWatch(tester, 'Yellow');
       await tester.pump();
       final home14 = find.text('home 14 · p-home-14');
       await tester.ensureVisible(home14);
@@ -255,9 +255,9 @@ void main() {
       await controller.operatorLoadScenario(ScenarioId.s07RapidRepeatAfterY2);
       await tester.pump();
       expect(controller.instrument.cautions, hasLength(1));
-      await tester.tap(find.text('Capture'));
+      await tapWatch(tester, 'Capture');
       await tester.pump();
-      await tester.tap(find.text('Yellow'));
+      await tapWatch(tester, 'Yellow');
       await tester.pump();
       final home9 = find.text('home 9 · p-home-9');
       await tester.ensureVisible(home9);
@@ -286,9 +286,9 @@ void main() {
 
     testWidgets('a regime change during a press invalidates it', (tester) async {
       final controller = await pumpLab(tester, size: const Size(1440, 900));
-      await tester.tap(find.text('Capture'));
+      await tapWatch(tester, 'Capture');
       await tester.pump();
-      await tester.tap(find.text('Yellow'));
+      await tapWatch(tester, 'Yellow');
       await tester.pump();
       final home14 = find.text('home 14 · p-home-14');
       await tester.ensureVisible(home14);
@@ -313,9 +313,9 @@ void main() {
 
     testWidgets('losing window focus during a press records nothing', (tester) async {
       final controller = await pumpLab(tester, size: const Size(1440, 900));
-      await tester.tap(find.text('Capture'));
+      await tapWatch(tester, 'Capture');
       await tester.pump();
-      await tester.tap(find.text('Yellow'));
+      await tapWatch(tester, 'Yellow');
       await tester.pump();
       final home14 = find.text('home 14 · p-home-14');
       await tester.ensureVisible(home14);
@@ -351,9 +351,9 @@ void main() {
 
     testWidgets('a watch Yellow does not light a sandbox stage', (tester) async {
       final controller = await pumpLab(tester);
-      await tester.tap(find.text('Capture'));
+      await tapWatch(tester, 'Capture');
       await tester.pump();
-      await tester.tap(find.text('Yellow'));
+      await tapWatch(tester, 'Yellow');
       await tester.pump();
       final home14 = find.text('home 14 · p-home-14');
       await tester.ensureVisible(home14);

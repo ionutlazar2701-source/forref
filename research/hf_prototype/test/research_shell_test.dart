@@ -63,6 +63,7 @@ void main() {
 
   testWidgets('rebuild keeps the research signature', (tester) async {
     final controller = ResearchController();
+    controller.openGeometryStage();
     await tester.pumpWidget(ResearchApp(controller: controller));
     controller.load(ScenarioId.s02YellowOnePrior);
     await tester.pump();

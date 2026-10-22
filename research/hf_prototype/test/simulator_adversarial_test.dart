@@ -9,8 +9,8 @@ void main() {
   testWidgets('painted yellow target matches the instrument rectangle',
       (tester) async {
     final controller = ResearchController();
-    await tester.pumpWidget(ResearchApp(controller: controller));
     controller.openGeometryStage();
+    await tester.pumpWidget(ResearchApp(controller: controller));
     controller.show(ResearchPage.yellow);
     await tester.pump();
 
@@ -34,8 +34,8 @@ void main() {
 
   testWidgets('C profile switch cancels an open pointer', (tester) async {
     final controller = ResearchController();
-    await tester.pumpWidget(ResearchApp(controller: controller));
     controller.openGeometryStage();
+    await tester.pumpWidget(ResearchApp(controller: controller));
     controller.show(ResearchPage.yellow);
     await tester.pump();
     final gesture =
@@ -53,8 +53,8 @@ void main() {
   testWidgets('D a round-watch corner does not activate a target',
       (tester) async {
     final controller = ResearchController();
-    await tester.pumpWidget(ResearchApp(controller: controller));
     controller.openGeometryStage();
+    await tester.pumpWidget(ResearchApp(controller: controller));
     controller.selectProfile(illustrativeRoundWatch.profileId);
     controller.show(ResearchPage.yellow);
     await tester.pump();
@@ -68,8 +68,8 @@ void main() {
 
   testWidgets('E F G held resolution keeps the frozen command', (tester) async {
     final controller = ResearchController();
-    await tester.pumpWidget(ResearchApp(controller: controller));
     controller.openGeometryStage();
+    await tester.pumpWidget(ResearchApp(controller: controller));
     controller.setHold(true);
     controller.load(ScenarioId.s09Home14ThenAway14);
     controller.show(ResearchPage.yellow);
@@ -132,8 +132,8 @@ void main() {
   testWidgets('H unknown outcome is not saved and not a known failure',
       (tester) async {
     final controller = ResearchController();
-    await tester.pumpWidget(ResearchApp(controller: controller));
     controller.openGeometryStage();
+    await tester.pumpWidget(ResearchApp(controller: controller));
     controller.load(ScenarioId.s16SaveNotVerified);
     controller.show(ResearchPage.yellow);
     await tester.pump();
@@ -149,8 +149,8 @@ void main() {
 
   testWidgets('I unknown touch is not treated as supported', (tester) async {
     final controller = ResearchController();
-    await tester.pumpWidget(ResearchApp(controller: controller));
     controller.openGeometryStage();
+    await tester.pumpWidget(ResearchApp(controller: controller));
     controller.importProfile(_touch('unknown'));
     await tester.pump();
     expect(controller.activeProfile.touchClaimedSupported, isFalse);
@@ -171,6 +171,7 @@ void main() {
   testWidgets('J rebuild, resize, inspection, and comparison write nothing',
       (tester) async {
     final controller = ResearchController();
+    controller.openGeometryStage();
     await tester.pumpWidget(ResearchApp(controller: controller));
     final before = controller.instrument.cautions.length;
     final signature = controller.instrument.behaviorSignature;
@@ -191,8 +192,8 @@ void main() {
 
   testWidgets('O a certified import is rejected', (tester) async {
     final controller = ResearchController();
-    await tester.pumpWidget(ResearchApp(controller: controller));
     controller.openGeometryStage();
+    await tester.pumpWidget(ResearchApp(controller: controller));
     final before = controller.activeProfile.profileId;
     controller.importProfile(
       _touch('supported').replaceAll(
@@ -210,8 +211,8 @@ void main() {
   testWidgets('P physical calibration without evidence stays uncalibrated',
       (tester) async {
     final controller = ResearchController();
-    await tester.pumpWidget(ResearchApp(controller: controller));
     controller.openGeometryStage();
+    await tester.pumpWidget(ResearchApp(controller: controller));
     controller.setCalibration(CalibrationMode.physical1to1);
     await tester.pump();
     expect(find.text('Calibration: NOT CALIBRATED'), findsOneWidget);
@@ -222,8 +223,8 @@ void main() {
 
   testWidgets('layout not fit hides action targets', (tester) async {
     final controller = ResearchController();
-    await tester.pumpWidget(ResearchApp(controller: controller));
     controller.openGeometryStage();
+    await tester.pumpWidget(ResearchApp(controller: controller));
     controller.importProfile(_tinyRound);
     controller.show(ResearchPage.yellow);
     await tester.pump();
@@ -235,8 +236,8 @@ void main() {
   testWidgets('K L M N focus, direct pathway, officials, and roles',
       (tester) async {
     final controller = ResearchController();
-    await tester.pumpWidget(ResearchApp(controller: controller));
     controller.openGeometryStage();
+    await tester.pumpWidget(ResearchApp(controller: controller));
     controller.show(ResearchPage.yellow);
     await tester.pump();
     final gesture =

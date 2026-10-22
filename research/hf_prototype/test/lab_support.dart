@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -5,6 +6,35 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hf_prototype/research_app.dart';
+import 'package:watch_reference_ui/watch_reference_ui.dart';
+import 'package:simulator_sandbox/simulator_sandbox.dart';
+
+/// Frozen capture output for widget tests (avoids SQLite in the Flutter binding).
+Map<String, Object?> loadCaptureReportFixture() {
+  final file = File('test/fixtures/sandbox_capture_report.json');
+  return jsonDecode(file.readAsStringSync()) as Map<String, Object?>;
+}
+
+/// Live file-backed capture for regression tests outside widget binding.
+Future<Map<String, Object?>> captureReportPayload() => generateCaptureReport();
+
+Future<void> tapWatch(WidgetTester tester, String label) async {
+  final target = find.descendant(
+    of: find.byType(WatchReferenceApp),
+    matching: find.text(label),
+  );
+  expect(target, findsOneWidget);
+  await tester.tap(target);
+}
+
+Future<void> tapWatchTextContaining(WidgetTester tester, String snippet) async {
+  final target = find.descendant(
+    of: find.byType(WatchReferenceApp),
+    matching: find.textContaining(snippet),
+  );
+  expect(target, findsOneWidget);
+  await tester.tap(target);
+}
 
 /// Wide enough for the inline inspector and the inline Command Lab rail.
 const wideLab = Size(1600, 1000);
