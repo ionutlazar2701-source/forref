@@ -97,8 +97,9 @@ Future<void> _capture(WidgetTester tester, String name) async {
     Directory('/opt/cursor/artifacts'),
   ];
   for (final directory in targets) {
-    if (directory.path == '/opt/cursor/artifacts' && !directory.existsSync())
+    if (directory.path == '/opt/cursor/artifacts' && !directory.existsSync()) {
       continue;
+    }
     directory.createSync(recursive: true);
     File('${directory.path}${Platform.pathSeparator}$name.png')
         .writeAsBytesSync(bytes!);

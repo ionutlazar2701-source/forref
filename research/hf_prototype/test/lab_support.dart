@@ -36,8 +36,17 @@ Future<void> selectDevice(WidgetTester tester, String profileId) async {
 }
 
 Future<void> openWorkspace(WidgetTester tester, LabWorkspace workspace) async {
-  await tester.tap(find.byKey(Key('workspace-${workspace.name}')));
-  await tester.pump();
+  final tab = find.byKey(Key('workspace-${workspace.name}'));
+  if (tab.evaluate().isNotEmpty) {
+    await tester.tap(tab);
+    await tester.pump();
+    return;
+  }
+  // Narrow regime: the workspace bar is a dropdown.
+  await tester.tap(find.byKey(const Key('workspace-dropdown')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(workspace.label).last);
+  await tester.pumpAndSettle();
 }
 
 Future<void> openInspectorTab(
@@ -96,8 +105,9 @@ Future<String> captureLab(
   ];
   String? first;
   for (final directory in targets) {
-    if (directory.path == '/opt/cursor/artifacts' && !directory.existsSync())
+    if (directory.path == '/opt/cursor/artifacts' && !directory.existsSync()) {
       continue;
+    }
     directory.createSync(recursive: true);
     final file = File('${directory.path}${Platform.pathSeparator}$name.png');
     file.writeAsBytesSync(bytes!);
