@@ -33,13 +33,13 @@ extension LabWorkspaceLabel on LabWorkspace {
 
   String get question => switch (this) {
         LabWorkspace.focus =>
-          'Judge the FORREF reference experience without permanent debugging controls.',
+          'Paired mobile and watch research surfaces over one deterministic match state.',
         LabWorkspace.commandLab =>
           'Repeatable synthetic scenarios while the watch remains the interaction surface.',
         LabWorkspace.compare =>
           'One active input · identical research presentation · no cross-device pointer replay.',
         LabWorkspace.matchBuilder =>
-          'Synthetic match preparation. Reserved for S2.4. Not authoritative.',
+          'Bootstrap a deterministic research fixture for the paired lab. Not authoritative.',
       };
 }
 

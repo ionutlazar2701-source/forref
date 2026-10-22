@@ -19,11 +19,17 @@ void main() {
     await selectDevice(tester, 'amazfit-gts4');
     expect(find.text('DIAGNOSTIC VIEWPORT'), findsNothing);
     expect(find.byType(WatchReferenceApp), findsOneWidget);
-    expect(find.text('Capture'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(WatchReferenceApp),
+        matching: find.text('Capture'),
+      ),
+      findsOneWidget,
+    );
 
-    await tester.tap(find.text('Capture'));
+    await tapWatch(tester, 'Capture');
     await tester.pump();
-    await tester.tap(find.text('Yellow'));
+    await tapWatch(tester, 'Yellow');
     await tester.pump();
     final home14 = find.text('home 14 · p-home-14');
     await tester.ensureVisible(home14);
@@ -90,7 +96,7 @@ void main() {
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
     await selectDevice(tester, 'amazfit-gts4');
-    await tester.tap(find.text('Capture'));
+    await tapWatch(tester, 'Capture');
     await tester.pump();
     await tester.tap(find.text('Sending-off'));
     await tester.pump();
@@ -111,9 +117,9 @@ void main() {
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
     await selectDevice(tester, 'garmin-approach-s60');
-    await tester.tap(find.text('Capture'));
+    await tapWatch(tester, 'Capture');
     await tester.pump();
-    await tester.tap(find.text('Yellow'));
+    await tapWatch(tester, 'Yellow');
     await tester.pump();
     final record = find.text('Record yellow');
     await tester.ensureVisible(record);
@@ -135,7 +141,7 @@ void main() {
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
     await selectDevice(tester, 'amazfit-gts4');
-    await tester.tap(find.text('Capture'));
+    await tapWatch(tester, 'Capture');
     await tester.pump();
     await tester.tap(find.text('Substitution'));
     await tester.pump();
@@ -171,7 +177,14 @@ void main() {
     await tester.pumpWidget(ResearchApp(controller: controller));
     await selectDevice(tester, 'amazfit-gts4');
     final gesture =
-        await tester.startGesture(tester.getCenter(find.text('Capture')));
+        await tester.startGesture(
+          tester.getCenter(
+            find.descendant(
+              of: find.byType(WatchReferenceApp),
+              matching: find.text('Capture'),
+            ),
+          ),
+        );
     await selectDevice(tester, 'huawei-watch-gt4-46');
     await gesture.up();
     await tester.pump();

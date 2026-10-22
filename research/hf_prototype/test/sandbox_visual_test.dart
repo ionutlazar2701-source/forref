@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -6,6 +5,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hf_prototype/research_app.dart';
+
+import 'lab_support.dart';
 
 Future<void> _loadReadableFonts() async {
   const regularPath = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
@@ -28,13 +29,7 @@ void main() {
     addTearDown(() async {
       await tester.binding.setSurfaceSize(null);
     });
-    final result = Process.runSync(
-      'dart',
-      ['run', 'bin/capture_report.dart'],
-      workingDirectory: '../simulator_sandbox',
-    );
-    expect(result.exitCode, 0, reason: '${result.stdout}\n${result.stderr}');
-    final report = jsonDecode(result.stdout as String) as Map<String, Object?>;
+    final report = loadCaptureReportFixture();
     final sha = _headSha();
     final stamp =
         'SHA $sha | profileId none | runtime Integration Sandbox | scenario synthetic yellow | fidelity not a device | ${report['measurement']}';

@@ -1,11 +1,10 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter/material.dart' hide ActivateIntent;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hf_prototype/research_app.dart';
 import 'package:simulator_sandbox/simulator_sandbox.dart';
 import 'package:watch_reference_ui/watch_reference_ui.dart';
+
+import 'lab_support.dart';
 
 void main() {
   testWidgets('the lab renders a file-backed sandbox journal', (tester) async {
@@ -13,7 +12,7 @@ void main() {
     addTearDown(() async {
       await tester.binding.setSurfaceSize(null);
     });
-    final report = _captureReport();
+    final report = loadCaptureReportFixture();
     expect(report['successLabel'], sandboxCommittedLabel);
     expect(report['failureLabel'], sandboxFailedLabel);
     expect(report['recordId'], isNotNull);
@@ -53,12 +52,3 @@ void main() {
   });
 }
 
-Map<String, Object?> _captureReport() {
-  final result = Process.runSync(
-    'dart',
-    ['run', 'bin/capture_report.dart'],
-    workingDirectory: '../simulator_sandbox',
-  );
-  expect(result.exitCode, 0, reason: '${result.stdout}\n${result.stderr}');
-  return jsonDecode(result.stdout as String) as Map<String, Object?>;
-}

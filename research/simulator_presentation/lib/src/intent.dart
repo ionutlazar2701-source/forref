@@ -1,15 +1,18 @@
 import 'state.dart';
 
 /// Who asked for the intent. The trace must keep these apart.
-enum IntentOrigin { watchUi, operatorFixture }
+enum IntentOrigin { watchUi, mobileUi, operatorFixture }
 
 const String watchUiTraceLabel = 'ACTUAL WATCH UI INTERACTION';
+
+const String mobileUiTraceLabel = 'MOBILE UI ACTION';
 
 const String operatorFixtureTraceLabel = 'OPERATOR FIXTURE ACTION';
 
 String intentOriginLabel(IntentOrigin origin) {
   return switch (origin) {
     IntentOrigin.watchUi => watchUiTraceLabel,
+    IntentOrigin.mobileUi => mobileUiTraceLabel,
     IntentOrigin.operatorFixture => operatorFixtureTraceLabel,
   };
 }

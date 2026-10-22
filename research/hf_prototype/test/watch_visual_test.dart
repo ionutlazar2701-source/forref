@@ -42,9 +42,9 @@ void main() {
     await selectDevice(tester, 'amazfit-gts4');
     await _capture(tester, '06-watch-live');
 
-    await tester.tap(find.text('Capture'));
+    await tapWatch(tester, 'Capture');
     await tester.pump();
-    await tester.tap(find.text('Yellow'));
+    await tapWatch(tester, 'Yellow');
     await tester.pump();
     await _capture(tester, '07-yellow-flow');
 

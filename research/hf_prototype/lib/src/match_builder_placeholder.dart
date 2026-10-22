@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:hf_v2/hf_v2.dart';
 
 import '../research_app.dart';
 import 'device_hero_stage.dart';
 import 'lab_theme.dart';
+import 'paired_session.dart';
 
 /// Reserved S2.4 workspace. Composition only.
 ///
@@ -56,6 +58,13 @@ class MatchBuilderPlaceholder extends StatefulWidget {
 
 class _MatchBuilderPlaceholderState extends State<MatchBuilderPlaceholder> {
   MatchBuilderStep _step = MatchBuilderStep.match;
+  late ResearchFixture _draft;
+
+  @override
+  void initState() {
+    super.initState();
+    _draft = widget.controller.fixture;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +75,12 @@ class _MatchBuilderPlaceholderState extends State<MatchBuilderPlaceholder> {
       horizontal: stacked,
       onSelect: (next) => setState(() => _step = next),
     );
-    final detail = _StepDetail(step: _step);
+    final detail = _StepDetail(
+      step: _step,
+      draft: _draft,
+      onDraftChanged: (next) => setState(() => _draft = next),
+      onApply: () => widget.controller.applyResearchFixture(_draft),
+    );
     return Padding(
       padding: const EdgeInsets.all(LabMetrics.pageMargin),
       child: Column(
@@ -194,9 +208,17 @@ class _StepTile extends StatelessWidget {
 }
 
 class _StepDetail extends StatelessWidget {
-  const _StepDetail({required this.step});
+  const _StepDetail({
+    required this.step,
+    required this.draft,
+    required this.onDraftChanged,
+    required this.onApply,
+  });
 
   final MatchBuilderStep step;
+  final ResearchFixture draft;
+  final ValueChanged<ResearchFixture> onDraftChanged;
+  final VoidCallback onApply;
 
   @override
   Widget build(BuildContext context) {
@@ -215,23 +237,61 @@ class _StepDetail extends StatelessWidget {
                 key: Key('builder-detail-${step.name}'), style: LabText.title),
             const SizedBox(height: LabMetrics.tight),
             Text(step.description, style: LabText.body),
+            if (step == MatchBuilderStep.match) ...[
+              const SizedBox(height: LabMetrics.gutter),
+              _field('Match name', draft.matchName, (v) => onDraftChanged(draft.copyWith(matchName: v))),
+              _field('Home team', draft.homeTeam, (v) => onDraftChanged(draft.copyWith(homeTeam: v))),
+              _field('Away team', draft.awayTeam, (v) => onDraftChanged(draft.copyWith(awayTeam: v))),
+            ],
+            if (step == MatchBuilderStep.format) ...[
+              const SizedBox(height: LabMetrics.gutter),
+              DropdownButton<ScenarioId>(
+                key: const Key('builder-scenario'),
+                value: draft.scenarioId,
+                isExpanded: true,
+                items: [
+                  for (final id in ScenarioId.values)
+                    DropdownMenuItem(value: id, child: Text(id.name)),
+                ],
+                onChanged: (id) {
+                  if (id != null) onDraftChanged(draft.copyWith(scenarioId: id));
+                },
+              ),
+            ],
+            if (step == MatchBuilderStep.review) ...[
+              const SizedBox(height: LabMetrics.gutter),
+              Text(_draftSummary(), style: LabText.body),
+              const SizedBox(height: LabMetrics.tight),
+              FilledButton(
+                key: const Key('builder-apply-fixture'),
+                onPressed: onApply,
+                child: const Text('Load into paired lab'),
+              ),
+            ],
             const SizedBox(height: LabMetrics.gutter),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: LabColors.canvas,
-                borderRadius: BorderRadius.circular(LabMetrics.controlRadius),
-              ),
-              child: const Text(
-                'Reserved for WAVE S2.4 — Complete Synthetic Match Builder. This placeholder '
-                'does not create Match Records, does not touch hf_v2 history, and never shows '
-                'a Saved state. The current research scenario stays the only loaded match.',
-                key: Key('builder-reserved-note'),
-                style: LabText.caption,
-              ),
+            const Text(
+              'Non-authoritative · no Match Records · not Saved',
+              key: Key('builder-reserved-note'),
+              style: LabText.caption,
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  String _draftSummary() =>
+      '${draft.matchName} · ${draft.homeTeam} vs ${draft.awayTeam} · '
+      'scenario ${draft.scenarioId.name} · watch ${draft.watchProfileId}';
+
+  Widget _field(String label, String value, ValueChanged<String> onChanged) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: TextFormField(
+        key: Key('builder-field-$label'),
+        initialValue: value,
+        decoration: InputDecoration(labelText: label, isDense: true),
+        onChanged: onChanged,
       ),
     );
   }

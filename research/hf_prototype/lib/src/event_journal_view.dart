@@ -140,6 +140,12 @@ class EventJournalView extends StatelessWidget {
           _OriginWarning(),
           const SizedBox(height: LabMetrics.tight),
           for (final stage in stages) _StageRow(stage: stage),
+          if (controller.pairedPresentationJournal.isNotEmpty) ...[
+            const SizedBox(height: LabMetrics.gutter),
+            const Text('PAIRED PRESENTATION', style: LabText.label),
+            for (final line in controller.pairedPresentationJournal)
+              Text(line, style: LabText.caption),
+          ],
           const SizedBox(height: LabMetrics.gutter),
           _ResearchPathCard(
             trace: trace.isEmpty

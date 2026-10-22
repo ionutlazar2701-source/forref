@@ -11,8 +11,10 @@ import 'src/lab_bridge.dart';
 import 'src/lab_model.dart';
 import 'src/lab_scaffold.dart';
 import 'src/lab_theme.dart';
+import 'src/paired_session.dart';
 
 export 'src/lab_model.dart';
+export 'src/paired_session.dart';
 export 'src/lab_theme.dart' show LabColors, LabMetrics, labTitle, labIdentity;
 
 enum ResearchPage {
@@ -75,6 +77,9 @@ class ResearchController extends ChangeNotifier {
   String shellProfileId = defaultShellProfileId;
   int inputEpoch = 0;
   String evidenceStamp = '';
+  ResearchFixture fixture = ResearchFixture.defaults;
+  PairedSessionState paired = PairedSessionState.initial(ResearchFixture.defaults);
+  final List<String> pairedPresentationJournal = [];
   bool sandboxVisible = false;
   SandboxSession? sandboxSession;
   SandboxCaptureReport? sandboxReport;
@@ -248,8 +253,57 @@ class ResearchController extends ChangeNotifier {
     notifyListeners();
   }
 
+  String get matchTitle => fixture.matchName;
+
   Future<void> dispatchWatch(WatchIntent intent) async {
     await watchRuntime.dispatch(intent);
+    _notePairedIntent(intent);
+    notifyListeners();
+  }
+
+  Future<void> dispatchMobile(WatchIntent intent) async {
+    await dispatchWatch(intent);
+  }
+
+  void _notePairedIntent(WatchIntent intent) {
+    final origin = originFromIntent(intent.origin);
+    paired = paired.afterIntent(origin: origin, intentName: intent.name);
+    pairedPresentationJournal.add(
+      '${pairedPresentationJournal.length + 1} ${origin.label} ${intent.name}',
+    );
+  }
+
+  /// Loads deterministic research fixture state. Does not write Match Memory.
+  Future<void> applyResearchFixture(ResearchFixture next) async {
+    fixture = next;
+    paired = PairedSessionState.initial(next).afterIntent(
+      origin: SimulatedActionOrigin.systemScenario,
+      intentName: 'fixture:${next.scenarioId.name}',
+    );
+    openDeviceShell(next.watchProfileId);
+    await watchRuntime.dispatch(
+      LoadScenarioIntent(next.scenarioId.name,
+          origin: IntentOrigin.operatorFixture),
+    );
+    page = ResearchPage.live;
+    _applyActiveLayout();
+    notifyListeners();
+  }
+
+  void setSimulatedDisconnect(bool disconnected) {
+    paired = PairedSessionState(
+      fixture: fixture,
+      connection: disconnected
+          ? SimulatedConnectionState.simulatedDisconnect
+          : SimulatedConnectionState.pairActive,
+      lastOrigin: paired.lastOrigin,
+      lastIntentName: paired.lastIntentName,
+      mobileUpdated: paired.mobileUpdated,
+      watchUpdated: paired.watchUpdated,
+      propagationNote: disconnected
+          ? 'SIMULATED DISCONNECT · shared truth frozen in instrument'
+          : 'SHARED MATCH STATE · SIMULATED PAIR',
+    );
     notifyListeners();
   }
 

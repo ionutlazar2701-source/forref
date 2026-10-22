@@ -82,7 +82,7 @@ void main() {
         note: 'watch yellow did not light any sandbox stage');
 
     // 07 Event Journal seeded from a real file-backed sandbox capture.
-    final report = _captureReport();
+    final report = loadCaptureReportFixture();
     controller.showJournalSnapshot(
       headline: 'Event Journal · ${report['successLabel']} · ${report['measurement']}',
       detail: 'record ${report['recordId']} bytes ${report['encodedBytes']} '
@@ -111,9 +111,9 @@ void main() {
     controller.openDeviceShell('amazfit-gts4');
     await controller.operatorLoadScenario(ScenarioId.s01YellowNoPrior);
     await tester.pump();
-    await tester.tap(find.text('Capture'));
+    await tapWatch(tester, 'Capture');
     await tester.pump();
-    await tester.tap(find.text('Yellow'));
+    await tapWatch(tester, 'Yellow');
     await tester.pump();
     final home14 = find.text('home 14 · p-home-14');
     await tester.ensureVisible(home14);
@@ -164,12 +164,3 @@ void main() {
   });
 }
 
-Map<String, Object?> _captureReport() {
-  final result = Process.runSync(
-    'dart',
-    ['run', 'bin/capture_report.dart'],
-    workingDirectory: '../simulator_sandbox',
-  );
-  expect(result.exitCode, 0, reason: '${result.stdout}\n${result.stderr}');
-  return jsonDecode(result.stdout as String) as Map<String, Object?>;
-}
