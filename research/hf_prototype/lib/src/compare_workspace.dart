@@ -264,7 +264,7 @@ class _SecondarySelector extends StatelessWidget {
               value: controller.compareProfileId,
               isExpanded: true,
               isDense: true,
-              style: LabText.body,
+              style: DefaultTextStyle.of(context).style.merge(LabText.body),
               items: [
                 for (final profile in options)
                   DropdownMenuItem(

@@ -89,6 +89,13 @@ class ResearchController extends ChangeNotifier {
 
   bool get inspectorOpen => inspector != null;
 
+  /// Evidence stamps are capture metadata, not state. Setting one through
+  /// here repaints the footer so a frame carries the stamp taken for it.
+  void setEvidenceStamp(String stamp) {
+    evidenceStamp = stamp;
+    notifyListeners();
+  }
+
   bool get geometryStageVisible => !deviceShellVisible;
 
   LabRuntime get runtime =>
@@ -522,8 +529,9 @@ class ResearchController extends ChangeNotifier {
 
   String _otherSeed(String profileId) {
     for (final profile in factualSeedProfiles) {
-      if (profile.identity.profileId != profileId)
+      if (profile.identity.profileId != profileId) {
         return profile.identity.profileId;
+      }
     }
     return profileId;
   }

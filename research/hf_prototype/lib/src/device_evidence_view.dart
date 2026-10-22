@@ -277,7 +277,7 @@ class DeviceEvidenceView extends StatelessWidget {
           const Text('DEVICE EVIDENCE · DeviceProfileV2', style: LabText.label),
           const SizedBox(height: 4),
           Text(deviceDisplayName(profile),
-              key: const Key('evidence-device-name'), style: LabText.title),
+              key: const Key('evidence-device-name'), style: LabText.panelTitle),
           const SizedBox(height: 4),
           Text(
             '$unknownCount facts are $unknownFactLabel. Unknown stays unknown; the shell never fills a missing number.',
@@ -337,35 +337,36 @@ class _RowTile extends StatelessWidget {
     final hasDetail = row.sourceIds.isNotEmpty ||
         row.derivation != null ||
         row.uncertainty != null;
-    final head = Row(
+    // Label and badge share the first line; the value gets the full width
+    // beneath so UNKNOWN is never broken mid-word in a narrow inspector.
+    final head = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 118,
-          child: Text(row.label, style: LabText.caption),
+        Row(
+          children: [
+            Expanded(child: Text(row.label, style: LabText.caption)),
+            const SizedBox(width: 6),
+            StatusBadge(status: row.status),
+          ],
         ),
-        Expanded(
-          child: Text(
-            row.value,
-            key: Key('evidence-value-$group-${row.label}'),
-            style: row.status == FactStatus.unknown
-                ? LabText.numeric.copyWith(color: LabColors.unknownFact)
-                : LabText.numeric,
-          ),
+        Text(
+          row.value,
+          key: Key('evidence-value-$group-${row.label}'),
+          style: row.status == FactStatus.unknown
+              ? LabText.numeric.copyWith(color: LabColors.unknownFact)
+              : LabText.numeric,
         ),
-        const SizedBox(width: 6),
-        StatusBadge(status: row.status),
       ],
     );
     if (!hasDetail) {
       return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 3), child: head);
+          padding: const EdgeInsets.symmetric(vertical: 4), child: head);
     }
     return Theme(
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
       child: ExpansionTile(
         tilePadding: EdgeInsets.zero,
-        childrenPadding: const EdgeInsets.only(left: 118, bottom: 6),
+        childrenPadding: const EdgeInsets.only(bottom: 6),
         dense: true,
         visualDensity: VisualDensity.compact,
         title: head,

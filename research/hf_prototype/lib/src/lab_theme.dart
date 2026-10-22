@@ -53,6 +53,13 @@ abstract final class LabText {
     fontWeight: FontWeight.w700,
     height: 1.2,
   );
+  /// Inspector-panel headline: secondary to the workspace title.
+  static const panelTitle = TextStyle(
+    color: LabColors.navy,
+    fontSize: 16,
+    fontWeight: FontWeight.w700,
+    height: 1.25,
+  );
   static const subtitle = TextStyle(
     color: LabColors.inkMuted,
     fontSize: 13,

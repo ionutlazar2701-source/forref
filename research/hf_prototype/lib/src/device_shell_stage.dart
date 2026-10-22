@@ -387,7 +387,8 @@ String _shortName(DeviceProfileV2 profile) {
 Color _bodyColor(DeviceShellManifest manifest) {
   if (manifest.canvasUnit.contains('plate')) return const Color(0xFFE8EEF4);
   if (manifest.clip == ScreenShape.round) return const Color(0xFF1C1F24);
-  if (manifest.canvasUnit.contains('not millimetres'))
+  if (manifest.canvasUnit.contains('not millimetres')) {
     return const Color(0xFF2C333A);
+  }
   return const Color(0xFFE4DDD4);
 }

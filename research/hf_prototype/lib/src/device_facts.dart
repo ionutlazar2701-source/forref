@@ -22,9 +22,26 @@ String deviceModelLine(DeviceProfileV2 profile) {
   final family = profile.identity.family.value;
   final model = profile.identity.model.value ?? profile.identity.profileId;
   final variant = profile.identity.variant.value;
-  final name =
-      family != null && !model.startsWith(family) ? '$family $model' : model;
+  final name = _joinFamilyAndModel(family, model);
   return variant == null ? name : '$name · $variant';
+}
+
+/// "Watch GT" + "GT 4" → "Watch GT 4"; "GTS" + "GTS 4" → "GTS 4".
+/// Overlapping words at the seam are emitted once; facts are not altered.
+String _joinFamilyAndModel(String? family, String model) {
+  if (family == null || model.startsWith(family)) return model;
+  final familyWords = family.split(' ');
+  final modelWords = model.split(' ');
+  for (var overlap = familyWords.length; overlap > 0; overlap--) {
+    if (overlap > modelWords.length) continue;
+    final tail = familyWords.sublist(familyWords.length - overlap);
+    final head = modelWords.sublist(0, overlap);
+    if (tail.join(' ') == head.join(' ')) {
+      return [...familyWords.sublist(0, familyWords.length - overlap), ...modelWords]
+          .join(' ');
+    }
+  }
+  return '$family $model';
 }
 
 /// Full display name used under a device stage.

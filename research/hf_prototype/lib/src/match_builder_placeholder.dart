@@ -178,9 +178,13 @@ class _StepTile extends StatelessWidget {
                   : LabText.bodyStrong.copyWith(color: LabColors.steel),
             ),
             const SizedBox(width: 10),
-            Text(
-              step.label,
-              style: selected ? LabText.onNavyStrong : LabText.bodyStrong,
+            Flexible(
+              child: Text(
+                step.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: selected ? LabText.onNavyStrong : LabText.bodyStrong,
+              ),
             ),
           ],
         ),

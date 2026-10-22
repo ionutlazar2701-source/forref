@@ -345,7 +345,7 @@ class _NarrowWorkspaceSelector extends StatelessWidget {
                 key: const Key('workspace-dropdown'),
                 value: controller.workspace,
                 isExpanded: true,
-                style: LabText.bodyStrong,
+                style: DefaultTextStyle.of(context).style.merge(LabText.bodyStrong),
                 items: [
                   for (final workspace in LabWorkspace.values)
                     DropdownMenuItem(

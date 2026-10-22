@@ -46,7 +46,8 @@ class CommandLabWorkspace extends StatelessWidget {
               controller: controller,
               profile: profile,
               zoom: controller.stageZoom,
-              overline: 'ACTIVE REFERENCE UI · $watchUiOriginLabel',
+              overline:
+                  'ACTIVE REFERENCE UI · WATCH TAPS HERE = $watchUiOriginLabel',
             ),
           ),
           OutcomeRibbon(controller: controller, alwaysVisible: true),
@@ -98,7 +99,7 @@ class _CommandRailState extends State<CommandRail> {
           children: [
             const Text('OPERATOR TOOLS', style: LabText.label),
             const SizedBox(height: 4),
-            const Text('Command Lab', style: LabText.title),
+            const Text('Operator rail', style: LabText.panelTitle),
             const SizedBox(height: 4),
             const Text(
               'Fixture actions are injected by an operator. Watch gestures remain inside the device.',
@@ -121,7 +122,7 @@ class _CommandRailState extends State<CommandRail> {
                 key: const Key('scenario-dropdown'),
                 value: instrument.scenarioId,
                 isExpanded: true,
-                style: LabText.body,
+                style: DefaultTextStyle.of(context).style.merge(LabText.body),
                 items: [
                   for (final id in ScenarioId.values)
                     DropdownMenuItem(value: id, child: Text(id.name)),

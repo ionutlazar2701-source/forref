@@ -123,7 +123,7 @@ class EventJournalView extends StatelessWidget {
           const Text('CAUSALITY · INTEGRATION SANDBOX', style: LabText.label),
           const SizedBox(height: 4),
           Text(headline,
-              key: const Key('journal-headline'), style: LabText.title),
+              key: const Key('journal-headline'), style: LabText.panelTitle),
           const SizedBox(height: 4),
           Text(
             hasAny
