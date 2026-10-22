@@ -10,6 +10,7 @@ Night I evidence is unchanged. Windows application launch observed by the founde
 | S2.1 | PASS | `69775730b6362d89033e25552c586e26ba963837` | Schematic shells. Diagnostic child, not the watch app. |
 | S2.2 | PASS | `39139906b40b2b4d1bdbfa8f190b1bbe48f1b77c` | Watch reference app runs inside the aperture. |
 | S2.3 | PASS | `68780d5569aebeb32126837434bd1d4ee768da26` | Isolated file-backed yellow commit, readback, and journal. |
+| S2.3.5 | PASS as desktop presentation | `334851b6fa626b7b7e1be0172cbc9dfa51c982e7` | John V1 lab: Focus, Command Lab, Compare, Inspector, Match Builder placeholder. Presentation only; no new authority. Windows local gate required. |
 | S2.4 | not started | | Phone shells and match builder are not implemented. |
 
 Production authority modified: NO.
