@@ -4,8 +4,6 @@ import 'package:hf_v2/hf_v2.dart';
 import '../research_app.dart';
 import 'device_hero_stage.dart';
 import 'lab_theme.dart';
-import 'paired_session.dart';
-
 /// Reserved S2.4 workspace. Composition only.
 ///
 /// Nothing here writes a record, loads a scenario, or claims a saved match.

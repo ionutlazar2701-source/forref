@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../research_app.dart';
 import 'lab_theme.dart';
-import 'paired_session.dart';
-
 /// Conceptual link between mobile and watch research surfaces.
 class PairedLinkPanel extends StatelessWidget {
   const PairedLinkPanel({super.key, required this.controller});

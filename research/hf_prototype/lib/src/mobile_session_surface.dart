@@ -1,10 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide ActivateIntent;
 import 'package:simulator_presentation/simulator_presentation.dart';
 
 import '../research_app.dart';
 import 'lab_theme.dart';
-import 'paired_session.dart';
-
 /// Research Mobile Session pane. Not the production phone app.
 class MobileSessionSurface extends StatelessWidget {
   const MobileSessionSurface({
@@ -45,6 +43,11 @@ class MobileSessionSurface extends StatelessWidget {
               _row('Phase', fixture.phaseLabel),
               _row('Time', _timeLine(state, fixture)),
               _row('Score', _scoreLine(state, fixture)),
+              Text(
+                _scoreLine(state, fixture),
+                key: const Key('mobile-score'),
+                style: LabText.numeric,
+              ),
               const SizedBox(height: 8),
               Text(
                 disconnected ? 'SIMULATED DISCONNECT' : 'SIMULATED CONNECTION · PAIR ACTIVE',
@@ -87,8 +90,89 @@ class MobileSessionSurface extends StatelessWidget {
                             ),
                     child: const Text('Yellow'),
                   ),
+                  FilledButton.tonal(
+                    key: const Key('mobile-goal'),
+                    onPressed: disconnected
+                        ? null
+                        : () => controller.dispatchMobile(
+                              const OfferGoalIntent(origin: IntentOrigin.mobileUi),
+                            ),
+                    child: const Text('Goal'),
+                  ),
+                  FilledButton.tonal(
+                    key: const Key('mobile-match-report'),
+                    onPressed: disconnected
+                        ? null
+                        : () => controller.dispatchMobile(
+                              const OpenRouteIntent(WatchRoute.matchReport,
+                                  origin: IntentOrigin.mobileUi),
+                            ),
+                    child: const Text('Match Report'),
+                  ),
                 ],
               ),
+              if (state.navigation.route == WatchRoute.goalFlow) ...[
+                const SizedBox(height: 8),
+                const Text('MOBILE GOAL', style: LabText.caption),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton.tonal(
+                      key: const Key('mobile-goal-team-home'),
+                      onPressed: disconnected
+                          ? null
+                          : () => controller.dispatchMobile(
+                                const SetTeamIntent(PresentationTeam.home,
+                                    origin: IntentOrigin.mobileUi),
+                              ),
+                      child: Text(fixture.homeTeam),
+                    ),
+                    FilledButton.tonal(
+                      key: const Key('mobile-goal-team-away'),
+                      onPressed: disconnected
+                          ? null
+                          : () => controller.dispatchMobile(
+                                const SetTeamIntent(PresentationTeam.away,
+                                    origin: IntentOrigin.mobileUi),
+                              ),
+                      child: Text(fixture.awayTeam),
+                    ),
+                    FilledButton.tonal(
+                      key: const Key('mobile-record-goal'),
+                      onPressed: disconnected || !state.goalFlow.canRecord
+                          ? null
+                          : () => controller.dispatchMobile(
+                                const ActivateIntent(PresentationAction.goal,
+                                    origin: IntentOrigin.mobileUi),
+                              ),
+                      child: const Text('Record Goal'),
+                    ),
+                  ],
+                ),
+                for (final person in state.roster)
+                  if (person.team == state.goalFlow.scoringTeam)
+                    FilledButton.tonal(
+                      key: Key('mobile-goal-scorer-${person.id}'),
+                      onPressed: disconnected
+                          ? null
+                          : () => controller.dispatchMobile(
+                                SelectParticipantIntent(person.id,
+                                    origin: IntentOrigin.mobileUi),
+                              ),
+                      child: Text('#${person.shirtLabel} ${person.name}'),
+                    ),
+              ],
+              const SizedBox(height: 8),
+              const Text('MATCH REPORT', style: LabText.caption),
+              for (final entry in state.matchReport.entries)
+                Text(
+                  '${entry.matchTimeLabel} GOAL ${entry.teamLabel} ${entry.participantDisplay} ${entry.scoreAfterLabel}',
+                  key: Key('mobile-match-report-entry-${entry.sequence}'),
+                  style: LabText.body,
+                ),
+              if (state.matchReport.entries.isEmpty)
+                const Text('No established events', style: LabText.caption),
               const SizedBox(height: 4),
               const Text(
                 'MOBILE UI · research pane · not production phone',
