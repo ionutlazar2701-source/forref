@@ -111,6 +111,173 @@ class MobileSessionSurface extends StatelessWidget {
                   ),
                 ],
               ),
+              if (state.navigation.route == WatchRoute.yellowFlow) ...[
+                const SizedBox(height: 8),
+                const Text('MOBILE YELLOW', style: LabText.caption),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton.tonal(
+                      key: const Key('mobile-yellow-team-home'),
+                      onPressed: disconnected
+                          ? null
+                          : () => controller.dispatchMobile(
+                                const SetTeamIntent(PresentationTeam.home,
+                                    origin: IntentOrigin.mobileUi),
+                              ),
+                      child: Text(fixture.homeTeam),
+                    ),
+                    FilledButton.tonal(
+                      key: const Key('mobile-yellow-team-away'),
+                      onPressed: disconnected
+                          ? null
+                          : () => controller.dispatchMobile(
+                                const SetTeamIntent(PresentationTeam.away,
+                                    origin: IntentOrigin.mobileUi),
+                              ),
+                      child: Text(fixture.awayTeam),
+                    ),
+                    FilledButton.tonal(
+                      key: const Key('mobile-record-yellow'),
+                      onPressed: disconnected
+                          ? null
+                          : () => controller.dispatchMobile(
+                                const ActivateIntent(PresentationAction.yellow,
+                                    origin: IntentOrigin.mobileUi),
+                              ),
+                      child: const Text('Record Yellow'),
+                    ),
+                  ],
+                ),
+                for (final person in state.roster)
+                  if (_teamFilter(state, person.team))
+                    FilledButton.tonal(
+                      key: Key('mobile-yellow-subject-${person.id}'),
+                      onPressed: disconnected
+                          ? null
+                          : () => controller.dispatchMobile(
+                                SelectParticipantIntent(person.id,
+                                    origin: IntentOrigin.mobileUi),
+                              ),
+                      child: Text('#${person.shirtLabel} ${person.name}'),
+                    ),
+              ],
+              if (state.navigation.route == WatchRoute.sendOffFlow) ...[
+                const SizedBox(height: 8),
+                const Text('MOBILE SEND-OFF', style: LabText.caption),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton.tonal(
+                      onPressed: disconnected
+                          ? null
+                          : () => controller.dispatchMobile(
+                                const OfferDirectSendOffIntent(
+                                    origin: IntentOrigin.mobileUi),
+                              ),
+                      child: const Text('Offer direct'),
+                    ),
+                    FilledButton.tonal(
+                      key: const Key('mobile-record-direct-sendoff'),
+                      onPressed: disconnected
+                          ? null
+                          : () => controller.dispatchMobile(
+                                const ActivateIntent(
+                                    PresentationAction.directSendOff,
+                                    origin: IntentOrigin.mobileUi),
+                              ),
+                      child: const Text('Record direct send-off'),
+                    ),
+                    FilledButton.tonal(
+                      key: const Key('mobile-record-second-sendoff'),
+                      onPressed: disconnected
+                          ? null
+                          : () => controller.dispatchMobile(
+                                const ActivateIntent(
+                                    PresentationAction.secondCautionSendOff,
+                                    origin: IntentOrigin.mobileUi),
+                              ),
+                      child: const Text('Record second-caution send-off'),
+                    ),
+                  ],
+                ),
+                for (final person in state.roster)
+                  if (_teamFilter(state, person.team))
+                    FilledButton.tonal(
+                      key: Key('mobile-sendoff-subject-${person.id}'),
+                      onPressed: disconnected
+                          ? null
+                          : () => controller.dispatchMobile(
+                                SelectParticipantIntent(person.id,
+                                    origin: IntentOrigin.mobileUi),
+                              ),
+                      child: Text('#${person.shirtLabel} ${person.name}'),
+                    ),
+              ],
+              if (state.navigation.route == WatchRoute.substitutionFlow) ...[
+                const SizedBox(height: 8),
+                const Text('MOBILE SUBSTITUTION', style: LabText.caption),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton.tonal(
+                      onPressed: disconnected
+                          ? null
+                          : () => controller.dispatchMobile(
+                                const SetTeamIntent(PresentationTeam.home,
+                                    origin: IntentOrigin.mobileUi),
+                              ),
+                      child: Text(fixture.homeTeam),
+                    ),
+                    FilledButton.tonal(
+                      onPressed: disconnected
+                          ? null
+                          : () => controller.dispatchMobile(
+                                const SetTeamIntent(PresentationTeam.away,
+                                    origin: IntentOrigin.mobileUi),
+                              ),
+                      child: Text(fixture.awayTeam),
+                    ),
+                    FilledButton.tonal(
+                      key: const Key('mobile-record-substitution'),
+                      onPressed: disconnected
+                          ? null
+                          : () => controller.dispatchMobile(
+                                const ActivateIntent(
+                                    PresentationAction.substitution,
+                                    origin: IntentOrigin.mobileUi),
+                              ),
+                      child: const Text('Record substitution'),
+                    ),
+                  ],
+                ),
+                for (final person in state.roster)
+                  if (_teamFilter(state, person.team)) ...[
+                    FilledButton.tonal(
+                      key: Key('mobile-sub-out-${person.id}'),
+                      onPressed: disconnected
+                          ? null
+                          : () => controller.dispatchMobile(
+                                SelectOutIntent(person.id,
+                                    origin: IntentOrigin.mobileUi),
+                              ),
+                      child: Text('OUT #${person.shirtLabel}'),
+                    ),
+                    FilledButton.tonal(
+                      key: Key('mobile-sub-in-${person.id}'),
+                      onPressed: disconnected
+                          ? null
+                          : () => controller.dispatchMobile(
+                                SelectInIntent(person.id,
+                                    origin: IntentOrigin.mobileUi),
+                              ),
+                      child: Text('IN #${person.shirtLabel}'),
+                    ),
+                  ],
+              ],
               if (state.navigation.route == WatchRoute.goalFlow) ...[
                 const SizedBox(height: 8),
                 const Text('MOBILE GOAL', style: LabText.caption),
@@ -167,7 +334,7 @@ class MobileSessionSurface extends StatelessWidget {
               const Text('MATCH REPORT', style: LabText.caption),
               for (final entry in state.matchReport.entries)
                 Text(
-                  '${entry.matchTimeLabel} GOAL ${entry.teamLabel} ${entry.participantDisplay} ${entry.scoreAfterLabel}',
+                  _mobileReportLine(entry),
                   key: Key('mobile-match-report-entry-${entry.sequence}'),
                   style: LabText.body,
                 ),
@@ -197,6 +364,28 @@ class MobileSessionSurface extends StatelessWidget {
   String _scoreLine(WatchPresentationState state, ResearchFixture fixture) {
     if (!state.score.available) return 'Score unavailable';
     return state.score.label;
+  }
+
+  bool _teamFilter(WatchPresentationState state, PresentationTeam personTeam) {
+    final ctx = state.header.teamContext;
+    return switch (ctx) {
+      PresentationTeamContext.home => personTeam == PresentationTeam.home,
+      PresentationTeamContext.away => personTeam == PresentationTeam.away,
+      PresentationTeamContext.absent || PresentationTeamContext.ambiguous =>
+        true,
+    };
+  }
+
+  String _mobileReportLine(MatchReportEntryPresentation entry) {
+    final kind = matchReportKindLabel(entry.kind);
+    final buffer = StringBuffer(
+      '${entry.matchTimeLabel} $kind ${entry.teamLabel} ${entry.participantDisplay}',
+    );
+    if (entry.details != null) buffer.write(' ${entry.details}');
+    if (entry.scoreAfterLabel != null) {
+      buffer.write(' ${entry.scoreAfterLabel}');
+    }
+    return buffer.toString();
   }
 
   Widget _row(String label, String value) {

@@ -41,6 +41,9 @@ const defaultCompareProfileId = 'amazfit-gts4';
 class ResearchController extends ChangeNotifier {
   ResearchController({ResearchInstrument? instrument})
       : instrument = instrument ?? ResearchInstrument() {
+    if (this.instrument.roster.isEmpty) {
+      this.instrument.loadScenario(ScenarioId.s01YellowNoPrior);
+    }
     watchRuntime = HfPresentationRuntime(instrument: this.instrument);
     _applyActiveLayout();
     this.instrument.noteProfileSelected(activeProfile.profileId);

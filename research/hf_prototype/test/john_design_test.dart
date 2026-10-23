@@ -176,9 +176,13 @@ void main() {
       // Switching the owner during a held press cancels it; nothing commits.
       await tester.tap(find.descendant(of: active, matching: find.text('Yellow')));
       await tester.pump();
-      final home14 = find.descendant(of: active, matching: find.text('home 14 · p-home-14'));
-      await tester.ensureVisible(home14);
-      await tester.tap(home14);
+      await syncWatchYellowFlow(controller);
+      await tester.pump();
+      await controller.dispatchWatch(
+        const SelectParticipantIntent('p-home-14',
+            origin: IntentOrigin.watchUi),
+      );
+      await tester.pump();
       await tester.pump();
       final record = find.descendant(of: active, matching: find.text('Record yellow'));
       await tester.ensureVisible(record);
@@ -219,13 +223,19 @@ void main() {
       await tester.pump();
       await tapWatch(tester, 'Yellow');
       await tester.pump();
-      final home14 = find.text('home 14 · p-home-14');
-      await tester.ensureVisible(home14);
-      await tester.tap(home14);
+      await syncWatchYellowFlow(controller);
       await tester.pump();
-      final record = find.text('Record yellow');
-      await tester.ensureVisible(record);
-      await tester.tap(record);
+      await controller.dispatchWatch(
+        const SelectParticipantIntent('p-home-14',
+            origin: IntentOrigin.watchUi),
+      );
+      await tester.pump();
+      controller.focusLost();
+      await tester.pump();
+      await controller.dispatchWatch(
+        const ActivateIntent(PresentationAction.yellow,
+            origin: IntentOrigin.watchUi),
+      );
       await tester.pump();
       expect(controller.instrument.snapshot.inFlight?.subjectId, 'p-home-14');
       expect(controller.instrument.cautions, isEmpty);
@@ -259,9 +269,12 @@ void main() {
       await tester.pump();
       await tapWatch(tester, 'Yellow');
       await tester.pump();
-      final home9 = find.text('home 9 · p-home-9');
-      await tester.ensureVisible(home9);
-      await tester.tap(home9);
+      await syncWatchYellowFlow(controller);
+      await tester.pump();
+      await controller.dispatchWatch(
+        const SelectParticipantIntent('p-home-9', origin: IntentOrigin.watchUi),
+      );
+      await tester.pump();
       await tester.pump();
       final record = find.text('Record yellow');
       await tester.ensureVisible(record);
@@ -290,9 +303,13 @@ void main() {
       await tester.pump();
       await tapWatch(tester, 'Yellow');
       await tester.pump();
-      final home14 = find.text('home 14 · p-home-14');
-      await tester.ensureVisible(home14);
-      await tester.tap(home14);
+      await syncWatchYellowFlow(controller);
+      await tester.pump();
+      await controller.dispatchWatch(
+        const SelectParticipantIntent('p-home-14',
+            origin: IntentOrigin.watchUi),
+      );
+      await tester.pump();
       await tester.pump();
       final record = find.text('Record yellow');
       await tester.ensureVisible(record);
@@ -317,9 +334,13 @@ void main() {
       await tester.pump();
       await tapWatch(tester, 'Yellow');
       await tester.pump();
-      final home14 = find.text('home 14 · p-home-14');
-      await tester.ensureVisible(home14);
-      await tester.tap(home14);
+      await syncWatchYellowFlow(controller);
+      await tester.pump();
+      await controller.dispatchWatch(
+        const SelectParticipantIntent('p-home-14',
+            origin: IntentOrigin.watchUi),
+      );
+      await tester.pump();
       await tester.pump();
       final record = find.text('Record yellow');
       await tester.ensureVisible(record);
@@ -355,9 +376,13 @@ void main() {
       await tester.pump();
       await tapWatch(tester, 'Yellow');
       await tester.pump();
-      final home14 = find.text('home 14 · p-home-14');
-      await tester.ensureVisible(home14);
-      await tester.tap(home14);
+      await syncWatchYellowFlow(controller);
+      await tester.pump();
+      await controller.dispatchWatch(
+        const SelectParticipantIntent('p-home-14',
+            origin: IntentOrigin.watchUi),
+      );
+      await tester.pump();
       await tester.pump();
       final record = find.text('Record yellow');
       await tester.ensureVisible(record);

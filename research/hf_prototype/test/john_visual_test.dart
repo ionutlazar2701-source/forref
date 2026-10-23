@@ -5,6 +5,7 @@ import 'package:flutter/material.dart' hide ActivateIntent;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hf_prototype/research_app.dart';
 import 'package:hf_v2/hf_v2.dart';
+import 'package:simulator_presentation/simulator_presentation.dart';
 
 import 'lab_support.dart';
 
@@ -115,9 +116,11 @@ void main() {
     await tester.pump();
     await tapWatch(tester, 'Yellow');
     await tester.pump();
-    final home14 = find.text('home 14 · p-home-14');
-    await tester.ensureVisible(home14);
-    await tester.tap(home14);
+    await syncWatchYellowFlow(controller);
+    await tester.pump();
+    await controller.dispatchWatch(
+      const SelectParticipantIntent('p-home-14', origin: IntentOrigin.watchUi),
+    );
     await tester.pump();
     final record = find.text('Record yellow');
     await tester.ensureVisible(record);

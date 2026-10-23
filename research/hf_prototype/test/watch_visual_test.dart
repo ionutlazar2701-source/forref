@@ -67,7 +67,7 @@ void main() {
           origin: IntentOrigin.watchUi),
     );
     await tester.pump();
-    final home14 = find.text('home 14 · p-home-14');
+    final home14 = find.byKey(const Key('watch-yellow-subject-p-home-14'));
     await tester.ensureVisible(home14);
     await tester.tap(home14);
     await tester.pump();

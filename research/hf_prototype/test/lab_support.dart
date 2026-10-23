@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hf_prototype/research_app.dart';
 import 'package:watch_reference_ui/watch_reference_ui.dart';
+import 'package:simulator_presentation/simulator_presentation.dart';
 import 'package:simulator_sandbox/simulator_sandbox.dart';
 
 /// Frozen capture output for widget tests (avoids SQLite in the Flutter binding).
@@ -25,6 +26,40 @@ Future<void> tapWatch(WidgetTester tester, String label) async {
   );
   expect(target, findsOneWidget);
   await tester.tap(target);
+}
+
+Future<void> tapWatchKey(WidgetTester tester, Key key, {Finder? of}) async {
+  final root = of ?? find.byType(WatchReferenceApp);
+  final target = find.descendant(
+    of: root,
+    matching: find.byKey(key),
+  );
+  expect(target, findsOneWidget);
+  await tester.ensureVisible(target);
+  await tester.tap(target);
+}
+
+/// Selects a yellow-flow subject by stable participant id.
+Future<void> tapWatchYellowSubject(
+  WidgetTester tester,
+  String participantId, {
+  Finder? of,
+}) {
+  return tapWatchKey(
+    tester,
+    Key('watch-yellow-subject-$participantId'),
+    of: of,
+  );
+}
+
+/// Keeps presentation route in sync when a test mixes taps and controller dispatch.
+Future<void> syncWatchYellowFlow(ResearchController controller) async {
+  await controller.dispatchWatch(
+    const OpenRouteIntent(WatchRoute.captureMenu, origin: IntentOrigin.watchUi),
+  );
+  await controller.dispatchWatch(
+    const OfferYellowIntent(origin: IntentOrigin.watchUi),
+  );
 }
 
 Future<void> tapWatchTextContaining(WidgetTester tester, String snippet) async {

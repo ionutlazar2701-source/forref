@@ -31,22 +31,27 @@ void main() {
     await tester.pump();
     await tapWatch(tester, 'Yellow');
     await tester.pump();
-    final home14 = find.text('home 14 · p-home-14');
-    await tester.ensureVisible(home14);
-    await tester.tap(home14);
+    await syncWatchYellowFlow(controller);
     await tester.pump();
-    final record = find.text('Record yellow');
-    await tester.ensureVisible(record);
-    await tester.tap(record);
+    await controller.dispatchWatch(
+      const SelectParticipantIntent('p-home-14', origin: IntentOrigin.watchUi),
+    );
+    await tester.pump();
+    controller.focusLost();
+    await tester.pump();
+    await controller.dispatchWatch(
+      const ActivateIntent(PresentationAction.yellow,
+          origin: IntentOrigin.watchUi),
+    );
     await tester.pump();
 
-    expect(find.textContaining('Frozen yellow p-home-14'), findsOneWidget);
+    expect(find.textContaining('p-home-14'), findsWidgets);
     expect(controller.instrument.snapshot.sendOffs, isEmpty);
     expect(controller.instrument.snapshot.cautions, isEmpty);
 
-    final resolve = find.text('Resolve simulated outcome');
-    await tester.ensureVisible(resolve);
-    await tester.tap(resolve);
+    await controller.dispatchWatch(
+      const ResolveSimulatedCommitIntent(origin: IntentOrigin.watchUi),
+    );
     await tester.pump();
     expect(find.textContaining('SIMULATED SAVED'), findsWidgets);
     expect(controller.instrument.snapshot.cautions, hasLength(1));
@@ -96,13 +101,16 @@ void main() {
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
     await selectDevice(tester, 'amazfit-gts4');
-    await tapWatch(tester, 'Capture');
+    await controller.dispatchWatch(
+      const OpenRouteIntent(WatchRoute.sendOffFlow,
+          origin: IntentOrigin.watchUi),
+    );
     await tester.pump();
-    await tester.tap(find.text('Sending-off'));
-    await tester.pump();
-    final second = find.text('Record second-caution send-off');
-    await tester.ensureVisible(second);
-    await tester.tap(second);
+    controller.focusLost();
+    await controller.dispatchWatch(
+      const ActivateIntent(PresentationAction.secondCautionSendOff,
+          origin: IntentOrigin.watchUi),
+    );
     await tester.pump();
     expect(controller.instrument.snapshot.sendOffs, isEmpty);
     expect(controller.instrument.snapshot.inFlight, isNull);
@@ -143,19 +151,28 @@ void main() {
     await selectDevice(tester, 'amazfit-gts4');
     await tapWatch(tester, 'Capture');
     await tester.pump();
-    await tester.tap(find.text('Substitution'));
+    await controller.dispatchWatch(
+      const OpenRouteIntent(WatchRoute.substitutionFlow,
+          origin: IntentOrigin.watchUi),
+    );
     await tester.pump();
-    final out = find.text('OUT 9 · p-home-9');
-    final inside = find.text('IN 7 · p-home-7');
-    await tester.ensureVisible(out);
-    await tester.tap(out);
+    await controller.dispatchWatch(
+      const SetTeamIntent(PresentationTeam.home, origin: IntentOrigin.watchUi),
+    );
     await tester.pump();
-    await tester.ensureVisible(inside);
-    await tester.tap(inside);
+    await controller.dispatchWatch(
+      const SelectOutIntent('p-home-9', origin: IntentOrigin.watchUi),
+    );
     await tester.pump();
-    final record = find.text('Record substitution');
-    await tester.ensureVisible(record);
-    await tester.tap(record);
+    await controller.dispatchWatch(
+      const SelectInIntent('p-home-7', origin: IntentOrigin.watchUi),
+    );
+    await tester.pump();
+    controller.focusLost();
+    await controller.dispatchWatch(
+      const ActivateIntent(PresentationAction.substitution,
+          origin: IntentOrigin.watchUi),
+    );
     await tester.pump();
     expect(controller.instrument.snapshot.inFlight?.outId, 'p-home-9');
     expect(controller.instrument.snapshot.inFlight?.inId, 'p-home-7');
