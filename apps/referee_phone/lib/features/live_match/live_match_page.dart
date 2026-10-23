@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:match_core/match_core.dart';
 import 'package:referee_phone/app_scope.dart';
 import 'package:referee_phone/features/live_match/capture_overlay.dart';
+import 'package:referee_phone/features/live_match/command_availability_panel.dart';
 import 'package:referee_phone/features/live_match/live_match_terminal_ui.dart';
 import 'package:referee_phone/infrastructure/competition_rules/phone_match_capture_context.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
@@ -12,10 +13,11 @@ import 'package:forref_match_core/forref_match_core.dart';
 import 'package:referee_phone/match/match_session.dart';
 import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
 import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_store.dart';
-import 'package:referee_phone/match_application/kick_off_authority.dart';
 import 'package:referee_phone/match_application/match_started_read_model.dart';
-import 'package:referee_phone/match/client_ids.dart';
 import 'package:referee_phone/match/new_match.dart';
+import 'package:referee_phone/mobile_commands/mobile_command.dart';
+import 'package:referee_phone/mobile_commands/mobile_command_availability.dart';
+import 'package:referee_phone/mobile_commands/mobile_command_dispatcher.dart';
 import 'package:referee_phone/routing/app_router.dart';
 
 class LiveMatchPage extends StatefulWidget {
@@ -491,37 +493,40 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
     }
     setState(() => _kickOffPending = true);
     try {
-      final evidence = scope.temporalEvidence;
-      final result = await boundary.commitKickOff(
-        captureContext,
-        period: const PeriodIdentity(index: 1),
-        periodAnchor: evidence == null
-            ? null
-            : () async {
-                final captured = await evidence.captureAnchor();
-                return TemporalContext(
-                  evidenceIds: [captured.evidenceId],
-                  domainClockPolicyVersion:
-                      PhoneCaptureIdentity.domainClockContract.value,
-                );
-              },
+      final runtime = scope.mobileCommands;
+      final prepared = runtime.preparation.freezeKickOff(
+        activation: runtime.preparation.beginActivation(),
+        matchId: widget.matchId,
+        originDeviceId: captureContext.originDeviceId,
+        periodIndex: 1,
       );
+      final outcome = await runtime.dispatcher.dispatch(prepared.envelope);
       if (!mounted) return;
-      if (result is KickOffAuthorityRejected) {
+      if (outcome.status == MobileCommandStatus.saved) {
+        await _refreshTemporal();
+        if (!mounted) return;
         setState(() => _kickOffPending = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.kickOffNotSaved)),
-        );
         return;
       }
-      await _refreshTemporal();
-      if (!mounted) return;
-      setState(() => _kickOffPending = false);
-      if (result is KickOffMatchStartedIncomplete) {
+      if (outcome.completeness == MobileCommitCompleteness.partial) {
+        await _refreshTemporal();
+        if (!mounted) return;
+        setState(() => _kickOffPending = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.periodStartNotSaved)),
         );
+        return;
       }
+      setState(() => _kickOffPending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            outcome.status == MobileCommandStatus.outcomeUnknown
+                ? l10n.outcomeUnknownLabel
+                : l10n.kickOffNotSaved,
+          ),
+        ),
+      );
     } catch (_) {
       if (!mounted) return;
       setState(() => _kickOffPending = false);
@@ -801,6 +806,20 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                 ],
               ),
               const SizedBox(height: 16),
+              CommandAvailabilityPanel(
+                catalog: AppScope.of(context).mobileCommands.catalog(
+                      MobilePhaseHint(
+                        kickOffCommitted: _matchStarted ||
+                            _activePeriod != null ||
+                            _endedPeriod != null,
+                      ),
+                    ),
+                noCompanion:
+                    AppScope.of(context).mobileCommands.companions.device ==
+                        null,
+                localStorageReady:
+                    AppScope.of(context).mobileCommands.localStorageReady,
+              ),
               for (final event in recent)
                 ListTile(
                   title: Text(
@@ -844,16 +863,39 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                     final captureContext = await _captureContext(scope);
                     if (captureContext == null) return;
                     try {
-                      final result = await scope.matchApplication!.commitGoal(
-                        captureContext,
-                        scoringTeamId: MatchTeamId(data.teamId!),
-                        captureIntentId: clientId(),
+                      final runtime = scope.mobileCommands;
+                      final draft = GoalCaptureDraft()
+                        ..scoringTeamId = data.teamId
+                        ..scorerLabel = data.player?.shirtNumber?.toString()
+                        ..displayMatchTime = null;
+                      final prepared = runtime.preparation.freezeGoal(
+                        activation: runtime.preparation.beginActivation(),
+                        matchId: widget.matchId,
+                        originDeviceId: captureContext.originDeviceId,
+                        draft: draft,
                       );
-                      if (result is DurableCommitSuccess) {
+                      final outcome =
+                          await runtime.dispatcher.dispatch(prepared.envelope);
+                      if (!context.mounted) return;
+                      if (outcome.status == MobileCommandStatus.saved) {
                         await _refreshTemporal();
+                        return;
                       }
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            outcome.status == MobileCommandStatus.outcomeUnknown
+                                ? l10n.outcomeUnknownLabel
+                                : l10n.goalNotSaved,
+                          ),
+                        ),
+                      );
                     } catch (_) {
                       // Goal not saved; no legacy fallback.
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l10n.goalNotSaved)),
+                      );
                     }
                     return;
                   }

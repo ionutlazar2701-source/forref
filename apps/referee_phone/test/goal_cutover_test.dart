@@ -286,8 +286,20 @@ void main() {
   test('live match page fails closed if legacy 0-0 scoreLine returns', () {
     final page =
         File('lib/features/live_match/live_match_page.dart').readAsStringSync();
+    final writer = File(
+      'lib/mobile_commands/match_application_command_writer.dart',
+    ).readAsStringSync();
+    final runtime = File(
+      'lib/mobile_commands/mobile_command_runtime.dart',
+    ).readAsStringSync();
     expect(page, contains('readScoreProjection'));
-    expect(page, contains('commitGoal'));
+    expect(page, contains('freezeGoal'));
+    expect(page, contains('runtime.dispatcher.dispatch'));
+    expect(page, contains('no legacy fallback'));
+    expect(page, isNot(contains('commitGoal')));
+    expect(runtime, contains('MatchApplicationCommandWriter'));
+    expect(writer, contains('_boundary.commitGoal'));
+    expect(writer, isNot(contains('MatchSession')));
     expect(page, contains('projection is! KnownScore'));
     expect(page, contains('_scoreProjection = const ScoreUnavailable()'));
     expect(
