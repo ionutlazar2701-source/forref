@@ -28,6 +28,8 @@ final class HfPresentationRuntime implements SimulatorPresentationRuntime {
   ProfileViewportContext? _viewport;
   String _homeTeamLabel = 'Home';
   String _awayTeamLabel = 'Away';
+  bool _yellowCapture = false;
+  bool _directCapture = false;
 
   ResearchInstrument get instrument => _instrument;
 
@@ -81,6 +83,7 @@ final class HfPresentationRuntime implements SimulatorPresentationRuntime {
     switch (intent) {
       case OpenRouteIntent(:final route):
         _route = route;
+        if (route == WatchRoute.sendOffFlow) _directCapture = true;
         _instrument.enterSurface(route.name);
       case SetTeamIntent(:final team):
         _instrument.setTeam(
@@ -102,11 +105,13 @@ final class HfPresentationRuntime implements SimulatorPresentationRuntime {
         _instrument.offerRecordGoal();
         _route = WatchRoute.goalFlow;
       case OfferYellowIntent():
+        _yellowCapture = true;
         _instrument.offerRecordYellow();
         _route = WatchRoute.yellowFlow;
       case AdvanceMatchClockIntent(:final seconds):
         _instrument.advanceMatchClock(seconds);
       case OfferDirectSendOffIntent():
+        _directCapture = true;
         _instrument.offerDirectSendOff();
         _route = WatchRoute.sendOffFlow;
       case SelectOutIntent(:final participantId):
@@ -123,28 +128,44 @@ final class HfPresentationRuntime implements SimulatorPresentationRuntime {
               FinalActionKind.recordGoal,
               originTrace: originTrace,
             );
-            _finishProductGoalIfScriptedSuccess();
+            _finishProductRecordIfScriptedSuccess(FinalActionKind.recordGoal);
           case PresentationAction.yellow:
-            _instrument.offerRecordYellow();
+            if (_yellowCapture) _instrument.offerRecordYellow();
             _instrument.accessibilityInvoke(
               FinalActionKind.recordYellow,
               originTrace: originTrace,
             );
+            _finishProductRecordIfScriptedSuccess(FinalActionKind.recordYellow);
+            if (_instrument.commitKind == SystemCommitKind.saved) {
+              _yellowCapture = false;
+            }
           case PresentationAction.directSendOff:
-            _instrument.offerDirectSendOff();
+            if (_directCapture) _instrument.offerDirectSendOff();
             _instrument.accessibilityInvoke(
               FinalActionKind.recordDirectSendOff,
               originTrace: originTrace,
             );
+            _finishProductRecordIfScriptedSuccess(
+              FinalActionKind.recordDirectSendOff,
+            );
+            if (_instrument.commitKind == SystemCommitKind.saved) {
+              _directCapture = false;
+            }
           case PresentationAction.secondCautionSendOff:
             _instrument.accessibilityInvoke(
               FinalActionKind.recordSecondCautionSendOff,
               originTrace: originTrace,
             );
+            _finishProductRecordIfScriptedSuccess(
+              FinalActionKind.recordSecondCautionSendOff,
+            );
           case PresentationAction.substitution:
             _instrument.accessibilityInvoke(
               FinalActionKind.recordSubstitution,
               originTrace: originTrace,
+            );
+            _finishProductRecordIfScriptedSuccess(
+              FinalActionKind.recordSubstitution,
             );
         }
       case ResolveSimulatedCommitIntent():
@@ -173,22 +194,23 @@ final class HfPresentationRuntime implements SimulatorPresentationRuntime {
         }
         _instrument.loadScenario(match);
         _route = WatchRoute.liveCore;
+        _yellowCapture = false;
+        _directCapture = false;
     }
   }
 
-  /// Normal Founder Goal path: scripted success completes in the same intent.
+  /// Scripted success completes the frozen command in the same Record intent.
   ///
-  /// Frozen command is still captured first. Known failure and unknown stay
-  /// unresolved until an explicit resolve.
-  void _finishProductGoalIfScriptedSuccess() {
-    if (_instrument.pendingAction != FinalActionKind.recordGoal) return;
+  /// Known failure and unknown stay in [SystemCommitKind.saving] until an
+  /// explicit resolve. The command is still frozen before this resolve runs.
+  void _finishProductRecordIfScriptedSuccess(FinalActionKind kind) {
+    if (_instrument.pendingAction != kind) return;
     if (_instrument.commitKind != SystemCommitKind.saving) return;
-    if (!_instrument.simulatedOutcomeIsSuccess(FinalActionKind.recordGoal)) {
-      return;
-    }
+    if (!_instrument.simulatedOutcomeIsSuccess(kind)) return;
     _instrument.resolveSimulatedCommit();
     if (_instrument.commitKind == SystemCommitKind.saved &&
-        _route == WatchRoute.goalFlow) {
+        _route != WatchRoute.liveCore &&
+        _route != WatchRoute.matchReport) {
       _route = WatchRoute.liveCore;
     }
   }

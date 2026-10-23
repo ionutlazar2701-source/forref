@@ -91,6 +91,27 @@ class MobileSessionSurface extends StatelessWidget {
                     child: const Text('Yellow'),
                   ),
                   FilledButton.tonal(
+                    key: const Key('mobile-sendoff'),
+                    onPressed: disconnected
+                        ? null
+                        : () => controller.dispatchMobile(
+                              const OpenRouteIntent(WatchRoute.sendOffFlow,
+                                  origin: IntentOrigin.mobileUi),
+                            ),
+                    child: const Text('Sending-off'),
+                  ),
+                  FilledButton.tonal(
+                    key: const Key('mobile-substitution'),
+                    onPressed: disconnected
+                        ? null
+                        : () => controller.dispatchMobile(
+                              const OpenRouteIntent(
+                                  WatchRoute.substitutionFlow,
+                                  origin: IntentOrigin.mobileUi),
+                            ),
+                    child: const Text('Substitution'),
+                  ),
+                  FilledButton.tonal(
                     key: const Key('mobile-goal'),
                     onPressed: disconnected
                         ? null
@@ -171,6 +192,26 @@ class MobileSessionSurface extends StatelessWidget {
                   runSpacing: 8,
                   children: [
                     FilledButton.tonal(
+                      key: const Key('mobile-sendoff-team-home'),
+                      onPressed: disconnected
+                          ? null
+                          : () => controller.dispatchMobile(
+                                const SetTeamIntent(PresentationTeam.home,
+                                    origin: IntentOrigin.mobileUi),
+                              ),
+                      child: Text(fixture.homeTeam),
+                    ),
+                    FilledButton.tonal(
+                      key: const Key('mobile-sendoff-team-away'),
+                      onPressed: disconnected
+                          ? null
+                          : () => controller.dispatchMobile(
+                                const SetTeamIntent(PresentationTeam.away,
+                                    origin: IntentOrigin.mobileUi),
+                              ),
+                      child: Text(fixture.awayTeam),
+                    ),
+                    FilledButton.tonal(
                       onPressed: disconnected
                           ? null
                           : () => controller.dispatchMobile(
@@ -224,6 +265,7 @@ class MobileSessionSurface extends StatelessWidget {
                   runSpacing: 8,
                   children: [
                     FilledButton.tonal(
+                      key: const Key('mobile-sub-team-home'),
                       onPressed: disconnected
                           ? null
                           : () => controller.dispatchMobile(
@@ -233,6 +275,7 @@ class MobileSessionSurface extends StatelessWidget {
                       child: Text(fixture.homeTeam),
                     ),
                     FilledButton.tonal(
+                      key: const Key('mobile-sub-team-away'),
                       onPressed: disconnected
                           ? null
                           : () => controller.dispatchMobile(
