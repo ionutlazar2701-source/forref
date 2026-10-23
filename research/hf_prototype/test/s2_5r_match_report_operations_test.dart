@@ -847,12 +847,6 @@ void main() {
       const ActivateIntent(PresentationAction.goal, origin: IntentOrigin.watchUi),
     );
     await _pumpWatch(tester, controller);
-    await tester.tap(find.byKey(const Key('watch-resolve-goal')));
-    await tester.pump();
-    await controller.dispatchWatch(
-      const ResolveSimulatedCommitIntent(origin: IntentOrigin.watchUi),
-    );
-    await _pumpWatch(tester, controller);
     expect(find.text('1 – 0'), findsWidgets);
 
     await tester.tap(find.text('Capture'));
