@@ -28,15 +28,43 @@ class PairedLinkPanel extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('PAIRED SESSION', style: LabText.label, textAlign: TextAlign.center),
-              const SizedBox(height: 8),
+              const Icon(Icons.devices, color: LabColors.navy, size: 18),
+              const SizedBox(height: 6),
+              const Text('Devices', style: LabText.caption, textAlign: TextAlign.center),
               Text(
                 paired.connection == SimulatedConnectionState.pairActive
-                    ? 'PAIR ACTIVE'
+                    ? 'Synchronized'
                     : 'SIMULATED DISCONNECT',
                 style: LabText.bodyStrong,
                 textAlign: TextAlign.center,
               ),
+              const SizedBox(height: 8),
+              Center(
+                child: Container(
+                  width: 54,
+                  height: 54,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF26C0CA),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.link, color: Colors.white, size: 26),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text('Live session', style: LabText.caption, textAlign: TextAlign.center),
+              Text(
+                paired.fixture.scenarioId.name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: LabText.bodyStrong,
+              ),
+              const SizedBox(height: 8),
+              const Text('● Events', style: LabText.caption, textAlign: TextAlign.center),
+              const Text('● Match time', style: LabText.caption, textAlign: TextAlign.center),
+              const Text('● Score', style: LabText.caption, textAlign: TextAlign.center),
+              const Text('● Cautions', style: LabText.caption, textAlign: TextAlign.center),
+              const Text('● Substitutions', style: LabText.caption, textAlign: TextAlign.center),
               const SizedBox(height: 8),
               Text(
                 paired.propagationNote,

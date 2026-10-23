@@ -115,6 +115,11 @@ class ResearchController extends ChangeNotifier {
   bool commandRailOpen = false;
   int layoutEpoch = 0;
 
+  /// Photorealistic hardware overlay. Off shows the logical schematic viewport.
+  bool showHardwareFrame = true;
+  bool showDeviceStatus = true;
+  bool phoneDark = false;
+
   ResearchPage page = ResearchPage.live;
   CalibrationMode calibration = CalibrationMode.fit;
   double zoom = 1;
@@ -204,6 +209,24 @@ class ResearchController extends ChangeNotifier {
   void setCommandRailOpen(bool open) {
     if (commandRailOpen == open) return;
     commandRailOpen = open;
+    notifyListeners();
+  }
+
+  void setShowHardwareFrame(bool value) {
+    if (showHardwareFrame == value) return;
+    showHardwareFrame = value;
+    notifyListeners();
+  }
+
+  void setShowDeviceStatus(bool value) {
+    if (showDeviceStatus == value) return;
+    showDeviceStatus = value;
+    notifyListeners();
+  }
+
+  void setPhoneDark(bool value) {
+    if (phoneDark == value) return;
+    phoneDark = value;
     notifyListeners();
   }
 

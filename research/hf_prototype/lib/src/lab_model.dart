@@ -25,9 +25,9 @@ LabLayoutRegime labRegimeFor(double width) {
 
 extension LabWorkspaceLabel on LabWorkspace {
   String get label => switch (this) {
-        LabWorkspace.focus => 'Focus',
+        LabWorkspace.focus => 'Simulation',
         LabWorkspace.commandLab => 'Command Lab',
-        LabWorkspace.compare => 'Compare',
+        LabWorkspace.compare => 'Device Compare',
         LabWorkspace.matchBuilder => 'Match Builder',
       };
 

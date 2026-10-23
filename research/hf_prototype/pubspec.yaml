@@ -33,3 +33,5 @@ flutter:
   uses-material-design: true
   assets:
     - assets/sim_lab/
+    - assets/john_design/source/
+    - assets/john_design/derived/

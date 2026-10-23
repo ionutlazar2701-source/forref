@@ -11,8 +11,8 @@ import 'lab_support.dart';
 void main() {
   testWidgets('the shell launches as a research prototype', (tester) async {
     final controller = await pumpLab(tester);
-    expect(find.text('FORREF'), findsOneWidget);
-    expect(find.text('SIM LAB'), findsOneWidget);
+    expect(find.text('FORREF SIMULATOR LAB'), findsOneWidget);
+    expect(find.text('FORREF'), findsWidgets);
     expect(find.text('RESEARCH / NON-PRODUCTION'), findsOneWidget);
     // The device is the hero: the factual shell and the reference UI are the
     // first thing on screen. The Night I geometry stage is an advanced route.

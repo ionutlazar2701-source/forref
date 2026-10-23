@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 
 /// FORREF research palette. Turquoise is decorative, not a status code.
 abstract final class LabColors {
-  static const navy = Color(0xFF0B2A4A);
-  static const softWhite = Color(0xFFF8FAFC);
-  static const steel = Color(0xFF5B7EA6);
-  static const turquoise = Color(0xFF00D4C8);
+  /// Sampled from the John master reference (bc28380e), not invented.
+  static const navy = Color(0xFF0B2743);
+  static const softWhite = Color(0xFFF4F7FA);
+  static const steel = Color(0xFF465D72);
+  static const turquoise = Color(0xFF26C0CA);
 
   /// Neutral chrome surfaces. Stage separation comes from whitespace, not cards.
-  static const canvas = Color(0xFFEEF2F6);
+  static const canvas = Color(0xFFF3F7FA);
   static const surface = Color(0xFFFFFFFF);
-  static const line = Color(0xFFD5DEE8);
+  static const line = Color(0xFFD1DBE2);
   static const inkMuted = Color(0xFF4A5B70);
   static const navyDeep = Color(0xFF07203A);
 

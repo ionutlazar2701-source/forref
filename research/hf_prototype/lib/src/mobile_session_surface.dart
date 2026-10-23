@@ -1,8 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart' hide ActivateIntent;
 import 'package:simulator_presentation/simulator_presentation.dart';
 
 import '../research_app.dart';
-import 'lab_theme.dart';
+import 'john_frames.dart';
 /// Research Mobile Session pane. Not the production phone app.
 class MobileSessionSurface extends StatelessWidget {
   const MobileSessionSurface({
@@ -22,51 +24,88 @@ class MobileSessionSurface extends StatelessWidget {
         controller.paired.connection == SimulatedConnectionState.simulatedDisconnect;
     final matchRunning = state.clock.available && !state.clock.kickOffAvailable;
     final canAct = !disconnected && matchRunning;
-    return Material(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final height = constraints.maxHeight.isFinite ? constraints.maxHeight : 620.0;
+        final width = math.min(constraints.maxWidth, height * 0.50);
+        return Align(
+          alignment: Alignment.topCenter,
+          child: SizedBox(
+            width: width,
+            height: height,
+            child: PhoneBezel(
+              child: Material(
       key: const Key('mobile-session'),
-      color: LabColors.surface,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border.all(color: LabColors.line),
-          borderRadius: BorderRadius.circular(LabMetrics.controlRadius),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(LabMetrics.gutter),
-          child: SingleChildScrollView(
+      color: controller.phoneDark ? const Color(0xFF081420) : const Color(0xFF10283F),
+      child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              filledButtonTheme: FilledButtonThemeData(
+                style: FilledButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  minimumSize: const Size(0, 32),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+            child: SingleChildScrollView(
             child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('FORREF MOBILE SESSION', style: LabText.label),
-              const SizedBox(height: 4),
-              Text(fixture.matchName,
-                  style: LabText.panelTitle, maxLines: 1, overflow: TextOverflow.ellipsis),
-              const SizedBox(height: 8),
-              _row('Phase', state.clock.phaseLabel, valueKey: const Key('mobile-phase')),
-              _row('Time', _timeLine(state, fixture), valueKey: const Key('mobile-clock')),
-              _row('Score', _scoreLine(state, fixture)),
+              if (state.clock.phaseLabel != _timeLine(state, fixture))
+                Text(
+                state.clock.phaseLabel,
+                key: const Key('mobile-phase'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFF26C0CA),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.1,
+                ),
+              ),
+              Text(
+                _timeLine(state, fixture),
+                key: const Key('mobile-clock'),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: const Color(0xFFF4F9FC),
+                  fontSize: state.navigation.route == WatchRoute.liveCore ? 40 : 22,
+                  fontWeight: FontWeight.w700,
+                  height: 1.05,
+                ),
+              ),
               Text(
                 _scoreLine(state, fixture),
                 key: const Key('mobile-score'),
-                style: LabText.numeric,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFFF4F9FC),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 disconnected ? 'SIMULATED DISCONNECT' : 'SIMULATED CONNECTION · PAIR ACTIVE',
-                style: LabText.caption.copyWith(
+                style: _phoneMeta.copyWith(
                   color: disconnected ? LabColors.unknownFact : LabColors.steel,
                 ),
               ),
               if (!compact) ...[
                 const SizedBox(height: 12),
-                const Text('Recent research state', style: LabText.caption),
+                const Text('Recent research state', style: _phoneMeta),
                 const SizedBox(height: 4),
-                Text(state.commit.label, style: LabText.bodyStrong),
+                Text(state.commit.label, style: const TextStyle(color: Color(0xFFF4F9FC), fontSize: 14, fontWeight: FontWeight.w700)),
                 if (state.frozenCommand != null)
                   Text(
                       'In flight: ${state.frozenCommand!.action.name} '
                       '${state.frozenCommand!.subjectId ?? ''}',
-                      style: LabText.caption),
+                      style: _phoneMeta),
               ],
               const SizedBox(height: 8),
               if (state.clock.kickOffAvailable)
@@ -80,74 +119,15 @@ class MobileSessionSurface extends StatelessWidget {
                     const ConfirmKickOffIntent(origin: IntentOrigin.mobileUi),
                   ),
                 ),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  FilledButton.tonal(
-                    key: const Key('mobile-open-capture'),
-                    onPressed: canAct
-                        ? () => controller.dispatchMobile(
-                              const OpenRouteIntent(WatchRoute.captureMenu,
-                                  origin: IntentOrigin.mobileUi),
-                            )
-                        : null,
-                    child: const Text('Capture'),
-                  ),
-                  FilledButton.tonal(
-                    key: const Key('mobile-yellow'),
-                    onPressed: canAct
-                        ? () => controller.dispatchMobile(
-                              const OfferYellowIntent(origin: IntentOrigin.mobileUi),
-                            )
-                        : null,
-                    child: const Text('Yellow'),
-                  ),
-                  FilledButton.tonal(
-                    key: const Key('mobile-sendoff'),
-                    onPressed: canAct
-                        ? () => controller.dispatchMobile(
-                              const OpenRouteIntent(WatchRoute.sendOffFlow,
-                                  origin: IntentOrigin.mobileUi),
-                            )
-                        : null,
-                    child: const Text('Sending-off'),
-                  ),
-                  FilledButton.tonal(
-                    key: const Key('mobile-substitution'),
-                    onPressed: canAct
-                        ? () => controller.dispatchMobile(
-                              const OpenRouteIntent(
-                                  WatchRoute.substitutionFlow,
-                                  origin: IntentOrigin.mobileUi),
-                            )
-                        : null,
-                    child: const Text('Substitution'),
-                  ),
-                  FilledButton.tonal(
-                    key: const Key('mobile-goal'),
-                    onPressed: canAct
-                        ? () => controller.dispatchMobile(
-                              const OfferGoalIntent(origin: IntentOrigin.mobileUi),
-                            )
-                        : null,
-                    child: const Text('Goal'),
-                  ),
-                  FilledButton.tonal(
-                    key: const Key('mobile-match-report'),
-                    onPressed: disconnected
-                        ? null
-                        : () => controller.dispatchMobile(
-                              const OpenRouteIntent(WatchRoute.matchReport,
-                                  origin: IntentOrigin.mobileUi),
-                            ),
-                    child: const Text('Match Report'),
-                  ),
-                ],
+              _PhoneActionGrid(
+                controller: controller,
+                canAct: canAct,
+                disconnected: disconnected,
+                roomy: state.navigation.route == WatchRoute.liveCore,
               ),
               if (state.navigation.route == WatchRoute.yellowFlow) ...[
                 const SizedBox(height: 8),
-                const Text('MOBILE YELLOW', style: LabText.caption),
+                const Text('MOBILE YELLOW', style: _phoneMeta),
                 if (state.clock.label != null)
                   Text(
                     'Match time ${state.clock.label}',
@@ -204,7 +184,7 @@ class MobileSessionSurface extends StatelessWidget {
               ],
               if (state.navigation.route == WatchRoute.sendOffFlow) ...[
                 const SizedBox(height: 8),
-                const Text('MOBILE SEND-OFF', style: LabText.caption),
+                const Text('MOBILE SEND-OFF', style: _phoneMeta),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -277,7 +257,7 @@ class MobileSessionSurface extends StatelessWidget {
               ],
               if (state.navigation.route == WatchRoute.substitutionFlow) ...[
                 const SizedBox(height: 8),
-                const Text('MOBILE SUBSTITUTION', style: LabText.caption),
+                const Text('MOBILE SUBSTITUTION', style: _phoneMeta),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -341,7 +321,7 @@ class MobileSessionSurface extends StatelessWidget {
               ],
               if (state.navigation.route == WatchRoute.goalFlow) ...[
                 const SizedBox(height: 8),
-                const Text('MOBILE GOAL', style: LabText.caption),
+                const Text('MOBILE GOAL', style: _phoneMeta),
                 Text(
                   state.goalFlow.reviewMatchTimeLabel ?? 'Kick-off required',
                   key: const Key('mobile-goal-review-time'),
@@ -396,25 +376,30 @@ class MobileSessionSurface extends StatelessWidget {
                     ),
               ],
               const SizedBox(height: 8),
-              const Text('MATCH REPORT', style: LabText.caption),
+              const Text('Recent events', style: _phoneMeta),
               for (final entry in state.matchReport.entries)
                 Text(
                   _mobileReportLine(entry),
                   key: Key('mobile-match-report-entry-${entry.sequence}'),
-                  style: LabText.body,
+                  style: _phoneBody,
                 ),
               if (state.matchReport.entries.isEmpty)
-                const Text('No established events', style: LabText.caption),
+                const Text('No established events', style: _phoneMeta),
               const SizedBox(height: 4),
               const Text(
-                'MOBILE UI · research pane · not production phone',
-                style: LabText.caption,
+                'Research phone · not the production app',
+                style: _phoneMeta,
               ),
             ],
           ),
           ),
         ),
       ),
+            ),
+          ),
+          ),
+        );
+      },
     );
   }
 
@@ -429,6 +414,11 @@ class MobileSessionSurface extends StatelessWidget {
 
   String _scoreLine(WatchPresentationState state, ResearchFixture fixture) {
     if (!state.score.available) return 'Score unavailable';
+    final home = state.score.homeGoals;
+    final away = state.score.awayGoals;
+    if (home != null && away != null) {
+      return 'Home $home  —  $away Away';
+    }
     return state.score.label;
   }
 
@@ -453,14 +443,154 @@ class MobileSessionSurface extends StatelessWidget {
     }
     return buffer.toString();
   }
+}
 
-  Widget _row(String label, String value, {Key? valueKey}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+const _phoneMeta = TextStyle(color: Color(0xFFB7C9D6), fontSize: 11, height: 1.3);
+const _phoneBody = TextStyle(color: Color(0xFFF4F9FC), fontSize: 13, height: 1.35);
+
+class _PhoneActionGrid extends StatelessWidget {
+  const _PhoneActionGrid({
+    required this.controller,
+    required this.canAct,
+    required this.disconnected,
+    required this.roomy,
+  });
+
+  final ResearchController controller;
+  final bool canAct;
+  final bool disconnected;
+  final bool roomy;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final gap = constraints.maxWidth < 24 ? 0.0 : 8.0;
+        return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(child: _card(
+              key: const Key('mobile-open-capture'),
+              icon: Icons.sports_soccer,
+              title: 'Capture event',
+              onPressed: canAct
+                  ? () => controller.dispatchMobile(
+                        const OpenRouteIntent(WatchRoute.captureMenu, origin: IntentOrigin.mobileUi),
+                      )
+                  : null,
+            )),
+            SizedBox(width: gap),
+            Expanded(child: _card(
+              key: const Key('mobile-goal'),
+              icon: Icons.flag_outlined,
+              title: 'Goal',
+              onPressed: canAct
+                  ? () => controller.dispatchMobile(
+                        const OfferGoalIntent(origin: IntentOrigin.mobileUi),
+                      )
+                  : null,
+            )),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(child: _card(
+              key: const Key('mobile-yellow'),
+              icon: Icons.square,
+              iconColor: const Color(0xFFEAB308),
+              title: 'Caution',
+              onPressed: canAct
+                  ? () => controller.dispatchMobile(
+                        const OfferYellowIntent(origin: IntentOrigin.mobileUi),
+                      )
+                  : null,
+            )),
+            SizedBox(width: gap),
+            Expanded(child: _card(
+              key: const Key('mobile-sendoff'),
+              icon: Icons.square,
+              iconColor: const Color(0xFFDC2626),
+              title: 'Send off',
+              onPressed: canAct
+                  ? () => controller.dispatchMobile(
+                        const OpenRouteIntent(WatchRoute.sendOffFlow, origin: IntentOrigin.mobileUi),
+                      )
+                  : null,
+            )),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(child: _card(
+              key: const Key('mobile-substitution'),
+              icon: Icons.swap_horiz,
+              title: 'Substitution',
+              onPressed: canAct
+                  ? () => controller.dispatchMobile(
+                        const OpenRouteIntent(WatchRoute.substitutionFlow, origin: IntentOrigin.mobileUi),
+                      )
+                  : null,
+            )),
+            SizedBox(width: gap),
+            Expanded(child: _card(
+              key: const Key('mobile-match-report'),
+              icon: Icons.receipt_long,
+              title: 'Reports',
+              onPressed: disconnected
+                  ? null
+                  : () => controller.dispatchMobile(
+                        const OpenRouteIntent(WatchRoute.matchReport, origin: IntentOrigin.mobileUi),
+                      ),
+            )),
+          ],
+        ),
+      ],
+        );
+      },
+    );
+  }
+
+  Widget _card({
+    required Key key,
+    required IconData icon,
+    required String title,
+    required VoidCallback? onPressed,
+    Color iconColor = const Color(0xFF0B2743),
+  }) {
+    return FilledButton(
+      key: key,
+      onPressed: onPressed,
+      style: FilledButton.styleFrom(
+        backgroundColor: const Color(0xFFF7FBFD),
+        foregroundColor: const Color(0xFF0B2743),
+        disabledBackgroundColor: const Color(0xFFE4EDF3),
+        disabledForegroundColor: const Color(0xFF5C7080),
+        elevation: 0,
+        minimumSize: Size(0, roomy ? 64 : 34),
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: roomy ? 10 : 4),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
       child: Row(
         children: [
-          SizedBox(width: 56, child: Text(label, style: LabText.caption)),
-          Expanded(child: Text(value, key: valueKey, style: LabText.numeric)),
+          Icon(icon, size: 16, color: onPressed == null ? const Color(0xFF8AA0B3) : iconColor),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                height: 1.15,
+                color: Color(0xFF0B2743),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -510,7 +640,22 @@ class _KickOffButtonState extends State<_KickOffButton> {
       child: FilledButton(
         key: const Key('mobile-kick-off'),
         onPressed: widget.enabled ? () {} : null,
-        child: const Text('Kick-off'),
+        style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xFF26C0CA),
+          foregroundColor: const Color(0xFF0B2743),
+          disabledBackgroundColor: const Color(0xFF1A3A56),
+          minimumSize: const Size.fromHeight(48),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+        child: const Text(
+          'KICK-OFF',
+          style: TextStyle(
+            fontFamily: 'Roboto',
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.8,
+            color: Color(0xFF0B2743),
+          ),
+        ),
       ),
     );
   }

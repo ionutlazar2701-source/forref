@@ -6,6 +6,7 @@ import 'package:watch_reference_ui/watch_reference_ui.dart';
 import '../research_app.dart';
 import 'device_facts.dart';
 import 'device_shell_stage.dart';
+import 'john_frames.dart';
 import 'lab_theme.dart';
 
 /// The hero: a factual schematic shell with the live WatchReferenceApp
@@ -48,22 +49,7 @@ class DeviceHeroStage extends StatelessWidget {
             child: FractionallySizedBox(
               widthFactor: zoom.clamp(0.3, 1.0),
               heightFactor: zoom.clamp(0.3, 1.0),
-              child: DeviceShellStage(
-                key: ValueKey('hero-$id-${interactive ? 'active' : 'mirror'}'),
-                profile: profile,
-                interactive: interactive,
-                onPointerCancel: (pointerId) {
-                  controller.instrument.pointerCancel(pointerId: pointerId);
-                  controller.refresh();
-                },
-                child: WatchReferenceApp(
-                  key: Key('watch-$id-${interactive ? 'active' : 'mirror'}'),
-                  state: controller.watchRuntime.watchState,
-                  inputEpoch: controller.inputEpoch,
-                  onIntent:
-                      interactive ? controller.dispatchWatch : _ignoreIntent,
-                ),
-              ),
+              child: _watchBody(id, interactive),
             ),
           ),
         ),
@@ -78,6 +64,34 @@ class DeviceHeroStage extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+
+  Widget _watchBody(String id, bool interactive) {
+    final app = WatchReferenceApp(
+      key: Key('watch-$id-${interactive ? 'active' : 'mirror'}'),
+      state: controller.watchRuntime.watchState,
+      inputEpoch: controller.inputEpoch,
+      onIntent: interactive ? controller.dispatchWatch : _ignoreIntent,
+    );
+    final frame =
+        controller.showHardwareFrame ? johnFrameForProfile(profile) : null;
+    if (frame == null) {
+      return DeviceShellStage(
+        key: ValueKey('hero-$id-${interactive ? 'active' : 'mirror'}'),
+        profile: profile,
+        interactive: interactive,
+        onPointerCancel: (pointerId) {
+          controller.instrument.pointerCancel(pointerId: pointerId);
+          controller.refresh();
+        },
+        child: app,
+      );
+    }
+    return PhotographicWatchFrame(
+      key: ValueKey('photo-$id-${interactive ? 'active' : 'mirror'}'),
+      frame: frame,
+      child: app,
     );
   }
 
@@ -100,8 +114,15 @@ class StageFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final narrow =
-        regime == LabLayoutRegime.narrow || regime == LabLayoutRegime.compact;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final narrow = constraints.maxWidth < 2000;
+        return _footerBody(narrow);
+      },
+    );
+  }
+
+  Widget _footerBody(bool narrow) {
     final zoomLabel = controller.stageZoom >= 0.999
         ? 'FIT'
         : '${(controller.stageZoom * 100).round()}%';
@@ -154,7 +175,14 @@ class StageFooter extends StatelessWidget {
                 children: [
                   fidelity,
                   const SizedBox(height: 6),
-                  Align(alignment: Alignment.centerRight, child: controls),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: controls,
+                    ),
+                  ),
                 ],
               )
             : Row(
