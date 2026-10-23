@@ -506,6 +506,15 @@ final class ResearchInstrument {
     _script[kind] = outcome;
   }
 
+  /// Product surfaces auto-complete only a scripted success.
+  ///
+  /// Failure and unknown stay in [SystemCommitKind.saving] until an explicit
+  /// resolve, so adversarial fixtures keep their outcomes.
+  bool simulatedOutcomeIsSuccess(FinalActionKind kind) {
+    return (_script[kind] ?? SimulatedScriptedOutcome.unknown) ==
+        SimulatedScriptedOutcome.success;
+  }
+
   void pointerDown({
     required int pointerId,
     required double x,

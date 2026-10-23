@@ -123,6 +123,7 @@ final class HfPresentationRuntime implements SimulatorPresentationRuntime {
               FinalActionKind.recordGoal,
               originTrace: originTrace,
             );
+            _finishProductGoalIfScriptedSuccess();
           case PresentationAction.yellow:
             _instrument.offerRecordYellow();
             _instrument.accessibilityInvoke(
@@ -172,6 +173,23 @@ final class HfPresentationRuntime implements SimulatorPresentationRuntime {
         }
         _instrument.loadScenario(match);
         _route = WatchRoute.liveCore;
+    }
+  }
+
+  /// Normal Founder Goal path: scripted success completes in the same intent.
+  ///
+  /// Frozen command is still captured first. Known failure and unknown stay
+  /// unresolved until an explicit resolve.
+  void _finishProductGoalIfScriptedSuccess() {
+    if (_instrument.pendingAction != FinalActionKind.recordGoal) return;
+    if (_instrument.commitKind != SystemCommitKind.saving) return;
+    if (!_instrument.simulatedOutcomeIsSuccess(FinalActionKind.recordGoal)) {
+      return;
+    }
+    _instrument.resolveSimulatedCommit();
+    if (_instrument.commitKind == SystemCommitKind.saved &&
+        _route == WatchRoute.goalFlow) {
+      _route = WatchRoute.liveCore;
     }
   }
 
