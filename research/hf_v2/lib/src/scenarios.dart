@@ -62,6 +62,7 @@ final class ScenarioFixture {
     this.simulatedRecoveryDisclaimer = false,
     this.initialMatchElapsedSeconds = 0,
     this.matchClockAvailable = true,
+    this.initialLifecycle = ResearchMatchLifecycle.firstHalfRunning,
   });
 
   final ScenarioId id;
@@ -89,6 +90,7 @@ final class ScenarioFixture {
   final bool simulatedRecoveryDisclaimer;
   final int initialMatchElapsedSeconds;
   final bool matchClockAvailable;
+  final ResearchMatchLifecycle initialLifecycle;
 }
 
 const _successScript = {
@@ -151,6 +153,8 @@ List<ScenarioFixture> _buildFixtures() {
     List<ResearchOfficial>? staff,
     int initialMatchElapsedSeconds = 0,
     bool matchClockAvailable = true,
+    ResearchMatchLifecycle initialLifecycle =
+        ResearchMatchLifecycle.firstHalfRunning,
   }) {
     return ScenarioFixture(
       id: id,
@@ -179,6 +183,7 @@ List<ScenarioFixture> _buildFixtures() {
       simulatedRecoveryDisclaimer: simulatedRecovery,
       initialMatchElapsedSeconds: initialMatchElapsedSeconds,
       matchClockAvailable: matchClockAvailable,
+      initialLifecycle: initialLifecycle,
     );
   }
 
@@ -375,6 +380,7 @@ List<ScenarioFixture> _buildFixtures() {
       participantId: null,
       people: _goalOpsRoster(),
       initialMatchElapsedSeconds: 0,
+      initialLifecycle: ResearchMatchLifecycle.matchNotStarted,
     ),
     base(
       id: ScenarioId.s21MatchReportOps,
@@ -388,6 +394,7 @@ List<ScenarioFixture> _buildFixtures() {
       participantId: null,
       people: _goalOpsRoster(),
       initialMatchElapsedSeconds: 0,
+      initialLifecycle: ResearchMatchLifecycle.matchNotStarted,
     ),
     base(
       id: ScenarioId.vDuplicateShirt,

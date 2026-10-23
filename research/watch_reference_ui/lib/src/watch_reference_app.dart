@@ -145,14 +145,22 @@ class _FitBody extends StatelessWidget {
   }
 
   List<Widget> _live() {
+    final ready = state.clock.kickOffAvailable;
+    final clockText = state.clock.label ?? state.clock.phaseLabel;
     return [
       Text(
         '${state.homeTeamLabel} v ${state.awayTeamLabel}',
         key: const Key('watch-match-title'),
         style: const TextStyle(fontFamily: 'Roboto', fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0B2A4A)),
       ),
+      if (state.clock.available && state.clock.phaseLabel == 'FIRST HALF')
+        Text(
+          state.clock.phaseLabel,
+          key: const Key('watch-phase'),
+          style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0B2A4A)),
+        ),
       Text(
-        state.clock.label ?? 'Clock unavailable',
+        clockText,
         key: const Key('watch-clock'),
         style: const TextStyle(fontFamily: 'Roboto', fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF0B2A4A)),
       ),
@@ -161,10 +169,14 @@ class _FitBody extends StatelessWidget {
         key: const Key('watch-score'),
         style: const TextStyle(fontFamily: 'Roboto', fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF0B2A4A)),
       ),
-      _button('Capture', const OpenRouteIntent(WatchRoute.captureMenu, origin: IntentOrigin.watchUi)),
+      if (ready) _kickOffButton(),
+      if (!ready)
+        _button('Capture', const OpenRouteIntent(WatchRoute.captureMenu, origin: IntentOrigin.watchUi)),
       _button('Match Report', const OpenRouteIntent(WatchRoute.matchReport, origin: IntentOrigin.watchUi)),
-      _button('Awareness', const OpenRouteIntent(WatchRoute.disciplinaryAwareness, origin: IntentOrigin.watchUi)),
-      _button('History', const OpenRouteIntent(WatchRoute.history, origin: IntentOrigin.watchUi)),
+      if (!ready) ...[
+        _button('Awareness', const OpenRouteIntent(WatchRoute.disciplinaryAwareness, origin: IntentOrigin.watchUi)),
+        _button('History', const OpenRouteIntent(WatchRoute.history, origin: IntentOrigin.watchUi)),
+      ],
       if (state.commit.label == ResearchCommitPhrases.saving)
         _button(
           'Resolve simulated outcome',
@@ -425,6 +437,20 @@ class _FitBody extends StatelessWidget {
     ];
   }
 
+  Widget _kickOffButton() {
+    return _HoldButton(
+      key: const Key('watch-kick-off'),
+      label: 'Kick-off',
+      inputEpoch: inputEpoch,
+      onArm: () => onIntent(
+        const ArmKickOffIntent(origin: IntentOrigin.watchUi),
+      ),
+      onCommit: () => onIntent(
+        const ConfirmKickOffIntent(origin: IntentOrigin.watchUi),
+      ),
+    );
+  }
+
   Widget _button(String label, WatchIntent intent, {Key? key}) {
     return _HoldButton(
       key: key,
@@ -459,11 +485,13 @@ class _HoldButton extends StatefulWidget {
     required this.label,
     required this.inputEpoch,
     required this.onCommit,
+    this.onArm,
   });
 
   final String label;
   final int inputEpoch;
   final VoidCallback onCommit;
+  final VoidCallback? onArm;
 
   @override
   State<_HoldButton> createState() => _HoldButtonState();
@@ -489,6 +517,7 @@ class _HoldButtonState extends State<_HoldButton> {
           if (!mounted) return;
           _pointer = event.pointer;
           _epoch = widget.inputEpoch;
+          widget.onArm?.call();
         },
         onPointerMove: (event) {
           if (!mounted || _pointer != event.pointer) return;

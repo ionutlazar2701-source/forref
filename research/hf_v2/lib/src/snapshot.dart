@@ -43,6 +43,10 @@ final class ResearchTruthSnapshot {
     required this.goals,
     required this.matchElapsedSeconds,
     required this.matchClockAvailable,
+    required this.lifecycle,
+    required this.liveClockArmed,
+    this.kickOffOriginTrace,
+    this.kickOffEvidenceSequence,
     required this.goalFlowStage,
     required this.goalOffered,
     required this.roster,
@@ -81,6 +85,14 @@ final class ResearchTruthSnapshot {
   final List<SavedGoal> goals;
   final int matchElapsedSeconds;
   final bool matchClockAvailable;
+  final ResearchMatchLifecycle lifecycle;
+  final bool liveClockArmed;
+  final String? kickOffOriginTrace;
+  final int? kickOffEvidenceSequence;
+
+  bool get footballTimeActive =>
+      lifecycle == ResearchMatchLifecycle.firstHalfRunning &&
+      matchClockAvailable;
   final GoalFlowStage goalFlowStage;
   final bool goalOffered;
   final List<ResearchParticipant> roster;

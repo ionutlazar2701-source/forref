@@ -36,6 +36,7 @@ final class _ActivatedCommand {
     this.scoringTeam,
     this.goalScorerParticipantId,
     this.capturedMatchTimeLabel,
+    this.occurrence,
     this.originTrace = 'research',
   });
 
@@ -48,6 +49,7 @@ final class _ActivatedCommand {
   final ResearchTeamSide? scoringTeam;
   final String? goalScorerParticipantId;
   final String? capturedMatchTimeLabel;
+  final ResearchOccurrence? occurrence;
   final String originTrace;
 }
 
@@ -102,7 +104,14 @@ final class ResearchInstrument {
   final List<SavedGoal> goals = [];
 
   int matchElapsedSeconds = 0;
-  bool matchClockAvailable = true;
+  bool matchClockAvailable = false;
+  ResearchMatchLifecycle lifecycle = ResearchMatchLifecycle.matchNotStarted;
+  bool liveClockArmed = false;
+  String? kickOffOriginTrace;
+  int? kickOffEvidenceSequence;
+  int _operatorOffsetSeconds = 0;
+  int _liveElapsedSeconds = 0;
+  int? _kickOffArmGeneration;
   GoalFlowStage goalFlowStage = GoalFlowStage.inactive;
   bool goalOffered = false;
   int _reportSequence = 0;
@@ -299,8 +308,18 @@ final class ResearchInstrument {
       ..addAll(fixture.seededSendOffs);
     substitutions.clear();
     goals.clear();
-    matchElapsedSeconds = fixture.initialMatchElapsedSeconds;
-    matchClockAvailable = fixture.matchClockAvailable;
+    lifecycle = fixture.initialLifecycle;
+    liveClockArmed = false;
+    kickOffOriginTrace = null;
+    kickOffEvidenceSequence = null;
+    _kickOffArmGeneration = null;
+    _liveElapsedSeconds = 0;
+    _operatorOffsetSeconds = lifecycle == ResearchMatchLifecycle.firstHalfRunning
+        ? fixture.initialMatchElapsedSeconds
+        : 0;
+    matchClockAvailable = lifecycle == ResearchMatchLifecycle.firstHalfRunning &&
+        fixture.matchClockAvailable;
+    matchElapsedSeconds = matchClockAvailable ? _operatorOffsetSeconds : 0;
     goalFlowStage = GoalFlowStage.inactive;
     goalOffered = false;
     _reportSequence = 0;
@@ -405,7 +424,7 @@ final class ResearchInstrument {
   }
 
   void offerRecordYellow() {
-    if (!_readyForDiscipline()) return;
+    if (!_activePlayAdmissible() || !_readyForDiscipline()) return;
     _exitGoalFlow();
     yellowOffered = true;
     directSendOffOffered = false;
@@ -413,6 +432,7 @@ final class ResearchInstrument {
   }
 
   void offerRecordGoal() {
+    if (!_activePlayAdmissible()) return;
     if (commitKind == SystemCommitKind.saving ||
         commitKind == SystemCommitKind.saveNotVerified) {
       return;
@@ -429,9 +449,68 @@ final class ResearchInstrument {
   }
 
   void advanceMatchClock(int seconds) {
-    if (!matchClockAvailable || seconds <= 0) return;
-    matchElapsedSeconds += seconds;
+    if (!footballTimeActive || seconds <= 0) return;
+    _operatorOffsetSeconds += seconds;
+    _publishElapsed();
     _log(ResearchLogKind.userCorrection, 'clock-advance:$seconds');
+  }
+
+  /// Adds monotonic first-half time. The shell ticker calls this once a second.
+  ///
+  /// This does not read wall-clock time. A negative or empty delta is ignored,
+  /// so a clock adjustment cannot move football time backwards.
+  bool noteLiveElapsed(Duration delta) {
+    if (!liveClockArmed || !footballTimeActive) return false;
+    final seconds = delta.inSeconds;
+    if (seconds <= 0) return false;
+    _liveElapsedSeconds += seconds;
+    _publishElapsed();
+    return true;
+  }
+
+  /// Arms Kick-off for the current input generation. A later focus loss or
+  /// device change makes [confirmKickOff] refuse.
+  void armKickOff() {
+    if (lifecycle != ResearchMatchLifecycle.matchNotStarted) return;
+    if (commitKind == SystemCommitKind.saving ||
+        commitKind == SystemCommitKind.saveNotVerified) {
+      return;
+    }
+    _kickOffArmGeneration = _generation;
+    _log(ResearchLogKind.finalActionArmed, 'kick-off');
+  }
+
+  /// Records that the referee has confirmed the lawful kick-off.
+  ///
+  /// The button does not cause the football match to start. It stores the
+  /// referee-declared boundary that first-half active play has begun.
+  /// A second call does not create another anchor or reset the clock.
+  bool confirmKickOff({required String originTrace}) {
+    if (lifecycle != ResearchMatchLifecycle.matchNotStarted) return false;
+    if (_kickOffArmGeneration == null || _kickOffArmGeneration != _generation) {
+      _kickOffArmGeneration = null;
+      _log(ResearchLogKind.inputRejected, 'kick-off-stale');
+      return false;
+    }
+    _kickOffArmGeneration = null;
+    lifecycle = ResearchMatchLifecycle.firstHalfRunning;
+    matchClockAvailable = true;
+    liveClockArmed = true;
+    _operatorOffsetSeconds = 0;
+    _liveElapsedSeconds = 0;
+    matchElapsedSeconds = 0;
+    kickOffOriginTrace = originTrace;
+    _log(ResearchLogKind.surfaceEntered, 'kick-off:first-half:$originTrace');
+    kickOffEvidenceSequence = _sequence;
+    return true;
+  }
+
+  bool get footballTimeActive =>
+      lifecycle == ResearchMatchLifecycle.firstHalfRunning &&
+      matchClockAvailable;
+
+  void _publishElapsed() {
+    matchElapsedSeconds = _operatorOffsetSeconds + _liveElapsedSeconds;
   }
 
   void noteIntentOriginTrace(String trace) {
@@ -444,7 +523,7 @@ final class ResearchInstrument {
   }
 
   void offerDirectSendOff() {
-    if (!_readyForDiscipline()) return;
+    if (!_activePlayAdmissible() || !_readyForDiscipline()) return;
     directSendOffOffered = true;
     yellowOffered = false;
     successorEstablished = false;
@@ -452,6 +531,7 @@ final class ResearchInstrument {
   }
 
   void selectOut(String id) {
+    if (!_activePlayAdmissible()) return;
     final person = _participant(id);
     if (person == null || !_teamMatches(person.team)) return;
     if (id == inId) {
@@ -466,6 +546,7 @@ final class ResearchInstrument {
   }
 
   void selectIn(String id) {
+    if (!_activePlayAdmissible()) return;
     final person = _participant(id);
     if (person == null || !_teamMatches(person.team)) return;
     if (id == outId) {
@@ -572,6 +653,7 @@ final class ResearchInstrument {
     _log(ResearchLogKind.focusLost, 'open:${_open.length}');
     _open.clear();
     armedKind = null;
+    _kickOffArmGeneration = null;
   }
 
   void relayout(ResearchLayout next, {String detail = 'relayout'}) {
@@ -586,6 +668,7 @@ final class ResearchInstrument {
     final open = _open.length;
     _open.clear();
     armedKind = null;
+    _kickOffArmGeneration = null;
     _generation += 1;
     _log(ResearchLogKind.pointerCancelled, 'device-change:open=$open');
     _log(ResearchLogKind.activeDeviceChanged, profileId);
@@ -704,7 +787,7 @@ final class ResearchInstrument {
             !sendingOffRecorded &&
             _readyForDiscipline(),
       FinalActionKind.recordSubstitution =>
-        matchClockAvailable &&
+        _activePlayAdmissible() &&
             substitutionStage == SubstitutionStage.review &&
             outId != null &&
             inId != null &&
@@ -718,16 +801,30 @@ final class ResearchInstrument {
     return _reportSequence;
   }
 
+  bool _activePlayAdmissible() => footballTimeActive;
+
+  bool _frozenFirstHalf(_ActivatedCommand command) {
+    final occurrence = command.occurrence;
+    return occurrence != null &&
+        occurrence.period == ResearchOccurrencePeriod.firstHalf &&
+        command.capturedMatchTimeLabel == occurrence.label;
+  }
+
+  ResearchOccurrence? _captureOccurrence() {
+    if (lifecycle != ResearchMatchLifecycle.firstHalfRunning) return null;
+    if (!footballTimeActive) return null;
+    return ResearchOccurrence.firstHalf(matchElapsedSeconds);
+  }
+
   String? _captureTimeLabel() {
-    if (!matchClockAvailable) return null;
-    return formatResearchMatchTime(matchElapsedSeconds);
+    return _captureOccurrence()?.label;
   }
 
   bool _readyForGoalRecord() {
     if (!goalOffered || goalFlowStage != GoalFlowStage.readyToRecord) {
       return false;
     }
-    if (!matchClockAvailable) return false;
+    if (!_activePlayAdmissible()) return false;
     final side = _trustedTeamSide();
     if (side == null) return false;
     final scorerId = selectedParticipantId;
@@ -749,7 +846,7 @@ final class ResearchInstrument {
   }
 
   bool _readyForDiscipline() {
-    if (!matchClockAvailable) return false;
+    if (!_activePlayAdmissible()) return false;
     final teamOk = teamContext == TeamContextKind.homeTrusted ||
         teamContext == TeamContextKind.awayTrusted;
     final subjectOk = selectionKind == SubjectSelectionKind.participant ||
@@ -860,6 +957,7 @@ final class ResearchInstrument {
       goalScorerParticipantId:
           kind == FinalActionKind.recordGoal ? selectedParticipantId : null,
       capturedMatchTimeLabel: _captureTimeLabel(),
+      occurrence: _captureOccurrence(),
       originTrace: _pendingOriginTrace,
     );
     commitKind = SystemCommitKind.saving;
@@ -882,7 +980,7 @@ final class ResearchInstrument {
         final subjectKind = command.subjectKind;
         if (subjectId == null ||
             subjectKind == null ||
-            command.capturedMatchTimeLabel == null) {
+            !_frozenFirstHalf(command)) {
           return false;
         }
         final seq = _nextReportSequence();
@@ -895,6 +993,7 @@ final class ResearchInstrument {
             sequence: seq,
             matchTimeLabel: command.capturedMatchTimeLabel,
             originTrace: command.originTrace,
+            occurrence: command.occurrence,
           ),
         );
         if (savedCautionCount(subjectId, subjectKind, command.scope) >= 2) {
@@ -911,7 +1010,7 @@ final class ResearchInstrument {
         final subjectKind = command.subjectKind;
         if (subjectId == null ||
             subjectKind == null ||
-            command.capturedMatchTimeLabel == null) {
+            !_frozenFirstHalf(command)) {
           return false;
         }
         final seqDirect = _nextReportSequence();
@@ -925,6 +1024,7 @@ final class ResearchInstrument {
             sequence: seqDirect,
             matchTimeLabel: command.capturedMatchTimeLabel,
             originTrace: command.originTrace,
+            occurrence: command.occurrence,
           ),
         );
         _logAppended(command, 'sendOffs:${sendOffs.length}');
@@ -934,7 +1034,7 @@ final class ResearchInstrument {
         final subjectKind = command.subjectKind;
         if (subjectId == null ||
             subjectKind == null ||
-            command.capturedMatchTimeLabel == null) {
+            !_frozenFirstHalf(command)) {
           return false;
         }
         final seqSecond = _nextReportSequence();
@@ -948,6 +1048,7 @@ final class ResearchInstrument {
             sequence: seqSecond,
             matchTimeLabel: command.capturedMatchTimeLabel,
             originTrace: command.originTrace,
+            occurrence: command.occurrence,
           ),
         );
         successorEstablished = false;
@@ -961,7 +1062,7 @@ final class ResearchInstrument {
             incoming == null ||
             out == incoming ||
             person == null ||
-            command.capturedMatchTimeLabel == null) {
+            !_frozenFirstHalf(command)) {
           return false;
         }
         final seqSub = _nextReportSequence();
@@ -974,6 +1075,7 @@ final class ResearchInstrument {
             sequence: seqSub,
             matchTimeLabel: command.capturedMatchTimeLabel,
             originTrace: command.originTrace,
+            occurrence: command.occurrence,
           ),
         );
         substitutionStage = SubstitutionStage.saved;
@@ -982,11 +1084,7 @@ final class ResearchInstrument {
       case FinalActionKind.recordGoal:
         final team = command.scoringTeam;
         final scorerId = command.goalScorerParticipantId;
-        final timeLabel = command.capturedMatchTimeLabel;
-        if (team == null ||
-            scorerId == null ||
-            timeLabel == null ||
-            !matchClockAvailable) {
+        if (team == null || scorerId == null || !_frozenFirstHalf(command)) {
           return false;
         }
         final person = _participant(scorerId);
@@ -998,8 +1096,9 @@ final class ResearchInstrument {
             sequence: seqGoal,
             scoringTeam: team,
             scorerParticipantId: scorerId,
-            matchTimeLabel: timeLabel,
+            matchTimeLabel: command.capturedMatchTimeLabel!,
             originTrace: command.originTrace,
+            occurrence: command.occurrence,
           ),
         );
         _exitGoalFlow();
@@ -1076,6 +1175,10 @@ final class ResearchInstrument {
       goals: List.unmodifiable([...goals]),
       matchElapsedSeconds: matchElapsedSeconds,
       matchClockAvailable: matchClockAvailable,
+      lifecycle: lifecycle,
+      liveClockArmed: liveClockArmed,
+      kickOffOriginTrace: kickOffOriginTrace,
+      kickOffEvidenceSequence: kickOffEvidenceSequence,
       goalFlowStage: goalFlowStage,
       goalOffered: goalOffered,
       roster: List.unmodifiable([...roster]),

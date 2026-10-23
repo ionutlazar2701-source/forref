@@ -84,7 +84,21 @@ final class OfferGoalIntent extends WatchIntent {
   String get name => 'offerGoal';
 }
 
-/// Advances deterministic match time for research. Not wall clock.
+final class ArmKickOffIntent extends WatchIntent {
+  const ArmKickOffIntent({required super.origin});
+
+  @override
+  String get name => 'armKickOff';
+}
+
+final class ConfirmKickOffIntent extends WatchIntent {
+  const ConfirmKickOffIntent({required super.origin});
+
+  @override
+  String get name => 'confirmKickOff';
+}
+
+/// Advances deterministic match time for research fixtures. Not the product clock.
 final class AdvanceMatchClockIntent extends WatchIntent {
   const AdvanceMatchClockIntent(this.seconds, {required super.origin});
 

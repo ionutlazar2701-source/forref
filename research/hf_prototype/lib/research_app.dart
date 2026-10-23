@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart' hide ActivateIntent;
@@ -54,6 +55,51 @@ class ResearchController extends ChangeNotifier {
       deviceShellVisible = true;
     }
     watchRuntime.bindMatchLabels(home: fixture.homeTeam, away: fixture.awayTeam);
+    _ensureFootballTicker();
+  }
+
+  Timer? _footballTick;
+
+  /// Widget tests leave this false so `pumpAndSettle` is not blocked.
+  /// The Windows lab process starts the ticker after Kick-off.
+  bool forceLiveClockInTest = false;
+
+  bool get _underWidgetTest =>
+      WidgetsBinding.instance.runtimeType.toString().contains('Test');
+
+  void _ensureFootballTicker() {
+    final run = instrument.liveClockArmed &&
+        (forceLiveClockInTest || !_underWidgetTest);
+    if (!run) {
+      _footballTick?.cancel();
+      _footballTick = null;
+      return;
+    }
+    if (_footballTick != null) return;
+    // One shared pulse per second. It does not rebuild on every frame, and
+    // it does not re-read wall-clock time. Both surfaces rebuild from the
+    // instrument when the displayed second changes.
+    _footballTick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (instrument.noteLiveElapsed(const Duration(seconds: 1))) {
+        notifyListeners();
+      }
+    });
+  }
+
+  void stopFootballTicker() {
+    _footballTick?.cancel();
+    _footballTick = null;
+  }
+
+  /// Test double for the one-second pulse. Notifies both surfaces.
+  void applyLiveElapsed(Duration delta) {
+    if (instrument.noteLiveElapsed(delta)) notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    stopFootballTicker();
+    super.dispose();
   }
 
   final ResearchInstrument instrument;
@@ -262,6 +308,7 @@ class ResearchController extends ChangeNotifier {
   Future<void> dispatchWatch(WatchIntent intent) async {
     await watchRuntime.dispatch(intent);
     _notePairedIntent(intent);
+    _ensureFootballTicker();
     notifyListeners();
   }
 

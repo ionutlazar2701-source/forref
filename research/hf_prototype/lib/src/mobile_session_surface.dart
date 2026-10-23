@@ -20,6 +20,8 @@ class MobileSessionSurface extends StatelessWidget {
     final fixture = controller.paired.fixture;
     final disconnected =
         controller.paired.connection == SimulatedConnectionState.simulatedDisconnect;
+    final matchRunning = state.clock.available && !state.clock.kickOffAvailable;
+    final canAct = !disconnected && matchRunning;
     return Material(
       key: const Key('mobile-session'),
       color: LabColors.surface,
@@ -40,8 +42,8 @@ class MobileSessionSurface extends StatelessWidget {
               Text(fixture.matchName,
                   style: LabText.panelTitle, maxLines: 1, overflow: TextOverflow.ellipsis),
               const SizedBox(height: 8),
-              _row('Phase', fixture.phaseLabel),
-              _row('Time', _timeLine(state, fixture)),
+              _row('Phase', state.clock.phaseLabel, valueKey: const Key('mobile-phase')),
+              _row('Time', _timeLine(state, fixture), valueKey: const Key('mobile-clock')),
               _row('Score', _scoreLine(state, fixture)),
               Text(
                 _scoreLine(state, fixture),
@@ -67,57 +69,68 @@ class MobileSessionSurface extends StatelessWidget {
                       style: LabText.caption),
               ],
               const SizedBox(height: 8),
+              if (state.clock.kickOffAvailable)
+                _KickOffButton(
+                  enabled: !disconnected,
+                  inputEpoch: controller.inputEpoch,
+                  onArm: () => controller.dispatchMobile(
+                    const ArmKickOffIntent(origin: IntentOrigin.mobileUi),
+                  ),
+                  onConfirm: () => controller.dispatchMobile(
+                    const ConfirmKickOffIntent(origin: IntentOrigin.mobileUi),
+                  ),
+                ),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
                   FilledButton.tonal(
                     key: const Key('mobile-open-capture'),
-                    onPressed: disconnected
-                        ? null
-                        : () => controller.dispatchMobile(
+                    onPressed: canAct
+                        ? () => controller.dispatchMobile(
                               const OpenRouteIntent(WatchRoute.captureMenu,
                                   origin: IntentOrigin.mobileUi),
-                            ),
+                            )
+                        : null,
                     child: const Text('Capture'),
                   ),
                   FilledButton.tonal(
                     key: const Key('mobile-yellow'),
-                    onPressed: disconnected
-                        ? null
-                        : () => controller.dispatchMobile(
+                    onPressed: canAct
+                        ? () => controller.dispatchMobile(
                               const OfferYellowIntent(origin: IntentOrigin.mobileUi),
-                            ),
+                            )
+                        : null,
                     child: const Text('Yellow'),
                   ),
                   FilledButton.tonal(
                     key: const Key('mobile-sendoff'),
-                    onPressed: disconnected
-                        ? null
-                        : () => controller.dispatchMobile(
+                    onPressed: canAct
+                        ? () => controller.dispatchMobile(
                               const OpenRouteIntent(WatchRoute.sendOffFlow,
                                   origin: IntentOrigin.mobileUi),
-                            ),
+                            )
+                        : null,
                     child: const Text('Sending-off'),
                   ),
                   FilledButton.tonal(
                     key: const Key('mobile-substitution'),
-                    onPressed: disconnected
-                        ? null
-                        : () => controller.dispatchMobile(
+                    onPressed: canAct
+                        ? () => controller.dispatchMobile(
                               const OpenRouteIntent(
                                   WatchRoute.substitutionFlow,
                                   origin: IntentOrigin.mobileUi),
-                            ),
+                            )
+                        : null,
                     child: const Text('Substitution'),
                   ),
                   FilledButton.tonal(
                     key: const Key('mobile-goal'),
-                    onPressed: disconnected
-                        ? null
-                        : () => controller.dispatchMobile(
+                    onPressed: canAct
+                        ? () => controller.dispatchMobile(
                               const OfferGoalIntent(origin: IntentOrigin.mobileUi),
-                            ),
+                            )
+                        : null,
                     child: const Text('Goal'),
                   ),
                   FilledButton.tonal(
@@ -135,6 +148,11 @@ class MobileSessionSurface extends StatelessWidget {
               if (state.navigation.route == WatchRoute.yellowFlow) ...[
                 const SizedBox(height: 8),
                 const Text('MOBILE YELLOW', style: LabText.caption),
+                if (state.clock.label != null)
+                  Text(
+                    'Match time ${state.clock.label}',
+                    key: const Key('mobile-yellow-review-time'),
+                  ),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -324,6 +342,10 @@ class MobileSessionSurface extends StatelessWidget {
               if (state.navigation.route == WatchRoute.goalFlow) ...[
                 const SizedBox(height: 8),
                 const Text('MOBILE GOAL', style: LabText.caption),
+                Text(
+                  state.goalFlow.reviewMatchTimeLabel ?? 'Kick-off required',
+                  key: const Key('mobile-goal-review-time'),
+                ),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -397,6 +419,7 @@ class MobileSessionSurface extends StatelessWidget {
   }
 
   String _timeLine(WatchPresentationState state, ResearchFixture fixture) {
+    if (state.clock.kickOffAvailable) return 'Not started';
     if (state.clock.available && state.clock.label != null) {
       return state.clock.label!;
     }
@@ -431,14 +454,63 @@ class MobileSessionSurface extends StatelessWidget {
     return buffer.toString();
   }
 
-  Widget _row(String label, String value) {
+  Widget _row(String label, String value, {Key? valueKey}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
           SizedBox(width: 56, child: Text(label, style: LabText.caption)),
-          Expanded(child: Text(value, style: LabText.numeric)),
+          Expanded(child: Text(value, key: valueKey, style: LabText.numeric)),
         ],
+      ),
+    );
+  }
+}
+
+class _KickOffButton extends StatefulWidget {
+  const _KickOffButton({
+    required this.enabled,
+    required this.inputEpoch,
+    required this.onArm,
+    required this.onConfirm,
+  });
+
+  final bool enabled;
+  final int inputEpoch;
+  final VoidCallback onArm;
+  final VoidCallback onConfirm;
+
+  @override
+  State<_KickOffButton> createState() => _KickOffButtonState();
+}
+
+class _KickOffButtonState extends State<_KickOffButton> {
+  int? _pointer;
+  int? _epoch;
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      onPointerDown: widget.enabled
+          ? (event) {
+              _pointer = event.pointer;
+              _epoch = widget.inputEpoch;
+              widget.onArm();
+            }
+          : null,
+      onPointerUp: widget.enabled
+          ? (event) {
+              final confirm =
+                  _pointer == event.pointer && _epoch == widget.inputEpoch;
+              _pointer = null;
+              if (confirm) widget.onConfirm();
+            }
+          : null,
+      onPointerCancel: (_) => _pointer = null,
+      child: FilledButton(
+        key: const Key('mobile-kick-off'),
+        onPressed: widget.enabled ? () {} : null,
+        child: const Text('Kick-off'),
       ),
     );
   }

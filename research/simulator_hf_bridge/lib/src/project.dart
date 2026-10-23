@@ -47,12 +47,16 @@ WatchPresentationState projectResearchSnapshot(
     homeTeamLabel: homeTeamLabel,
     awayTeamLabel: awayTeamLabel,
   );
-  final clock = snapshot.matchClockAvailable
-      ? ClockPresentation(
-          available: true,
-          label: formatResearchMatchTime(snapshot.matchElapsedSeconds),
-        )
-      : ClockPresentation.unavailable;
+  final clock = switch (snapshot.lifecycle) {
+    ResearchMatchLifecycle.matchNotStarted => ClockPresentation.matchReady,
+    ResearchMatchLifecycle.firstHalfRunning => snapshot.footballTimeActive
+        ? ClockPresentation(
+            available: true,
+            label: formatResearchMatchTime(snapshot.matchElapsedSeconds),
+            phaseLabel: 'FIRST HALF',
+          )
+        : ClockPresentation.unavailable,
+  };
   final commitRecognized = _recognized(snapshot.commitLabel);
   return WatchPresentationState(
     scenarioId: snapshot.scenarioId,
@@ -141,18 +145,21 @@ GoalFlowPresentation _goalFlow(ResearchTruthSnapshot snapshot) {
     team = PresentationTeam.away;
   }
   final canRecord = snapshot.goalFlowStage == GoalFlowStage.readyToRecord &&
-      snapshot.matchClockAvailable;
+      snapshot.footballTimeActive;
+  final reviewTime = snapshot.footballTimeActive
+      ? formatResearchMatchTime(snapshot.matchElapsedSeconds)
+      : null;
   return GoalFlowPresentation(
     stage: stage,
     scoringTeam: team,
     scorerParticipantId: snapshot.selectedSubjectId,
-    reviewMatchTimeLabel: snapshot.matchClockAvailable
-        ? formatResearchMatchTime(snapshot.matchElapsedSeconds)
-        : null,
+    reviewMatchTimeLabel: reviewTime,
     canRecord: canRecord,
-    blockReason: snapshot.matchClockAvailable
+    blockReason: snapshot.footballTimeActive
         ? null
-        : 'Match time unavailable',
+        : snapshot.lifecycle == ResearchMatchLifecycle.matchNotStarted
+            ? 'Kick-off required'
+            : 'Match time unavailable',
   );
 }
 

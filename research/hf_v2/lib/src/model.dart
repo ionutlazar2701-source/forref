@@ -43,6 +43,26 @@ enum FinalActionKind {
 
 enum GoalFlowStage { inactive, selectTeam, selectScorer, readyToRecord }
 
+/// Research sporting lifecycle. Not a production Match Record.
+///
+/// [matchNotStarted] has no football-time coordinate. A formatted `00:00`
+/// is not this state.
+enum ResearchMatchLifecycle { matchNotStarted, firstHalfRunning }
+
+/// Period of an established research event. Only first half exists in S2.6A.
+enum ResearchOccurrencePeriod { firstHalf }
+
+/// Frozen football-time evidence. The label is a projection of [elapsedSeconds].
+final class ResearchOccurrence {
+  const ResearchOccurrence.firstHalf(this.elapsedSeconds)
+      : period = ResearchOccurrencePeriod.firstHalf;
+
+  final ResearchOccurrencePeriod period;
+  final int elapsedSeconds;
+
+  String get label => formatResearchMatchTime(elapsedSeconds);
+}
+
 /// Established research goal. Not a production Match Record.
 final class SavedGoal {
   const SavedGoal({
@@ -52,6 +72,7 @@ final class SavedGoal {
     required this.scorerParticipantId,
     required this.matchTimeLabel,
     required this.originTrace,
+    this.occurrence,
   });
 
   final String eventId;
@@ -60,6 +81,7 @@ final class SavedGoal {
   final String scorerParticipantId;
   final String matchTimeLabel;
   final String originTrace;
+  final ResearchOccurrence? occurrence;
 }
 
 String formatResearchMatchTime(int totalSeconds) {
@@ -177,6 +199,7 @@ final class SavedCaution {
     this.sequence,
     this.matchTimeLabel,
     this.originTrace,
+    this.occurrence,
   });
 
   final String subjectId;
@@ -186,6 +209,7 @@ final class SavedCaution {
   final int? sequence;
   final String? matchTimeLabel;
   final String? originTrace;
+  final ResearchOccurrence? occurrence;
 
   bool get reportable => sequence != null && matchTimeLabel != null;
 }
@@ -200,6 +224,7 @@ final class SavedSendOff {
     this.sequence,
     this.matchTimeLabel,
     this.originTrace,
+    this.occurrence,
   });
 
   final String subjectId;
@@ -210,6 +235,7 @@ final class SavedSendOff {
   final int? sequence;
   final String? matchTimeLabel;
   final String? originTrace;
+  final ResearchOccurrence? occurrence;
 
   bool get reportable => sequence != null && matchTimeLabel != null;
 }
@@ -223,6 +249,7 @@ final class SavedSubstitution {
     this.sequence,
     this.matchTimeLabel,
     this.originTrace,
+    this.occurrence,
   });
 
   final String outId;
@@ -232,6 +259,7 @@ final class SavedSubstitution {
   final int? sequence;
   final String? matchTimeLabel;
   final String? originTrace;
+  final ResearchOccurrence? occurrence;
 
   bool get reportable => sequence != null && matchTimeLabel != null;
 }

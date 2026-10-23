@@ -102,14 +102,29 @@ final class MatchHeaderPresentation {
 }
 
 final class ClockPresentation {
-  const ClockPresentation({required this.available, required this.label});
+  const ClockPresentation({
+    required this.available,
+    required this.label,
+    this.phaseLabel = 'FIRST HALF',
+    this.kickOffAvailable = false,
+  });
 
   final bool available;
   final String? label;
+  final String phaseLabel;
+  final bool kickOffAvailable;
 
   static const unavailable = ClockPresentation(
     available: false,
     label: 'Clock unavailable',
+    phaseLabel: 'Clock unavailable',
+  );
+
+  static const matchReady = ClockPresentation(
+    available: false,
+    label: null,
+    phaseLabel: 'MATCH READY',
+    kickOffAvailable: true,
   );
 }
 

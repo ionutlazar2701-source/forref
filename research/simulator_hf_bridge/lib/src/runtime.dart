@@ -108,6 +108,13 @@ final class HfPresentationRuntime implements SimulatorPresentationRuntime {
         _yellowCapture = true;
         _instrument.offerRecordYellow();
         _route = WatchRoute.yellowFlow;
+      case ArmKickOffIntent():
+        _instrument.armKickOff();
+      case ConfirmKickOffIntent(:final origin):
+        final started = _instrument.confirmKickOff(
+          originTrace: intentOriginLabel(origin),
+        );
+        if (started) _route = WatchRoute.liveCore;
       case AdvanceMatchClockIntent(:final seconds):
         _instrument.advanceMatchClock(seconds);
       case OfferDirectSendOffIntent():
