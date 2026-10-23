@@ -33,6 +33,10 @@ final class _ActivatedCommand {
     required this.scope,
     required this.outId,
     required this.inId,
+    this.scoringTeam,
+    this.goalScorerParticipantId,
+    this.capturedMatchTimeLabel,
+    this.originTrace = 'research',
   });
 
   final FinalActionKind kind;
@@ -41,6 +45,10 @@ final class _ActivatedCommand {
   final ResearchScope scope;
   final String? outId;
   final String? inId;
+  final ResearchTeamSide? scoringTeam;
+  final String? goalScorerParticipantId;
+  final String? capturedMatchTimeLabel;
+  final String originTrace;
 }
 
 /// Deterministic research session.
@@ -91,6 +99,14 @@ final class ResearchInstrument {
   final List<SavedCaution> cautions = [];
   final List<SavedSendOff> sendOffs = [];
   final List<SavedSubstitution> substitutions = [];
+  final List<SavedGoal> goals = [];
+
+  int matchElapsedSeconds = 0;
+  bool matchClockAvailable = true;
+  GoalFlowStage goalFlowStage = GoalFlowStage.inactive;
+  bool goalOffered = false;
+  int _goalEventSequence = 0;
+  String _pendingOriginTrace = 'research';
 
   final Map<FinalActionKind, SimulatedScriptedOutcome> _script = {
     FinalActionKind.recordYellow: SimulatedScriptedOutcome.success,
@@ -98,6 +114,7 @@ final class ResearchInstrument {
     FinalActionKind.recordSecondCautionSendOff:
         SimulatedScriptedOutcome.success,
     FinalActionKind.recordSubstitution: SimulatedScriptedOutcome.success,
+    FinalActionKind.recordGoal: SimulatedScriptedOutcome.success,
   };
 
   ResearchLayout layout = ResearchLayout.phone;
@@ -281,6 +298,12 @@ final class ResearchInstrument {
       ..clear()
       ..addAll(fixture.seededSendOffs);
     substitutions.clear();
+    goals.clear();
+    matchElapsedSeconds = fixture.initialMatchElapsedSeconds;
+    matchClockAvailable = fixture.matchClockAvailable;
+    goalFlowStage = GoalFlowStage.inactive;
+    goalOffered = false;
+    _goalEventSequence = 0;
     _script
       ..clear()
       ..addAll(fixture.script);
@@ -321,6 +344,12 @@ final class ResearchInstrument {
           : ResearchLogKind.teamContextApplied,
       side.name,
     );
+    if (goalFlowStage != GoalFlowStage.inactive) {
+      selectedParticipantId = null;
+      selectedOfficialId = null;
+      selectionKind = SubjectSelectionKind.none;
+      goalFlowStage = GoalFlowStage.selectScorer;
+    }
     _invalidateForTeam(side);
   }
 
@@ -341,6 +370,10 @@ final class ResearchInstrument {
     selectionKind = SubjectSelectionKind.participant;
     yellowOffered = false;
     directSendOffOffered = false;
+    if (goalFlowStage == GoalFlowStage.selectScorer ||
+        goalFlowStage == GoalFlowStage.selectTeam) {
+      goalFlowStage = GoalFlowStage.readyToRecord;
+    }
     _log(ResearchLogKind.subjectSelected, person.id);
   }
 
@@ -373,9 +406,41 @@ final class ResearchInstrument {
 
   void offerRecordYellow() {
     if (!_readyForDiscipline()) return;
+    _exitGoalFlow();
     yellowOffered = true;
     directSendOffOffered = false;
     _log(ResearchLogKind.surfaceEntered, 'yellow');
+  }
+
+  void offerRecordGoal() {
+    if (commitKind == SystemCommitKind.saving ||
+        commitKind == SystemCommitKind.saveNotVerified) {
+      return;
+    }
+    goalOffered = true;
+    goalFlowStage = GoalFlowStage.selectTeam;
+    teamContext = TeamContextKind.absent;
+    selectedParticipantId = null;
+    selectedOfficialId = null;
+    selectionKind = SubjectSelectionKind.none;
+    yellowOffered = false;
+    directSendOffOffered = false;
+    _log(ResearchLogKind.surfaceEntered, 'goal');
+  }
+
+  void advanceMatchClock(int seconds) {
+    if (!matchClockAvailable || seconds <= 0) return;
+    matchElapsedSeconds += seconds;
+    _log(ResearchLogKind.userCorrection, 'clock-advance:$seconds');
+  }
+
+  void noteIntentOriginTrace(String trace) {
+    _pendingOriginTrace = trace;
+  }
+
+  void _exitGoalFlow() {
+    goalOffered = false;
+    goalFlowStage = GoalFlowStage.inactive;
   }
 
   void offerDirectSendOff() {
@@ -525,10 +590,14 @@ final class ResearchInstrument {
     _log(ResearchLogKind.inputRejected, reason);
   }
 
-  void accessibilityInvoke(FinalActionKind kind) {
+  void accessibilityInvoke(
+    FinalActionKind kind, {
+    String originTrace = 'research',
+  }) {
     if (_open.isNotEmpty) return;
     if (!eligible(kind)) return;
     if (_isSuccessor(kind) && !successorEstablished) return;
+    _pendingOriginTrace = originTrace;
     _activate(kind);
   }
 
@@ -630,6 +699,32 @@ final class ResearchInstrument {
             outId != null &&
             inId != null &&
             outId != inId,
+      FinalActionKind.recordGoal => _readyForGoalRecord(),
+    };
+  }
+
+  bool _readyForGoalRecord() {
+    if (!goalOffered || goalFlowStage != GoalFlowStage.readyToRecord) {
+      return false;
+    }
+    if (!matchClockAvailable) return false;
+    final side = _trustedTeamSide();
+    if (side == null) return false;
+    final scorerId = selectedParticipantId;
+    if (scorerId == null ||
+        selectionKind != SubjectSelectionKind.participant) {
+      return false;
+    }
+    final person = _participant(scorerId);
+    if (person == null || person.team != side) return false;
+    return true;
+  }
+
+  ResearchTeamSide? _trustedTeamSide() {
+    return switch (teamContext) {
+      TeamContextKind.homeTrusted => ResearchTeamSide.home,
+      TeamContextKind.awayTrusted => ResearchTeamSide.away,
+      _ => null,
     };
   }
 
@@ -728,13 +823,25 @@ final class ResearchInstrument {
         : kind;
     pendingAction = kind;
     lastActivated = kind;
+    final side = kind == FinalActionKind.recordGoal ? _trustedTeamSide() : null;
     _activated = _ActivatedCommand(
       kind: kind,
-      subjectId: selectedSubjectId,
-      subjectKind: selectedKind,
+      subjectId: kind == FinalActionKind.recordGoal
+          ? selectedParticipantId
+          : selectedSubjectId,
+      subjectKind: kind == FinalActionKind.recordGoal
+          ? SubjectKind.participant
+          : selectedKind,
       scope: scope,
       outId: outId,
       inId: inId,
+      scoringTeam: side,
+      goalScorerParticipantId:
+          kind == FinalActionKind.recordGoal ? selectedParticipantId : null,
+      capturedMatchTimeLabel: kind == FinalActionKind.recordGoal
+          ? formatResearchMatchTime(matchElapsedSeconds)
+          : null,
+      originTrace: _pendingOriginTrace,
     );
     commitKind = SystemCommitKind.saving;
     yellowOffered = false;
@@ -816,6 +923,32 @@ final class ResearchInstrument {
         substitutionStage = SubstitutionStage.saved;
         _logAppended(command, 'substitutions:${substitutions.length}');
         return true;
+      case FinalActionKind.recordGoal:
+        final team = command.scoringTeam;
+        final scorerId = command.goalScorerParticipantId;
+        final timeLabel = command.capturedMatchTimeLabel;
+        if (team == null ||
+            scorerId == null ||
+            timeLabel == null ||
+            !matchClockAvailable) {
+          return false;
+        }
+        final person = _participant(scorerId);
+        if (person == null || person.team != team) return false;
+        _goalEventSequence += 1;
+        goals.add(
+          SavedGoal(
+            eventId: 'goal-$_goalEventSequence',
+            sequence: _goalEventSequence,
+            scoringTeam: team,
+            scorerParticipantId: scorerId,
+            matchTimeLabel: timeLabel,
+            originTrace: command.originTrace,
+          ),
+        );
+        _exitGoalFlow();
+        _logAppended(command, 'goals:${goals.length}');
+        return true;
     }
   }
 
@@ -866,6 +999,9 @@ final class ResearchInstrument {
       scope: command.scope,
       outId: command.outId,
       inId: command.inId,
+      scoringTeam: command.scoringTeam,
+      goalScorerParticipantId: command.goalScorerParticipantId,
+      capturedMatchTimeLabel: command.capturedMatchTimeLabel,
     );
   }
 
@@ -881,6 +1017,11 @@ final class ResearchInstrument {
       cautions: List.unmodifiable([...cautions]),
       sendOffs: List.unmodifiable([...sendOffs]),
       substitutions: List.unmodifiable([...substitutions]),
+      goals: List.unmodifiable([...goals]),
+      matchElapsedSeconds: matchElapsedSeconds,
+      matchClockAvailable: matchClockAvailable,
+      goalFlowStage: goalFlowStage,
+      goalOffered: goalOffered,
       roster: List.unmodifiable([...roster]),
       officials: List.unmodifiable([...officials]),
       teamContext: teamContext,
@@ -909,7 +1050,7 @@ final class ResearchInstrument {
       '${x.toStringAsFixed(2)},${y.toStringAsFixed(2)}';
 
   String _frozenDetail(_ActivatedCommand command) {
-    return '${command.kind.name}|subject:${command.subjectId ?? '-'}|kind:${command.subjectKind?.name ?? '-'}|scope:${command.scope.name}|out:${command.outId ?? '-'}|in:${command.inId ?? '-'}';
+    return '${command.kind.name}|subject:${command.subjectId ?? '-'}|kind:${command.subjectKind?.name ?? '-'}|scope:${command.scope.name}|out:${command.outId ?? '-'}|in:${command.inId ?? '-'}|goalTeam:${command.scoringTeam?.name ?? '-'}|goalScorer:${command.goalScorerParticipantId ?? '-'}|goalTime:${command.capturedMatchTimeLabel ?? '-'}';
   }
 
   void _log(ResearchLogKind kind, String detail) {

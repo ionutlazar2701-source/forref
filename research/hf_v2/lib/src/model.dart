@@ -38,6 +38,35 @@ enum FinalActionKind {
   recordDirectSendOff,
   recordSecondCautionSendOff,
   recordSubstitution,
+  recordGoal,
+}
+
+enum GoalFlowStage { inactive, selectTeam, selectScorer, readyToRecord }
+
+/// Established research goal. Not a production Match Record.
+final class SavedGoal {
+  const SavedGoal({
+    required this.eventId,
+    required this.sequence,
+    required this.scoringTeam,
+    required this.scorerParticipantId,
+    required this.matchTimeLabel,
+    required this.originTrace,
+  });
+
+  final String eventId;
+  final int sequence;
+  final ResearchTeamSide scoringTeam;
+  final String scorerParticipantId;
+  final String matchTimeLabel;
+  final String originTrace;
+}
+
+String formatResearchMatchTime(int totalSeconds) {
+  if (totalSeconds < 0) return 'Time unavailable';
+  final minutes = totalSeconds ~/ 60;
+  final seconds = totalSeconds % 60;
+  return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
 }
 
 enum SimulatedScriptedOutcome { success, failure, unknown }
@@ -104,6 +133,7 @@ final class ResearchLayout {
       FinalActionKind.recordSecondCautionSendOff =>
         sendOff,
       FinalActionKind.recordSubstitution => substitution,
+      FinalActionKind.recordGoal => yellow,
     };
   }
 }

@@ -20,6 +20,7 @@ enum ScenarioId {
   s17FinishLaterSimulatedRestart,
   s18MatchToShootout,
   s19SentOffHistoricalReview,
+  s20GoalMatchReport,
   vDuplicateShirt,
   vCrossTeamShirt,
   vSimilarNames,
@@ -58,6 +59,8 @@ final class ScenarioFixture {
     this.successorAlreadyEstablished = false,
     this.predecessorKind,
     this.simulatedRecoveryDisclaimer = false,
+    this.initialMatchElapsedSeconds = 0,
+    this.matchClockAvailable = true,
   });
 
   final ScenarioId id;
@@ -83,6 +86,8 @@ final class ScenarioFixture {
   final bool successorAlreadyEstablished;
   final FinalActionKind? predecessorKind;
   final bool simulatedRecoveryDisclaimer;
+  final int initialMatchElapsedSeconds;
+  final bool matchClockAvailable;
 }
 
 const _successScript = {
@@ -90,6 +95,7 @@ const _successScript = {
   FinalActionKind.recordDirectSendOff: SimulatedScriptedOutcome.success,
   FinalActionKind.recordSecondCautionSendOff: SimulatedScriptedOutcome.success,
   FinalActionKind.recordSubstitution: SimulatedScriptedOutcome.success,
+  FinalActionKind.recordGoal: SimulatedScriptedOutcome.success,
 };
 
 ScenarioFixture scenarioFixture(ScenarioId id) {
@@ -142,6 +148,8 @@ List<ScenarioFixture> _buildFixtures() {
     Map<FinalActionKind, SimulatedScriptedOutcome> script = _successScript,
     List<ResearchParticipant>? people,
     List<ResearchOfficial>? staff,
+    int initialMatchElapsedSeconds = 0,
+    bool matchClockAvailable = true,
   }) {
     return ScenarioFixture(
       id: id,
@@ -168,6 +176,8 @@ List<ScenarioFixture> _buildFixtures() {
       predecessorKind:
           successor ? FinalActionKind.recordYellow : null,
       simulatedRecoveryDisclaimer: simulatedRecovery,
+      initialMatchElapsedSeconds: initialMatchElapsedSeconds,
+      matchClockAvailable: matchClockAvailable,
     );
   }
 
@@ -353,6 +363,19 @@ List<ScenarioFixture> _buildFixtures() {
       ],
     ),
     base(
+      id: ScenarioId.s20GoalMatchReport,
+      pitch: 'Research match for Goal capture and Match Report review.',
+      digital: 'Score and report follow established goals only.',
+      unfinished: 'No goal is saved until simulated success completes.',
+      p0: 'Inventing goals, scorers, or match times without establishment.',
+      team: TeamContextKind.absent,
+      scope: ResearchScope.match,
+      selection: SubjectSelectionKind.none,
+      participantId: null,
+      people: _goalOpsRoster(),
+      initialMatchElapsedSeconds: 0,
+    ),
+    base(
       id: ScenarioId.vDuplicateShirt,
       pitch: 'Two home players wear 7.',
       digital: 'Each player id stays distinct.',
@@ -443,6 +466,39 @@ List<ScenarioFixture> _buildFixtures() {
       team: TeamContextKind.absent,
       selection: SubjectSelectionKind.none,
       participantId: null,
+    ),
+  ];
+}
+
+List<ResearchParticipant> _goalOpsRoster() {
+  return [
+    const ResearchParticipant(
+      id: 'p-home-9',
+      team: ResearchTeamSide.home,
+      shirtLabel: '9',
+      name: 'Popescu',
+      presence: PresenceRank.onField,
+    ),
+    const ResearchParticipant(
+      id: 'p-home-14',
+      team: ResearchTeamSide.home,
+      shirtLabel: '14',
+      name: 'Mihai Pop',
+      presence: PresenceRank.onField,
+    ),
+    const ResearchParticipant(
+      id: 'p-away-14',
+      team: ResearchTeamSide.away,
+      shirtLabel: '14',
+      name: 'Radu Stan',
+      presence: PresenceRank.onField,
+    ),
+    const ResearchParticipant(
+      id: 'p-away-11',
+      team: ResearchTeamSide.away,
+      shirtLabel: '11',
+      name: 'Matei Ionescu',
+      presence: PresenceRank.onField,
     ),
   ];
 }

@@ -2,11 +2,13 @@
 enum WatchRoute {
   liveCore,
   captureMenu,
+  goalFlow,
   yellowFlow,
   sendOffFlow,
   substitutionFlow,
   disciplinaryAwareness,
   history,
+  matchReport,
 }
 
 enum PresentationTeam { home, away }
@@ -20,10 +22,51 @@ enum PresentationSubjectKind { participant, official }
 enum PriorAwareness { knownNone, knownStanding, unavailable, conflicted }
 
 enum PresentationAction {
+  goal,
   yellow,
   directSendOff,
   secondCautionSendOff,
   substitution,
+}
+
+enum MatchReportEntryKind { goal }
+
+/// Referee-facing established event. Not engineering journal noise.
+final class MatchReportEntryPresentation {
+  const MatchReportEntryPresentation({
+    required this.eventId,
+    required this.sequence,
+    required this.kind,
+    required this.matchTimeLabel,
+    required this.teamLabel,
+    required this.participantDisplay,
+    required this.scoreAfterLabel,
+    required this.originTrace,
+  });
+
+  final String eventId;
+  final int sequence;
+  final MatchReportEntryKind kind;
+  final String matchTimeLabel;
+  final String teamLabel;
+  final String participantDisplay;
+  final String scoreAfterLabel;
+  final String originTrace;
+}
+
+final class MatchReportPresentation {
+  const MatchReportPresentation({required this.entries});
+
+  final List<MatchReportEntryPresentation> entries;
+
+  static const empty = MatchReportPresentation(entries: []);
+}
+
+enum GoalFlowStagePresentation {
+  inactive,
+  selectTeam,
+  selectScorer,
+  readyToRecord,
 }
 
 /// Research-mode commit text. These phrases are not production D1.
@@ -136,6 +179,9 @@ final class FrozenCommandPresentation {
     required this.scope,
     required this.outId,
     required this.inId,
+    this.scoringTeam,
+    this.goalScorerParticipantId,
+    this.capturedMatchTimeLabel,
   });
 
   final PresentationAction action;
@@ -143,6 +189,36 @@ final class FrozenCommandPresentation {
   final PresentationScope scope;
   final String? outId;
   final String? inId;
+  final PresentationTeam? scoringTeam;
+  final String? goalScorerParticipantId;
+  final String? capturedMatchTimeLabel;
+}
+
+final class GoalFlowPresentation {
+  const GoalFlowPresentation({
+    required this.stage,
+    required this.scoringTeam,
+    required this.scorerParticipantId,
+    required this.reviewMatchTimeLabel,
+    required this.canRecord,
+    required this.blockReason,
+  });
+
+  final GoalFlowStagePresentation stage;
+  final PresentationTeam? scoringTeam;
+  final String? scorerParticipantId;
+  final String? reviewMatchTimeLabel;
+  final bool canRecord;
+  final String? blockReason;
+
+  static const inactive = GoalFlowPresentation(
+    stage: GoalFlowStagePresentation.inactive,
+    scoringTeam: null,
+    scorerParticipantId: null,
+    reviewMatchTimeLabel: null,
+    canRecord: false,
+    blockReason: null,
+  );
 }
 
 final class CommitPresentation {
@@ -213,6 +289,10 @@ final class WatchPresentationState {
     required this.officials,
     required this.recoveryLabel,
     required this.lastRejection,
+    required this.goalFlow,
+    required this.matchReport,
+    required this.homeTeamLabel,
+    required this.awayTeamLabel,
   });
 
   final String scenarioId;
@@ -230,6 +310,10 @@ final class WatchPresentationState {
   final List<PresentationOfficial> officials;
   final String? recoveryLabel;
   final String? lastRejection;
+  final GoalFlowPresentation goalFlow;
+  final MatchReportPresentation matchReport;
+  final String homeTeamLabel;
+  final String awayTeamLabel;
 
   static const empty = WatchPresentationState(
     scenarioId: '',
@@ -270,5 +354,9 @@ final class WatchPresentationState {
     officials: [],
     recoveryLabel: null,
     lastRejection: null,
+    goalFlow: GoalFlowPresentation.inactive,
+    matchReport: MatchReportPresentation.empty,
+    homeTeamLabel: 'Home',
+    awayTeamLabel: 'Away',
   );
 }

@@ -9,6 +9,9 @@ final class ActivatedCommandSnapshot {
     required this.scope,
     required this.outId,
     required this.inId,
+    this.scoringTeam,
+    this.goalScorerParticipantId,
+    this.capturedMatchTimeLabel,
   });
 
   final FinalActionKind kind;
@@ -17,6 +20,9 @@ final class ActivatedCommandSnapshot {
   final ResearchScope scope;
   final String? outId;
   final String? inId;
+  final ResearchTeamSide? scoringTeam;
+  final String? goalScorerParticipantId;
+  final String? capturedMatchTimeLabel;
 }
 
 /// Read-only view of one research instrument.
@@ -34,6 +40,11 @@ final class ResearchTruthSnapshot {
     required this.cautions,
     required this.sendOffs,
     required this.substitutions,
+    required this.goals,
+    required this.matchElapsedSeconds,
+    required this.matchClockAvailable,
+    required this.goalFlowStage,
+    required this.goalOffered,
     required this.roster,
     required this.officials,
     required this.teamContext,
@@ -67,6 +78,11 @@ final class ResearchTruthSnapshot {
   final List<SavedCaution> cautions;
   final List<SavedSendOff> sendOffs;
   final List<SavedSubstitution> substitutions;
+  final List<SavedGoal> goals;
+  final int matchElapsedSeconds;
+  final bool matchClockAvailable;
+  final GoalFlowStage goalFlowStage;
+  final bool goalOffered;
   final List<ResearchParticipant> roster;
   final List<ResearchOfficial> officials;
   final TeamContextKind teamContext;

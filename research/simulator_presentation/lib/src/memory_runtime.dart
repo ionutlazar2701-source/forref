@@ -103,6 +103,10 @@ final class InMemoryPresentationRuntime implements SimulatorPresentationRuntime 
       officials: current.officials,
       recoveryLabel: current.recoveryLabel,
       lastRejection: lastRejection,
+      goalFlow: current.goalFlow,
+      matchReport: current.matchReport,
+      homeTeamLabel: current.homeTeamLabel,
+      awayTeamLabel: current.awayTeamLabel,
     );
   }
 }
