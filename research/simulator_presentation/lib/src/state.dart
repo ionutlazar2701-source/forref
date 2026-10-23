@@ -29,7 +29,13 @@ enum PresentationAction {
   substitution,
 }
 
-enum MatchReportEntryKind { goal }
+enum MatchReportEntryKind {
+  goal,
+  yellow,
+  directSendOff,
+  secondCautionSendOff,
+  substitution,
+}
 
 /// Referee-facing established event. Not engineering journal noise.
 final class MatchReportEntryPresentation {
@@ -40,7 +46,8 @@ final class MatchReportEntryPresentation {
     required this.matchTimeLabel,
     required this.teamLabel,
     required this.participantDisplay,
-    required this.scoreAfterLabel,
+    this.details,
+    this.scoreAfterLabel,
     required this.originTrace,
   });
 
@@ -50,7 +57,8 @@ final class MatchReportEntryPresentation {
   final String matchTimeLabel;
   final String teamLabel;
   final String participantDisplay;
-  final String scoreAfterLabel;
+  final String? details;
+  final String? scoreAfterLabel;
   final String originTrace;
 }
 

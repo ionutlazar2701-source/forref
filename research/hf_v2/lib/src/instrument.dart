@@ -105,7 +105,7 @@ final class ResearchInstrument {
   bool matchClockAvailable = true;
   GoalFlowStage goalFlowStage = GoalFlowStage.inactive;
   bool goalOffered = false;
-  int _goalEventSequence = 0;
+  int _reportSequence = 0;
   String _pendingOriginTrace = 'research';
 
   final Map<FinalActionKind, SimulatedScriptedOutcome> _script = {
@@ -303,7 +303,7 @@ final class ResearchInstrument {
     matchClockAvailable = fixture.matchClockAvailable;
     goalFlowStage = GoalFlowStage.inactive;
     goalOffered = false;
-    _goalEventSequence = 0;
+    _reportSequence = 0;
     _script
       ..clear()
       ..addAll(fixture.script);
@@ -695,12 +695,23 @@ final class ResearchInstrument {
             !sendingOffRecorded &&
             _readyForDiscipline(),
       FinalActionKind.recordSubstitution =>
-        substitutionStage == SubstitutionStage.review &&
+        matchClockAvailable &&
+            substitutionStage == SubstitutionStage.review &&
             outId != null &&
             inId != null &&
             outId != inId,
       FinalActionKind.recordGoal => _readyForGoalRecord(),
     };
+  }
+
+  int _nextReportSequence() {
+    _reportSequence += 1;
+    return _reportSequence;
+  }
+
+  String? _captureTimeLabel() {
+    if (!matchClockAvailable) return null;
+    return formatResearchMatchTime(matchElapsedSeconds);
   }
 
   bool _readyForGoalRecord() {
@@ -729,6 +740,7 @@ final class ResearchInstrument {
   }
 
   bool _readyForDiscipline() {
+    if (!matchClockAvailable) return false;
     final teamOk = teamContext == TeamContextKind.homeTrusted ||
         teamContext == TeamContextKind.awayTrusted;
     final subjectOk = selectionKind == SubjectSelectionKind.participant ||
@@ -838,9 +850,7 @@ final class ResearchInstrument {
       scoringTeam: side,
       goalScorerParticipantId:
           kind == FinalActionKind.recordGoal ? selectedParticipantId : null,
-      capturedMatchTimeLabel: kind == FinalActionKind.recordGoal
-          ? formatResearchMatchTime(matchElapsedSeconds)
-          : null,
+      capturedMatchTimeLabel: _captureTimeLabel(),
       originTrace: _pendingOriginTrace,
     );
     commitKind = SystemCommitKind.saving;
@@ -861,12 +871,21 @@ final class ResearchInstrument {
       case FinalActionKind.recordYellow:
         final subjectId = command.subjectId;
         final subjectKind = command.subjectKind;
-        if (subjectId == null || subjectKind == null) return false;
+        if (subjectId == null ||
+            subjectKind == null ||
+            command.capturedMatchTimeLabel == null) {
+          return false;
+        }
+        final seq = _nextReportSequence();
         cautions.add(
           SavedCaution(
             subjectId: subjectId,
             kind: subjectKind,
             scope: command.scope,
+            eventId: 'yellow-$seq',
+            sequence: seq,
+            matchTimeLabel: command.capturedMatchTimeLabel,
+            originTrace: command.originTrace,
           ),
         );
         if (savedCautionCount(subjectId, subjectKind, command.scope) >= 2) {
@@ -881,13 +900,22 @@ final class ResearchInstrument {
       case FinalActionKind.recordDirectSendOff:
         final subjectId = command.subjectId;
         final subjectKind = command.subjectKind;
-        if (subjectId == null || subjectKind == null) return false;
+        if (subjectId == null ||
+            subjectKind == null ||
+            command.capturedMatchTimeLabel == null) {
+          return false;
+        }
+        final seqDirect = _nextReportSequence();
         sendOffs.add(
           SavedSendOff(
             subjectId: subjectId,
             kind: subjectKind,
             scope: command.scope,
             pathway: SendOffPathwayLabel.direct,
+            eventId: 'sendoff-direct-$seqDirect',
+            sequence: seqDirect,
+            matchTimeLabel: command.capturedMatchTimeLabel,
+            originTrace: command.originTrace,
           ),
         );
         _logAppended(command, 'sendOffs:${sendOffs.length}');
@@ -895,13 +923,22 @@ final class ResearchInstrument {
       case FinalActionKind.recordSecondCautionSendOff:
         final subjectId = command.subjectId;
         final subjectKind = command.subjectKind;
-        if (subjectId == null || subjectKind == null) return false;
+        if (subjectId == null ||
+            subjectKind == null ||
+            command.capturedMatchTimeLabel == null) {
+          return false;
+        }
+        final seqSecond = _nextReportSequence();
         sendOffs.add(
           SavedSendOff(
             subjectId: subjectId,
             kind: subjectKind,
             scope: command.scope,
             pathway: SendOffPathwayLabel.secondCaution,
+            eventId: 'sendoff-second-$seqSecond',
+            sequence: seqSecond,
+            matchTimeLabel: command.capturedMatchTimeLabel,
+            originTrace: command.originTrace,
           ),
         );
         successorEstablished = false;
@@ -914,11 +951,21 @@ final class ResearchInstrument {
         if (out == null ||
             incoming == null ||
             out == incoming ||
-            person == null) {
+            person == null ||
+            command.capturedMatchTimeLabel == null) {
           return false;
         }
+        final seqSub = _nextReportSequence();
         substitutions.add(
-          SavedSubstitution(outId: out, inId: incoming, team: person.team),
+          SavedSubstitution(
+            outId: out,
+            inId: incoming,
+            team: person.team,
+            eventId: 'substitution-$seqSub',
+            sequence: seqSub,
+            matchTimeLabel: command.capturedMatchTimeLabel,
+            originTrace: command.originTrace,
+          ),
         );
         substitutionStage = SubstitutionStage.saved;
         _logAppended(command, 'substitutions:${substitutions.length}');
@@ -935,11 +982,11 @@ final class ResearchInstrument {
         }
         final person = _participant(scorerId);
         if (person == null || person.team != team) return false;
-        _goalEventSequence += 1;
+        final seqGoal = _nextReportSequence();
         goals.add(
           SavedGoal(
-            eventId: 'goal-$_goalEventSequence',
-            sequence: _goalEventSequence,
+            eventId: 'goal-$seqGoal',
+            sequence: seqGoal,
             scoringTeam: team,
             scorerParticipantId: scorerId,
             matchTimeLabel: timeLabel,

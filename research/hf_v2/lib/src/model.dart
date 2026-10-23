@@ -173,11 +173,21 @@ final class SavedCaution {
     required this.subjectId,
     required this.kind,
     required this.scope,
+    this.eventId,
+    this.sequence,
+    this.matchTimeLabel,
+    this.originTrace,
   });
 
   final String subjectId;
   final SubjectKind kind;
   final ResearchScope scope;
+  final String? eventId;
+  final int? sequence;
+  final String? matchTimeLabel;
+  final String? originTrace;
+
+  bool get reportable => sequence != null && matchTimeLabel != null;
 }
 
 final class SavedSendOff {
@@ -186,12 +196,22 @@ final class SavedSendOff {
     required this.kind,
     required this.scope,
     required this.pathway,
+    this.eventId,
+    this.sequence,
+    this.matchTimeLabel,
+    this.originTrace,
   });
 
   final String subjectId;
   final SubjectKind kind;
   final ResearchScope scope;
   final SendOffPathwayLabel pathway;
+  final String? eventId;
+  final int? sequence;
+  final String? matchTimeLabel;
+  final String? originTrace;
+
+  bool get reportable => sequence != null && matchTimeLabel != null;
 }
 
 final class SavedSubstitution {
@@ -199,11 +219,21 @@ final class SavedSubstitution {
     required this.outId,
     required this.inId,
     required this.team,
+    this.eventId,
+    this.sequence,
+    this.matchTimeLabel,
+    this.originTrace,
   });
 
   final String outId;
   final String inId;
   final ResearchTeamSide team;
+  final String? eventId;
+  final int? sequence;
+  final String? matchTimeLabel;
+  final String? originTrace;
+
+  bool get reportable => sequence != null && matchTimeLabel != null;
 }
 
 int presenceRankOrder(PresenceRank presence) {

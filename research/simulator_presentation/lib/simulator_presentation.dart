@@ -4,7 +4,7 @@
 /// Match Memory and does not decide sporting outcomes.
 library;
 
-export 'src/goal_projection.dart';
+export 'src/match_report_projection.dart';
 export 'src/intent.dart';
 export 'src/memory_runtime.dart';
 export 'src/runtime.dart';

@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 void main() {
   test('every core scenario and variant loads, resets, and logs', () {
-    expect(coreScenarios, hasLength(20));
+    expect(coreScenarios, hasLength(21));
     for (final id in ScenarioId.values) {
       final instrument = ResearchInstrument()..loadScenario(id);
       expect(instrument.pitchTruth, isNotEmpty);

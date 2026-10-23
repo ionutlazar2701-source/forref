@@ -161,49 +161,141 @@ MatchReportPresentation _matchReport(
   String homeTeamLabel,
   String awayTeamLabel,
 ) {
+  final entries = <MatchReportEntryPresentation>[];
   var home = 0;
   var away = 0;
-  final rows = <({
-    String eventId,
-    int sequence,
-    String matchTimeLabel,
-    String teamLabel,
-    String participantDisplay,
-    String scoreAfterLabel,
-    String originTrace,
-  })>[];
-  final sorted = [...snapshot.goals]..sort((a, b) => a.sequence.compareTo(b.sequence));
-  for (final goal in sorted) {
-    if (goal.scoringTeam == ResearchTeamSide.home) {
-      home += 1;
-    } else {
-      away += 1;
-    }
-    ResearchParticipant? person;
-    for (final candidate in snapshot.roster) {
-      if (candidate.id == goal.scorerParticipantId) {
-        person = candidate;
-        break;
-      }
-    }
-    final display = person == null
-        ? goal.scorerParticipantId
-        : '#${person.shirtLabel} ${person.name}';
-    final teamLabel =
-        goal.scoringTeam == ResearchTeamSide.home ? homeTeamLabel : awayTeamLabel;
-    rows.add(
-      (
-        eventId: goal.eventId,
-        sequence: goal.sequence,
-        matchTimeLabel: goal.matchTimeLabel,
-        teamLabel: teamLabel,
-        participantDisplay: display,
-        scoreAfterLabel: '$home–$away',
-        originTrace: goal.originTrace,
-      ),
-    );
+
+  void addEntry(MatchReportEntryPresentation entry) {
+    entries.add(entry);
   }
-  return matchReportFromGoals(rows);
+
+  ResearchParticipant? participant(String id) {
+    for (final person in snapshot.roster) {
+      if (person.id == id) return person;
+    }
+    return null;
+  }
+
+  ResearchOfficial? official(String id) {
+    for (final person in snapshot.officials) {
+      if (person.id == id) return person;
+    }
+    return null;
+  }
+
+  String teamLabel(ResearchTeamSide side) =>
+      side == ResearchTeamSide.home ? homeTeamLabel : awayTeamLabel;
+
+  String subjectDisplay(String id, SubjectKind kind) {
+    if (kind == SubjectKind.participant) {
+      final person = participant(id);
+      return person == null ? id : '#${person.shirtLabel} ${person.name}';
+    }
+    final off = official(id);
+    return off == null ? id : '${off.name} · ${off.roleLabel}';
+  }
+
+  final timeline = <({int sequence, void Function() emit})>[];
+
+  for (final goal in snapshot.goals) {
+    timeline.add((sequence: goal.sequence, emit: () {
+      if (goal.scoringTeam == ResearchTeamSide.home) {
+        home += 1;
+      } else {
+        away += 1;
+      }
+      addEntry(
+        MatchReportEntryPresentation(
+          eventId: goal.eventId,
+          sequence: goal.sequence,
+          kind: MatchReportEntryKind.goal,
+          matchTimeLabel: goal.matchTimeLabel,
+          teamLabel: teamLabel(goal.scoringTeam),
+          participantDisplay: subjectDisplay(
+            goal.scorerParticipantId,
+            SubjectKind.participant,
+          ),
+          scoreAfterLabel: '$home–$away',
+          originTrace: goal.originTrace,
+        ),
+      );
+    }));
+  }
+
+  for (final caution in snapshot.cautions) {
+    if (!caution.reportable) continue;
+    final seq = caution.sequence!;
+    timeline.add((sequence: seq, emit: () {
+      final side = participant(caution.subjectId)?.team ??
+          official(caution.subjectId)?.team;
+      addEntry(
+        MatchReportEntryPresentation(
+          eventId: caution.eventId!,
+          sequence: seq,
+          kind: MatchReportEntryKind.yellow,
+          matchTimeLabel: caution.matchTimeLabel!,
+          teamLabel: side == null ? '—' : teamLabel(side),
+          participantDisplay: subjectDisplay(caution.subjectId, caution.kind),
+          originTrace: caution.originTrace ?? 'research',
+        ),
+      );
+    }));
+  }
+
+  for (final sendOff in snapshot.sendOffs) {
+    if (!sendOff.reportable) continue;
+    final seq = sendOff.sequence!;
+    timeline.add((sequence: seq, emit: () {
+      final side = participant(sendOff.subjectId)?.team ??
+          official(sendOff.subjectId)?.team;
+      addEntry(
+        MatchReportEntryPresentation(
+          eventId: sendOff.eventId!,
+          sequence: seq,
+          kind: sendOff.pathway == SendOffPathwayLabel.direct
+              ? MatchReportEntryKind.directSendOff
+              : MatchReportEntryKind.secondCautionSendOff,
+          matchTimeLabel: sendOff.matchTimeLabel!,
+          teamLabel: side == null ? '—' : teamLabel(side),
+          participantDisplay:
+              subjectDisplay(sendOff.subjectId, sendOff.kind),
+          originTrace: sendOff.originTrace ?? 'research',
+        ),
+      );
+    }));
+  }
+
+  for (final sub in snapshot.substitutions) {
+    if (!sub.reportable) continue;
+    final seq = sub.sequence!;
+    timeline.add((sequence: seq, emit: () {
+      final out = participant(sub.outId);
+      final incoming = participant(sub.inId);
+      final outLabel =
+          out == null ? sub.outId : '#${out.shirtLabel} ${out.name}';
+      final inLabel = incoming == null
+          ? sub.inId
+          : '#${incoming.shirtLabel} ${incoming.name}';
+      addEntry(
+        MatchReportEntryPresentation(
+          eventId: sub.eventId!,
+          sequence: seq,
+          kind: MatchReportEntryKind.substitution,
+          matchTimeLabel: sub.matchTimeLabel!,
+          teamLabel: teamLabel(sub.team),
+          participantDisplay: outLabel,
+          details: '$outLabel → $inLabel',
+          originTrace: sub.originTrace ?? 'research',
+        ),
+      );
+    }));
+  }
+
+  timeline.sort((a, b) => a.sequence.compareTo(b.sequence));
+  for (final item in timeline) {
+    item.emit();
+  }
+  return buildMatchReport(entries: entries);
 }
 
 bool _recognized(String label) {

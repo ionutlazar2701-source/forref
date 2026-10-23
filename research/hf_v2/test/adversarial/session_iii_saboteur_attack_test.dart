@@ -346,7 +346,7 @@ void main() {
   });
 
   test('BANK L scenarios: reload restores the opening instrument', () {
-    expect(coreScenarios, hasLength(20));
+    expect(coreScenarios, hasLength(21));
     final instrument = ResearchInstrument();
     for (final id in ScenarioId.values) {
       instrument.loadScenario(id);

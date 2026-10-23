@@ -13,7 +13,9 @@ import 'project.dart';
 final class HfPresentationRuntime implements SimulatorPresentationRuntime {
   HfPresentationRuntime({ResearchInstrument? instrument})
       : _instrument = instrument ?? ResearchInstrument() {
-    _instrument.loadScenario(ScenarioId.s01YellowNoPrior);
+    if (instrument == null) {
+      _instrument.loadScenario(ScenarioId.s01YellowNoPrior);
+    }
   }
 
   final ResearchInstrument _instrument;
@@ -147,7 +149,8 @@ final class HfPresentationRuntime implements SimulatorPresentationRuntime {
       case ResolveSimulatedCommitIntent():
         _instrument.resolveSimulatedCommit();
         if (_instrument.commitKind == SystemCommitKind.saved &&
-            _route == WatchRoute.goalFlow) {
+            _route != WatchRoute.liveCore &&
+            _route != WatchRoute.matchReport) {
           _route = WatchRoute.liveCore;
         }
       case AcknowledgeUnknownIntent():

@@ -269,7 +269,7 @@ class _FitBody extends StatelessWidget {
       ),
       for (final entry in state.matchReport.entries)
         Text(
-          '${entry.matchTimeLabel} GOAL\n${entry.teamLabel} · ${entry.participantDisplay}\nScore ${entry.scoreAfterLabel}',
+          _reportLine(entry),
           key: Key('watch-match-report-entry-${entry.sequence}'),
           style: const TextStyle(fontFamily: 'Roboto', fontSize: 12, color: Color(0xFF0B2A4A)),
         ),
@@ -290,35 +290,59 @@ class _FitBody extends StatelessWidget {
   }
 
   List<Widget> _yellow() {
+    final time = state.frozenCommand?.capturedMatchTimeLabel ??
+        (state.clock.available ? state.clock.label : null);
     return [
+      const Text('YELLOW', style: TextStyle(fontFamily: 'Roboto', fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF0B2A4A))),
+      _button(state.homeTeamLabel, const SetTeamIntent(PresentationTeam.home, origin: IntentOrigin.watchUi), key: const Key('watch-yellow-team-home')),
+      _button(state.awayTeamLabel, const SetTeamIntent(PresentationTeam.away, origin: IntentOrigin.watchUi), key: const Key('watch-yellow-team-away')),
+      Text(state.discipline.awarenessLabel, key: const Key('watch-prior-awareness')),
+      if (time != null)
+        Text('Match time $time', key: const Key('watch-yellow-review-time'), style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, color: Color(0xFF0B2A4A))),
+      for (final person in _visiblePeople())
+        _button(
+          '#${person.shirtLabel} ${person.name}',
+          SelectParticipantIntent(person.id, origin: IntentOrigin.watchUi),
+          key: Key('watch-yellow-subject-${person.id}'),
+        ),
       _button(
         'Record yellow',
         const ActivateIntent(PresentationAction.yellow, origin: IntentOrigin.watchUi),
+        key: const Key('watch-record-yellow'),
       ),
       if (state.commit.label == ResearchCommitPhrases.saving)
         _button(
           'Resolve simulated outcome',
           const ResolveSimulatedCommitIntent(origin: IntentOrigin.watchUi),
+          key: const Key('watch-resolve-yellow'),
         ),
       _button('Back', const OpenRouteIntent(WatchRoute.liveCore, origin: IntentOrigin.watchUi)),
-      Text(state.discipline.awarenessLabel),
-      for (final person in _visiblePeople())
-        _button(
-          '${person.team.name} ${person.shirtLabel} · ${person.id}',
-          SelectParticipantIntent(person.id, origin: IntentOrigin.watchUi),
-        ),
     ];
   }
 
   List<Widget> _sendOff() {
+    final time = state.frozenCommand?.capturedMatchTimeLabel ??
+        (state.clock.available ? state.clock.label : null);
     return [
+      _button(state.homeTeamLabel, const SetTeamIntent(PresentationTeam.home, origin: IntentOrigin.watchUi), key: const Key('watch-sendoff-team-home')),
+      _button(state.awayTeamLabel, const SetTeamIntent(PresentationTeam.away, origin: IntentOrigin.watchUi), key: const Key('watch-sendoff-team-away')),
+      for (final person in _visiblePeople())
+        _button(
+          '#${person.shirtLabel} ${person.name}',
+          SelectParticipantIntent(person.id, origin: IntentOrigin.watchUi),
+          key: Key('watch-sendoff-subject-${person.id}'),
+        ),
+      if (time != null)
+        Text('Match time $time', key: const Key('watch-sendoff-review-time'), style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, color: Color(0xFF0B2A4A))),
       _button(
         'Record direct send-off',
         const ActivateIntent(PresentationAction.directSendOff, origin: IntentOrigin.watchUi),
+        key: const Key('watch-record-direct-sendoff'),
       ),
       _button(
         'Record second-caution send-off',
         const ActivateIntent(PresentationAction.secondCautionSendOff, origin: IntentOrigin.watchUi),
+        key: const Key('watch-record-second-sendoff'),
       ),
       _button('Offer direct send-off', const OfferDirectSendOffIntent(origin: IntentOrigin.watchUi)),
       const Text(
@@ -335,22 +359,31 @@ class _FitBody extends StatelessWidget {
   }
 
   List<Widget> _substitution() {
+    final time = state.frozenCommand?.capturedMatchTimeLabel ??
+        (state.clock.available ? state.clock.label : null);
     return [
+      _button(state.homeTeamLabel, const SetTeamIntent(PresentationTeam.home, origin: IntentOrigin.watchUi), key: const Key('watch-sub-team-home')),
+      _button(state.awayTeamLabel, const SetTeamIntent(PresentationTeam.away, origin: IntentOrigin.watchUi), key: const Key('watch-sub-team-away')),
+      Text('OUT ${state.substitution.outId ?? '-'}  IN ${state.substitution.inId ?? '-'}'),
+      if (time != null)
+        Text('Match time $time', key: const Key('watch-sub-review-time'), style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, color: Color(0xFF0B2A4A))),
+      for (final person in _visiblePeople()) ...[
+        _button(
+          'OUT #${person.shirtLabel} ${person.name}',
+          SelectOutIntent(person.id, origin: IntentOrigin.watchUi),
+          key: Key('watch-sub-out-${person.id}'),
+        ),
+        _button(
+          'IN #${person.shirtLabel} ${person.name}',
+          SelectInIntent(person.id, origin: IntentOrigin.watchUi),
+          key: Key('watch-sub-in-${person.id}'),
+        ),
+      ],
       _button(
         'Record substitution',
         const ActivateIntent(PresentationAction.substitution, origin: IntentOrigin.watchUi),
+        key: const Key('watch-record-substitution'),
       ),
-      Text('OUT ${state.substitution.outId ?? '-'}  IN ${state.substitution.inId ?? '-'}'),
-      for (final person in _visiblePeople()) ...[
-        _button(
-          'OUT ${person.shirtLabel} · ${person.id}',
-          SelectOutIntent(person.id, origin: IntentOrigin.watchUi),
-        ),
-        _button(
-          'IN ${person.shirtLabel} · ${person.id}',
-          SelectInIntent(person.id, origin: IntentOrigin.watchUi),
-        ),
-      ],
       if (state.commit.label == ResearchCommitPhrases.saving)
         _button(
           'Resolve simulated outcome',
@@ -399,6 +432,17 @@ class _FitBody extends StatelessWidget {
       inputEpoch: inputEpoch,
       onCommit: () => onIntent(intent),
     );
+  }
+
+  String _reportLine(MatchReportEntryPresentation entry) {
+    final headline = matchReportKindLabel(entry.kind);
+    final buffer = StringBuffer('${entry.matchTimeLabel} $headline\n'
+        '${entry.teamLabel} · ${entry.participantDisplay}');
+    if (entry.details != null) buffer.write('\n${entry.details}');
+    if (entry.scoreAfterLabel != null) {
+      buffer.write('\nScore ${entry.scoreAfterLabel}');
+    }
+    return buffer.toString();
   }
 
   String _frozen(FrozenCommandPresentation command) {
