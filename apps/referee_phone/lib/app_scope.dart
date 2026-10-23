@@ -4,6 +4,7 @@ import 'package:referee_phone/infrastructure/competition_rules/phone_match_captu
 import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
 import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_store.dart';
 import 'package:referee_phone/match_application/match_application_boundary.dart';
+import 'package:referee_phone/mobile_commands/mobile_command_runtime.dart';
 
 class AppScope extends InheritedWidget {
   const AppScope({
@@ -14,6 +15,7 @@ class AppScope extends InheritedWidget {
     this.captureIdentity,
     this.matchCaptureContext,
     this.temporalEvidence,
+    required this.mobileCommands,
     required super.child,
   });
 
@@ -32,6 +34,9 @@ class AppScope extends InheritedWidget {
   /// In-process temporal evidence. Not Match Memory and not a certified clock.
   final PhoneTemporalEvidenceStore? temporalEvidence;
 
+  /// Phone command layer. Peer transport defaults to a no-op.
+  final MobileCommandRuntime mobileCommands;
+
   static AppScope of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<AppScope>();
     assert(scope != null, 'AppScope missing');
@@ -45,5 +50,6 @@ class AppScope extends InheritedWidget {
       oldWidget.matchApplication != matchApplication ||
       oldWidget.captureIdentity != captureIdentity ||
       oldWidget.matchCaptureContext != matchCaptureContext ||
-      oldWidget.temporalEvidence != temporalEvidence;
+      oldWidget.temporalEvidence != temporalEvidence ||
+      oldWidget.mobileCommands != mobileCommands;
 }

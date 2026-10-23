@@ -769,6 +769,276 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{clock} +{minutes}'**
   String clockWithAdded(String clock, int minutes);
+
+  /// No description provided for @devicesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Devices'**
+  String get devicesTitle;
+
+  /// No description provided for @noCompanionDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'No companion device'**
+  String get noCompanionDevice;
+
+  /// No description provided for @phoneCanRunMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone can still run supported match workflows'**
+  String get phoneCanRunMatch;
+
+  /// No description provided for @phoneOnlyMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone only'**
+  String get phoneOnlyMode;
+
+  /// No description provided for @commandAvailabilityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Commands'**
+  String get commandAvailabilityTitle;
+
+  /// No description provided for @kickOffCommandAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Kick-off available'**
+  String get kickOffCommandAvailable;
+
+  /// No description provided for @kickOffCommandUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Kick-off unavailable'**
+  String get kickOffCommandUnavailable;
+
+  /// No description provided for @goalCommandAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal available'**
+  String get goalCommandAvailable;
+
+  /// No description provided for @goalCommandUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal unavailable'**
+  String get goalCommandUnavailable;
+
+  /// No description provided for @notInProductionBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is not available in this production build yet'**
+  String notInProductionBuild(String name);
+
+  /// No description provided for @authorityRequiredForCommand.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} needs capture authority'**
+  String authorityRequiredForCommand(String name);
+
+  /// No description provided for @companionDoesNotControlMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Companion does not control the match'**
+  String get companionDoesNotControlMatch;
+
+  /// No description provided for @matchReportDisciplineUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Cards and substitutions are not in the production report yet'**
+  String get matchReportDisciplineUnsupported;
+
+  /// No description provided for @outcomeUnknownLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Outcome unknown'**
+  String get outcomeUnknownLabel;
+
+  /// No description provided for @goalNotSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal not saved'**
+  String get goalNotSaved;
+
+  /// No description provided for @localStorageReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Local storage ready'**
+  String get localStorageReady;
+
+  /// No description provided for @commandNameYellow.
+  ///
+  /// In en, this message translates to:
+  /// **'Yellow card'**
+  String get commandNameYellow;
+
+  /// No description provided for @commandNameDirectSendOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct send-off'**
+  String get commandNameDirectSendOff;
+
+  /// No description provided for @commandNameSecondCaution.
+  ///
+  /// In en, this message translates to:
+  /// **'Second-caution send-off'**
+  String get commandNameSecondCaution;
+
+  /// No description provided for @commandNameSubstitution.
+  ///
+  /// In en, this message translates to:
+  /// **'Substitution'**
+  String get commandNameSubstitution;
+
+  /// No description provided for @commandNameFullTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Full time'**
+  String get commandNameFullTime;
+
+  /// No description provided for @commandNameFinishMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish match'**
+  String get commandNameFinishMatch;
+
+  /// No description provided for @platformWearOs.
+  ///
+  /// In en, this message translates to:
+  /// **'Wear OS'**
+  String get platformWearOs;
+
+  /// No description provided for @platformWatchOs.
+  ///
+  /// In en, this message translates to:
+  /// **'watchOS'**
+  String get platformWatchOs;
+
+  /// No description provided for @platformGarmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Garmin'**
+  String get platformGarmin;
+
+  /// No description provided for @platformZepp.
+  ///
+  /// In en, this message translates to:
+  /// **'Zepp OS'**
+  String get platformZepp;
+
+  /// No description provided for @platformHuawei.
+  ///
+  /// In en, this message translates to:
+  /// **'Huawei'**
+  String get platformHuawei;
+
+  /// No description provided for @platformUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown platform'**
+  String get platformUnknown;
+
+  /// No description provided for @connectionConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get connectionConnected;
+
+  /// No description provided for @connectionDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnected'**
+  String get connectionDisconnected;
+
+  /// No description provided for @connectionLostLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection lost'**
+  String get connectionLostLabel;
+
+  /// No description provided for @certificationUnknownLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Certification unknown'**
+  String get certificationUnknownLabel;
+
+  /// No description provided for @certificationKnownLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Known device'**
+  String get certificationKnownLabel;
+
+  /// No description provided for @certificationCompatibleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Compatible'**
+  String get certificationCompatibleLabel;
+
+  /// No description provided for @certificationCertifiedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Certified'**
+  String get certificationCertifiedLabel;
+
+  /// No description provided for @pairingNotPaired.
+  ///
+  /// In en, this message translates to:
+  /// **'Not paired'**
+  String get pairingNotPaired;
+
+  /// No description provided for @noDeclaredCapabilities.
+  ///
+  /// In en, this message translates to:
+  /// **'No declared capabilities'**
+  String get noDeclaredCapabilities;
+
+  /// No description provided for @capabilityCaptureGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal capture'**
+  String get capabilityCaptureGoal;
+
+  /// No description provided for @capabilityCaptureYellow.
+  ///
+  /// In en, this message translates to:
+  /// **'Yellow capture'**
+  String get capabilityCaptureYellow;
+
+  /// No description provided for @capabilityCaptureSendOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Send-off capture'**
+  String get capabilityCaptureSendOff;
+
+  /// No description provided for @capabilityCaptureSubstitution.
+  ///
+  /// In en, this message translates to:
+  /// **'Substitution capture'**
+  String get capabilityCaptureSubstitution;
+
+  /// No description provided for @capabilityLocalMatchMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Local match memory'**
+  String get capabilityLocalMatchMemory;
+
+  /// No description provided for @capabilityIndependentTiming.
+  ///
+  /// In en, this message translates to:
+  /// **'Independent match timing'**
+  String get capabilityIndependentTiming;
+
+  /// No description provided for @capabilityLocalHaptics.
+  ///
+  /// In en, this message translates to:
+  /// **'Local haptics'**
+  String get capabilityLocalHaptics;
+
+  /// No description provided for @capabilityPeerTransport.
+  ///
+  /// In en, this message translates to:
+  /// **'Peer transport'**
+  String get capabilityPeerTransport;
 }
 
 class _AppLocalizationsDelegate

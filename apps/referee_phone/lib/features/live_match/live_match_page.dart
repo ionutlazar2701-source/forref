@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:match_core/match_core.dart';
 import 'package:referee_phone/app_scope.dart';
 import 'package:referee_phone/features/live_match/capture_overlay.dart';
+import 'package:referee_phone/features/live_match/command_availability_panel.dart';
 import 'package:referee_phone/features/live_match/live_match_terminal_ui.dart';
 import 'package:referee_phone/infrastructure/competition_rules/phone_match_capture_context.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
@@ -12,9 +13,11 @@ import 'package:forref_match_core/forref_match_core.dart';
 import 'package:referee_phone/match/match_session.dart';
 import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
 import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_store.dart';
-import 'package:referee_phone/match_application/kick_off_authority.dart';
 import 'package:referee_phone/match_application/match_started_read_model.dart';
 import 'package:referee_phone/match/new_match.dart';
+import 'package:referee_phone/mobile_commands/mobile_command.dart';
+import 'package:referee_phone/mobile_commands/mobile_command_availability.dart';
+import 'package:referee_phone/mobile_commands/mobile_command_dispatcher.dart';
 import 'package:referee_phone/routing/app_router.dart';
 
 class LiveMatchPage extends StatefulWidget {
@@ -44,6 +47,7 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
       ActivePeriodElapsedProjection.unavailable;
   TemporalMatchProjection _temporal = TemporalMatchProjection.empty;
   MatchProjectionState? _projection;
+  ScoreProjection? _scoreProjection;
   List<MatchRecord> _records = const [];
   TemporalEvidence? _anchor;
   TemporalEvidence? _suspensionBoundary;
@@ -61,8 +65,7 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
   }
 
   Future<void> _load() async {
-    final match =
-        await AppScope.of(context).database.getMatch(widget.matchId);
+    final match = await AppScope.of(context).database.getMatch(widget.matchId);
     if (!mounted || match == null) return;
     _session?.dispose();
     final session = MatchSession(
@@ -91,74 +94,96 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
     final boundary = scope.matchApplication;
     final identity = scope.captureIdentity;
     if (boundary == null || identity == null) return;
-    final projection = await boundary.project(
-      widget.matchId,
-      evaluatedAuthorityGeneration:
-          identity.contextFor(widget.matchId).projectionAuthorityGeneration,
-    );
-    final records = await boundary.durableStore.readCommittedForMatch(
-      widget.matchId,
-    );
-    final started = MatchStartedReadModel.from(
-      projection: projection,
-      records: records,
-    );
-    final temporal = TemporalMatchProjection.derive(
-      projection: projection,
-      records: records,
-    );
-    final evidence = scope.temporalEvidence;
-    final anchorId = _periodAnchorId(records, temporal.activePeriod);
-    final anchor = evidence == null || anchorId == null
-        ? null
-        : await evidence.resolve(anchorId);
-    final suspensionId = _suspensionEvidenceId(records, temporal.activePeriod);
-    final suspensionBoundary = evidence == null || suspensionId == null
-        ? null
-        : await evidence.resolve(suspensionId);
-    final resumptionId = _resumptionEvidenceId(records, temporal.activePeriod);
-    final resumptionAnchor = evidence == null || resumptionId == null
-        ? null
-        : await evidence.resolve(resumptionId);
-    final recordedEvidence = await _resolveRecordedEvidence(evidence, records);
-    final current = evidence?.currentObservation();
-    final elapsed = deriveActivePeriodElapsed(
-      temporal: temporal,
-      projection: projection,
-      records: records,
-      anchor: anchor,
-      current: current,
-      suspensionBoundary: suspensionBoundary,
-      resumptionAnchor: resumptionAnchor,
-      recordedEvidence: recordedEvidence,
-    );
-    NormalMatchEndEligibility? terminalEligibility;
-    final matchCapture = scope.matchCaptureContext;
-    if (matchCapture != null && started.authoritativelyStarted) {
-      terminalEligibility = await assessStoredNormalMatchEndEligibility(
-        capture: matchCapture,
-        matchId: widget.matchId,
+    final match = _session?.match;
+    try {
+      final projection = await boundary.project(
+        widget.matchId,
+        evaluatedAuthorityGeneration:
+            identity.contextFor(widget.matchId).projectionAuthorityGeneration,
+      );
+      final records = await boundary.durableStore.readCommittedForMatch(
+        widget.matchId,
+      );
+      final started = MatchStartedReadModel.from(
+        projection: projection,
         records: records,
       );
+      final temporal = TemporalMatchProjection.derive(
+        projection: projection,
+        records: records,
+      );
+      final evidence = scope.temporalEvidence;
+      final anchorId = _periodAnchorId(records, temporal.activePeriod);
+      final anchor = evidence == null || anchorId == null
+          ? null
+          : await evidence.resolve(anchorId);
+      final suspensionId =
+          _suspensionEvidenceId(records, temporal.activePeriod);
+      final suspensionBoundary = evidence == null || suspensionId == null
+          ? null
+          : await evidence.resolve(suspensionId);
+      final resumptionId =
+          _resumptionEvidenceId(records, temporal.activePeriod);
+      final resumptionAnchor = evidence == null || resumptionId == null
+          ? null
+          : await evidence.resolve(resumptionId);
+      final recordedEvidence =
+          await _resolveRecordedEvidence(evidence, records);
+      final current = evidence?.currentObservation();
+      final elapsed = deriveActivePeriodElapsed(
+        temporal: temporal,
+        projection: projection,
+        records: records,
+        anchor: anchor,
+        current: current,
+        suspensionBoundary: suspensionBoundary,
+        resumptionAnchor: resumptionAnchor,
+        recordedEvidence: recordedEvidence,
+      );
+      NormalMatchEndEligibility? terminalEligibility;
+      final matchCapture = scope.matchCaptureContext;
+      if (matchCapture != null && started.authoritativelyStarted) {
+        terminalEligibility = await assessStoredNormalMatchEndEligibility(
+          capture: matchCapture,
+          matchId: widget.matchId,
+          records: records,
+        );
+      }
+      ScoreProjection? scoreProjection;
+      if (match != null) {
+        scoreProjection = await boundary.readScoreProjection(
+          matchId: widget.matchId,
+          evaluatedAuthorityGeneration:
+              identity.contextFor(widget.matchId).projectionAuthorityGeneration,
+          homeTeamId: MatchTeamId(match.teams.home.teamId),
+          awayTeamId: MatchTeamId(match.teams.away.teamId),
+        );
+      }
+      if (!mounted) return;
+      setState(() {
+        _matchStarted = started.authoritativelyStarted;
+        _activePeriod = started.activePeriod;
+        _endedPeriod = temporal.endedPeriod;
+        _intervalActive = temporal.intervalActive;
+        _temporallyIncomplete = started.temporallyIncomplete;
+        _elapsed = elapsed;
+        _temporal = temporal;
+        _projection = projection;
+        _scoreProjection = scoreProjection;
+        _records = records;
+        _anchor = anchor;
+        _suspensionBoundary = suspensionBoundary;
+        _resumptionAnchor = resumptionAnchor;
+        _recordedEvidence = recordedEvidence;
+        _terminalEligibility = terminalEligibility;
+      });
+      _syncClockTicker();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _scoreProjection = const ScoreUnavailable();
+      });
     }
-    if (!mounted) return;
-    setState(() {
-      _matchStarted = started.authoritativelyStarted;
-      _activePeriod = started.activePeriod;
-      _endedPeriod = temporal.endedPeriod;
-      _intervalActive = temporal.intervalActive;
-      _temporallyIncomplete = started.temporallyIncomplete;
-      _elapsed = elapsed;
-      _temporal = temporal;
-      _projection = projection;
-      _records = records;
-      _anchor = anchor;
-      _suspensionBoundary = suspensionBoundary;
-      _resumptionAnchor = resumptionAnchor;
-      _recordedEvidence = recordedEvidence;
-      _terminalEligibility = terminalEligibility;
-    });
-    _syncClockTicker();
   }
 
   void _syncClockTicker() {
@@ -468,37 +493,40 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
     }
     setState(() => _kickOffPending = true);
     try {
-      final evidence = scope.temporalEvidence;
-      final result = await boundary.commitKickOff(
-        captureContext,
-        period: const PeriodIdentity(index: 1),
-        periodAnchor: evidence == null
-            ? null
-            : () async {
-                final captured = await evidence.captureAnchor();
-                return TemporalContext(
-                  evidenceIds: [captured.evidenceId],
-                  domainClockPolicyVersion:
-                      PhoneCaptureIdentity.domainClockContract.value,
-                );
-              },
+      final runtime = scope.mobileCommands;
+      final prepared = runtime.preparation.freezeKickOff(
+        activation: runtime.preparation.beginActivation(),
+        matchId: widget.matchId,
+        originDeviceId: captureContext.originDeviceId,
+        periodIndex: 1,
       );
+      final outcome = await runtime.dispatcher.dispatch(prepared.envelope);
       if (!mounted) return;
-      if (result is KickOffAuthorityRejected) {
+      if (outcome.status == MobileCommandStatus.saved) {
+        await _refreshTemporal();
+        if (!mounted) return;
         setState(() => _kickOffPending = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.kickOffNotSaved)),
-        );
         return;
       }
-      await _refreshTemporal();
-      if (!mounted) return;
-      setState(() => _kickOffPending = false);
-      if (result is KickOffMatchStartedIncomplete) {
+      if (outcome.completeness == MobileCommitCompleteness.partial) {
+        await _refreshTemporal();
+        if (!mounted) return;
+        setState(() => _kickOffPending = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.periodStartNotSaved)),
         );
+        return;
       }
+      setState(() => _kickOffPending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            outcome.status == MobileCommandStatus.outcomeUnknown
+                ? l10n.outcomeUnknownLabel
+                : l10n.kickOffNotSaved,
+          ),
+        ),
+      );
     } catch (_) {
       if (!mounted) return;
       setState(() => _kickOffPending = false);
@@ -583,15 +611,14 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                         ? l10n.periodStartIncomplete
                         : '${periodLabel(match.currentState.periodId, l10n)}  ${matchStatusLabel(match, l10n)}';
     final terminalBlockedMessage = showTerminalBlockedReason(
-          eligibility: _terminalEligibility,
-          matchNormallyEnded: _temporal.matchNormallyEnded,
-          matchStarted: _matchStarted,
-        )
+      eligibility: _terminalEligibility,
+      matchNormallyEnded: _temporal.matchNormallyEnded,
+      matchStarted: _matchStarted,
+    )
         ? terminalEligibilityMessage(l10n, _terminalEligibility!)
         : null;
-    final legacyHalfTimeVisible = !_intervalActive &&
-        _endedPeriod == null &&
-        _activePeriod == null;
+    final legacyHalfTimeVisible =
+        !_intervalActive && _endedPeriod == null && _activePeriod == null;
     final recent = match.events.reversed.take(7).toList();
 
     return Scaffold(
@@ -628,8 +655,7 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                 Text(l10n.noActivePlayingPeriod),
               ] else if (_temporal.bothOrdinaryPeriodsEnded)
                 Text(l10n.noActivePlayingPeriod),
-              if (terminalBlockedMessage != null)
-                Text(terminalBlockedMessage),
+              if (terminalBlockedMessage != null) Text(terminalBlockedMessage),
               if (cutOverClock &&
                   !_intervalActive &&
                   _elapsed.continuity !=
@@ -759,16 +785,11 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                     ),
                   ],
                 ),
-              Text(
-                l10n.scoreLine(
-                  homeLabel(match, l10n),
-                  match.score.home,
-                  match.score.away,
-                  awayLabel(match, l10n),
-                ),
-                style: Theme.of(context).textTheme.headlineMedium,
-                textAlign: TextAlign.center,
-              ),
+              ...() {
+                final headline = _buildScoreHeadline(context, match, l10n);
+                if (headline == null) return <Widget>[];
+                return [headline];
+              }(),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
@@ -785,6 +806,20 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                 ],
               ),
               const SizedBox(height: 16),
+              CommandAvailabilityPanel(
+                catalog: AppScope.of(context).mobileCommands.catalog(
+                      MobilePhaseHint(
+                        kickOffCommitted: _matchStarted ||
+                            _activePeriod != null ||
+                            _endedPeriod != null,
+                      ),
+                    ),
+                noCompanion:
+                    AppScope.of(context).mobileCommands.companions.device ==
+                        null,
+                localStorageReady:
+                    AppScope.of(context).mobileCommands.localStorageReady,
+              ),
               for (final event in recent)
                 ListTile(
                   title: Text(
@@ -821,12 +856,95 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                 onCancel: () => setState(() => _captureType = null),
                 onSave: (type, data) async {
                   setState(() => _captureType = null);
+                  final scope = AppScope.of(context);
+                  if (type == EventType.goal &&
+                      scope.matchApplication != null &&
+                      data.teamId != null) {
+                    final captureContext = await _captureContext(scope);
+                    if (captureContext == null) return;
+                    try {
+                      final runtime = scope.mobileCommands;
+                      final draft = GoalCaptureDraft()
+                        ..scoringTeamId = data.teamId
+                        ..scorerLabel = data.player?.shirtNumber?.toString()
+                        ..displayMatchTime = null;
+                      final prepared = runtime.preparation.freezeGoal(
+                        activation: runtime.preparation.beginActivation(),
+                        matchId: widget.matchId,
+                        originDeviceId: captureContext.originDeviceId,
+                        draft: draft,
+                      );
+                      final outcome =
+                          await runtime.dispatcher.dispatch(prepared.envelope);
+                      if (!context.mounted) return;
+                      if (outcome.status == MobileCommandStatus.saved) {
+                        await _refreshTemporal();
+                        return;
+                      }
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            outcome.status == MobileCommandStatus.outcomeUnknown
+                                ? l10n.outcomeUnknownLabel
+                                : l10n.goalNotSaved,
+                          ),
+                        ),
+                      );
+                    } catch (_) {
+                      // Goal not saved; no legacy fallback.
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l10n.goalNotSaved)),
+                      );
+                    }
+                    return;
+                  }
                   await session.saveEvent(type: type, data: data);
                 },
               ),
             ),
         ],
       ),
+    );
+  }
+
+  /// MATCH_MEMORY score: omit numerals when projection is not [KnownScore].
+  Widget? _buildScoreHeadline(
+    BuildContext context,
+    Match match,
+    AppLocalizations l10n,
+  ) {
+    final boundary = AppScope.of(context).matchApplication;
+    if (boundary == null) {
+      return Text(
+        l10n.scoreLine(
+          homeLabel(match, l10n),
+          match.score.home,
+          match.score.away,
+          awayLabel(match, l10n),
+        ),
+        style: Theme.of(context).textTheme.headlineMedium,
+        textAlign: TextAlign.center,
+      );
+    }
+    final projection = _scoreProjection;
+    if (projection == null || projection is! KnownScore) {
+      return null;
+    }
+    final homeId = MatchTeamId(match.teams.home.teamId);
+    final awayId = MatchTeamId(match.teams.away.teamId);
+    final homeScore = projection.goalsByTeam[homeId];
+    final awayScore = projection.goalsByTeam[awayId];
+    if (homeScore == null || awayScore == null) return null;
+    return Text(
+      l10n.scoreLine(
+        homeLabel(match, l10n),
+        homeScore,
+        awayScore,
+        awayLabel(match, l10n),
+      ),
+      style: Theme.of(context).textTheme.headlineMedium,
+      textAlign: TextAlign.center,
     );
   }
 

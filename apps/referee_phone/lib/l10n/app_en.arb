@@ -140,5 +140,60 @@
       "clock": {"type": "String"},
       "minutes": {"type": "int"}
     }
-  }
+  },
+  "devicesTitle": "Devices",
+  "noCompanionDevice": "No companion device",
+  "phoneCanRunMatch": "Phone can still run supported match workflows",
+  "phoneOnlyMode": "Phone only",
+  "commandAvailabilityTitle": "Commands",
+  "kickOffCommandAvailable": "Kick-off available",
+  "kickOffCommandUnavailable": "Kick-off unavailable",
+  "goalCommandAvailable": "Goal available",
+  "goalCommandUnavailable": "Goal unavailable",
+  "notInProductionBuild": "{name} is not available in this production build yet",
+  "@notInProductionBuild": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "authorityRequiredForCommand": "{name} needs capture authority",
+  "@authorityRequiredForCommand": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "companionDoesNotControlMatch": "Companion does not control the match",
+  "matchReportDisciplineUnsupported": "Cards and substitutions are not in the production report yet",
+  "outcomeUnknownLabel": "Outcome unknown",
+  "goalNotSaved": "Goal not saved",
+  "localStorageReady": "Local storage ready",
+  "commandNameYellow": "Yellow card",
+  "commandNameDirectSendOff": "Direct send-off",
+  "commandNameSecondCaution": "Second-caution send-off",
+  "commandNameSubstitution": "Substitution",
+  "commandNameFullTime": "Full time",
+  "commandNameFinishMatch": "Finish match",
+  "platformWearOs": "Wear OS",
+  "platformWatchOs": "watchOS",
+  "platformGarmin": "Garmin",
+  "platformZepp": "Zepp OS",
+  "platformHuawei": "Huawei",
+  "platformUnknown": "Unknown platform",
+  "connectionConnected": "Connected",
+  "connectionDisconnected": "Disconnected",
+  "connectionLostLabel": "Connection lost",
+  "certificationUnknownLabel": "Certification unknown",
+  "certificationKnownLabel": "Known device",
+  "certificationCompatibleLabel": "Compatible",
+  "certificationCertifiedLabel": "Certified",
+  "pairingNotPaired": "Not paired",
+  "noDeclaredCapabilities": "No declared capabilities",
+  "capabilityCaptureGoal": "Goal capture",
+  "capabilityCaptureYellow": "Yellow capture",
+  "capabilityCaptureSendOff": "Send-off capture",
+  "capabilityCaptureSubstitution": "Substitution capture",
+  "capabilityLocalMatchMemory": "Local match memory",
+  "capabilityIndependentTiming": "Independent match timing",
+  "capabilityLocalHaptics": "Local haptics",
+  "capabilityPeerTransport": "Peer transport"
 }

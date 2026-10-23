@@ -22,7 +22,8 @@ void main() {
   });
 
   test('kick-off creates one MATCH_STARTED with allocated sequence', () async {
-    final composition = await MatchApplicationComposition.open(storageRoot: temp);
+    final composition =
+        await MatchApplicationComposition.open(storageRoot: temp);
     addTearDown(composition.close);
     final identity = await PhoneCaptureIdentityStore(temp).loadOrCreate();
 
@@ -31,7 +32,8 @@ void main() {
     );
 
     expect(result, isA<DurableCommitSuccess>());
-    final records = await composition.boundary.durableStore.readCommittedForMatch(
+    final records =
+        await composition.boundary.durableStore.readCommittedForMatch(
       'match-1',
     );
     expect(records, hasLength(1));
@@ -48,8 +50,10 @@ void main() {
     );
   });
 
-  test('second MATCH_STARTED fails closed and does not consume a sequence', () async {
-    final composition = await MatchApplicationComposition.open(storageRoot: temp);
+  test('second MATCH_STARTED fails closed and does not consume a sequence',
+      () async {
+    final composition =
+        await MatchApplicationComposition.open(storageRoot: temp);
     addTearDown(composition.close);
     final identity = await PhoneCaptureIdentityStore(temp).loadOrCreate();
     final context = identity.contextFor('match-1');
@@ -62,7 +66,8 @@ void main() {
 
     expect(second, isA<DurableCommitFailure>());
     expect((second as DurableCommitFailure).reason, contains('MATCH_STARTED'));
-    final records = await composition.boundary.durableStore.readCommittedForMatch(
+    final records =
+        await composition.boundary.durableStore.readCommittedForMatch(
       'match-1',
     );
     expect(records, hasLength(1));
@@ -70,7 +75,8 @@ void main() {
   });
 
   test('failed kick-off leaves no started projection', () async {
-    final composition = await MatchApplicationComposition.open(storageRoot: temp);
+    final composition =
+        await MatchApplicationComposition.open(storageRoot: temp);
     addTearDown(composition.close);
     final identity = await PhoneCaptureIdentityStore(temp).loadOrCreate();
     composition.boundary.durableStore.abortBeforeCommitForTest = () {
@@ -82,12 +88,14 @@ void main() {
     );
 
     expect(result, isA<DurableCommitFailure>());
-    final records = await composition.boundary.durableStore.readCommittedForMatch(
+    final records =
+        await composition.boundary.durableStore.readCommittedForMatch(
       'match-1',
     );
     final projection = await composition.boundary.project(
       'match-1',
-      evaluatedAuthorityGeneration: PhoneCaptureIdentity.initialAuthorityGeneration,
+      evaluatedAuthorityGeneration:
+          PhoneCaptureIdentity.initialAuthorityGeneration,
     );
     expect(
       MatchStartedReadModel.from(projection: projection, records: records)
@@ -112,10 +120,12 @@ void main() {
     );
     final projection = await reopened.boundary.project(
       'match-1',
-      evaluatedAuthorityGeneration: PhoneCaptureIdentity.initialAuthorityGeneration,
+      evaluatedAuthorityGeneration:
+          PhoneCaptureIdentity.initialAuthorityGeneration,
     );
 
-    expect(projection.trustFor(ProjectionFacet.temporal), ProjectionTrust.trusted);
+    expect(
+        projection.trustFor(ProjectionFacet.temporal), ProjectionTrust.trusted);
     final model = MatchStartedReadModel.from(
       projection: projection,
       records: records,
@@ -125,8 +135,10 @@ void main() {
     expect(model.temporallyIncomplete, isTrue);
   });
 
-  test('kick-off commits MATCH_STARTED then PERIOD_STARTED in sequence', () async {
-    final composition = await MatchApplicationComposition.open(storageRoot: temp);
+  test('kick-off commits MATCH_STARTED then PERIOD_STARTED in sequence',
+      () async {
+    final composition =
+        await MatchApplicationComposition.open(storageRoot: temp);
     addTearDown(composition.close);
     final identity = await PhoneCaptureIdentityStore(temp).loadOrCreate();
 
@@ -136,7 +148,8 @@ void main() {
     );
 
     expect(result, isA<KickOffAuthorityCommitted>());
-    final records = await composition.boundary.durableStore.readCommittedForMatch(
+    final records =
+        await composition.boundary.durableStore.readCommittedForMatch(
       'match-1',
     );
     expect(records.map((record) => record.originSequence).toList(), [1, 2]);
@@ -154,8 +167,10 @@ void main() {
     );
   });
 
-  test('period failure keeps MATCH_STARTED and retry writes only the period', () async {
-    final composition = await MatchApplicationComposition.open(storageRoot: temp);
+  test('period failure keeps MATCH_STARTED and retry writes only the period',
+      () async {
+    final composition =
+        await MatchApplicationComposition.open(storageRoot: temp);
     addTearDown(composition.close);
     final identity = await PhoneCaptureIdentityStore(temp).loadOrCreate();
     final context = identity.contextFor('match-1');
@@ -171,7 +186,8 @@ void main() {
     );
 
     expect(partial, isA<KickOffMatchStartedIncomplete>());
-    final afterPartial = await composition.boundary.durableStore.readCommittedForMatch(
+    final afterPartial =
+        await composition.boundary.durableStore.readCommittedForMatch(
       'match-1',
     );
     expect(afterPartial, hasLength(1));
@@ -188,7 +204,8 @@ void main() {
     );
 
     expect(recovered, isA<KickOffAuthorityCommitted>());
-    final records = await composition.boundary.durableStore.readCommittedForMatch(
+    final records =
+        await composition.boundary.durableStore.readCommittedForMatch(
       'match-1',
     );
     expect(records, hasLength(2));
@@ -240,7 +257,8 @@ void main() {
   });
 
   test('duplicate kick-off does not write a second start or period', () async {
-    final composition = await MatchApplicationComposition.open(storageRoot: temp);
+    final composition =
+        await MatchApplicationComposition.open(storageRoot: temp);
     addTearDown(composition.close);
     final identity = await PhoneCaptureIdentityStore(temp).loadOrCreate();
     final context = identity.contextFor('match-1');
@@ -258,7 +276,8 @@ void main() {
     );
 
     expect(second, isA<KickOffAlreadyStarted>());
-    final records = await composition.boundary.durableStore.readCommittedForMatch(
+    final records =
+        await composition.boundary.durableStore.readCommittedForMatch(
       'match-1',
     );
     expect(records, hasLength(2));
@@ -266,7 +285,8 @@ void main() {
   });
 
   test('PERIOD_STARTED without MATCH_STARTED fails closed', () async {
-    final composition = await MatchApplicationComposition.open(storageRoot: temp);
+    final composition =
+        await MatchApplicationComposition.open(storageRoot: temp);
     addTearDown(composition.close);
     final identity = await PhoneCaptureIdentityStore(temp).loadOrCreate();
 
@@ -281,14 +301,16 @@ void main() {
       (result as DurableCommitFailure).reason,
       contains('MATCH_STARTED'),
     );
-    final records = await composition.boundary.durableStore.readCommittedForMatch(
+    final records =
+        await composition.boundary.durableStore.readCommittedForMatch(
       'match-1',
     );
     expect(records, isEmpty);
   });
 
   test('PERIOD_STARTED with the wrong start id fails closed', () async {
-    final composition = await MatchApplicationComposition.open(storageRoot: temp);
+    final composition =
+        await MatchApplicationComposition.open(storageRoot: temp);
     addTearDown(composition.close);
     final identity = await PhoneCaptureIdentityStore(temp).loadOrCreate();
     final context = identity.contextFor('match-1');
@@ -305,27 +327,32 @@ void main() {
 
     expect(result, isA<DurableCommitFailure>());
     expect((result as DurableCommitFailure).reason, contains('dependency'));
-    final records = await composition.boundary.durableStore.readCommittedForMatch(
+    final records =
+        await composition.boundary.durableStore.readCommittedForMatch(
       'match-1',
     );
     expect(records, hasLength(1));
   });
 
   test('recordedAt does not choose sporting order', () async {
-    final composition = await MatchApplicationComposition.open(storageRoot: temp);
+    final composition =
+        await MatchApplicationComposition.open(storageRoot: temp);
     addTearDown(composition.close);
     final identity = await PhoneCaptureIdentityStore(temp).loadOrCreate();
     final early = DateTime.utc(2026, 1, 1);
     final late = DateTime.utc(2026, 12, 31);
 
     await composition.boundary.captureAndCommit(
-      _command(identity, recordedAt: late, code: V1SemanticTypeCode.periodEnded),
+      _command(identity,
+          recordedAt: late, code: V1SemanticTypeCode.periodEnded),
     );
     await composition.boundary.captureAndCommit(
-      _command(identity, recordedAt: early, code: V1SemanticTypeCode.periodStarted),
+      _command(identity,
+          recordedAt: early, code: V1SemanticTypeCode.periodStarted),
     );
 
-    final records = await composition.boundary.durableStore.readCommittedForMatch(
+    final records =
+        await composition.boundary.durableStore.readCommittedForMatch(
       'match-1',
     );
     expect(records.map((record) => record.originSequence).toList(), [1, 2]);
@@ -343,12 +370,23 @@ void main() {
   });
 
   test('kick-off UI path does not call legacy kickOff', () {
-    final page = File('lib/features/live_match/live_match_page.dart')
-        .readAsStringSync();
-    expect(page, contains('commitKickOff'));
+    final page =
+        File('lib/features/live_match/live_match_page.dart').readAsStringSync();
+    final writer = File(
+      'lib/mobile_commands/match_application_command_writer.dart',
+    ).readAsStringSync();
+    final runtime = File(
+      'lib/mobile_commands/mobile_command_runtime.dart',
+    ).readAsStringSync();
+    expect(page, contains('freezeKickOff'));
+    expect(page, contains('runtime.dispatcher.dispatch'));
+    expect(page, isNot(contains('commitKickOff')));
     expect(page, isNot(contains('commitMatchStarted')));
     expect(page, isNot(contains('session.kickOff')));
     expect(page, isNot(contains('.kickOff(')));
+    expect(runtime, contains('MatchApplicationCommandWriter'));
+    expect(writer, contains('_boundary.commitKickOff'));
+    expect(writer, isNot(contains('MatchSession')));
     final session = File('lib/match/match_session.dart').readAsStringSync();
     expect(session, contains('applyKickOff'));
   });
@@ -362,7 +400,8 @@ Future<MatchStartedReadModel> _model(
   );
   final projection = await composition.boundary.project(
     'match-1',
-    evaluatedAuthorityGeneration: PhoneCaptureIdentity.initialAuthorityGeneration,
+    evaluatedAuthorityGeneration:
+        PhoneCaptureIdentity.initialAuthorityGeneration,
   );
   return MatchStartedReadModel.from(projection: projection, records: records);
 }

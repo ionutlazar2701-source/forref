@@ -1,6 +1,16 @@
 # Pre-match and post-match mechanics
 
-Mechanics only — not visual design, not watch. Live Match capture stays in [ux-live-match.md](ux-live-match.md). Aggregate: [data-model.md](data-model.md).
+> **CURRENT AUTHORITY / FTM**
+>
+> Broader and historical product mechanics in this file may describe Injury.
+>
+> FTM v1 must exclude Injury authoritative capture. No authoritative Injury Match Record exists in FTM v1. A legacy Injury control must not be a reachable authoritative writer for a MATCH_MEMORY FTM match.
+>
+> WAVE 1 must not expose Injury as an authoritative add-event path. WAVE 1 is Goal + Score only, and it is HOLD.
+>
+> Foundation Freeze overrides this file where authority scope differs: [FOUNDATION_FREEZE.md](forref-development/FOUNDATION_FREEZE.md).
+
+Mechanics only — not visual design, not watch. Live Match capture stays in [ux-live-match.md](ux-live-match.md). Aggregate: [data-model.md](data-model.md) is the legacy mutable model, not FTM Match Memory authority.
 
 Same idea as in play: **minimum input when the ball is in play; enrich when there is time.**
 
@@ -71,7 +81,7 @@ Bottom of Setup is a **recap** (names, duration, crew), not a form and not a new
 - Clock `00:00`. Score 0–0. State visible: **READY**.
 - Kick-off is the **only** start (1 tap) → LIVE, internal start timestamp. Do not start the clock on entering this screen. Do not add a separate Start Match control.
 - Setup/squad/crew still editable (settings / back to Setup).
-- Five event actions work (same Quick Capture; timestamps at 00:00 if before Kick-off). Back to list is allowed.
+- The historical/broader event actions work (same Quick Capture; timestamps at 00:00 if before Kick-off). FTM v1 does not include Injury. Back to list is allowed.
 
 ## After the final whistle
 
@@ -81,20 +91,20 @@ Playing vs closed are different:
 |---|---|---|
 | Meaning | Ball-in-play is over | Record is closed (`COMPLETED`) |
 | Clock | Frozen | Frozen |
-| Five actions | Still available | No new live capture; **edit** (and add-from-timeline) still allowed |
+| Historical/broader actions | Still available, except Injury is unavailable for FTM v1 and for a MATCH_MEMORY match | No new live capture; **edit** (and add-from-timeline) still allowed. Do not add Injury as an authoritative MATCH_MEMORY writer |
 | Confirm | **None** (1 tap). **Undo 5 s** restores previous period/clock | Only if there are **incomplete** events |
 
 ### Full time (1 tap)
 
-Match-state row, not with Goal/Card/Sub/Injury. Not automatic at 90:00.
+Match-state row, not with the historical event row (Goal, Card, Sub, Injury). Injury is not an FTM v1 action. Not automatic at 90:00.
 
-After tap: state **FULL TIME**, clock frozen, score obvious, five actions still work, primary CTA **Summary**. Undo 5 s = cancel FT.
+After tap: state **FULL TIME**, clock frozen, score obvious, the historical/broader actions still work except Injury for FTM v1, primary CTA **Summary**. Undo 5 s = cancel FT.
 
 Extra time remains as already specified (1 tap **before** FT, same screen, ET from 0:00, default 15). Penalty kicks: after real matches.
 
 ### Incomplete events
 
-An event is **incomplete** if a player is Unknown (goal/card/injury) or a sub has Unknown OUT or IN. Mark it (e.g. warning on the row). **Never block** Full time, Summary, Finish, or PDF.
+An event is **incomplete** if a player is Unknown (goal or card) or a sub has Unknown OUT or IN. Injury incompleteness belongs only to the historical/broader mechanics; Injury is not an FTM v1 incomplete-event path and must not be written as MATCH_MEMORY. Mark an incomplete row (e.g. warning on the row). **Never block** Full time, Summary, Finish, or PDF.
 
 From the row: **Edit** or leave incomplete.
 
@@ -103,7 +113,7 @@ From the row: **Edit** or leave incomplete.
 Not three screens (Review / Summary / Report).
 
 - Score, duration, added time, crew, optional competition/venue
-- Counts: goals, yellows, reds, subs, injuries
+- Counts on the broader/historical surface: goals, yellows, reds, subs, injuries. FTM v1 has no Injury count, because Injury capture is unavailable.
 - **Full timeline** (tap = edit). Incomplete rows visible
 - Light checklist (not a form): teams, score, time, events — glance only, not required ticks
 - Optional **match notes** (one free-text field, not required)
@@ -111,7 +121,7 @@ Not three screens (Review / Summary / Report).
 
 ### Add event after COMPLETED (and from Summary)
 
-`+ Add event` → the same five types (Goal, Yellow, Red, Sub, Injury) and the same capture logic as Live Match. **Do not** open an 8–10 field form.
+`+ Add event` in the broader/historical mechanics lists Goal, Yellow, Red, Sub, and Injury, with the same capture logic as Live Match. WAVE 1 and FTM v1 must not expose Injury as an authoritative add-event path. No legacy Injury fallback is allowed for MATCH_MEMORY FTM matches. **Do not** open an 8–10 field form.
 
 Timestamp is not “now”: set **match time** (type or pick) and/or **±30 s**, then the usual team → player auto-save. Further edit uses the same edit-later rules.
 

@@ -360,4 +360,146 @@ class AppLocalizationsEn extends AppLocalizations {
   String clockWithAdded(String clock, int minutes) {
     return '$clock +$minutes';
   }
+
+  @override
+  String get devicesTitle => 'Devices';
+
+  @override
+  String get noCompanionDevice => 'No companion device';
+
+  @override
+  String get phoneCanRunMatch =>
+      'Phone can still run supported match workflows';
+
+  @override
+  String get phoneOnlyMode => 'Phone only';
+
+  @override
+  String get commandAvailabilityTitle => 'Commands';
+
+  @override
+  String get kickOffCommandAvailable => 'Kick-off available';
+
+  @override
+  String get kickOffCommandUnavailable => 'Kick-off unavailable';
+
+  @override
+  String get goalCommandAvailable => 'Goal available';
+
+  @override
+  String get goalCommandUnavailable => 'Goal unavailable';
+
+  @override
+  String notInProductionBuild(String name) {
+    return '$name is not available in this production build yet';
+  }
+
+  @override
+  String authorityRequiredForCommand(String name) {
+    return '$name needs capture authority';
+  }
+
+  @override
+  String get companionDoesNotControlMatch =>
+      'Companion does not control the match';
+
+  @override
+  String get matchReportDisciplineUnsupported =>
+      'Cards and substitutions are not in the production report yet';
+
+  @override
+  String get outcomeUnknownLabel => 'Outcome unknown';
+
+  @override
+  String get goalNotSaved => 'Goal not saved';
+
+  @override
+  String get localStorageReady => 'Local storage ready';
+
+  @override
+  String get commandNameYellow => 'Yellow card';
+
+  @override
+  String get commandNameDirectSendOff => 'Direct send-off';
+
+  @override
+  String get commandNameSecondCaution => 'Second-caution send-off';
+
+  @override
+  String get commandNameSubstitution => 'Substitution';
+
+  @override
+  String get commandNameFullTime => 'Full time';
+
+  @override
+  String get commandNameFinishMatch => 'Finish match';
+
+  @override
+  String get platformWearOs => 'Wear OS';
+
+  @override
+  String get platformWatchOs => 'watchOS';
+
+  @override
+  String get platformGarmin => 'Garmin';
+
+  @override
+  String get platformZepp => 'Zepp OS';
+
+  @override
+  String get platformHuawei => 'Huawei';
+
+  @override
+  String get platformUnknown => 'Unknown platform';
+
+  @override
+  String get connectionConnected => 'Connected';
+
+  @override
+  String get connectionDisconnected => 'Disconnected';
+
+  @override
+  String get connectionLostLabel => 'Connection lost';
+
+  @override
+  String get certificationUnknownLabel => 'Certification unknown';
+
+  @override
+  String get certificationKnownLabel => 'Known device';
+
+  @override
+  String get certificationCompatibleLabel => 'Compatible';
+
+  @override
+  String get certificationCertifiedLabel => 'Certified';
+
+  @override
+  String get pairingNotPaired => 'Not paired';
+
+  @override
+  String get noDeclaredCapabilities => 'No declared capabilities';
+
+  @override
+  String get capabilityCaptureGoal => 'Goal capture';
+
+  @override
+  String get capabilityCaptureYellow => 'Yellow capture';
+
+  @override
+  String get capabilityCaptureSendOff => 'Send-off capture';
+
+  @override
+  String get capabilityCaptureSubstitution => 'Substitution capture';
+
+  @override
+  String get capabilityLocalMatchMemory => 'Local match memory';
+
+  @override
+  String get capabilityIndependentTiming => 'Independent match timing';
+
+  @override
+  String get capabilityLocalHaptics => 'Local haptics';
+
+  @override
+  String get capabilityPeerTransport => 'Peer transport';
 }

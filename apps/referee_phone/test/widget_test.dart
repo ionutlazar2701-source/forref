@@ -170,12 +170,20 @@ void main() {
     });
     await tester.pump();
 
-    expect(find.textContaining('Goal'), findsWidgets);
     final stored = await db.listNewestFirst();
     expect(stored, hasLength(1));
     expect(stored.single.status, MatchStatus.ready);
-    expect(stored.single.events, hasLength(1));
-    expect(stored.single.score.home, 1);
+    expect(stored.single.events, isEmpty);
+    expect(stored.single.score.home, 0);
+    expect(stored.single.score.away, 0);
+    await tester.runAsync(() async {
+      final records =
+          await composition.boundary.durableStore.readCommittedForMatch(matchId);
+      expect(
+        records.where((record) => record.payload is GoalPayload),
+        hasLength(1),
+      );
+    });
   });
 
   testWidgets('failed kick-off does not show started state', (tester) async {

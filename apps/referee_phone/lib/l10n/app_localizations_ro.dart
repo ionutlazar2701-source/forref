@@ -363,4 +363,146 @@ class AppLocalizationsRo extends AppLocalizations {
   String clockWithAdded(String clock, int minutes) {
     return '$clock +$minutes';
   }
+
+  @override
+  String get devicesTitle => 'Dispozitive';
+
+  @override
+  String get noCompanionDevice => 'Niciun dispozitiv companion';
+
+  @override
+  String get phoneCanRunMatch =>
+      'Telefonul poate rula în continuare fluxurile de meci acceptate';
+
+  @override
+  String get phoneOnlyMode => 'Doar telefon';
+
+  @override
+  String get commandAvailabilityTitle => 'Comenzi';
+
+  @override
+  String get kickOffCommandAvailable => 'Start disponibil';
+
+  @override
+  String get kickOffCommandUnavailable => 'Start indisponibil';
+
+  @override
+  String get goalCommandAvailable => 'Gol disponibil';
+
+  @override
+  String get goalCommandUnavailable => 'Gol indisponibil';
+
+  @override
+  String notInProductionBuild(String name) {
+    return '$name nu este disponibil în această versiune de producție';
+  }
+
+  @override
+  String authorityRequiredForCommand(String name) {
+    return '$name necesită autoritate de captură';
+  }
+
+  @override
+  String get companionDoesNotControlMatch =>
+      'Companionul nu controlează meciul';
+
+  @override
+  String get matchReportDisciplineUnsupported =>
+      'Cartonașele și schimbările nu sunt încă în raportul de producție';
+
+  @override
+  String get outcomeUnknownLabel => 'Rezultat necunoscut';
+
+  @override
+  String get goalNotSaved => 'Golul nu a fost salvat';
+
+  @override
+  String get localStorageReady => 'Stocare locală pregătită';
+
+  @override
+  String get commandNameYellow => 'Cartonaș galben';
+
+  @override
+  String get commandNameDirectSendOff => 'Eliminare directă';
+
+  @override
+  String get commandNameSecondCaution => 'Eliminare după al doilea galben';
+
+  @override
+  String get commandNameSubstitution => 'Schimbare';
+
+  @override
+  String get commandNameFullTime => 'Timp regulamentar';
+
+  @override
+  String get commandNameFinishMatch => 'Închidere meci';
+
+  @override
+  String get platformWearOs => 'Wear OS';
+
+  @override
+  String get platformWatchOs => 'watchOS';
+
+  @override
+  String get platformGarmin => 'Garmin';
+
+  @override
+  String get platformZepp => 'Zepp OS';
+
+  @override
+  String get platformHuawei => 'Huawei';
+
+  @override
+  String get platformUnknown => 'Platformă necunoscută';
+
+  @override
+  String get connectionConnected => 'Conectat';
+
+  @override
+  String get connectionDisconnected => 'Deconectat';
+
+  @override
+  String get connectionLostLabel => 'Conexiune pierdută';
+
+  @override
+  String get certificationUnknownLabel => 'Certificare necunoscută';
+
+  @override
+  String get certificationKnownLabel => 'Dispozitiv cunoscut';
+
+  @override
+  String get certificationCompatibleLabel => 'Compatibil';
+
+  @override
+  String get certificationCertifiedLabel => 'Certificat';
+
+  @override
+  String get pairingNotPaired => 'Neperecheat';
+
+  @override
+  String get noDeclaredCapabilities => 'Nicio capacitate declarată';
+
+  @override
+  String get capabilityCaptureGoal => 'Captură gol';
+
+  @override
+  String get capabilityCaptureYellow => 'Captură galben';
+
+  @override
+  String get capabilityCaptureSendOff => 'Captură eliminare';
+
+  @override
+  String get capabilityCaptureSubstitution => 'Captură schimbare';
+
+  @override
+  String get capabilityLocalMatchMemory => 'Memorie de meci locală';
+
+  @override
+  String get capabilityIndependentTiming => 'Cronometraj independent';
+
+  @override
+  String get capabilityLocalHaptics => 'Vibrație locală';
+
+  @override
+  String get capabilityPeerTransport => 'Transport către companion';
 }

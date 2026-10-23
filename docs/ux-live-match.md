@@ -1,13 +1,25 @@
 # Live Match interaction mechanics
 
-Speed during the match beats visual polish. This doc freezes **interaction mechanics** for the phone Live Match screen. It is not a visual design, not a watch spec, and not a data-schema ADR.
+> **CURRENT AUTHORITY / FTM**
+>
+> This file contains broader historical and product interaction mechanics. It is not Match Memory authority.
+>
+> During First Trustworthy Match v1, Injury authoritative capture is unavailable. No authoritative Injury Match Record exists in FTM v1. See [FOUNDATION_FREEZE.md](forref-development/FOUNDATION_FREEZE.md).
+>
+> WAVE 1 implements Goal + Score only, and that wave is HOLD. Yellow, Red, Substitution, and Injury are not WAVE 1.
+>
+> The Injury flow below is **not** authorized for current Match Memory implementation. A legacy Injury control must not be a reachable authoritative writer for a MATCH_MEMORY FTM match.
+>
+> Foundation Freeze overrides any broader event list in this file where authority scope differs.
 
-Defaults below are frozen. ChatGPT Alts are test-later options, not competing specs. Do not implement a **Do not**.
+Speed during the match beats visual polish. This doc records **interaction mechanics** for the phone Live Match screen. It is not a visual design, not a watch spec, and not a data-schema ADR. Current FTM availability is the banner above, not the broader event list.
+
+Defaults below are the historical and broader mechanics. ChatGPT Alts are test-later options, not competing specs. Do not implement a **Do not**. Do not implement Injury as FTM v1 Match Memory capture.
 
 Work order (do not skip ahead):
 
 1. Live Match information architecture (this doc)
-2. Five event flows (this doc)
+2. Historical/broader interaction family (this doc). This list is not FTM availability.
 3. Error / edge cases (this doc)
 4. Pre-match and post-match workflow — [ux-pre-post-match.md](ux-pre-post-match.md)
 5. Visual design — not yet
@@ -20,14 +32,14 @@ One screen, staying open for the whole match (including half-time). Structural r
 | Region | Always shows | Job |
 |---|---|---|
 | Time + period + match state | Clock, period, **READY** / **LIVE** / **Paused** / **FULL TIME** | Where am I; is time running |
-| Match-state actions | Kick-off (from READY), Pause, Resume, Start 2nd Half, Extra time, Full time | Separate from events. **Do not** put these in the Goal/Card/Sub/Injury row. **Do not** add a second Start Match control |
+| Match-state actions | Kick-off (from READY), Pause, Resume, Start 2nd Half, Extra time, Full time | Separate from events. **Do not** put these in the historical Goal/Card/Sub/Injury row. Injury is not on the FTM v1 row. **Do not** add a second Start Match control |
 | Score | Team names from setup (fallback HOME / AWAY) | Score at a glance |
-| Event actions | Goal, Yellow, Red, Sub, Injury only | Start a 2–3 tap capture |
+| Event actions | Historical/broader MVP interaction family: Goal, Yellow, Red, Sub, Injury. FTM v1 current authoritative availability is controlled by [FOUNDATION_FREEZE.md](forref-development/FOUNDATION_FREEZE.md). Injury is unavailable. | Start a 2–3 tap capture for an event that the current authority scope allows |
 | Recent events | About **5–7** rows | Confirm save; tap to edit |
 
 The ASCII sketch in product chat is a **wire of regions**, not the final UI.
 
-Targets for the five event actions: one-handed; at least ~48×48 dp/pt, larger in the main zone. Do not rely on precise gestures as the only capture method.
+Targets for that historical/broader interaction family: one-handed; at least ~48×48 dp/pt, larger in the main zone. Do not rely on precise gestures as the only capture method. Injury is not an FTM v1 action.
 
 ## Match clock and states
 
@@ -35,7 +47,7 @@ Targets for the five event actions: one-handed; at least ~48×48 dp/pt, larger i
 - Clock starts only on explicit **Kick-off** (1 tap). Not on the first event, not on opening the screen, not on a separate Start Match.
 - **Start / Resume:** 1 tap. **Pause:** 1 tap (extra confirm only if real matches prove accidental pauses; not the default).
 - **Paused** is a persistent, visible state. Do not infer pause only from a button label `Resume`.
-- Events stay recordable while paused and while **READY** or **FULL TIME**. Same five flows; no extra steps.
+- Events stay recordable while paused and while **READY** or **FULL TIME**. Same historical/broader flows; no extra steps. Injury is unavailable in FTM v1.
 - **Added time** is a **phase**, not a second timer. The main clock continues: 90:00 → 90:01 → 90:02. `+N` is match info for the **current period**, set with a **compact stepper** on Live Match (`−  N  +` or chips like +1 +2 +3 +5 +10). No separate “Start added time” tap. No second clock.
 - **Half-time** is an explicit state: Live Match stays open, clock stopped. **Start 2nd Half** is 1 tap and resumes the clock. Do not reopen Match Setup between halves. Do not use a generic Resume that silently flips to 2H unless we later reopen that Alt.
 - **Full time** and **Extra time / Finish / COMPLETED:** [ux-pre-post-match.md](ux-pre-post-match.md). Full time is 1 tap + Undo 5 s (no confirm). Finish match is what closes the record. Penalty kicks are not MVP.
@@ -47,10 +59,14 @@ Targets for the five event actions: one-handed; at least ~48×48 dp/pt, larger i
 - Last **valid** tap **auto-saves**. Do not add a Done after a flow that already used 3 selections.
 - **Quick Capture:** incomplete events are valid. Enrich later from the timeline (tap row → edit). Example: yellow Team #7 at 67:23 now; reason later.
 - Capture is **reentrant**: a second event must not wait on the first UI, and must not be eaten by a global lock. Goal + card within ~2s = two independent saves.
-- **Debounce / idempotency** on the five actions: two identical taps in ~**500 ms** = one event. Then tune on real matches. Do not treat every tap as a new event.
+- **Debounce / idempotency** on the historical/broader action buttons: two identical taps in ~**500 ms** = one event. Then tune on real matches. Do not treat every tap as a new event. Injury is not an FTM v1 action.
 - Fast path must work with **empty or incomplete squad**. Do not force Setup/Squad before logging. Do not ask for team names during an event (names come from setup; fallback HOME/AWAY).
 
-## The five fast paths
+## Historical/broader MVP fast paths
+
+Historical/broader MVP interaction family: Goal, Yellow, Red, Sub, Injury.
+
+FTM v1 current authoritative availability is controlled by [FOUNDATION_FREEZE.md](forref-development/FOUNDATION_FREEZE.md). Injury is unavailable. These flows do not authorize Yellow, Red, or Substitution for WAVE 1.
 
 Team step shows **setup names**, fallback HOME/AWAY.
 
@@ -86,9 +102,11 @@ OUT and IN may both be Unknown. Do not require a second team pick when OUT and I
 
 ### Injury
 
+**HISTORICAL / SUPERSEDED for FTM v1.** Not authorized for current Match Memory implementation. Not part of WAVE 1. No legacy Injury fallback is allowed for a MATCH_MEMORY FTM match.
+
 `Injury → Team → Player (or unknown / free number) → auto-save`
 
-Injury is **only an event**. It must not auto-pause. A non-blocking “Pause?” hint is optional and must not delay the save; full assisted-pause behavior stays after real matches — [mvp-scope.md](mvp-scope.md).
+In this historical/broader mechanic, Injury is **only an event**. It must not auto-pause. A non-blocking “Pause?” hint is optional and must not delay the save; full assisted-pause behavior stays after real matches — [mvp-scope.md](mvp-scope.md). A later dedicated domain slice may reopen Injury. This paragraph does not reopen it.
 
 ## What is saved immediately
 
@@ -124,12 +142,12 @@ MVP edit may change: **type, team, player, timestamp, note/reason**, plus event-
 | Wrong substitution | Edit or delete the row; no extra “correction” event type |
 | Player with no number / not on squad | Unknown or free number; save anyway |
 | Empty squad | Still capture; do not force Setup |
-| Injury, player unknown | Save with unknown; fill later |
+| Injury, player unknown | Historical/broader mechanic only. Not an FTM v1 path. If a later contract reopens Injury, save with unknown and fill later |
 | Accidental tap | 5 s Undo, then edit/delete |
 | Yellow meant Red mid-flow | Change type; do not implicit-convert a saved yellow |
 | Second yellow | Second yellow event; no auto-red |
 | Own goal | Edit later; not a fast-path branch |
-| Match paused / added time | Same five flows; paused state visible |
+| Match paused / added time | Same historical/broader flows, except Injury is unavailable in FTM v1; paused state visible |
 | Half-time | Live Match open, clock stopped; Start 2nd Half 1 tap |
 | App killed mid-draft | Restore draft; not a saved event |
 | App killed after save | Events persist (offline-first); no duplicate |

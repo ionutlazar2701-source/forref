@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../features/devices/devices_page.dart';
 import '../features/live_match/live_match_page.dart';
 import '../features/match_setup/match_setup_page.dart';
 import '../features/match_summary/match_summary_page.dart';
@@ -12,6 +13,7 @@ abstract final class AppRouter {
   static const liveMatch = '/live';
   static const matchSummary = '/summary';
   static const settingsPath = '/settings';
+  static const devices = '/devices';
 
   static Route<void>? onGenerateRoute(RouteSettings routeSettings) {
     final matchId = routeSettings.arguments as String?;
@@ -21,6 +23,7 @@ abstract final class AppRouter {
       liveMatch when matchId != null => LiveMatchPage(matchId: matchId),
       matchSummary when matchId != null => MatchSummaryPage(matchId: matchId),
       settingsPath => const SettingsPage(),
+      devices => const DevicesPage(),
       _ => const MatchesPage(),
     };
     return MaterialPageRoute<void>(
