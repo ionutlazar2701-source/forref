@@ -24,7 +24,7 @@ Second yellow **does not** create a send-off. Send-off after two cautions requir
 
 All final actions capture `formatResearchMatchTime(matchElapsedSeconds)` at activation. Time is stored on `SavedCaution`, `SavedSendOff`, `SavedSubstitution`, and `SavedGoal`. Later clock advances do not rewrite established labels.
 
-**LIVE TIMER CONTINUITY STILL RESEARCH LIMITATION** — clock advances via `AdvanceMatchClockIntent`; no continuous real-time tick.
+Product matches now start from Kick-off. See `S2_6A_MATCH_START_FIRST_HALF.md`. `AdvanceMatchClockIntent` remains an operator fixture for deterministic tests.
 
 ## Match Report projection
 
