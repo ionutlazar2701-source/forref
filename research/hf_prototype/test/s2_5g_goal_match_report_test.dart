@@ -36,6 +36,12 @@ Future<HfPresentationRuntime> _goalRuntime() async {
     LoadScenarioIntent(ScenarioId.s20GoalMatchReport.name,
         origin: IntentOrigin.operatorFixture),
   );
+  await runtime.dispatch(
+    const ArmKickOffIntent(origin: IntentOrigin.operatorFixture),
+  );
+  await runtime.dispatch(
+    const ConfirmKickOffIntent(origin: IntentOrigin.operatorFixture),
+  );
   return runtime;
 }
 
@@ -237,6 +243,7 @@ void main() {
         awayScore: 0,
       ),
     );
+    await establishFirstHalf(controller);
     await _pumpWatch(tester, controller);
     expect(find.byKey(const Key('watch-score')), findsOneWidget);
     expect(find.text('0 – 0'), findsOneWidget);
@@ -287,6 +294,7 @@ void main() {
     await controller.applyResearchFixture(
       ResearchFixture.defaults.copyWith(scenarioId: ScenarioId.s20GoalMatchReport),
     );
+    await establishFirstHalf(controller);
     await tester.pumpAndSettle();
     await controller.dispatchWatch(const OfferGoalIntent(origin: IntentOrigin.watchUi));
     await controller.dispatchWatch(

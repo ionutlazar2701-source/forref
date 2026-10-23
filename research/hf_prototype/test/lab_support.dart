@@ -100,6 +100,15 @@ Future<void> selectDevice(WidgetTester tester, String profileId) async {
   await tester.pump();
 }
 
+Future<void> establishFirstHalf(dynamic controller) async {
+  await controller.dispatchWatch(
+    const ArmKickOffIntent(origin: IntentOrigin.operatorFixture),
+  );
+  await controller.dispatchWatch(
+    const ConfirmKickOffIntent(origin: IntentOrigin.operatorFixture),
+  );
+}
+
 Future<void> openWorkspace(WidgetTester tester, LabWorkspace workspace) async {
   final tab = find.byKey(Key('workspace-${workspace.name}'));
   if (tab.evaluate().isNotEmpty) {

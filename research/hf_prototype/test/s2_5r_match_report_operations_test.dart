@@ -54,6 +54,14 @@ Future<HfPresentationRuntime> _opsRuntime({
   await runtime.dispatch(
     LoadScenarioIntent(scenario.name, origin: IntentOrigin.operatorFixture),
   );
+  if (runtime.instrument.lifecycle == ResearchMatchLifecycle.matchNotStarted) {
+    await runtime.dispatch(
+      const ArmKickOffIntent(origin: IntentOrigin.operatorFixture),
+    );
+    await runtime.dispatch(
+      const ConfirmKickOffIntent(origin: IntentOrigin.operatorFixture),
+    );
+  }
   return runtime;
 }
 
@@ -809,6 +817,7 @@ void main() {
         awayScore: 0,
       ),
     );
+    await establishFirstHalf(controller);
     await _pumpWatch(tester, controller);
 
     Future<void> advance(int seconds) async {

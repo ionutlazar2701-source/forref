@@ -12,6 +12,7 @@ void main() {
     await loadReadableFonts();
     final controller = await pumpLab(tester);
     await controller.operatorLoadScenario(ScenarioId.s21MatchReportOps);
+    await establishFirstHalf(controller);
     await controller.watchRuntime.dispatch(
       const AdvanceMatchClockIntent(12 * 60 + 14,
           origin: IntentOrigin.operatorFixture),
@@ -86,6 +87,7 @@ void main() {
   testWidgets('a second Record Goal tap does not add another goal', (tester) async {
     final controller = await pumpLab(tester);
     await controller.operatorLoadScenario(ScenarioId.s21MatchReportOps);
+    await establishFirstHalf(controller);
     await tester.pump();
     await tester.tap(find.byKey(const Key('mobile-goal')));
     await tester.pump();
@@ -110,6 +112,7 @@ void main() {
     final controller = await pumpLab(tester);
     await selectDevice(tester, 'amazfit-gts4');
     await controller.operatorLoadScenario(ScenarioId.s21MatchReportOps);
+    await establishFirstHalf(controller);
     await tester.pump();
     await tapWatch(tester, 'Capture');
     await tester.pump();
@@ -134,6 +137,7 @@ void main() {
       (tester) async {
     final controller = await pumpLab(tester);
     await controller.operatorLoadScenario(ScenarioId.s21MatchReportOps);
+    await establishFirstHalf(controller);
     controller.instrument.setScriptedOutcome(
       FinalActionKind.recordGoal,
       SimulatedScriptedOutcome.failure,
@@ -164,6 +168,7 @@ void main() {
   testWidgets('scripted unknown goal is not established', (tester) async {
     final controller = await pumpLab(tester);
     await controller.operatorLoadScenario(ScenarioId.s21MatchReportOps);
+    await establishFirstHalf(controller);
     controller.instrument.setScriptedOutcome(
       FinalActionKind.recordGoal,
       SimulatedScriptedOutcome.unknown,

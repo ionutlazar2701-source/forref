@@ -20,6 +20,7 @@ void main() {
     await loadReadableFonts();
     final controller = await pumpLab(tester);
     await controller.operatorLoadScenario(ScenarioId.s21MatchReportOps);
+    await establishFirstHalf(controller);
     await _clock(controller, tester, 26 * 60 + 3);
     await tester.tap(find.byKey(const Key('mobile-yellow')));
     await tester.pump();
@@ -47,6 +48,7 @@ void main() {
   testWidgets('second Yellow does not create a send-off', (tester) async {
     final controller = await pumpLab(tester);
     await controller.operatorLoadScenario(ScenarioId.s21MatchReportOps);
+    await establishFirstHalf(controller);
     await tester.pump();
     for (var i = 0; i < 2; i++) {
       await tester.tap(find.byKey(const Key('mobile-yellow')));
@@ -77,6 +79,7 @@ void main() {
   testWidgets('second-caution send-off is a fresh successful record', (tester) async {
     final controller = await pumpLab(tester);
     await controller.operatorLoadScenario(ScenarioId.s21MatchReportOps);
+    await establishFirstHalf(controller);
     await tester.pump();
     for (var i = 0; i < 2; i++) {
       await tester.tap(find.byKey(const Key('mobile-yellow')));
@@ -113,6 +116,7 @@ void main() {
   testWidgets('direct send-off records as direct', (tester) async {
     final controller = await pumpLab(tester);
     await controller.operatorLoadScenario(ScenarioId.s21MatchReportOps);
+    await establishFirstHalf(controller);
     await _clock(controller, tester, 77 * 60 + 5);
     await tester.tap(find.byKey(const Key('mobile-sendoff')));
     await tester.pump();
@@ -136,6 +140,7 @@ void main() {
   testWidgets('substitution records the frozen pair', (tester) async {
     final controller = await pumpLab(tester);
     await controller.operatorLoadScenario(ScenarioId.s21MatchReportOps);
+    await establishFirstHalf(controller);
     await _clock(controller, tester, 44 * 60 + 3);
     await tester.tap(find.byKey(const Key('mobile-substitution')));
     await tester.pump();
@@ -162,6 +167,7 @@ void main() {
   testWidgets('home 14 yellow is not away 14', (tester) async {
     final controller = await pumpLab(tester);
     await controller.operatorLoadScenario(ScenarioId.s21MatchReportOps);
+    await establishFirstHalf(controller);
     await tester.pump();
     await tester.tap(find.byKey(const Key('mobile-yellow')));
     await tester.pump();
@@ -178,6 +184,7 @@ void main() {
       (tester) async {
     final controller = await pumpLab(tester);
     await controller.operatorLoadScenario(ScenarioId.s21MatchReportOps);
+    await establishFirstHalf(controller);
     await tester.pump();
     await tester.tap(find.byKey(const Key('mobile-yellow')));
     await tester.pump();
@@ -198,6 +205,7 @@ void main() {
       (tester) async {
     final controller = await pumpLab(tester);
     await controller.operatorLoadScenario(ScenarioId.s21MatchReportOps);
+    await establishFirstHalf(controller);
     controller.instrument.setScriptedOutcome(
       FinalActionKind.recordYellow,
       SimulatedScriptedOutcome.failure,
@@ -280,6 +288,7 @@ void main() {
   testWidgets('scripted unknown outcomes are not established', (tester) async {
     final controller = await pumpLab(tester);
     await controller.operatorLoadScenario(ScenarioId.s21MatchReportOps);
+    await establishFirstHalf(controller);
     controller.instrument.setScriptedOutcome(
       FinalActionKind.recordYellow,
       SimulatedScriptedOutcome.unknown,
@@ -369,6 +378,7 @@ void main() {
     await loadReadableFonts();
     final controller = await pumpLab(tester);
     await controller.operatorLoadScenario(ScenarioId.s21MatchReportOps);
+    await establishFirstHalf(controller);
     await tester.pump();
 
     Future<void> tapKey(Key key) async {
