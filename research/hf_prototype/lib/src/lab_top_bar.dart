@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../research_app.dart';
-import 'device_selector.dart';
-import 'lab_assets.dart';
 import 'lab_theme.dart';
 
 /// Calm persistent app bar. Context only: match, device, runtime, inspector.
@@ -18,59 +16,55 @@ class LabTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final narrow = regime == LabLayoutRegime.narrow;
     final compact = regime == LabLayoutRegime.compact || narrow;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const ColoredBox(
-          color: LabColors.turquoise,
-          child: SizedBox(height: 3),
-        ),
-        ColoredBox(
-          color: LabColors.navy,
-          child: SizedBox(
-            height: LabMetrics.topBarHeight,
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: LabMetrics.gutter),
-              child: Row(
-                children: [
-                  const _Brand(),
-                  const SizedBox(width: LabMetrics.gutter),
-                  Expanded(
+    return ColoredBox(
+      color: LabColors.navy,
+      child: SizedBox(
+        height: LabMetrics.topBarHeight,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: LabMetrics.gutter),
+          child: Row(
+            children: [
+              const _Brand(),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (!compact) ...[
-                          Flexible(
-                            child: _ContextPill(
-                              key: Key('top-match'),
-                              label: 'MATCH',
-                              value: controller.matchTitle,
+                        if (regime == LabLayoutRegime.wide ||
+                            regime == LabLayoutRegime.desktop) ...[
+                          for (final workspace in [
+                            LabWorkspace.focus,
+                            LabWorkspace.commandLab,
+                            LabWorkspace.compare,
+                          ])
+                            _WorkspaceTab(
+                              workspace: workspace,
+                              selected: controller.workspace == workspace,
+                              onTap: () => controller.setWorkspace(workspace),
                             ),
+                          _MatchBuilderLink(
+                            selected: controller.workspace == LabWorkspace.matchBuilder,
+                            onTap: () => controller.setWorkspace(LabWorkspace.matchBuilder),
                           ),
-                          const SizedBox(width: LabMetrics.tight),
                         ],
-                        Flexible(
-                          child: DeviceSummaryButton(
-                              controller: controller, compact: compact),
-                        ),
+                        const SizedBox(width: 8),
+                        _RuntimeControl(controller: controller, compact: compact),
+                        const SizedBox(width: 8),
+                        _InspectorControl(controller: controller, compact: true),
                       ],
                     ),
                   ),
-                  const SizedBox(width: LabMetrics.tight),
-                  _RuntimeControl(controller: controller, compact: compact),
-                  const SizedBox(width: LabMetrics.tight),
-                  _InspectorControl(controller: controller, compact: compact),
-                  if (regime == LabLayoutRegime.wide) ...[
-                    const SizedBox(width: LabMetrics.gutter),
-                    const Text(labIdentity,
-                        key: Key('top-identity'), style: LabText.onNavy),
-                  ],
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }
@@ -80,74 +74,27 @@ class _Brand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return const Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Image.asset(
-          LabAssets.logo,
-          key: const Key('sim-lab-logo'),
-          height: 28,
-          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+        SizedBox(width: 3, height: 16, child: ColoredBox(color: LabColors.turquoise)),
+        SizedBox(width: 8),
+        Text(
+          labTitle,
+          style: TextStyle(
+            color: LabColors.softWhite,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.4,
+          ),
         ),
-        const SizedBox(width: 8),
-        const Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(labBrand, style: LabText.onNavyStrong),
-            Text(
-              labBrandSub,
-              style: TextStyle(
-                color: LabColors.softWhite,
-                fontSize: 10,
-                letterSpacing: 1.6,
-                height: 1.2,
-              ),
-            ),
-          ],
+        SizedBox(width: 12),
+        Text(
+          labIdentity,
+          key: Key('top-identity'),
+          style: TextStyle(color: Color(0xFF8FB4C8), fontSize: 11, letterSpacing: 0.4),
         ),
       ],
-    );
-  }
-}
-
-class _ContextPill extends StatelessWidget {
-  const _ContextPill({super.key, required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: LabMetrics.controlHeight - 6,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        border: Border.all(color: LabColors.steel),
-        borderRadius: BorderRadius.circular(LabMetrics.controlRadius),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '$label · ',
-            style: const TextStyle(
-                color: LabColors.softWhite, fontSize: 11, letterSpacing: 0.6),
-          ),
-          Flexible(
-            child: Text(
-              value,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: LabColors.softWhite,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -228,25 +175,27 @@ class _InspectorControl extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final open = controller.inspectorOpen;
-    return SizedBox(
-      height: LabMetrics.controlHeight - 6,
-      child: FilledButton.tonal(
-        key: const Key('inspector-toggle'),
-        onPressed: controller.toggleInspector,
-        style: FilledButton.styleFrom(
-          backgroundColor: open ? LabColors.softWhite : LabColors.navyDeep,
-          foregroundColor: open ? LabColors.navy : LabColors.softWhite,
-          side: const BorderSide(color: LabColors.steel),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(LabMetrics.controlRadius),
+    return InkWell(
+      key: const Key('inspector-toggle'),
+      onTap: controller.toggleInspector,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: open ? LabColors.turquoise : Colors.transparent,
+              width: 3,
+            ),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
         ),
         child: Text(
-          open
-              ? (compact ? 'Close' : 'Close inspector')
-              : (compact ? 'Inspect' : 'Inspect evidence'),
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+          'Inspection',
+          style: TextStyle(
+            color: open ? LabColors.softWhite : const Color(0xFFB7C6D4),
+            fontSize: compact ? 12 : 14,
+            fontWeight: open ? FontWeight.w700 : FontWeight.w500,
+          ),
         ),
       ),
     );
@@ -263,39 +212,17 @@ class WorkspaceBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final narrow = regime == LabLayoutRegime.narrow;
+    final menu = regime == LabLayoutRegime.narrow || regime == LabLayoutRegime.compact;
     return DecoratedBox(
       decoration: const BoxDecoration(
-        color: LabColors.surface,
+        color: LabColors.canvas,
         border: Border(bottom: BorderSide(color: LabColors.line)),
       ),
       child: SizedBox(
-        height: LabMetrics.workspaceBarHeight,
-        child: narrow
+        height: menu ? LabMetrics.workspaceBarHeight : 0,
+        child: menu
             ? _NarrowWorkspaceSelector(controller: controller)
-            : Row(
-                children: [
-                  const SizedBox(width: LabMetrics.gutter),
-                  for (final workspace in LabWorkspace.values)
-                    _WorkspaceTab(
-                      workspace: workspace,
-                      selected: controller.workspace == workspace,
-                      onTap: () => controller.setWorkspace(workspace),
-                    ),
-                  const Spacer(),
-                  if (controller.workspace == LabWorkspace.commandLab &&
-                      (regime == LabLayoutRegime.compact))
-                    Padding(
-                      padding: const EdgeInsets.only(right: LabMetrics.gutter),
-                      child: TextButton.icon(
-                        key: const Key('commands-drawer-button'),
-                        onPressed: () => controller.setCommandRailOpen(true),
-                        icon: const Icon(Icons.tune, size: 16),
-                        label: const Text('Commands'),
-                      ),
-                    ),
-                ],
-              ),
+            : const SizedBox.shrink(),
       ),
     );
   }
@@ -318,7 +245,7 @@ class _WorkspaceTab extends StatelessWidget {
       key: Key('workspace-${workspace.name}'),
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
@@ -331,9 +258,37 @@ class _WorkspaceTab extends StatelessWidget {
         child: Text(
           workspace.label,
           style: TextStyle(
-            color: selected ? LabColors.navy : LabColors.inkMuted,
+            color: selected ? LabColors.softWhite : const Color(0xFFB7C6D4),
             fontSize: 14,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Secondary route. Present on the bar so Match Builder stays reachable
+/// after leaving Simulation. It is not a primary navigation peer.
+class _MatchBuilderLink extends StatelessWidget {
+  const _MatchBuilderLink({required this.selected, required this.onTap});
+
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      key: const Key('workspace-matchBuilder'),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Text(
+          'Match Builder',
+          style: TextStyle(
+            color: selected ? LabColors.turquoise : const Color(0xFF8AA0B3),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
@@ -396,9 +351,8 @@ class LabFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stamp = controller.evidenceStamp;
-    // The top bar carries the identity only when wide. Below that it lives
-    // here, so it is on screen exactly once in every regime.
-    final note = regime == LabLayoutRegime.wide ? labFooterNote : labIdentity;
+    final note = labFooterNote;
+    assert(regime.index >= 0);
     return DecoratedBox(
       decoration: const BoxDecoration(
         color: LabColors.surface,

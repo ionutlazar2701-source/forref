@@ -26,7 +26,7 @@ class WatchReferenceApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFFF8FAFC),
+      color: const Color(0xFF10283F),
       child: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth < 120 || constraints.maxHeight < 180) {
@@ -37,7 +37,7 @@ class WatchReferenceApp extends StatelessWidget {
                   'LAYOUT NOT FIT FOR THIS PROFILE',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Color(0xFF0B2A4A),
+                    color: Color(0xFFF4F9FC),
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     fontFamily: 'Roboto',
@@ -97,7 +97,7 @@ class _FitBody extends StatelessWidget {
               _frozen(state.frozenCommand!),
               key: const Key('watch-frozen-command'),
               style: const TextStyle(
-                color: Color(0xFF0B2A4A),
+                color: Color(0xFFF4F9FC),
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 fontFamily: 'Roboto',
@@ -110,7 +110,7 @@ class _FitBody extends StatelessWidget {
             state.commit.label,
             key: const Key('watch-commit-label'),
             style: const TextStyle(
-              color: Color(0xFF0B2A4A),
+              color: Color(0xFFF4F9FC),
               fontSize: 12,
               fontWeight: FontWeight.w700,
               fontFamily: 'Roboto',
@@ -146,28 +146,39 @@ class _FitBody extends StatelessWidget {
 
   List<Widget> _live() {
     final ready = state.clock.kickOffAvailable;
-    final clockText = state.clock.label ?? state.clock.phaseLabel;
+    final clockText = state.clock.label ?? (ready ? 'Not started' : state.clock.phaseLabel);
+    final showPhase = state.clock.phaseLabel != clockText;
     return [
-      Text(
-        '${state.homeTeamLabel} v ${state.awayTeamLabel}',
-        key: const Key('watch-match-title'),
-        style: const TextStyle(fontFamily: 'Roboto', fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0B2A4A)),
-      ),
-      if (state.clock.available && state.clock.phaseLabel == 'FIRST HALF')
+      if (showPhase)
         Text(
           state.clock.phaseLabel,
           key: const Key('watch-phase'),
-          style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0B2A4A)),
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontFamily: 'Roboto',
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.1,
+            color: Color(0xFF26C0CA),
+          ),
         ),
       Text(
         clockText,
         key: const Key('watch-clock'),
-        style: const TextStyle(fontFamily: 'Roboto', fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF0B2A4A)),
+        textAlign: TextAlign.center,
+        style: const TextStyle(fontFamily: 'Roboto', fontSize: 34, fontWeight: FontWeight.w700, color: Color(0xFFF4F9FC), height: 1.05),
       ),
       Text(
         state.score.label,
         key: const Key('watch-score'),
-        style: const TextStyle(fontFamily: 'Roboto', fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF0B2A4A)),
+        textAlign: TextAlign.center,
+        style: const TextStyle(fontFamily: 'Roboto', fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFFF4F9FC)),
+      ),
+      Text(
+        '${state.homeTeamLabel} v ${state.awayTeamLabel}',
+        key: const Key('watch-match-title'),
+        textAlign: TextAlign.center,
+        style: const TextStyle(fontFamily: 'Roboto', fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFFB7C9D6)),
       ),
       if (ready) _kickOffButton(),
       if (!ready)
@@ -184,11 +195,11 @@ class _FitBody extends StatelessWidget {
         ),
       Text(
         state.header.identityLabel,
-        style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, color: Color(0xFF0B2A4A)),
+        style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, color: Color(0xFFF4F9FC)),
       ),
       Text(
         'Phase ${state.header.scope.name}',
-        style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, color: Color(0xFF0B2A4A)),
+        style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, color: Color(0xFFF4F9FC)),
       ),
     ];
   }
@@ -223,7 +234,7 @@ class _FitBody extends StatelessWidget {
     return [
       const Text(
         'GOAL',
-        style: TextStyle(fontFamily: 'Roboto', fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF0B2A4A)),
+        style: TextStyle(fontFamily: 'Roboto', fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFFF4F9FC)),
       ),
       _button(
         state.homeTeamLabel,
@@ -239,7 +250,7 @@ class _FitBody extends StatelessWidget {
         Text(
           teamLabel,
           key: const Key('watch-goal-selected-team'),
-          style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, color: Color(0xFF0B2A4A)),
+          style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, color: Color(0xFFF4F9FC)),
         ),
       for (final person in _goalScorers())
         _button(
@@ -252,7 +263,7 @@ class _FitBody extends StatelessWidget {
         Text(
           'GOAL\n$teamLabel\n${scorerLabel ?? '—'}\n$reviewTime',
           key: const Key('watch-goal-review'),
-          style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, color: Color(0xFF0B2A4A)),
+          style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, color: Color(0xFFF4F9FC)),
         ),
       if (flow.canRecord)
         _button(
@@ -261,7 +272,7 @@ class _FitBody extends StatelessWidget {
           key: const Key('watch-record-goal'),
         )
       else if (flow.blockReason != null)
-        Text(flow.blockReason!, style: const TextStyle(fontFamily: 'Roboto', fontSize: 12, color: Color(0xFF0B2A4A))),
+        Text(flow.blockReason!, style: const TextStyle(fontFamily: 'Roboto', fontSize: 12, color: Color(0xFFF4F9FC))),
       if (state.commit.label == ResearchCommitPhrases.saving)
         _button(
           'Resolve simulated outcome',
@@ -277,19 +288,19 @@ class _FitBody extends StatelessWidget {
       const Text(
         'MATCH REPORT',
         key: Key('watch-match-report-heading'),
-        style: TextStyle(fontFamily: 'Roboto', fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF0B2A4A)),
+        style: TextStyle(fontFamily: 'Roboto', fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFFF4F9FC)),
       ),
       for (final entry in state.matchReport.entries)
         Text(
           _reportLine(entry),
           key: Key('watch-match-report-entry-${entry.sequence}'),
-          style: const TextStyle(fontFamily: 'Roboto', fontSize: 12, color: Color(0xFF0B2A4A)),
+          style: const TextStyle(fontFamily: 'Roboto', fontSize: 12, color: Color(0xFFF4F9FC)),
         ),
       if (state.matchReport.entries.isEmpty)
         const Text(
           'No established events',
           key: Key('watch-match-report-empty'),
-          style: TextStyle(fontFamily: 'Roboto', fontSize: 12, color: Color(0xFF0B2A4A)),
+          style: TextStyle(fontFamily: 'Roboto', fontSize: 12, color: Color(0xFFF4F9FC)),
         ),
       _button('Back', const OpenRouteIntent(WatchRoute.liveCore, origin: IntentOrigin.watchUi)),
     ];
@@ -305,12 +316,12 @@ class _FitBody extends StatelessWidget {
     final time = state.frozenCommand?.capturedMatchTimeLabel ??
         (state.clock.available ? state.clock.label : null);
     return [
-      const Text('YELLOW', style: TextStyle(fontFamily: 'Roboto', fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF0B2A4A))),
+      const Text('YELLOW', style: TextStyle(fontFamily: 'Roboto', fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFFF4F9FC))),
       _button(state.homeTeamLabel, const SetTeamIntent(PresentationTeam.home, origin: IntentOrigin.watchUi), key: const Key('watch-yellow-team-home')),
       _button(state.awayTeamLabel, const SetTeamIntent(PresentationTeam.away, origin: IntentOrigin.watchUi), key: const Key('watch-yellow-team-away')),
       Text(state.discipline.awarenessLabel, key: const Key('watch-prior-awareness')),
       if (time != null)
-        Text('Match time $time', key: const Key('watch-yellow-review-time'), style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, color: Color(0xFF0B2A4A))),
+        Text('Match time $time', key: const Key('watch-yellow-review-time'), style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, color: Color(0xFFF4F9FC))),
       for (final person in _visiblePeople())
         _button(
           '#${person.shirtLabel} ${person.name}',
@@ -345,7 +356,7 @@ class _FitBody extends StatelessWidget {
           key: Key('watch-sendoff-subject-${person.id}'),
         ),
       if (time != null)
-        Text('Match time $time', key: const Key('watch-sendoff-review-time'), style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, color: Color(0xFF0B2A4A))),
+        Text('Match time $time', key: const Key('watch-sendoff-review-time'), style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, color: Color(0xFFF4F9FC))),
       _button(
         'Record direct send-off',
         const ActivateIntent(PresentationAction.directSendOff, origin: IntentOrigin.watchUi),
@@ -359,7 +370,7 @@ class _FitBody extends StatelessWidget {
       _button('Offer direct send-off', const OfferDirectSendOffIntent(origin: IntentOrigin.watchUi)),
       const Text(
         'DIRECT and SECOND_CAUTION are separate final actions.',
-        style: TextStyle(fontFamily: 'Roboto', fontSize: 12, color: Color(0xFF0B2A4A)),
+        style: TextStyle(fontFamily: 'Roboto', fontSize: 12, color: Color(0xFFF4F9FC)),
       ),
       if (state.commit.label == ResearchCommitPhrases.saving)
         _button(
@@ -378,7 +389,7 @@ class _FitBody extends StatelessWidget {
       _button(state.awayTeamLabel, const SetTeamIntent(PresentationTeam.away, origin: IntentOrigin.watchUi), key: const Key('watch-sub-team-away')),
       Text('OUT ${state.substitution.outId ?? '-'}  IN ${state.substitution.inId ?? '-'}'),
       if (time != null)
-        Text('Match time $time', key: const Key('watch-sub-review-time'), style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, color: Color(0xFF0B2A4A))),
+        Text('Match time $time', key: const Key('watch-sub-review-time'), style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, color: Color(0xFFF4F9FC))),
       for (final person in _visiblePeople()) ...[
         _button(
           'OUT #${person.shirtLabel} ${person.name}',
@@ -540,7 +551,7 @@ class _HoldButtonState extends State<_HoldButton> {
           height: 48,
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: const Color(0xFF0B2A4A),
+              color: const Color(0xFF1A5270),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(

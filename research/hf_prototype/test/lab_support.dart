@@ -148,6 +148,12 @@ Future<void> loadReadableFonts() async {
   await regular.load();
   final bold = FontLoader('Roboto')..addFont(bytes(boldPath));
   await bold.load();
+  const iconsPath =
+      '/opt/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf';
+  if (File(iconsPath).existsSync()) {
+    final icons = FontLoader('MaterialIcons')..addFont(bytes(iconsPath));
+    await icons.load();
+  }
 }
 
 String headSha() {
