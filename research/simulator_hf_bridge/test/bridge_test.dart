@@ -46,12 +46,7 @@ void main() {
     await runtime.dispatch(
       const ActivateIntent(PresentationAction.yellow, origin: IntentOrigin.watchUi),
     );
-    expect(runtime.watchState.frozenCommand?.subjectId, 'p-home-14');
-    expect(runtime.watchState.frozenCommand?.action, PresentationAction.yellow);
-    expect(runtime.watchState.commit.label, ResearchCommitPhrases.saving);
-    await runtime.dispatch(
-      const ResolveSimulatedCommitIntent(origin: IntentOrigin.watchUi),
-    );
+    expect(runtime.watchState.frozenCommand, isNull);
     expect(runtime.watchState.commit.label, ResearchCommitPhrases.simulatedSaved);
     expect(runtime.watchState.discipline.cautionCount, 1);
     expect(runtime.watchState.discipline.sendOffCount, 0);
@@ -70,9 +65,9 @@ void main() {
     await runtime.dispatch(
       const SetTeamIntent(PresentationTeam.away, origin: IntentOrigin.operatorFixture),
     );
-    expect(runtime.watchState.frozenCommand?.subjectId, 'p-home-14');
+    expect(runtime.instrument.cautions.single.subjectId, 'p-home-14');
     expect(runtime.watchState.header.teamContext, PresentationTeamContext.away);
-    expect(runtime.watchState.discipline.cautionCount, 0);
+    expect(runtime.watchState.discipline.cautionCount, 1);
     expect(runtime.intentTrace.last.originLabel, operatorFixtureTraceLabel);
   });
 
@@ -88,7 +83,7 @@ void main() {
     await runtime.dispatch(
       const SetScopeIntent(PresentationScope.shootout, origin: IntentOrigin.operatorFixture),
     );
-    expect(runtime.watchState.frozenCommand?.scope, PresentationScope.match);
+    expect(runtime.instrument.cautions.single.scope, ResearchScope.match);
     expect(runtime.watchState.header.scope, PresentationScope.shootout);
     expect(runtime.watchState.discipline.sendOffCount, 0);
   });
@@ -110,9 +105,9 @@ void main() {
     await runtime.dispatch(
       const SelectInIntent('p-home-12', origin: IntentOrigin.operatorFixture),
     );
-    expect(runtime.watchState.frozenCommand?.outId, 'p-home-9');
-    expect(runtime.watchState.frozenCommand?.inId, 'p-home-7');
-    expect(runtime.instrument.snapshot.substitutions, isEmpty);
+    expect(runtime.instrument.substitutions.single.outId, 'p-home-9');
+    expect(runtime.instrument.substitutions.single.inId, 'p-home-7');
+    expect(runtime.watchState.frozenCommand, isNull);
   });
 
   test('second-caution send-off is refused before a successor exists', () async {

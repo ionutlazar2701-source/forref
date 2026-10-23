@@ -75,10 +75,6 @@ void main() {
     await tester.ensureVisible(record);
     await tester.tap(record);
     await tester.pump();
-    final resolve = find.text('Resolve simulated outcome');
-    await tester.ensureVisible(resolve);
-    await tester.tap(resolve);
-    await tester.pump();
     controller.evidenceStamp =
         stamp('apple-watch-series9-45', 's01YellowNoPrior');
     await selectDevice(tester, 'apple-watch-series9-45');

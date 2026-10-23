@@ -452,7 +452,8 @@ void main() {
           origin: IntentOrigin.watchUi,
         ),
       );
-      expect(runtime.instrument.snapshot.inFlight?.subjectId, 'p-home-4');
+      expect(runtime.instrument.sendOffs.single.subjectId, 'p-home-4');
+      expect(runtime.instrument.snapshot.inFlight, isNull);
     });
 
     test('R3 team retarget cannot alter frozen result', () async {
@@ -878,12 +879,6 @@ void main() {
       const ActivateIntent(PresentationAction.yellow, origin: IntentOrigin.watchUi),
     );
     await _pumpWatch(tester, controller);
-    await tester.tap(find.byKey(const Key('watch-resolve-yellow')));
-    await tester.pump();
-    await controller.dispatchWatch(
-      const ResolveSimulatedCommitIntent(origin: IntentOrigin.watchUi),
-    );
-    await _pumpWatch(tester, controller);
 
     await tester.tap(find.text('Capture'));
     await tester.pump();
@@ -919,12 +914,6 @@ void main() {
     await controller.dispatchWatch(
       const ActivateIntent(PresentationAction.substitution,
           origin: IntentOrigin.watchUi),
-    );
-    await _pumpWatch(tester, controller);
-    await tester.tap(find.text('Resolve simulated outcome'));
-    await tester.pump();
-    await controller.dispatchWatch(
-      const ResolveSimulatedCommitIntent(origin: IntentOrigin.watchUi),
     );
     await _pumpWatch(tester, controller);
 

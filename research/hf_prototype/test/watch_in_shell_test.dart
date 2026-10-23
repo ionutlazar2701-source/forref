@@ -45,16 +45,10 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.textContaining('p-home-14'), findsWidgets);
+    expect(controller.instrument.cautions.single.subjectId, 'p-home-14');
     expect(controller.instrument.snapshot.sendOffs, isEmpty);
-    expect(controller.instrument.snapshot.cautions, isEmpty);
-
-    await controller.dispatchWatch(
-      const ResolveSimulatedCommitIntent(origin: IntentOrigin.watchUi),
-    );
-    await tester.pump();
-    expect(find.textContaining('SIMULATED SAVED'), findsWidgets);
     expect(controller.instrument.snapshot.cautions, hasLength(1));
+    expect(find.textContaining('SIMULATED SAVED'), findsWidgets);
     expect(controller.instrument.snapshot.sendOffs, isEmpty);
     expect(find.textContaining('ACTUAL WATCH UI INTERACTION'), findsWidgets);
 
@@ -83,12 +77,12 @@ void main() {
     expect(trace.data, isNot(contains('ACTUAL WATCH UI INTERACTION')));
     expect(controller.watchRuntime.intentTrace.last.origin,
         IntentOrigin.operatorFixture);
-    expect(controller.instrument.snapshot.inFlight?.subjectId, 'p-home-14');
+    expect(controller.instrument.cautions.single.subjectId, 'p-home-14');
+    expect(controller.instrument.snapshot.inFlight, isNull);
     expect(controller.instrument.snapshot.sendOffs, isEmpty);
     controller.instrument.setTeam(ResearchTeamSide.away);
     await tester.pump();
-    expect(controller.watchRuntime.watchState.frozenCommand?.subjectId,
-        'p-home-14');
+    expect(controller.instrument.cautions.single.subjectId, 'p-home-14');
   });
 
   testWidgets(
@@ -174,15 +168,15 @@ void main() {
           origin: IntentOrigin.watchUi),
     );
     await tester.pump();
-    expect(controller.instrument.snapshot.inFlight?.outId, 'p-home-9');
-    expect(controller.instrument.snapshot.inFlight?.inId, 'p-home-7');
+    expect(controller.instrument.substitutions.single.outId, 'p-home-9');
+    expect(controller.instrument.substitutions.single.inId, 'p-home-7');
     await controller.watchRuntime.dispatch(
       const SelectInIntent('p-home-12', origin: IntentOrigin.operatorFixture),
     );
     await tester.pump();
-    expect(controller.watchRuntime.watchState.frozenCommand?.outId, 'p-home-9');
-    expect(controller.watchRuntime.watchState.frozenCommand?.inId, 'p-home-7');
-    expect(controller.instrument.snapshot.substitutions, isEmpty);
+    expect(controller.instrument.substitutions.single.outId, 'p-home-9');
+    expect(controller.instrument.substitutions.single.inId, 'p-home-7');
+    expect(controller.watchRuntime.watchState.frozenCommand, isNull);
   });
 
   testWidgets('a device change during a press does not commit', (tester) async {

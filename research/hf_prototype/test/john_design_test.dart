@@ -237,16 +237,9 @@ void main() {
             origin: IntentOrigin.watchUi),
       );
       await tester.pump();
-      expect(controller.instrument.snapshot.inFlight?.subjectId, 'p-home-14');
-      expect(controller.instrument.cautions, isEmpty);
-      final frozen = tester.widget<Text>(find.byKey(const Key('outcome-frozen')));
-      expect(frozen.data, contains('p-home-14'));
-
-      final resolve = find.text('Resolve simulated outcome');
-      await tester.ensureVisible(resolve);
-      await tester.tap(resolve);
-      await tester.pump();
+      expect(controller.instrument.snapshot.inFlight, isNull);
       expect(controller.instrument.cautions, hasLength(1));
+      expect(controller.instrument.cautions.single.subjectId, 'p-home-14');
       expect(controller.instrument.sendOffs, isEmpty);
       final label = tester.widget<Text>(find.byKey(const Key('outcome-label')));
       expect(label.data, ResearchCommitPhrases.simulatedSaved);
@@ -279,10 +272,6 @@ void main() {
       final record = find.text('Record yellow');
       await tester.ensureVisible(record);
       await tester.tap(record);
-      await tester.pump();
-      final resolve = find.text('Resolve simulated outcome');
-      await tester.ensureVisible(resolve);
-      await tester.tap(resolve);
       await tester.pump();
       expect(controller.instrument.cautions, hasLength(2));
       expect(controller.instrument.sendOffs, isEmpty);
@@ -387,10 +376,6 @@ void main() {
       final record = find.text('Record yellow');
       await tester.ensureVisible(record);
       await tester.tap(record);
-      await tester.pump();
-      final resolve = find.text('Resolve simulated outcome');
-      await tester.ensureVisible(resolve);
-      await tester.tap(resolve);
       await tester.pump();
       expect(controller.instrument.cautions, hasLength(1));
       await openInspectorTab(tester, InspectorSection.eventJournal);

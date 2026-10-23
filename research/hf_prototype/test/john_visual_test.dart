@@ -126,10 +126,6 @@ void main() {
     await tester.ensureVisible(record);
     await tester.tap(record);
     await tester.pump();
-    final resolve = find.text('Resolve simulated outcome');
-    await tester.ensureVisible(resolve);
-    await tester.tap(resolve);
-    await tester.pump();
     expect(controller.instrument.cautions, hasLength(1));
     await shot('10-john-watch-yellow', scenario: ScenarioId.s01YellowNoPrior.name,
         note: 'SIMULATED SAVED — not production D1, ACTUAL WATCH UI INTERACTION');
