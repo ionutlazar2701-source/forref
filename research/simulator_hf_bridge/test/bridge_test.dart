@@ -31,8 +31,9 @@ void main() {
     expect(runtime.viewport?.safeAreaKnown, isFalse);
     expect(runtime.watchState.profileId, 'amazfit-gts4');
     expect(runtime.watchState.discipline.cautionCount, before);
-    expect(runtime.watchState.clock.available, isFalse);
-    expect(runtime.watchState.score.homeGoals, isNull);
+    expect(runtime.watchState.clock.available, isTrue);
+    expect(runtime.watchState.score.homeGoals, 0);
+    expect(runtime.watchState.score.awayGoals, 0);
     expect(runtime.instrument.productionMatchMemoryWrites, isFalse);
   });
 

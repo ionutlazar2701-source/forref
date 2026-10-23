@@ -24,10 +24,18 @@ final class HfPresentationRuntime implements SimulatorPresentationRuntime {
   String? _profileId;
   String? _rejection;
   ProfileViewportContext? _viewport;
+  String _homeTeamLabel = 'Home';
+  String _awayTeamLabel = 'Away';
 
   ResearchInstrument get instrument => _instrument;
 
   ProfileViewportContext? get viewport => _viewport;
+
+  void bindMatchLabels({required String home, required String away}) {
+    _homeTeamLabel = home;
+    _awayTeamLabel = away;
+    if (!_states.isClosed) _states.add(watchState);
+  }
 
   @override
   WatchPresentationState get watchState => projectResearchSnapshot(
@@ -35,6 +43,8 @@ final class HfPresentationRuntime implements SimulatorPresentationRuntime {
         route: _route,
         profileId: _profileId,
         lastRejection: _rejection,
+        homeTeamLabel: _homeTeamLabel,
+        awayTeamLabel: _awayTeamLabel,
       );
 
   @override
@@ -86,9 +96,14 @@ final class HfPresentationRuntime implements SimulatorPresentationRuntime {
           PresentationScope.shootout => ResearchScope.shootout,
           PresentationScope.unresolved => ResearchScope.unresolved,
         });
+      case OfferGoalIntent():
+        _instrument.offerRecordGoal();
+        _route = WatchRoute.goalFlow;
       case OfferYellowIntent():
         _instrument.offerRecordYellow();
         _route = WatchRoute.yellowFlow;
+      case AdvanceMatchClockIntent(:final seconds):
+        _instrument.advanceMatchClock(seconds);
       case OfferDirectSendOffIntent():
         _instrument.offerDirectSendOff();
         _route = WatchRoute.sendOffFlow;
@@ -98,23 +113,43 @@ final class HfPresentationRuntime implements SimulatorPresentationRuntime {
       case SelectInIntent(:final participantId):
         _instrument.selectIn(participantId);
         _route = WatchRoute.substitutionFlow;
-      case ActivateIntent(:final action):
+      case ActivateIntent(:final action, :final origin):
+        final originTrace = intentOriginLabel(origin);
         switch (action) {
+          case PresentationAction.goal:
+            _instrument.accessibilityInvoke(
+              FinalActionKind.recordGoal,
+              originTrace: originTrace,
+            );
           case PresentationAction.yellow:
             _instrument.offerRecordYellow();
-            _instrument.accessibilityInvoke(FinalActionKind.recordYellow);
+            _instrument.accessibilityInvoke(
+              FinalActionKind.recordYellow,
+              originTrace: originTrace,
+            );
           case PresentationAction.directSendOff:
             _instrument.offerDirectSendOff();
-            _instrument.accessibilityInvoke(FinalActionKind.recordDirectSendOff);
+            _instrument.accessibilityInvoke(
+              FinalActionKind.recordDirectSendOff,
+              originTrace: originTrace,
+            );
           case PresentationAction.secondCautionSendOff:
             _instrument.accessibilityInvoke(
               FinalActionKind.recordSecondCautionSendOff,
+              originTrace: originTrace,
             );
           case PresentationAction.substitution:
-            _instrument.accessibilityInvoke(FinalActionKind.recordSubstitution);
+            _instrument.accessibilityInvoke(
+              FinalActionKind.recordSubstitution,
+              originTrace: originTrace,
+            );
         }
       case ResolveSimulatedCommitIntent():
         _instrument.resolveSimulatedCommit();
+        if (_instrument.commitKind == SystemCommitKind.saved &&
+            _route == WatchRoute.goalFlow) {
+          _route = WatchRoute.liveCore;
+        }
       case AcknowledgeUnknownIntent():
         _instrument.acknowledgeUnknownOutcome();
       case FocusLostIntent():

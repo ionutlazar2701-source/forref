@@ -9,6 +9,8 @@ WatchPresentationState projectResearchSnapshot(
   required WatchRoute route,
   String? profileId,
   String? lastRejection,
+  String homeTeamLabel = 'Home',
+  String awayTeamLabel = 'Away',
 }) {
   final teamContext = switch (snapshot.teamContext) {
     TeamContextKind.absent => PresentationTeamContext.absent,
@@ -18,15 +20,39 @@ WatchPresentationState projectResearchSnapshot(
   };
   final scope = _scope(snapshot.scope);
   final selected = _selected(snapshot);
-  final frozen = snapshot.inFlight == null
+  final inFlight = snapshot.inFlight;
+  final frozen = inFlight == null
       ? null
       : FrozenCommandPresentation(
-          action: _action(snapshot.inFlight!.kind),
-          subjectId: snapshot.inFlight!.subjectId,
-          scope: _scope(snapshot.inFlight!.scope),
-          outId: snapshot.inFlight!.outId,
-          inId: snapshot.inFlight!.inId,
+          action: _action(inFlight.kind),
+          subjectId: inFlight.subjectId,
+          scope: _scope(inFlight.scope),
+          outId: inFlight.outId,
+          inId: inFlight.inId,
+          scoringTeam: inFlight.scoringTeam == null
+              ? null
+              : inFlight.scoringTeam == ResearchTeamSide.home
+                  ? PresentationTeam.home
+                  : PresentationTeam.away,
+          goalScorerParticipantId: inFlight.goalScorerParticipantId,
+          capturedMatchTimeLabel: inFlight.capturedMatchTimeLabel,
         );
+  final homeGoals = snapshot.goals
+      .where((goal) => goal.scoringTeam == ResearchTeamSide.home)
+      .length;
+  final awayGoals = snapshot.goals.length - homeGoals;
+  final score = scoreFromGoalCounts(
+    homeGoals: homeGoals,
+    awayGoals: awayGoals,
+    homeTeamLabel: homeTeamLabel,
+    awayTeamLabel: awayTeamLabel,
+  );
+  final clock = snapshot.matchClockAvailable
+      ? ClockPresentation(
+          available: true,
+          label: formatResearchMatchTime(snapshot.matchElapsedSeconds),
+        )
+      : ClockPresentation.unavailable;
   final commitRecognized = _recognized(snapshot.commitLabel);
   return WatchPresentationState(
     scenarioId: snapshot.scenarioId,
@@ -37,8 +63,8 @@ WatchPresentationState projectResearchSnapshot(
       scope: scope,
       identityLabel: 'Research scenario ${snapshot.scenarioId}',
     ),
-    clock: ClockPresentation.unavailable,
-    score: ScorePresentation.unavailable,
+    clock: clock,
+    score: score,
     selection: selected,
     discipline: DisciplinePresentation(
       awareness: switch (snapshot.priorCaution) {
@@ -94,7 +120,90 @@ WatchPresentationState projectResearchSnapshot(
         ? ResearchCommitPhrases.simulatedRecovery
         : null,
     lastRejection: lastRejection,
+    goalFlow: _goalFlow(snapshot),
+    matchReport: _matchReport(snapshot, homeTeamLabel, awayTeamLabel),
+    homeTeamLabel: homeTeamLabel,
+    awayTeamLabel: awayTeamLabel,
   );
+}
+
+GoalFlowPresentation _goalFlow(ResearchTruthSnapshot snapshot) {
+  final stage = switch (snapshot.goalFlowStage) {
+    GoalFlowStage.inactive => GoalFlowStagePresentation.inactive,
+    GoalFlowStage.selectTeam => GoalFlowStagePresentation.selectTeam,
+    GoalFlowStage.selectScorer => GoalFlowStagePresentation.selectScorer,
+    GoalFlowStage.readyToRecord => GoalFlowStagePresentation.readyToRecord,
+  };
+  PresentationTeam? team;
+  if (snapshot.teamContext == TeamContextKind.homeTrusted) {
+    team = PresentationTeam.home;
+  } else if (snapshot.teamContext == TeamContextKind.awayTrusted) {
+    team = PresentationTeam.away;
+  }
+  final canRecord = snapshot.goalFlowStage == GoalFlowStage.readyToRecord &&
+      snapshot.matchClockAvailable;
+  return GoalFlowPresentation(
+    stage: stage,
+    scoringTeam: team,
+    scorerParticipantId: snapshot.selectedSubjectId,
+    reviewMatchTimeLabel: snapshot.matchClockAvailable
+        ? formatResearchMatchTime(snapshot.matchElapsedSeconds)
+        : null,
+    canRecord: canRecord,
+    blockReason: snapshot.matchClockAvailable
+        ? null
+        : 'Match time unavailable',
+  );
+}
+
+MatchReportPresentation _matchReport(
+  ResearchTruthSnapshot snapshot,
+  String homeTeamLabel,
+  String awayTeamLabel,
+) {
+  var home = 0;
+  var away = 0;
+  final rows = <({
+    String eventId,
+    int sequence,
+    String matchTimeLabel,
+    String teamLabel,
+    String participantDisplay,
+    String scoreAfterLabel,
+    String originTrace,
+  })>[];
+  final sorted = [...snapshot.goals]..sort((a, b) => a.sequence.compareTo(b.sequence));
+  for (final goal in sorted) {
+    if (goal.scoringTeam == ResearchTeamSide.home) {
+      home += 1;
+    } else {
+      away += 1;
+    }
+    ResearchParticipant? person;
+    for (final candidate in snapshot.roster) {
+      if (candidate.id == goal.scorerParticipantId) {
+        person = candidate;
+        break;
+      }
+    }
+    final display = person == null
+        ? goal.scorerParticipantId
+        : '#${person.shirtLabel} ${person.name}';
+    final teamLabel =
+        goal.scoringTeam == ResearchTeamSide.home ? homeTeamLabel : awayTeamLabel;
+    rows.add(
+      (
+        eventId: goal.eventId,
+        sequence: goal.sequence,
+        matchTimeLabel: goal.matchTimeLabel,
+        teamLabel: teamLabel,
+        participantDisplay: display,
+        scoreAfterLabel: '$home–$away',
+        originTrace: goal.originTrace,
+      ),
+    );
+  }
+  return matchReportFromGoals(rows);
 }
 
 bool _recognized(String label) {
@@ -120,6 +229,7 @@ PresentationAction _action(FinalActionKind kind) {
     FinalActionKind.recordSecondCautionSendOff =>
       PresentationAction.secondCautionSendOff,
     FinalActionKind.recordSubstitution => PresentationAction.substitution,
+    FinalActionKind.recordGoal => PresentationAction.goal,
   };
 }
 

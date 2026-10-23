@@ -50,6 +50,7 @@ class ResearchController extends ChangeNotifier {
       shellProfileId = shell.identity.profileId;
       deviceShellVisible = true;
     }
+    watchRuntime.bindMatchLabels(home: fixture.homeTeam, away: fixture.awayTeam);
   }
 
   final ResearchInstrument instrument;
@@ -276,6 +277,7 @@ class ResearchController extends ChangeNotifier {
   /// Loads deterministic research fixture state. Does not write Match Memory.
   Future<void> applyResearchFixture(ResearchFixture next) async {
     fixture = next;
+    watchRuntime.bindMatchLabels(home: next.homeTeam, away: next.awayTeam);
     paired = PairedSessionState.initial(next).afterIntent(
       origin: SimulatedActionOrigin.systemScenario,
       intentName: 'fixture:${next.scenarioId.name}',
