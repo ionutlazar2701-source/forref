@@ -2,15 +2,27 @@
 
 Canonical lists for what ships now, what waits, and what v1 must not do. Do not promote a later or never item into MVP unless the user reopens the decision.
 
-## Ship now (MVP)
+## Scope layers
 
-A match must be refereeable on the phone, with no watch:
+These layers are different. An item in the broader phone list is not authority to build it inside WAVE 1 or inside FTM v1 Match Memory.
+
+| Layer | What it allows |
+| --- | --- |
+| Foundation / FTM v1 | The boundary in [forref-development/FOUNDATION_FREEZE.md](forref-development/FOUNDATION_FREEZE.md). Product Command acceptance is still pending. Authoritative Injury capture is unavailable. |
+| WAVE 1 Goal + Score | Narrower than this page. HOLD until Product Command accepts the Foundation Freeze SHA. It does not include Injury, Yellow implementation, Cautions Recall, Red, Substitution, or watch capture. |
+| Phone accessibility | A referee can complete the supported workflow on a phone with no watch. |
+| Later product scope | Items below that are outside FTM v1 and outside WAVE 1. |
+
+## Ship now (phone accessibility)
+
+A supported match workflow must be refereeable on the phone, with no watch. This list is not the WAVE 1 build list and it is not permission to add an authoritative Injury writer:
 
 - Match setup, simple squad (number + optional name), optional competition/venue free text, crew names — [ux-pre-post-match.md](ux-pre-post-match.md)
 - Main timer, added time as a **phase**, manual pause with visible **Paused** state — [ux-live-match.md](ux-live-match.md)
 - Kick-off starts the clock from **READY** (same Live Match screen, not a Ready/Pre-Match screen)
 - Explicit **Full time** (1 tap, Undo 5 s); **Finish match** → COMPLETED (confirm only if incomplete events); optional Extra time; Summary + one PDF — [ux-pre-post-match.md](ux-pre-post-match.md)
-- Goals, yellow/red cards, substitutions, **injuries** — fast paths in [ux-live-match.md](ux-live-match.md)
+- Goals are the sporting event inside the future WAVE 1 boundary, and that wave is HOLD. Yellow, red, and substitution are later than WAVE 1. Fast-path mechanics, where they exist, are described in [ux-live-match.md](ux-live-match.md). That UX note is not a WAVE 1 authorization.
+- **Injury** is not part of authoritative FTM v1 Match Memory capture. A legacy Injury control must not remain reachable as an authoritative FTM writer. Injury returns only under a later dedicated domain contract. Do not implement it during WAVE 1.
 - Event in **1–2 seconds** (2–3 taps, auto-save on last tap, Quick Capture, no multi-field modal); targets ≥ ~48 dp; configurable vibrations
 - Match timeline (5–7 recent rows), tap to edit, **Undo 5 s** after save
 - Offline save (Drift) and later Firestore sync (signed-in only)

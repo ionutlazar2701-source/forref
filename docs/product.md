@@ -4,9 +4,15 @@ Ref App is a football referee match app. It covers the same job as Refsix — ti
 
 ## Identity
 
-The **phone is the product**. The watch is an upgrade, not a condition of use.
+Two roles. Do not collapse them.
 
-A referee with a ~100€ phone and no watch must be able to referee a complete match: timer, added time, pauses, goals, cards, substitutions, injuries, a simple squad, crew names, local save, and a PDF export.
+**Implementation and accessibility.** The phone is the preparation, fallback, and post-match surface. A referee with a ~100€ phone and no watch must be able to complete every supported match workflow: timer, added time, pauses, the events that the Foundation contract allows, a simple squad, crew names, local save, and a PDF export.
+
+**Target professional match role.** A supported smartwatch is not a cosmetic upgrade. When its platform profile is certified for the required match-critical capabilities and MATCH READY has established it as the active capture authority, that watch is the primary in-match instrument and must operate autonomously inside its certified envelope. No watch implementation is claimed to exist today, and no watch is production-certified by this page.
+
+Match Core stays device-neutral. The phone is not permanent sporting authority. Canonical wording: `AGENTS.md`. Foundation candidate: [forref-development/FOUNDATION_FREEZE.md](forref-development/FOUNDATION_FREEZE.md). Product Command has not yet accepted that SHA. WAVE 1 Goal + Score stays HOLD.
+
+Authoritative Injury capture is unavailable in FTM v1. It is not part of the phone-complete Foundation workflow and it is not WAVE 1.
 
 ## Audience
 
@@ -19,8 +25,8 @@ V1 records the **crew as roles on the match** (center, assistant 1, assistant 2,
 | | Refsix-like core | Ref App difference |
 |---|---|---|
 | Job | Time a match, log events, keep a record | Same job; log an event in 1–2 seconds |
-| Devices | Narrow ecosystem | Phone-complete first, then several watch platforms |
-| Budget | Flagship watch assumed | Cheap phone is enough; watch is optional |
+| Devices | Narrow ecosystem | Phone can complete the supported workflow with no watch; a later certified watch is the in-match instrument when MATCH READY assigns it |
+| Budget | Flagship watch assumed | A cheap phone is enough for the supported workflow; a watch is not required for that accessibility path |
 | Language | Generic UI copy | Referee terminology, localizable; not raw machine translation |
 | After MVP | — | Heatmap, HR alerts, live crew sync, voice notes — only after real matches |
 
@@ -28,9 +34,9 @@ Wider device reach is the product bet. Extra features are not the v1 bet.
 
 ## UX principle (MVP)
 
-**Phone first → match first → event first.**
+**Match first → event first.**
 
-The referee opens the app and can record any in-match event in **1–2 seconds** (2–3 taps), with critical time and score visible at a glance. Mechanics: [ux-live-match.md](ux-live-match.md). Optimize for motion, bright sun, and split attention — not for a dashboard of features. Do not start visual design or watch UI before those mechanics are implemented in spec.
+On the phone, the referee opens the app and can record a supported in-match event in **1–2 seconds** (2–3 taps), with critical time and score visible at a glance. That accessibility path does not make the phone the permanent in-match authority. Mechanics: [ux-live-match.md](ux-live-match.md). Optimize for motion, bright sun, and split attention — not for a dashboard of features. Do not start visual design or watch UI before those mechanics are implemented in spec. No watch UI is claimed here.
 
 ## Paid launch (not MVP)
 

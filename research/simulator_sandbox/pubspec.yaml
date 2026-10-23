@@ -1,0 +1,21 @@
+name: simulator_sandbox
+description: >
+  Isolated research sandbox for FORREF Match Memory. Desktop evidence only.
+  Not production phone capture and not watch hardware evidence.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  forref_match_core:
+    path: ../../packages/forref_match_core
+  forref_match_persistence:
+    path: ../../packages/forref_match_persistence
+  simulator_presentation:
+    path: ../simulator_presentation
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.0
