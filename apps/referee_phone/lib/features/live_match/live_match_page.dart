@@ -497,7 +497,10 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
     MobileCommandEnvelope? envelope;
     try {
       final runtime = scope.mobileCommands;
-      final held = runtime.unresolved(MobileCommandType.kickOff);
+      final held = runtime.unresolved(
+        MobileCommandType.kickOff,
+        widget.matchId,
+      );
       envelope = held ??
           runtime.preparation
               .freezeKickOff(
@@ -923,7 +926,10 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                   setState(() => _captureType = null);
                   final scope = AppScope.of(context);
                   final runtime = scope.mobileCommands;
-                  final heldGoal = runtime.unresolved(MobileCommandType.goal);
+                  final heldGoal = runtime.unresolved(
+                    MobileCommandType.goal,
+                    widget.matchId,
+                  );
                   if (type == EventType.goal &&
                       scope.matchApplication != null &&
                       (heldGoal != null || data.teamId != null)) {

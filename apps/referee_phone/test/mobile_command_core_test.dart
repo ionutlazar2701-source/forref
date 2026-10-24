@@ -468,6 +468,13 @@ final class _RecordingWriter implements MobileAuthoritativeWriter {
     calls += 1;
     return admission;
   }
+
+  @override
+  Future<MobileWriterAdmission> inspectOutcome(
+    MobileCommandEnvelope envelope,
+  ) async {
+    return admission;
+  }
 }
 
 final class _HookWriter implements MobileAuthoritativeWriter {
@@ -478,6 +485,13 @@ final class _HookWriter implements MobileAuthoritativeWriter {
   @override
   Future<MobileWriterAdmission> commit(MobileCommandEnvelope envelope) {
     return _commit(envelope);
+  }
+
+  @override
+  Future<MobileWriterAdmission> inspectOutcome(
+    MobileCommandEnvelope envelope,
+  ) async {
+    return const MobileWriterOutcomeUnknown();
   }
 }
 

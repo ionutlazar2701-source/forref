@@ -265,7 +265,7 @@ void main() {
     expect(blocked.commandId, original.commandId);
     expect(blocked.status, MobileCommandStatus.outcomeUnknown);
     expect(
-      lost.unresolved(MobileCommandType.goal)?.commandId,
+      lost.unresolved(MobileCommandType.goal, match.matchId)?.commandId,
       original.commandId,
     );
 
@@ -278,7 +278,7 @@ void main() {
     expect(reconciled.status, MobileCommandStatus.saved);
     expect(reconciled.commandId, original.commandId);
     expect(reconciled.committedRecordId, recordId);
-    expect(lost.unresolved(MobileCommandType.goal), isNull);
+    expect(lost.unresolved(MobileCommandType.goal, match.matchId), isNull);
 
     final committed = await records();
     final goals = goalsOf(committed);

@@ -27,7 +27,11 @@ final class MobileWriterOutcomeUnknown extends MobileWriterAdmission {
 }
 
 abstract interface class MobileAuthoritativeWriter {
+  /// Effectful sporting commit. This may append a Match Record.
   Future<MobileWriterAdmission> commit(MobileCommandEnvelope envelope);
+
+  /// Non-mutating evidence check. Must not append a Match Record.
+  Future<MobileWriterAdmission> inspectOutcome(MobileCommandEnvelope envelope);
 }
 
 final class MobileCommandOutcome {
@@ -73,9 +77,9 @@ final class _Receipt {
 ///
 /// Duplicate [MobileCommandEnvelope.commandId] after Saved is recognized and
 /// not written again. [dispatch] does not retry
-/// [MobileCommandStatus.outcomeUnknown]. [reconcile] is the explicit
-/// same-identity read-back. Sporting idempotency stays inside the production
-/// commit port.
+/// [MobileCommandStatus.outcomeUnknown]. [reconcile] reads evidence and does
+/// not call the writer commit. Sporting idempotency stays inside the
+/// production commit port.
 final class MobileCommandDispatcher {
   MobileCommandDispatcher({
     required MobileAuthoritativeWriter writer,
@@ -148,46 +152,24 @@ final class MobileCommandDispatcher {
 
     _progress[envelope.commandId] = MobileCommandStatus.dispatching;
     final admission = await _writer.commit(envelope);
-    final outcome = switch (admission) {
-      MobileWriterSaved(:final committedRecordId) => MobileCommandOutcome(
-          commandId: envelope.commandId,
-          status: MobileCommandStatus.saved,
-          availability: decision.kind,
-          writerInvoked: true,
-          completeness: MobileCommitCompleteness.complete,
-          committedRecordId: committedRecordId,
-        ),
-      MobileWriterFailed(:final reason, :final partial) => MobileCommandOutcome(
-          commandId: envelope.commandId,
-          status: MobileCommandStatus.failed,
-          availability: decision.kind,
-          writerInvoked: true,
-          completeness: partial
-              ? MobileCommitCompleteness.partial
-              : MobileCommitCompleteness.none,
-          detail: reason,
-        ),
-      MobileWriterOutcomeUnknown() => MobileCommandOutcome(
-          commandId: envelope.commandId,
-          status: MobileCommandStatus.outcomeUnknown,
-          availability: decision.kind,
-          writerInvoked: true,
-          completeness: MobileCommitCompleteness.none,
-          detail: 'outcome_unknown',
-        ),
-    };
+    final outcome = _fromAdmission(
+      envelope: envelope,
+      admission: admission,
+      availability: decision.kind,
+      writerInvoked: true,
+    );
     _progress[envelope.commandId] = outcome.status;
     return _remember(envelope, outcome);
   }
 
-  /// Reads Match Memory again for an unknown receipt of this exact command.
+  /// Evidence check for an unknown command. Does not call [writer.commit].
   ///
-  /// Does not allocate a command id. A second [dispatch] of an unknown
-  /// command still returns the stored receipt without calling the writer.
+  /// A second [dispatch] of an unknown command still returns the stored
+  /// receipt and does not call the writer. This method reads Match Memory
+  /// through [MobileAuthoritativeWriter.inspectOutcome] only.
   Future<MobileCommandOutcome> reconcile(MobileCommandEnvelope envelope) async {
     final prior = _receipts[envelope.commandId];
-    if (prior == null) return dispatch(envelope);
-    if (prior.canonical != envelope.canonicalBody) {
+    if (prior != null && prior.canonical != envelope.canonicalBody) {
       return MobileCommandOutcome(
         commandId: envelope.commandId,
         status: MobileCommandStatus.failed,
@@ -197,11 +179,58 @@ final class MobileCommandDispatcher {
         detail: MobileCommandReason.commandIdentityConflict,
       );
     }
-    if (prior.outcome.status != MobileCommandStatus.outcomeUnknown) {
+    if (prior != null &&
+        prior.outcome.status != MobileCommandStatus.outcomeUnknown) {
       return prior.outcome.copyWith(writerInvoked: false);
     }
-    _receipts.remove(envelope.commandId);
-    return dispatch(envelope);
+    final decision = _gate.evaluate(
+      commandType: envelope.commandType,
+      authority: _authority,
+    );
+    final admission = await _writer.inspectOutcome(envelope);
+    final outcome = _fromAdmission(
+      envelope: envelope,
+      admission: admission,
+      availability: prior?.outcome.availability ?? decision.kind,
+      writerInvoked: false,
+    );
+    return _remember(envelope, outcome);
+  }
+
+  MobileCommandOutcome _fromAdmission({
+    required MobileCommandEnvelope envelope,
+    required MobileWriterAdmission admission,
+    required MobileCommandAvailabilityKind availability,
+    required bool writerInvoked,
+  }) {
+    return switch (admission) {
+      MobileWriterSaved(:final committedRecordId) => MobileCommandOutcome(
+          commandId: envelope.commandId,
+          status: MobileCommandStatus.saved,
+          availability: availability,
+          writerInvoked: writerInvoked,
+          completeness: MobileCommitCompleteness.complete,
+          committedRecordId: committedRecordId,
+        ),
+      MobileWriterFailed(:final reason, :final partial) => MobileCommandOutcome(
+          commandId: envelope.commandId,
+          status: MobileCommandStatus.failed,
+          availability: availability,
+          writerInvoked: writerInvoked,
+          completeness: partial
+              ? MobileCommitCompleteness.partial
+              : MobileCommitCompleteness.none,
+          detail: reason,
+        ),
+      MobileWriterOutcomeUnknown() => MobileCommandOutcome(
+          commandId: envelope.commandId,
+          status: MobileCommandStatus.outcomeUnknown,
+          availability: availability,
+          writerInvoked: writerInvoked,
+          completeness: MobileCommitCompleteness.none,
+          detail: 'outcome_unknown',
+        ),
+    };
   }
 
   MobileCommandOutcome _remember(
