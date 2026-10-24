@@ -3,7 +3,10 @@ import 'package:match_core/match_core.dart';
 import 'package:forref_match_core/forref_match_core.dart';
 import 'package:referee_phone/app_scope.dart';
 import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
+import 'package:referee_phone/design/forref_components.dart';
+import 'package:referee_phone/design/forref_spacing.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
+import 'package:referee_phone/officiate/fixture_list.dart';
 import 'package:referee_phone/l10n/match_labels.dart';
 import 'package:referee_phone/match/match_session.dart';
 import 'package:referee_phone/match/new_match.dart';
@@ -111,12 +114,32 @@ class _MatchSummaryPageState extends State<MatchSummaryPage> {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.summary)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(
+          ForrefSpace.s20,
+          ForrefSpace.s16,
+          ForrefSpace.s20,
+          ForrefSpace.s32,
+        ),
         children: [
+          ForrefFixtureIdentity(
+            title: fixtureTitle(
+              match,
+              homeNotSet: l10n.homeTeamNotSet,
+              awayNotSet: l10n.awayTeamNotSet,
+            ),
+            detail: '${match.date} · ${matchStatusLabel(match, l10n)}',
+            large: true,
+          ),
+          const SizedBox(height: ForrefSpace.s24),
           if (_summaryScoreHeadline(context, match, l10n) != null)
             _summaryScoreHeadline(context, match, l10n)!,
-          Text(matchStatusLabel(match, l10n)),
-          Text(formatMatchClock(session.displayedElapsed())),
+          Text(
+            formatMatchClock(session.displayedElapsed()),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
           const SizedBox(height: 12),
           for (final event in match.events.reversed)
             ListTile(
@@ -157,7 +180,9 @@ class _MatchSummaryPageState extends State<MatchSummaryPage> {
           match.score.away,
           awayLabel(match, l10n),
         ),
-        style: Theme.of(context).textTheme.headlineMedium,
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
       );
     }
     final projection = _scoreProjection;
@@ -176,7 +201,9 @@ class _MatchSummaryPageState extends State<MatchSummaryPage> {
         awayScore,
         awayLabel(match, l10n),
       ),
-      style: Theme.of(context).textTheme.headlineMedium,
+      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
     );
   }
 }

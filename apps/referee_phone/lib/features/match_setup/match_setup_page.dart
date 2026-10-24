@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:match_core/match_core.dart';
 import 'package:referee_phone/app_scope.dart';
 import 'package:referee_phone/infrastructure/competition_rules/phone_competition_format_choice.dart';
+import 'package:referee_phone/design/forref_components.dart';
+import 'package:referee_phone/design/forref_spacing.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
 import 'package:referee_phone/l10n/preparation_labels.dart';
 import 'package:referee_phone/match/client_ids.dart';
@@ -280,21 +282,35 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
       homeNotSet: l10n.homeTeamNotSet,
       awayNotSet: l10n.awayTeamNotSet,
     );
+    final competition = _competition.text.trim();
+    final readinessTone = switch (assessment.claim) {
+      PreparationClaim.needsAttention => ForrefNoticeTone.attention,
+      PreparationClaim.recordingAuthorityUnconfirmed =>
+        ForrefNoticeTone.unavailable,
+      PreparationClaim.matchSetupReady ||
+      PreparationClaim.readyToOfficiateOnThisPhone =>
+        ForrefNoticeTone.neutral,
+    };
     return Scaffold(
       key: const Key('preparation-page'),
       appBar: AppBar(title: Text(l10n.preparationTitle)),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(
+          ForrefSpace.s20,
+          ForrefSpace.s16,
+          ForrefSpace.s20,
+          ForrefSpace.s24,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(identity, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 4),
-            Text(
-              match.date,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
+            ForrefFixtureIdentity(
+              title: identity,
+              detail: [
+                match.date,
+                if (competition.isNotEmpty) competition,
+              ].join(' · '),
+              large: true,
             ),
             _section(
               context,
@@ -448,37 +464,25 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
               key: const Key('section-readiness'),
               title: l10n.sectionReadiness,
               children: [
-                Text(
-                  preparationClaimLabel(l10n, assessment.claim),
-                  key: const Key('readiness-claim'),
-                ),
-                for (final blocker in assessment.blockers)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(preparationBlockerLabel(l10n, blocker)),
-                  ),
-                const SizedBox(height: 8),
-                Text(
-                  l10n.optionalDetailsDoNotBlock,
-                  style: Theme.of(context).textTheme.bodySmall,
+                ForrefNotice(
+                  title: preparationClaimLabel(l10n, assessment.claim),
+                  titleKey: const Key('readiness-claim'),
+                  tone: readinessTone,
+                  lines: [
+                    for (final blocker in assessment.blockers)
+                      preparationBlockerLabel(l10n, blocker),
+                    l10n.optionalDetailsDoNotBlock,
+                  ],
                 ),
               ],
             ),
           ],
         ),
       ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: FilledButton(
-            key: const Key('enter-live-match'),
-            onPressed: assessment.canEnterLiveMatch ? _goLive : null,
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-            ),
-            child: Text(l10n.enterLiveMatch),
-          ),
-        ),
+      bottomNavigationBar: ForrefBottomAction(
+        buttonKey: const Key('enter-live-match'),
+        label: l10n.enterLiveMatch,
+        onPressed: assessment.canEnterLiveMatch ? _goLive : null,
       ),
     );
   }
@@ -493,12 +497,15 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
       key: key,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 24),
+        const SizedBox(height: ForrefSpace.s24),
         Text(title, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
+        const SizedBox(height: ForrefSpace.s8),
         const Divider(height: 1),
-        const SizedBox(height: 12),
-        ...children,
+        const SizedBox(height: ForrefSpace.s16),
+        for (var i = 0; i < children.length; i++) ...[
+          if (i > 0) const SizedBox(height: ForrefSpace.s12),
+          children[i],
+        ],
       ],
     );
   }

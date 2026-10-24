@@ -580,4 +580,7 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get fixtureGroupCompleted => 'Încheiate';
+
+  @override
+  String get checkingMatchState => 'Se verifică starea meciului';
 }

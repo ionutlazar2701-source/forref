@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:referee_phone/app_scope.dart';
+import 'package:referee_phone/design/forref_components.dart';
+import 'package:referee_phone/design/forref_spacing.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
 import 'package:referee_phone/l10n/match_labels.dart';
 import 'package:referee_phone/l10n/preparation_labels.dart';
@@ -103,7 +105,14 @@ class _MatchesPageState extends State<MatchesPage> {
     final sections = groupFixtures(fixtures: _fixtures, today: DateTime.now());
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.matchesTitle),
+        toolbarHeight: 72,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.appTitle, style: Theme.of(context).textTheme.labelMedium),
+            Text(l10n.matchesTitle),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () =>
@@ -113,36 +122,54 @@ class _MatchesPageState extends State<MatchesPage> {
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: ForrefSpace.s16),
+                  Text(l10n.checkingMatchState),
+                ],
+              ),
+            )
           : sections.isEmpty
-              ? Center(child: Text(l10n.emptyMatches))
-              : ListView(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  children: [
-                    for (final section in sections) ...[
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                        child: Text(
-                          _groupLabel(l10n, section.group),
-                          style: Theme.of(context).textTheme.titleMedium,
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: ForrefSpace.s20,
+                  ),
+                  child: Center(
+                    child: Text(
+                      l10n.emptyMatches,
+                      style: Theme.of(context).textTheme.titleMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.only(bottom: ForrefSpace.s24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final section in sections) ...[
+                        ForrefSectionHeader(
+                          title: _groupLabel(l10n, section.group),
+                          quiet: section.group == FixtureGroup.completed ||
+                              section.group == FixtureGroup.notStarted,
                         ),
-                      ),
-                      const Divider(height: 1),
-                      for (final fixture in section.fixtures)
-                        _FixtureTile(
-                          fixture: fixture,
-                          emphasized: section.group == FixtureGroup.current,
-                          onTap: () => _open(fixture),
-                        ),
+                        const Divider(height: 1),
+                        for (final fixture in section.fixtures)
+                          _FixtureTile(
+                            fixture: fixture,
+                            group: section.group,
+                            onTap: () => _open(fixture),
+                          ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-      floatingActionButton: SizedBox(
-        height: 48,
-        child: FilledButton(
-          onPressed: _newMatch,
-          child: Text(l10n.newMatch),
-        ),
+      bottomNavigationBar: ForrefBottomAction(
+        label: l10n.newMatch,
+        onPressed: _newMatch,
       ),
     );
   }
@@ -161,17 +188,18 @@ class _MatchesPageState extends State<MatchesPage> {
 class _FixtureTile extends StatelessWidget {
   const _FixtureTile({
     required this.fixture,
-    required this.emphasized,
+    required this.group,
     required this.onTap,
   });
 
   final ListedFixture fixture;
-  final bool emphasized;
+  final FixtureGroup group;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
     final match = fixture.match;
     final attention = fixtureAttention(match);
     final competition = match.competition?.trim();
@@ -186,16 +214,42 @@ class _FixtureTile extends StatelessWidget {
       homeNotSet: l10n.homeTeamNotSet,
       awayNotSet: l10n.awayTeamNotSet,
     );
-    final tile = ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      title: Text(title),
-      subtitle: Text(details.join(' · ')),
-      onTap: onTap,
+    final quiet =
+        group == FixtureGroup.completed || group == FixtureGroup.notStarted;
+    final current = group == FixtureGroup.current;
+    final identity = ForrefFixtureIdentity(
+      title: title,
+      detail: details.join(' · '),
+      large: current,
+      color: quiet ? theme.colorScheme.onSurfaceVariant : null,
     );
-    if (!emphasized) return tile;
+    final child = Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: ForrefSpace.s20,
+        vertical: ForrefSpace.s12,
+      ),
+      child: current
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                identity,
+                const SizedBox(height: ForrefSpace.s12),
+                Text(
+                  l10n.liveMatch,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.brightness == Brightness.dark
+                        ? theme.colorScheme.onSurface
+                        : theme.colorScheme.primary,
+                  ),
+                ),
+              ],
+            )
+          : identity,
+    );
     return Material(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: tile,
+      color:
+          current ? theme.colorScheme.surfaceContainerHigh : Colors.transparent,
+      child: InkWell(onTap: onTap, child: child),
     );
   }
 }

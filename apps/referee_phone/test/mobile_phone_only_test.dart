@@ -101,7 +101,10 @@ void main() {
     await tester.enterText(find.byKey(const Key('home-team')), 'Home FC');
     await tester.enterText(find.byKey(const Key('away-team')), 'Away FC');
     await tester.pump();
+    tester.testTextInput.hide();
+    await tester.pump();
     expect(find.text('Ready to officiate on this phone'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 200));
     await tester.ensureVisible(find.byKey(const Key('enter-live-match')));
     await tester.tap(find.byKey(const Key('enter-live-match')));
     await tester.pump();

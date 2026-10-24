@@ -50,6 +50,17 @@ void main() {
     return int.parse(match!.group(1)!) * 60 + int.parse(match.group(2)!);
   }
 
+  /// The instrument clock is its own text, separate from the phase label.
+  String visibleClock(WidgetTester tester) {
+    for (final text in tester.widgetList<Text>(find.byType(Text))) {
+      final data = text.data;
+      if (data != null && RegExp(r'^\d{2}:\d{2}$').hasMatch(data)) {
+        return data;
+      }
+    }
+    fail('No match clock was visible');
+  }
+
   Future<void> pumpUntilFound(
     WidgetTester tester,
     Finder finder, {
@@ -112,6 +123,8 @@ void main() {
     await tester.enterText(find.byKey(const Key('home-team')), 'Home FC');
     await tester.enterText(find.byKey(const Key('away-team')), 'Away FC');
     await tester.pump();
+    tester.testTextInput.hide();
+    await tester.pump(const Duration(milliseconds: 200));
     await tester.ensureVisible(find.byKey(const Key('enter-live-match')));
     await tester.tap(find.byKey(const Key('enter-live-match')));
     await tester.pump();
@@ -424,7 +437,7 @@ void main() {
     await tester.pump();
     expect(find.text('Resume match'), findsOneWidget);
     expect(find.text('Match suspended'), findsOneWidget);
-    final frozen = tester.widget<Text>(find.textContaining('Period 1')).data;
+    final frozen = visibleClock(tester);
 
     await tester.runAsync(() async {
       await tester.tap(find.text('Resume match'));
@@ -444,7 +457,7 @@ void main() {
     expect(find.text('Added time'), findsNothing);
     expect(find.text('Continuity exact'), findsOneWidget);
     expect(find.textContaining('Period 1'), findsOneWidget);
-    final resumed = tester.widget<Text>(find.textContaining('Period 1')).data;
+    final resumed = visibleClock(tester);
     final continued = clockSeconds(resumed) - clockSeconds(frozen);
     expect(continued, greaterThan(0));
     expect(continued, lessThan(15));
@@ -672,17 +685,14 @@ void main() {
     expect(find.text('Half-time'), findsNothing);
     expect(find.text('Start 2nd half'), findsNothing);
     expect(find.textContaining('Period 2'), findsOneWidget);
-    final started = tester.widget<Text>(find.textContaining('Period 2')).data;
+    final started = visibleClock(tester);
     expect(clockSeconds(started), greaterThan(0));
     expect(clockSeconds(started), lessThan(20));
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(seconds: 2)),
     );
     await tester.pump();
-    final continued = clockSeconds(
-          tester.widget<Text>(find.textContaining('Period 2')).data,
-        ) -
-        clockSeconds(started);
+    final continued = clockSeconds(visibleClock(tester)) - clockSeconds(started);
     expect(continued, greaterThan(0));
     expect(continued, lessThan(15));
 

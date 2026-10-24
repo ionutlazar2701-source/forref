@@ -219,5 +219,6 @@
   "fixtureGroupUpcoming": "Upcoming",
   "fixtureGroupNeedsAttention": "Needs attention",
   "fixtureGroupNotStarted": "Not started",
-  "fixtureGroupCompleted": "Completed"
+  "fixtureGroupCompleted": "Completed",
+  "checkingMatchState": "Checking match state"
 }

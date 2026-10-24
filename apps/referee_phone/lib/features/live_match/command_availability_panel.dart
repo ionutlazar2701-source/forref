@@ -27,10 +27,31 @@ class CommandAvailabilityPanel extends StatelessWidget {
           l10n.commandAvailabilityTitle,
           style: Theme.of(context).textTheme.titleMedium,
         ),
-        if (localStorageReady) Text(l10n.localStorageReady),
-        Text(l10n.phoneOnlyMode),
-        for (final entry in catalog) Text(_line(l10n, entry)),
-        Text(l10n.matchReportDisciplineUnsupported),
+        if (localStorageReady)
+          Text(l10n.localStorageReady,
+              style: Theme.of(context).textTheme.bodyMedium),
+        Text(l10n.phoneOnlyMode, style: Theme.of(context).textTheme.bodyLarge),
+        for (final entry in catalog)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              _line(l10n, entry),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: entry.kind == MobileCommandAvailabilityKind.available
+                        ? Theme.of(context).colorScheme.onSurface
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+          ),
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            l10n.matchReportDisciplineUnsupported,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+        ),
       ],
     );
   }
