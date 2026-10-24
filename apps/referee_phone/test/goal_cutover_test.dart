@@ -294,7 +294,7 @@ void main() {
     ).readAsStringSync();
     expect(page, contains('readScoreProjection'));
     expect(page, contains('freezeGoal'));
-    expect(page, contains('runtime.dispatcher.dispatch'));
+    expect(page, contains('runtime.submit'));
     expect(page, contains('no legacy fallback'));
     expect(page, isNot(contains('commitGoal')));
     expect(runtime, contains('MatchApplicationCommandWriter'));

@@ -379,7 +379,7 @@ void main() {
       'lib/mobile_commands/mobile_command_runtime.dart',
     ).readAsStringSync();
     expect(page, contains('freezeKickOff'));
-    expect(page, contains('runtime.dispatcher.dispatch'));
+    expect(page, contains('runtime.submit'));
     expect(page, isNot(contains('commitKickOff')));
     expect(page, isNot(contains('commitMatchStarted')));
     expect(page, isNot(contains('session.kickOff')));

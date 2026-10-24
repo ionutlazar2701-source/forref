@@ -38,8 +38,38 @@ final class MobileCommandRuntime {
   final bool localStorageReady;
   final bool temporalEvidenceReady;
   final bool authorityKnown;
+  final Map<MobileCommandType, MobileCommandEnvelope> _unresolved = {};
 
   MobileAuthoritySnapshot get authority => dispatcher.authority;
+
+  /// The command whose outcome is still unknown, if this session holds one.
+  MobileCommandEnvelope? unresolved(MobileCommandType type) =>
+      _unresolved[type];
+
+  /// Keeps [envelope] when a caller lost the result before [submit] recorded it.
+  ///
+  /// Does not replace an unknown command already held for that type.
+  void holdUnresolved(MobileCommandEnvelope envelope) {
+    _unresolved.putIfAbsent(envelope.commandType, () => envelope);
+  }
+
+  /// Dispatches [envelope], or reconciles the held unknown command of its type.
+  ///
+  /// A new capture identity is not submitted while an unknown command of the
+  /// same type is still unresolved.
+  Future<MobileCommandOutcome> submit(MobileCommandEnvelope envelope) async {
+    final held = _unresolved[envelope.commandType];
+    final target = held ?? envelope;
+    final outcome = held == null
+        ? await dispatcher.dispatch(target)
+        : await dispatcher.reconcile(target);
+    if (outcome.status == MobileCommandStatus.outcomeUnknown) {
+      _unresolved[envelope.commandType] = target;
+    } else {
+      _unresolved.remove(envelope.commandType);
+    }
+    return outcome;
+  }
 
   factory MobileCommandRuntime.phoneOnly({
     required MatchApplicationBoundary? boundary,
