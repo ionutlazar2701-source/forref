@@ -6,7 +6,7 @@ Branch: `cursor/forref-mobile-002-officiate-preparation`
 
 Start commit: `9cd76ec9e431263fae6ad1b218bd61d435f6ed66` (MOBILE 001, PR #29). No later commits were on that branch. The watch-banks branch was not merged.
 
-Final commit: filled in after the implementation commit is created.
+Implementation commit: `cf8922dd5272a341dae5c78c63aafa1940aefcee`.
 
 ## Scope that shipped
 
