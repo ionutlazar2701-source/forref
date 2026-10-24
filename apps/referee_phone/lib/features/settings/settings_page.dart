@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:referee_phone/app_scope.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
-import 'package:referee_phone/routing/app_router.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -22,10 +21,6 @@ class SettingsPage extends StatelessWidget {
           ListTile(
             title: Text(l10n.romanian),
             onTap: () => locale.value = const Locale('ro'),
-          ),
-          ListTile(
-            title: Text(l10n.devicesTitle),
-            onTap: () => Navigator.of(context).pushNamed(AppRouter.devices),
           ),
         ],
       ),

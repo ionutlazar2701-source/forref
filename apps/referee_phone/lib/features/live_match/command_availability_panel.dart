@@ -4,18 +4,15 @@ import '../../companion/companion_device.dart';
 import '../../l10n/app_localizations.dart';
 import '../../mobile_commands/mobile_command.dart';
 import '../../mobile_commands/mobile_command_availability.dart';
-import '../../routing/app_router.dart';
 
 class CommandAvailabilityPanel extends StatelessWidget {
   const CommandAvailabilityPanel({
     super.key,
     required this.catalog,
-    required this.noCompanion,
     required this.localStorageReady,
   });
 
   final List<MobileCommandAvailability> catalog;
-  final bool noCompanion;
   final bool localStorageReady;
 
   @override
@@ -34,12 +31,6 @@ class CommandAvailabilityPanel extends StatelessWidget {
         Text(l10n.phoneOnlyMode),
         for (final entry in catalog) Text(_line(l10n, entry)),
         Text(l10n.matchReportDisciplineUnsupported),
-        TextButton(
-          onPressed: () => Navigator.of(context).pushNamed(AppRouter.devices),
-          child: Text(
-            noCompanion ? l10n.noCompanionDevice : l10n.devicesTitle,
-          ),
-        ),
       ],
     );
   }

@@ -630,7 +630,7 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
               AppRouter.matchSetup,
               arguments: widget.matchId,
             ),
-            child: Text(l10n.setupTitle),
+            child: Text(l10n.preparationTitle),
           ),
         ],
       ),
@@ -814,9 +814,6 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                             _endedPeriod != null,
                       ),
                     ),
-                noCompanion:
-                    AppScope.of(context).mobileCommands.companions.device ==
-                        null,
                 localStorageReady:
                     AppScope.of(context).mobileCommands.localStorageReady,
               ),

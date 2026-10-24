@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:match_core/match_core.dart';
 import 'package:referee_phone/app_scope.dart';
+import 'package:referee_phone/infrastructure/competition_rules/phone_competition_format_choice.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
+import 'package:referee_phone/l10n/preparation_labels.dart';
 import 'package:referee_phone/match/client_ids.dart';
 import 'package:referee_phone/match/match_session.dart';
-import 'package:referee_phone/infrastructure/competition_rules/phone_competition_format_choice.dart';
+import 'package:referee_phone/officiate/fixture_list.dart';
+import 'package:referee_phone/officiate/preparation_assessment.dart';
 import 'package:referee_phone/routing/app_router.dart';
 
+/// One Preparation workspace for a single match.
+///
+/// Setup fields stay on the existing match aggregate. They are not Match
+/// Memory. Entering Live Match still uses [MatchSession.goReady] and does
+/// not write a sporting record.
 class MatchSetupPage extends StatefulWidget {
   const MatchSetupPage({super.key, required this.matchId});
 
@@ -30,27 +38,36 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
   PhoneCompetitionFormatChoice _formatChoice =
       PhoneCompetitionFormatChoice.additionalPlayingPhaseMayApply;
   bool _penaltyShootOutAfterMatchEnd = false;
+  bool _hydrating = false;
+  bool _closed = false;
+  Future<void> _persistChain = Future<void>.value();
 
   @override
   void initState() {
     super.initState();
-    _home = TextEditingController();
-    _away = TextEditingController();
-    _competition = TextEditingController();
-    _venue = TextEditingController();
-    _half = TextEditingController(text: '45');
-    _referee = TextEditingController();
-    _ar1 = TextEditingController();
-    _ar2 = TextEditingController();
-    _fourth = TextEditingController();
+    _home = TextEditingController()..addListener(_onDraftChanged);
+    _away = TextEditingController()..addListener(_onDraftChanged);
+    _competition = TextEditingController()..addListener(_onDraftChanged);
+    _venue = TextEditingController()..addListener(_onDraftChanged);
+    _half = TextEditingController(text: '45')..addListener(_onDraftChanged);
+    _referee = TextEditingController()..addListener(_onDraftChanged);
+    _ar1 = TextEditingController()..addListener(_onDraftChanged);
+    _ar2 = TextEditingController()..addListener(_onDraftChanged);
+    _fourth = TextEditingController()..addListener(_onDraftChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
+  void _onDraftChanged() {
+    if (_hydrating || _closed || !mounted || _session == null) return;
+    setState(() {});
+    _persistChain = _persistChain.then((_) => _persistSetup());
+  }
+
   Future<void> _load() async {
-    final match =
-        await AppScope.of(context).database.getMatch(widget.matchId);
+    final match = await AppScope.of(context).database.getMatch(widget.matchId);
     if (!mounted || match == null) return;
     _session?.dispose();
+    _hydrating = true;
     _home.text = match.teams.home.name ?? '';
     _away.text = match.teams.away.name ?? '';
     _competition.text = match.competition ?? '';
@@ -60,6 +77,7 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
     _ar1.text = match.crew.assistant1?.name ?? '';
     _ar2.text = match.crew.assistant2?.name ?? '';
     _fourth.text = match.crew.fourthOfficial?.name ?? '';
+    _hydrating = false;
     setState(() {
       _session = MatchSession(
         database: AppScope.of(context).database,
@@ -80,6 +98,7 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
 
   @override
   void dispose() {
+    _closed = true;
     _home.dispose();
     _away.dispose();
     _competition.dispose();
@@ -93,10 +112,23 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
     super.dispose();
   }
 
+  PreparationAssessment _assessment() {
+    final commands = AppScope.of(context).mobileCommands;
+    return assessPreparation(
+      homeName: _home.text,
+      awayName: _away.text,
+      halfMinutes: int.tryParse(_half.text.trim()),
+      localStorageReady: commands.localStorageReady,
+      authorityKnown: commands.authorityKnown,
+      temporalEvidenceReady: commands.temporalEvidenceReady,
+    );
+  }
+
   Future<void> _persistSetup() async {
     final session = _session;
-    if (session == null) return;
-    final minutes = int.tryParse(_half.text.trim()) ?? 45;
+    if (_closed || session == null || !mounted) return;
+    final minutes = int.tryParse(_half.text.trim());
+    final halfSeconds = minutes != null && minutes > 0 ? minutes * 60 : 0;
     await session.replace(
       session.match.copyWith(
         updatedAt: DateTime.now().toUtc(),
@@ -115,7 +147,7 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
         venue: _venue.text.trim(),
         clearVenue: _venue.text.trim().isEmpty,
         settings: session.match.settings.copyWith(
-          halfDurationSeconds: minutes * 60,
+          halfDurationSeconds: halfSeconds,
         ),
         crew: Crew(
           referee: _member(_referee.text),
@@ -145,6 +177,8 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
   }
 
   Future<void> _goLive() async {
+    final assessment = _assessment();
+    if (!assessment.canEnterLiveMatch) return;
     await _persistSetup();
     final session = _session;
     if (session == null) return;
@@ -154,8 +188,7 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
     if (!mounted) return;
     await Navigator.of(context).pushNamedAndRemoveUntil(
       AppRouter.liveMatch,
-      (route) =>
-          route.settings.name == AppRouter.matches || route.isFirst,
+      (route) => route.settings.name == AppRouter.matches || route.isFirst,
       arguments: widget.matchId,
     );
   }
@@ -216,7 +249,7 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
     await _session!.replace(match.copyWith(squads: squads));
     number.dispose();
     name.dispose();
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   @override
@@ -224,118 +257,249 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
     final l10n = AppLocalizations.of(context);
     final session = _session;
     if (session == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        key: Key('preparation-page'),
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
     final match = session.match;
+    final assessment = _assessment();
+    final identity = fixtureTitle(
+      match.copyWith(
+        teams: Teams(
+          home: match.teams.home.copyWith(
+            name: _home.text.trim(),
+            clearName: _home.text.trim().isEmpty,
+          ),
+          away: match.teams.away.copyWith(
+            name: _away.text.trim(),
+            clearName: _away.text.trim().isEmpty,
+          ),
+        ),
+      ),
+      homeNotSet: l10n.homeTeamNotSet,
+      awayNotSet: l10n.awayTeamNotSet,
+    );
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.setupTitle)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          TextField(
-            controller: _home,
-            decoration: InputDecoration(labelText: l10n.homeTeam),
-          ),
-          TextField(
-            controller: _away,
-            decoration: InputDecoration(labelText: l10n.awayTeam),
-          ),
-          TextField(
-            controller: _competition,
-            decoration: InputDecoration(labelText: l10n.competition),
-          ),
-          TextField(
-            controller: _venue,
-            decoration: InputDecoration(labelText: l10n.venue),
-          ),
-          TextField(
-            controller: _half,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(labelText: l10n.halfLength),
-          ),
-          const SizedBox(height: 16),
-          Text(l10n.competitionFormatTitle),
-          ListTile(
-            title: Text(l10n.competitionFormatNoExtraTime),
-            trailing:
-                _formatChoice ==
-                    PhoneCompetitionFormatChoice.noAdditionalPlayingPeriods
-                ? const Icon(Icons.check)
-                : null,
-            onTap: () async {
-              setState(
-                () => _formatChoice =
-                    PhoneCompetitionFormatChoice.noAdditionalPlayingPeriods,
-              );
-              await _persistCompetitionRules();
-            },
-          ),
-          ListTile(
-            title: Text(l10n.competitionFormatExtraTimeMayApply),
-            trailing:
-                _formatChoice ==
-                    PhoneCompetitionFormatChoice.additionalPlayingPhaseMayApply
-                ? const Icon(Icons.check)
-                : null,
-            onTap: () async {
-              setState(
-                () => _formatChoice =
-                    PhoneCompetitionFormatChoice.additionalPlayingPhaseMayApply,
-              );
-              await _persistCompetitionRules();
-            },
-          ),
-          CheckboxListTile(
-            title: Text(l10n.penaltyShootOutAfterMatchEnd),
-            value: _penaltyShootOutAfterMatchEnd,
-            onChanged: (value) async {
-              setState(() => _penaltyShootOutAfterMatchEnd = value ?? false);
-              await _persistCompetitionRules();
-            },
-            controlAffinity: ListTileControlAffinity.leading,
-          ),
-          TextField(
-            controller: _referee,
-            decoration: InputDecoration(labelText: l10n.crewReferee),
-          ),
-          TextField(
-            controller: _ar1,
-            decoration: InputDecoration(labelText: l10n.crewAr1),
-          ),
-          TextField(
-            controller: _ar2,
-            decoration: InputDecoration(labelText: l10n.crewAr2),
-          ),
-          TextField(
-            controller: _fourth,
-            decoration: InputDecoration(labelText: l10n.crewFourth),
-          ),
-          const SizedBox(height: 16),
-          Text(l10n.squadHome),
-          for (final player in match.squads.home.players)
-            Text('#${player.shirtNumber ?? '—'} ${player.name ?? ''}'),
-          TextButton(
-            onPressed: () => _addPlayer(home: true),
-            child: Text(l10n.addPlayer),
-          ),
-          Text(l10n.squadAway),
-          for (final player in match.squads.away.players)
-            Text('#${player.shirtNumber ?? '—'} ${player.name ?? ''}'),
-          TextButton(
-            onPressed: () => _addPlayer(home: false),
-            child: Text(l10n.addPlayer),
-          ),
-        ],
+      key: const Key('preparation-page'),
+      appBar: AppBar(title: Text(l10n.preparationTitle)),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(identity, style: Theme.of(context).textTheme.headlineSmall),
+            const SizedBox(height: 4),
+            Text(
+              match.date,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+            _section(
+              context,
+              key: const Key('section-match'),
+              title: l10n.sectionMatch,
+              children: [
+                TextField(
+                  controller: _competition,
+                  decoration: InputDecoration(
+                    labelText: l10n.competition,
+                    helperText: l10n.fieldOptional,
+                  ),
+                ),
+                TextField(
+                  controller: _venue,
+                  decoration: InputDecoration(
+                    labelText: l10n.venue,
+                    helperText: l10n.fieldOptional,
+                  ),
+                ),
+                TextField(
+                  key: const Key('half-length'),
+                  controller: _half,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: l10n.halfLength,
+                    helperText: l10n.fieldRequired,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(l10n.competitionFormatTitle),
+                ListTile(
+                  title: Text(l10n.competitionFormatNoExtraTime),
+                  trailing: _formatChoice ==
+                          PhoneCompetitionFormatChoice
+                              .noAdditionalPlayingPeriods
+                      ? const Icon(Icons.check)
+                      : null,
+                  onTap: () async {
+                    setState(
+                      () => _formatChoice = PhoneCompetitionFormatChoice
+                          .noAdditionalPlayingPeriods,
+                    );
+                    await _persistCompetitionRules();
+                  },
+                ),
+                ListTile(
+                  title: Text(l10n.competitionFormatExtraTimeMayApply),
+                  trailing: _formatChoice ==
+                          PhoneCompetitionFormatChoice
+                              .additionalPlayingPhaseMayApply
+                      ? const Icon(Icons.check)
+                      : null,
+                  onTap: () async {
+                    setState(
+                      () => _formatChoice = PhoneCompetitionFormatChoice
+                          .additionalPlayingPhaseMayApply,
+                    );
+                    await _persistCompetitionRules();
+                  },
+                ),
+                CheckboxListTile(
+                  title: Text(l10n.penaltyShootOutAfterMatchEnd),
+                  value: _penaltyShootOutAfterMatchEnd,
+                  onChanged: (value) async {
+                    setState(
+                      () => _penaltyShootOutAfterMatchEnd = value ?? false,
+                    );
+                    await _persistCompetitionRules();
+                  },
+                  controlAffinity: ListTileControlAffinity.leading,
+                ),
+              ],
+            ),
+            _section(
+              context,
+              key: const Key('section-teams'),
+              title: l10n.sectionTeams,
+              children: [
+                TextField(
+                  key: const Key('home-team'),
+                  controller: _home,
+                  decoration: InputDecoration(
+                    labelText: l10n.homeTeam,
+                    helperText: l10n.fieldRequired,
+                  ),
+                ),
+                TextField(
+                  key: const Key('away-team'),
+                  controller: _away,
+                  decoration: InputDecoration(
+                    labelText: l10n.awayTeam,
+                    helperText: l10n.fieldRequired,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(l10n.squadHome),
+                Text(l10n.fieldOptional),
+                for (final player in match.squads.home.players)
+                  Text('#${player.shirtNumber ?? '—'} ${player.name ?? ''}'),
+                TextButton(
+                  onPressed: () => _addPlayer(home: true),
+                  child: Text(l10n.addPlayer),
+                ),
+                Text(l10n.squadAway),
+                for (final player in match.squads.away.players)
+                  Text('#${player.shirtNumber ?? '—'} ${player.name ?? ''}'),
+                TextButton(
+                  onPressed: () => _addPlayer(home: false),
+                  child: Text(l10n.addPlayer),
+                ),
+              ],
+            ),
+            _section(
+              context,
+              key: const Key('section-crew'),
+              title: l10n.sectionCrew,
+              children: [
+                TextField(
+                  controller: _referee,
+                  decoration: InputDecoration(
+                    labelText: l10n.crewReferee,
+                    helperText: l10n.fieldOptional,
+                  ),
+                ),
+                TextField(
+                  controller: _ar1,
+                  decoration: InputDecoration(
+                    labelText: l10n.crewAr1,
+                    helperText: l10n.fieldOptional,
+                  ),
+                ),
+                TextField(
+                  controller: _ar2,
+                  decoration: InputDecoration(
+                    labelText: l10n.crewAr2,
+                    helperText: l10n.fieldOptional,
+                  ),
+                ),
+                TextField(
+                  controller: _fourth,
+                  decoration: InputDecoration(
+                    labelText: l10n.crewFourth,
+                    helperText: l10n.fieldOptional,
+                  ),
+                ),
+              ],
+            ),
+            _section(
+              context,
+              key: const Key('section-readiness'),
+              title: l10n.sectionReadiness,
+              children: [
+                Text(
+                  preparationClaimLabel(l10n, assessment.claim),
+                  key: const Key('readiness-claim'),
+                ),
+                for (final blocker in assessment.blockers)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(preparationBlockerLabel(l10n, blocker)),
+                  ),
+                const SizedBox(height: 8),
+                Text(
+                  l10n.optionalDetailsDoNotBlock,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: FilledButton(
-            onPressed: _goLive,
-            child: Text(l10n.liveMatch),
+            key: const Key('enter-live-match'),
+            onPressed: assessment.canEnterLiveMatch ? _goLive : null,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+            ),
+            child: Text(l10n.enterLiveMatch),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _section(
+    BuildContext context, {
+    required Key key,
+    required String title,
+    required List<Widget> children,
+  }) {
+    return Column(
+      key: key,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 24),
+        Text(title, style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        const Divider(height: 1),
+        const SizedBox(height: 12),
+        ...children,
+      ],
     );
   }
 }

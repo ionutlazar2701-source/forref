@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forref_match_core/forref_match_core.dart';
 import 'package:referee_phone/app.dart';
@@ -93,9 +94,16 @@ void main() {
     await tester.runAsync(() async {
       await Future<void>.delayed(const Duration(milliseconds: 100));
     });
-    await pumpUntilFound(tester, find.text('Match setup'));
+    await pumpUntilFound(tester, find.text('Preparation'));
     expect(find.text('Home team'), findsOneWidget);
-    await tester.tap(find.text('Live Match'));
+    expect(find.text('Watch'), findsNothing);
+    expect(find.textContaining('coming soon'), findsNothing);
+    await tester.enterText(find.byKey(const Key('home-team')), 'Home FC');
+    await tester.enterText(find.byKey(const Key('away-team')), 'Away FC');
+    await tester.pump();
+    expect(find.text('Ready to officiate on this phone'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('enter-live-match')));
+    await tester.tap(find.byKey(const Key('enter-live-match')));
     await tester.pump();
     await tester.runAsync(() async {
       await Future<void>.delayed(const Duration(milliseconds: 100));
@@ -125,7 +133,7 @@ void main() {
     final matchId = (await db.listNewestFirst()).single.matchId;
     await tester.tap(find.text('Goal'));
     await tester.pump();
-    await tester.tap(find.text('HOME'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Home FC'));
     await tester.pump();
     await tester.runAsync(() async {
       await tester.tap(find.text('Unknown'));
@@ -151,30 +159,23 @@ void main() {
     });
   });
 
-  testWidgets('F6 the device page says there is no companion', (tester) async {
+  testWidgets('F6 settings stays secondary and has no device destination', (
+    tester,
+  ) async {
     await pumpMatches(tester, testApp());
     await tester.tap(find.text('Settings'));
     await tester.pump();
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 100)),
     );
-    await pumpUntilFound(tester, find.text('Devices'));
-    await tester.tap(find.text('Devices'));
-    await tester.pump();
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 100)),
-    );
-    await pumpUntilFound(tester, find.text('No companion device'));
-    expect(find.text('No companion device'), findsOneWidget);
-    expect(
-      find.text('Phone can still run supported match workflows'),
-      findsOneWidget,
-    );
-    expect(find.text('Not paired'), findsOneWidget);
+    await pumpUntilFound(tester, find.text('English'));
+    expect(find.text('Devices'), findsNothing);
+    expect(find.text('Training'), findsNothing);
+    expect(find.textContaining('Watch'), findsNothing);
     expect(find.textContaining('controls the match'), findsNothing);
   });
 
-  testWidgets('a simulated companion is visible and not authoritative', (
+  testWidgets('a simulated companion is not a production surface', (
     tester,
   ) async {
     final registry = CompanionRegistry()
@@ -197,24 +198,11 @@ void main() {
       temporalEvidenceReady: true,
     );
     await pumpMatches(tester, testApp(mobileCommands: runtime));
-    await tester.tap(find.text('Settings'));
-    await tester.pump();
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 100)),
-    );
-    await pumpUntilFound(tester, find.text('Devices'));
-    await tester.tap(find.text('Devices'));
-    await tester.pump();
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 100)),
-    );
-    await pumpUntilFound(tester, find.text('Lab Watch'));
-    expect(find.text('Lab Watch'), findsOneWidget);
-    expect(find.text('Wear OS'), findsOneWidget);
-    expect(find.text('Connected'), findsOneWidget);
-    expect(find.text('Certified'), findsOneWidget);
-    expect(find.text('Goal capture'), findsOneWidget);
-    expect(find.text('Companion does not control the match'), findsOneWidget);
+    expect(find.text('Lab Watch'), findsNothing);
+    expect(find.text('Wear OS'), findsNothing);
+    expect(find.text('Certified'), findsNothing);
     expect(find.textContaining('Watch controls'), findsNothing);
+    expect(runtime.authority.companionHoldsCaptureAuthority, isFalse);
+    expect(runtime.companions.device?.holdsCaptureAuthority, isFalse);
   });
 }

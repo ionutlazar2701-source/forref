@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:match_core/match_core.dart';
 import 'package:referee_phone/app_scope.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
 import 'package:referee_phone/l10n/match_labels.dart';
+import 'package:referee_phone/l10n/preparation_labels.dart';
 import 'package:referee_phone/match/new_match.dart';
+import 'package:referee_phone/officiate/fixture_evidence.dart';
+import 'package:referee_phone/officiate/fixture_list.dart';
 import 'package:referee_phone/routing/app_router.dart';
 
 class MatchesPage extends StatefulWidget {
@@ -14,28 +18,56 @@ class MatchesPage extends StatefulWidget {
 }
 
 class _MatchesPageState extends State<MatchesPage> {
-  List<Match> _matches = const [];
+  List<ListedFixture> _fixtures = const [];
   bool _loading = true;
+  int _evidenceGeneration = 0;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _reload();
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_reload());
+    });
+  }
+
+  @override
+  void dispose() {
+    _evidenceGeneration++;
+    super.dispose();
   }
 
   Future<void> _reload() async {
-    final db = AppScope.of(context).database;
-    final list = await db.listNewestFirst();
+    final scope = AppScope.of(context);
+    final list = await scope.database.listNewestFirst();
     if (!mounted) return;
     setState(() {
-      _matches = list;
+      _fixtures = [
+        for (final match in list)
+          ListedFixture(match: match, evidence: const FixtureEvidence.none()),
+      ];
       _loading = false;
+    });
+    final generation = ++_evidenceGeneration;
+    final boundary = scope.matchApplication;
+    // The frame future ends here. Match Memory reads run on the root event
+    // loop so a widget-test pump is not left waiting on sqlite, and store
+    // close is not queued behind a read that the fake zone will never run.
+    Zone.root.scheduleMicrotask(() {
+      unawaited(() async {
+        final fixtures = await fixturesWithEvidence(
+          boundary: boundary,
+          matches: list,
+          cancelled: () => !mounted || generation != _evidenceGeneration,
+        );
+        if (!mounted || generation != _evidenceGeneration) return;
+        if (fixtures.length != list.length) return;
+        setState(() => _fixtures = fixtures);
+      }());
     });
   }
 
   Future<void> _newMatch() async {
-    final scope = AppScope.of(context);
-    final db = scope.database;
+    final db = AppScope.of(context).database;
     final match = newLocalMatch(DateTime.now());
     await db.upsertMatch(match);
     if (!mounted) return;
@@ -46,19 +78,29 @@ class _MatchesPageState extends State<MatchesPage> {
     await _reload();
   }
 
-  Future<void> _open(Match match) async {
-    final route = switch (match.status) {
-      MatchStatus.setup => AppRouter.matchSetup,
-      MatchStatus.completed => AppRouter.matchSummary,
-      _ => AppRouter.liveMatch,
+  Future<void> _open(ListedFixture fixture) async {
+    final group = classifyFixture(
+      match: fixture.match,
+      evidence: fixture.evidence,
+      today: DateTime.now(),
+    );
+    final route = switch (group) {
+      FixtureGroup.current => AppRouter.liveMatch,
+      FixtureGroup.completed => AppRouter.matchSummary,
+      FixtureGroup.upcoming ||
+      FixtureGroup.needsAttention ||
+      FixtureGroup.notStarted =>
+        AppRouter.matchSetup,
     };
-    await Navigator.of(context).pushNamed(route, arguments: match.matchId);
+    await Navigator.of(context)
+        .pushNamed(route, arguments: fixture.match.matchId);
     await _reload();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final sections = groupFixtures(fixtures: _fixtures, today: DateTime.now());
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.matchesTitle),
@@ -72,32 +114,31 @@ class _MatchesPageState extends State<MatchesPage> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : _matches.isEmpty
+          : sections.isEmpty
               ? Center(child: Text(l10n.emptyMatches))
               : ListView(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   children: [
-                    for (final section in _sections(l10n)) ...[
-                      ListTile(title: Text(section.label)),
-                      for (final match in section.matches)
-                        ListTile(
-                          title: Text(
-                            AppScope.of(context).matchApplication == null
-                                ? l10n.scoreLine(
-                                    homeLabel(match, l10n),
-                                    match.score.home,
-                                    match.score.away,
-                                    awayLabel(match, l10n),
-                                  )
-                                : '${homeLabel(match, l10n)} – ${awayLabel(match, l10n)}',
-                          ),
-                          subtitle: Text(matchStatusLabel(match, l10n)),
-                          onTap: () => _open(match),
+                    for (final section in sections) ...[
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                        child: Text(
+                          _groupLabel(l10n, section.group),
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                      const Divider(height: 1),
+                      for (final fixture in section.fixtures)
+                        _FixtureTile(
+                          fixture: fixture,
+                          emphasized: section.group == FixtureGroup.current,
+                          onTap: () => _open(fixture),
                         ),
                     ],
                   ],
                 ),
       floatingActionButton: SizedBox(
-        height: 56,
+        height: 48,
         child: FilledButton(
           onPressed: _newMatch,
           child: Text(l10n.newMatch),
@@ -106,34 +147,55 @@ class _MatchesPageState extends State<MatchesPage> {
     );
   }
 
-  List<_DaySection> _sections(AppLocalizations l10n) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
-    final groups = <String, List<Match>>{};
-    for (final match in _matches) {
-      final parsed = DateTime.tryParse(match.date);
-      final day = parsed == null
-          ? today
-          : DateTime(parsed.year, parsed.month, parsed.day);
-      final label = day == today
-          ? l10n.today
-          : day == yesterday
-              ? l10n.yesterday
-              : l10n.older;
-      groups.putIfAbsent(label, () => []).add(match);
-    }
-    return [
-      for (final label in [l10n.today, l10n.yesterday, l10n.older])
-        if (groups[label] != null)
-          _DaySection(label: label, matches: groups[label]!),
-    ];
+  String _groupLabel(AppLocalizations l10n, FixtureGroup group) {
+    return switch (group) {
+      FixtureGroup.current => l10n.fixtureGroupCurrent,
+      FixtureGroup.upcoming => l10n.fixtureGroupUpcoming,
+      FixtureGroup.needsAttention => l10n.fixtureGroupNeedsAttention,
+      FixtureGroup.notStarted => l10n.fixtureGroupNotStarted,
+      FixtureGroup.completed => l10n.fixtureGroupCompleted,
+    };
   }
 }
 
-final class _DaySection {
-  const _DaySection({required this.label, required this.matches});
+class _FixtureTile extends StatelessWidget {
+  const _FixtureTile({
+    required this.fixture,
+    required this.emphasized,
+    required this.onTap,
+  });
 
-  final String label;
-  final List<Match> matches;
+  final ListedFixture fixture;
+  final bool emphasized;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final match = fixture.match;
+    final attention = fixtureAttention(match);
+    final competition = match.competition?.trim();
+    final details = <String>[
+      match.date,
+      if (competition != null && competition.isNotEmpty) competition,
+      matchStatusLabel(match, l10n),
+      if (attention != null) preparationBlockerLabel(l10n, attention),
+    ];
+    final title = fixtureTitle(
+      match,
+      homeNotSet: l10n.homeTeamNotSet,
+      awayNotSet: l10n.awayTeamNotSet,
+    );
+    final tile = ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      title: Text(title),
+      subtitle: Text(details.join(' · ')),
+      onTap: onTap,
+    );
+    if (!emphasized) return tile;
+    return Material(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: tile,
+    );
+  }
 }

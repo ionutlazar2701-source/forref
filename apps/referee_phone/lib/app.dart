@@ -98,6 +98,20 @@ class _RefereeAppState extends State<RefereeApp> {
         valueListenable: locale,
         builder: (context, resolved, _) {
           return MaterialApp(
+            theme: ThemeData(
+              useMaterial3: true,
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: const Color(0xFF1F3A4C),
+                brightness: Brightness.light,
+              ),
+            ),
+            darkTheme: ThemeData(
+              useMaterial3: true,
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: const Color(0xFF1F3A4C),
+                brightness: Brightness.dark,
+              ),
+            ),
             onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
             supportedLocales: AppLocalizations.supportedLocales,
             locale: resolved,
