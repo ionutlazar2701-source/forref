@@ -8,7 +8,18 @@ import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_st
 import 'package:referee_phone/l10n/app_localizations.dart';
 import 'package:referee_phone/match_application/match_application_boundary.dart';
 import 'package:referee_phone/mobile_commands/mobile_command_runtime.dart';
+import 'package:referee_phone/design/forref_theme.dart';
 import 'package:referee_phone/routing/app_router.dart';
+
+/// Launch override for review on a host that cannot report platform
+/// brightness. Absent, the app follows the platform.
+const _brightnessOverride = String.fromEnvironment('FORREF_BRIGHTNESS');
+
+ThemeMode get _themeMode => switch (_brightnessOverride) {
+      'dark' => ThemeMode.dark,
+      'light' => ThemeMode.light,
+      _ => ThemeMode.system,
+    };
 
 class RefereeApp extends StatefulWidget {
   const RefereeApp({
@@ -98,20 +109,10 @@ class _RefereeAppState extends State<RefereeApp> {
         valueListenable: locale,
         builder: (context, resolved, _) {
           return MaterialApp(
-            theme: ThemeData(
-              useMaterial3: true,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color(0xFF1F3A4C),
-                brightness: Brightness.light,
-              ),
-            ),
-            darkTheme: ThemeData(
-              useMaterial3: true,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color(0xFF1F3A4C),
-                brightness: Brightness.dark,
-              ),
-            ),
+            debugShowCheckedModeBanner: false,
+            theme: ForrefTheme.light(),
+            darkTheme: ForrefTheme.dark(),
+            themeMode: _themeMode,
             onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
             supportedLocales: AppLocalizations.supportedLocales,
             locale: resolved,

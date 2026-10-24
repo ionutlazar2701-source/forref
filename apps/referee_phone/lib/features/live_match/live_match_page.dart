@@ -7,7 +7,9 @@ import 'package:referee_phone/features/live_match/capture_overlay.dart';
 import 'package:referee_phone/features/live_match/command_availability_panel.dart';
 import 'package:referee_phone/features/live_match/live_match_terminal_ui.dart';
 import 'package:referee_phone/infrastructure/competition_rules/phone_match_capture_context.dart';
+import 'package:referee_phone/design/forref_spacing.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
+import 'package:referee_phone/officiate/fixture_list.dart';
 import 'package:referee_phone/l10n/match_labels.dart';
 import 'package:forref_match_core/forref_match_core.dart';
 import 'package:referee_phone/match/match_session.dart';
@@ -591,7 +593,18 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
     final l10n = AppLocalizations.of(context);
     final session = _session;
     if (session == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: ForrefSpace.s16),
+              Text(l10n.checkingMatchState),
+            ],
+          ),
+        ),
+      );
     }
     final match = session.match;
     final addedMinutes = match.currentState.addedTimeSeconds ~/ 60;
@@ -621,9 +634,23 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
         !_intervalActive && _endedPeriod == null && _activePeriod == null;
     final recent = match.events.reversed.take(7).toList();
 
+    final fixtureName = fixtureTitle(
+      match,
+      homeNotSet: l10n.homeTeamNotSet,
+      awayNotSet: l10n.awayTeamNotSet,
+    );
+    final clockTrusted = cutOverClock
+        ? _elapsed.precisionSafeToShow &&
+            _elapsed.continuity == TemporalContinuityStatus.exactContinuity &&
+            _elapsed.exactElapsed != null
+        : _matchStarted;
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.liveMatch),
+        title: Text(
+          fixtureName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pushNamed(
@@ -637,11 +664,28 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
       body: Stack(
         children: [
           ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(
+              ForrefSpace.s20,
+              ForrefSpace.s8,
+              ForrefSpace.s20,
+              ForrefSpace.s32,
+            ),
             children: [
               Text(
-                '$clock  $temporalLabel',
-                style: Theme.of(context).textTheme.headlineSmall,
+                temporalLabel,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+              const SizedBox(height: ForrefSpace.s8),
+              Text(
+                clock,
+                style: clockTrusted
+                    ? Theme.of(context).textTheme.headlineLarge
+                    : Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
               ),
               if (_intervalActive && _endedPeriod != null) ...[
                 Text(l10n.periodEndedInterval(_endedPeriod!.index)),
@@ -670,6 +714,16 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                   _endedPeriod == null &&
                   addedMinutes > 0)
                 Text(l10n.clockWithAdded(clock, addedMinutes)),
+              if (_matchStarted)
+                Padding(
+                  padding: const EdgeInsets.only(top: ForrefSpace.s8),
+                  child: Text(
+                    l10n.matchStarted,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -687,7 +741,6 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                       onPressed: _kickOffPending ? null : _kickOff,
                       child: Text(l10n.completePeriodStart),
                     ),
-                  if (_matchStarted) Text(l10n.matchStarted),
                   if (_intervalActive)
                     FilledButton(
                       onPressed: _nextPeriodPending ? null : _startPeriod2,
@@ -695,11 +748,11 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                     ),
                   if (_activePeriod != null &&
                       !_elapsed.formalSuspensionActive) ...[
-                    FilledButton(
+                    OutlinedButton(
                       onPressed: _suspensionPending ? null : _suspendMatch,
                       child: Text(l10n.suspendMatch),
                     ),
-                    FilledButton(
+                    OutlinedButton(
                       onPressed: _periodEndPending ? null : _endPeriod,
                       child: Text(l10n.endPeriod),
                     ),
@@ -719,12 +772,12 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                       child: Text(l10n.endMatch),
                     ),
                   if (match.status == MatchStatus.live)
-                    FilledButton(
+                    OutlinedButton(
                       onPressed: () => _onState(session.pause),
                       child: Text(l10n.pause),
                     ),
                   if (match.status == MatchStatus.paused)
-                    FilledButton(
+                    OutlinedButton(
                       onPressed: () => _onState(session.resume),
                       child: Text(l10n.resume),
                     ),
@@ -796,13 +849,16 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                 runSpacing: 8,
                 children: [
                   for (final type in EventType.values)
-                    SizedBox(
-                      height: 48,
-                      child: FilledButton(
-                        onPressed: () => _startCapture(type),
-                        child: Text(eventTypeLabel(type, l10n)),
-                      ),
-                    ),
+                    type == EventType.goal &&
+                            (_matchStarted || _activePeriod != null)
+                        ? FilledButton(
+                            onPressed: () => _startCapture(type),
+                            child: Text(eventTypeLabel(type, l10n)),
+                          )
+                        : OutlinedButton(
+                            onPressed: () => _startCapture(type),
+                            child: Text(eventTypeLabel(type, l10n)),
+                          ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -920,7 +976,9 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
           match.score.away,
           awayLabel(match, l10n),
         ),
-        style: Theme.of(context).textTheme.headlineMedium,
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
         textAlign: TextAlign.center,
       );
     }
@@ -940,7 +998,9 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
         awayScore,
         awayLabel(match, l10n),
       ),
-      style: Theme.of(context).textTheme.headlineMedium,
+      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
       textAlign: TextAlign.center,
     );
   }

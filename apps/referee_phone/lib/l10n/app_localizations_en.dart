@@ -575,4 +575,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fixtureGroupCompleted => 'Completed';
+
+  @override
+  String get checkingMatchState => 'Checking match state';
 }

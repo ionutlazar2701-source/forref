@@ -1183,6 +1183,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Completed'**
   String get fixtureGroupCompleted;
+
+  /// No description provided for @checkingMatchState.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking match state'**
+  String get checkingMatchState;
 }
 
 class _AppLocalizationsDelegate
