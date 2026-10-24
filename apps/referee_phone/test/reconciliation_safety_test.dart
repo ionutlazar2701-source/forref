@@ -114,12 +114,6 @@ void main() {
       () async {
     final match = newLocalMatch(DateTime.utc(2026, 10, 24, 19, 1));
     await database.upsertMatch(match);
-    final runtime = MobileCommandRuntime.phoneOnly(
-      boundary: composition.boundary,
-      originDeviceId: identity.originDeviceId,
-      captureContext: (matchId) async => identity.contextFor(matchId),
-      preparation: preparation,
-    );
     final original = goalFor(match, match.teams.home.teamId);
     await composition.close();
     composition = await MatchApplicationComposition.open(storageRoot: temp);

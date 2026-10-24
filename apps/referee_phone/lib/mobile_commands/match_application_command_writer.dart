@@ -61,8 +61,8 @@ final class MatchApplicationCommandWriter implements MobileAuthoritativeWriter {
         return const MobileWriterOutcomeUnknown();
       }
       return switch (envelope.commandType) {
-        MobileCommandType.kickOff => _inspectKickOff(context, envelope),
-        MobileCommandType.goal => _inspectGoal(context, envelope),
+        MobileCommandType.kickOff => await _inspectKickOff(context, envelope),
+        MobileCommandType.goal => await _inspectGoal(context, envelope),
         _ => const MobileWriterOutcomeUnknown(),
       };
     } catch (_) {
