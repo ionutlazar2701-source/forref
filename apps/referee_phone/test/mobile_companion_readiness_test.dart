@@ -334,4 +334,11 @@ final class _CountingWriter implements MobileAuthoritativeWriter {
     calls += 1;
     return const MobileWriterSaved();
   }
+
+  @override
+  Future<MobileWriterAdmission> inspectOutcome(
+    MobileCommandEnvelope envelope,
+  ) async {
+    return const MobileWriterSaved();
+  }
 }

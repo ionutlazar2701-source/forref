@@ -38,38 +38,47 @@ final class MobileCommandRuntime {
   final bool localStorageReady;
   final bool temporalEvidenceReady;
   final bool authorityKnown;
-  final Map<MobileCommandType, MobileCommandEnvelope> _unresolved = {};
+  final Map<String, MobileCommandEnvelope> _unresolved = {};
 
   MobileAuthoritySnapshot get authority => dispatcher.authority;
 
-  /// The command whose outcome is still unknown, if this session holds one.
-  MobileCommandEnvelope? unresolved(MobileCommandType type) =>
-      _unresolved[type];
+  /// Unknown command for this match and command type, if this session holds it.
+  MobileCommandEnvelope? unresolved(MobileCommandType type, String matchId) =>
+      _unresolved[_unresolvedKey(type, matchId)];
 
   /// Keeps [envelope] when a caller lost the result before [submit] recorded it.
   ///
-  /// Does not replace an unknown command already held for that type.
+  /// Does not replace an unknown command already held for that match and type,
+  /// and does not drop an unknown command for a different match.
   void holdUnresolved(MobileCommandEnvelope envelope) {
-    _unresolved.putIfAbsent(envelope.commandType, () => envelope);
+    _unresolved.putIfAbsent(
+      _unresolvedKey(envelope.commandType, envelope.matchId),
+      () => envelope,
+    );
   }
 
-  /// Dispatches [envelope], or reconciles the held unknown command of its type.
+  /// Dispatches [envelope], or reconciles the held unknown command of its
+  /// match and type.
   ///
-  /// A new capture identity is not submitted while an unknown command of the
-  /// same type is still unresolved.
+  /// A new capture identity is not submitted for that match while its unknown
+  /// command is unresolved. Another match is not routed to this envelope.
   Future<MobileCommandOutcome> submit(MobileCommandEnvelope envelope) async {
-    final held = _unresolved[envelope.commandType];
+    final key = _unresolvedKey(envelope.commandType, envelope.matchId);
+    final held = _unresolved[key];
     final target = held ?? envelope;
     final outcome = held == null
         ? await dispatcher.dispatch(target)
         : await dispatcher.reconcile(target);
     if (outcome.status == MobileCommandStatus.outcomeUnknown) {
-      _unresolved[envelope.commandType] = target;
+      _unresolved[key] = target;
     } else {
-      _unresolved.remove(envelope.commandType);
+      _unresolved.remove(key);
     }
     return outcome;
   }
+
+  String _unresolvedKey(MobileCommandType type, String matchId) =>
+      '${type.name}\u0000$matchId';
 
   factory MobileCommandRuntime.phoneOnly({
     required MatchApplicationBoundary? boundary,
@@ -144,5 +153,12 @@ final class _BoundaryMissingWriter implements MobileAuthoritativeWriter {
   @override
   Future<MobileWriterAdmission> commit(MobileCommandEnvelope envelope) async {
     return const MobileWriterFailed('match application boundary missing');
+  }
+
+  @override
+  Future<MobileWriterAdmission> inspectOutcome(
+    MobileCommandEnvelope envelope,
+  ) async {
+    return const MobileWriterOutcomeUnknown();
   }
 }

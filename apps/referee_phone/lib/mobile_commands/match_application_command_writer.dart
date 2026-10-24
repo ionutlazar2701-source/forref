@@ -48,6 +48,50 @@ final class MatchApplicationCommandWriter implements MobileAuthoritativeWriter {
     };
   }
 
+  /// Reads Match Memory for [envelope]. Does not call the commit boundary.
+  @override
+  Future<MobileWriterAdmission> inspectOutcome(
+    MobileCommandEnvelope envelope,
+  ) async {
+    try {
+      final context = await _captureContext(envelope.matchId);
+      if (context == null ||
+          context.matchId != envelope.matchId ||
+          context.originDeviceId != envelope.originDeviceId) {
+        return const MobileWriterOutcomeUnknown();
+      }
+      return switch (envelope.commandType) {
+        MobileCommandType.kickOff => _inspectKickOff(context, envelope),
+        MobileCommandType.goal => _inspectGoal(context, envelope),
+        _ => const MobileWriterOutcomeUnknown(),
+      };
+    } catch (_) {
+      return const MobileWriterOutcomeUnknown();
+    }
+  }
+
+  Future<MobileWriterAdmission> _inspectGoal(
+    CaptureContext context,
+    MobileCommandEnvelope envelope,
+  ) async {
+    final payload = envelope.payload;
+    if (payload is! GoalCommandPayload) {
+      return const MobileWriterOutcomeUnknown();
+    }
+    return _reconcileGoal(context, payload, null);
+  }
+
+  Future<MobileWriterAdmission> _inspectKickOff(
+    CaptureContext context,
+    MobileCommandEnvelope envelope,
+  ) async {
+    final payload = envelope.payload;
+    if (payload is! KickOffCommandPayload) {
+      return const MobileWriterOutcomeUnknown();
+    }
+    return _reconcileKickOff(context, payload, null);
+  }
+
   Future<MobileWriterAdmission> _kickOff(
     CaptureContext context,
     MobileCommandEnvelope envelope,
