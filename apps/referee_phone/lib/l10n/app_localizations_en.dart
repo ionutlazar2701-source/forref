@@ -502,4 +502,77 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get capabilityPeerTransport => 'Peer transport';
+
+  @override
+  String get preparationTitle => 'Preparation';
+
+  @override
+  String get sectionMatch => 'Match';
+
+  @override
+  String get sectionTeams => 'Teams';
+
+  @override
+  String get sectionCrew => 'Crew';
+
+  @override
+  String get sectionReadiness => 'Readiness';
+
+  @override
+  String get fieldRequired => 'Required';
+
+  @override
+  String get fieldOptional => 'Optional';
+
+  @override
+  String get homeTeamNotSet => 'Home team not set';
+
+  @override
+  String get awayTeamNotSet => 'Away team not set';
+
+  @override
+  String get homeTeamRequired => 'Home team required';
+
+  @override
+  String get awayTeamRequired => 'Away team required';
+
+  @override
+  String get halfLengthRequired => 'Half length required';
+
+  @override
+  String get localRecordingUnavailable => 'Local recording unavailable';
+
+  @override
+  String get recordingAuthorityUnconfirmed => 'Recording authority unconfirmed';
+
+  @override
+  String get needsAttention => 'Needs attention';
+
+  @override
+  String get matchSetupReady => 'Match setup ready';
+
+  @override
+  String get readyToOfficiateOnThisPhone => 'Ready to officiate on this phone';
+
+  @override
+  String get optionalDetailsDoNotBlock =>
+      'Optional details do not block the match';
+
+  @override
+  String get enterLiveMatch => 'Enter Live Match';
+
+  @override
+  String get fixtureGroupCurrent => 'Current';
+
+  @override
+  String get fixtureGroupUpcoming => 'Upcoming';
+
+  @override
+  String get fixtureGroupNeedsAttention => 'Needs attention';
+
+  @override
+  String get fixtureGroupNotStarted => 'Not started';
+
+  @override
+  String get fixtureGroupCompleted => 'Completed';
 }

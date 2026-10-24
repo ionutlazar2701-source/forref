@@ -1039,6 +1039,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Peer transport'**
   String get capabilityPeerTransport;
+
+  /// No description provided for @preparationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparation'**
+  String get preparationTitle;
+
+  /// No description provided for @sectionMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Match'**
+  String get sectionMatch;
+
+  /// No description provided for @sectionTeams.
+  ///
+  /// In en, this message translates to:
+  /// **'Teams'**
+  String get sectionTeams;
+
+  /// No description provided for @sectionCrew.
+  ///
+  /// In en, this message translates to:
+  /// **'Crew'**
+  String get sectionCrew;
+
+  /// No description provided for @sectionReadiness.
+  ///
+  /// In en, this message translates to:
+  /// **'Readiness'**
+  String get sectionReadiness;
+
+  /// No description provided for @fieldRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Required'**
+  String get fieldRequired;
+
+  /// No description provided for @fieldOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get fieldOptional;
+
+  /// No description provided for @homeTeamNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Home team not set'**
+  String get homeTeamNotSet;
+
+  /// No description provided for @awayTeamNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Away team not set'**
+  String get awayTeamNotSet;
+
+  /// No description provided for @homeTeamRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Home team required'**
+  String get homeTeamRequired;
+
+  /// No description provided for @awayTeamRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Away team required'**
+  String get awayTeamRequired;
+
+  /// No description provided for @halfLengthRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Half length required'**
+  String get halfLengthRequired;
+
+  /// No description provided for @localRecordingUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Local recording unavailable'**
+  String get localRecordingUnavailable;
+
+  /// No description provided for @recordingAuthorityUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording authority unconfirmed'**
+  String get recordingAuthorityUnconfirmed;
+
+  /// No description provided for @needsAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get needsAttention;
+
+  /// No description provided for @matchSetupReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Match setup ready'**
+  String get matchSetupReady;
+
+  /// No description provided for @readyToOfficiateOnThisPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to officiate on this phone'**
+  String get readyToOfficiateOnThisPhone;
+
+  /// No description provided for @optionalDetailsDoNotBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional details do not block the match'**
+  String get optionalDetailsDoNotBlock;
+
+  /// No description provided for @enterLiveMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Live Match'**
+  String get enterLiveMatch;
+
+  /// No description provided for @fixtureGroupCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get fixtureGroupCurrent;
+
+  /// No description provided for @fixtureGroupUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get fixtureGroupUpcoming;
+
+  /// No description provided for @fixtureGroupNeedsAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get fixtureGroupNeedsAttention;
+
+  /// No description provided for @fixtureGroupNotStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not started'**
+  String get fixtureGroupNotStarted;
+
+  /// No description provided for @fixtureGroupCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get fixtureGroupCompleted;
 }
 
 class _AppLocalizationsDelegate

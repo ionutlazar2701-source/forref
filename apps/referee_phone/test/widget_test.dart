@@ -105,11 +105,15 @@ void main() {
     await tester.runAsync(() async {
       await Future<void>.delayed(const Duration(milliseconds: 100));
     });
-    await pumpUntilFound(tester, find.text('Match setup'));
+    await pumpUntilFound(tester, find.text('Preparation'));
   }
 
   Future<void> enterLiveMatch(WidgetTester tester) async {
-    await tester.tap(find.text('Live Match'));
+    await tester.enterText(find.byKey(const Key('home-team')), 'Home FC');
+    await tester.enterText(find.byKey(const Key('away-team')), 'Away FC');
+    await tester.pump();
+    await tester.ensureVisible(find.byKey(const Key('enter-live-match')));
+    await tester.tap(find.byKey(const Key('enter-live-match')));
     await tester.pump();
     await tester.runAsync(() async {
       await Future<void>.delayed(const Duration(milliseconds: 100));
@@ -131,7 +135,7 @@ void main() {
     await pumpMatchesLoaded(tester, testApp());
 
     await startNewMatchSetup(tester);
-    expect(find.text('Match setup'), findsOneWidget);
+    expect(find.text('Preparation'), findsOneWidget);
 
     await enterLiveMatch(tester);
     expect(find.text('Kick-off'), findsOneWidget);
@@ -155,14 +159,14 @@ void main() {
     final matchId = (await db.listNewestFirst()).single.matchId;
     await tester.pump(const Duration(seconds: 2));
     await tester.runAsync(() async {
-      final records =
-          await composition.boundary.durableStore.readCommittedForMatch(matchId);
+      final records = await composition.boundary.durableStore
+          .readCommittedForMatch(matchId);
       expect(records, hasLength(2));
     });
 
     await tester.tap(find.text('Goal'));
     await tester.pump();
-    await tester.tap(find.text('HOME'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Home FC'));
     await tester.pump();
     await tester.runAsync(() async {
       await tester.tap(find.text('Unknown'));
@@ -177,8 +181,8 @@ void main() {
     expect(stored.single.score.home, 0);
     expect(stored.single.score.away, 0);
     await tester.runAsync(() async {
-      final records =
-          await composition.boundary.durableStore.readCommittedForMatch(matchId);
+      final records = await composition.boundary.durableStore
+          .readCommittedForMatch(matchId);
       expect(
         records.where((record) => record.payload is GoalPayload),
         hasLength(1),
@@ -214,7 +218,8 @@ void main() {
     expect((await db.listNewestFirst()).single.status, MatchStatus.ready);
   });
 
-  testWidgets('incomplete period start is recoverable without a second match start', (
+  testWidgets(
+      'incomplete period start is recoverable without a second match start', (
     tester,
   ) async {
     var commits = 0;
@@ -263,10 +268,13 @@ void main() {
       () => Future<void>.delayed(const Duration(seconds: 2)),
     );
     await tester.pump();
-    await pumpUntilAnyFound(tester, [
-      find.textContaining('Period 1'),
-      find.text('Continuity exact'),
-    ], maxPumps: 20);
+    await pumpUntilAnyFound(
+        tester,
+        [
+          find.textContaining('Period 1'),
+          find.text('Continuity exact'),
+        ],
+        maxPumps: 20);
 
     expect(find.textContaining('Period start incomplete'), findsNothing);
     expect(find.text('Complete period start'), findsNothing);
@@ -343,7 +351,8 @@ void main() {
     expect(stored.single.events, isEmpty);
   });
 
-  testWidgets('failed suspension does not show suspended state', (tester) async {
+  testWidgets('failed suspension does not show suspended state',
+      (tester) async {
     await pumpMatchesLoaded(tester, testApp());
     await startNewMatchSetup(tester);
     await enterLiveMatch(tester);
@@ -614,7 +623,8 @@ void main() {
     expect(stored.single.events, isEmpty);
   });
 
-  testWidgets('Start Period 2 leaves the interval only after D1', (tester) async {
+  testWidgets('Start Period 2 leaves the interval only after D1',
+      (tester) async {
     await pumpMatchesLoaded(tester, testApp());
     await startNewMatchSetup(tester);
     await enterLiveMatch(tester);
@@ -854,7 +864,8 @@ void main() {
       find.textContaining('Competition format is unresolved'),
       findsOneWidget,
     );
-    final frozen = tester.widget<Text>(find.textContaining('Period 2 ended')).data;
+    final frozen =
+        tester.widget<Text>(find.textContaining('Period 2 ended')).data;
     await tester.pump(const Duration(seconds: 3));
     expect(
       tester.widget<Text>(find.textContaining('Period 2 ended')).data,

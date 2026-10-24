@@ -505,4 +505,79 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get capabilityPeerTransport => 'Transport către companion';
+
+  @override
+  String get preparationTitle => 'Pregătire';
+
+  @override
+  String get sectionMatch => 'Meci';
+
+  @override
+  String get sectionTeams => 'Echipe';
+
+  @override
+  String get sectionCrew => 'Brigadă';
+
+  @override
+  String get sectionReadiness => 'Verificare';
+
+  @override
+  String get fieldRequired => 'Obligatoriu';
+
+  @override
+  String get fieldOptional => 'Opțional';
+
+  @override
+  String get homeTeamNotSet => 'Echipa gazdă nu este setată';
+
+  @override
+  String get awayTeamNotSet => 'Echipa oaspete nu este setată';
+
+  @override
+  String get homeTeamRequired => 'Echipa gazdă este obligatorie';
+
+  @override
+  String get awayTeamRequired => 'Echipa oaspete este obligatorie';
+
+  @override
+  String get halfLengthRequired => 'Durata reprizei este obligatorie';
+
+  @override
+  String get localRecordingUnavailable =>
+      'Înregistrarea locală nu este disponibilă';
+
+  @override
+  String get recordingAuthorityUnconfirmed =>
+      'Autoritatea de înregistrare nu este confirmată';
+
+  @override
+  String get needsAttention => 'Necesită atenție';
+
+  @override
+  String get matchSetupReady => 'Configurarea meciului este gata';
+
+  @override
+  String get readyToOfficiateOnThisPhone => 'Gata de arbitraj pe acest telefon';
+
+  @override
+  String get optionalDetailsDoNotBlock =>
+      'Detaliile opționale nu blochează meciul';
+
+  @override
+  String get enterLiveMatch => 'Intră în meciul live';
+
+  @override
+  String get fixtureGroupCurrent => 'În desfășurare';
+
+  @override
+  String get fixtureGroupUpcoming => 'Urmează';
+
+  @override
+  String get fixtureGroupNeedsAttention => 'Necesită atenție';
+
+  @override
+  String get fixtureGroupNotStarted => 'Neînceput';
+
+  @override
+  String get fixtureGroupCompleted => 'Încheiate';
 }
