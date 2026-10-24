@@ -494,15 +494,20 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
       return;
     }
     setState(() => _kickOffPending = true);
+    MobileCommandEnvelope? envelope;
     try {
       final runtime = scope.mobileCommands;
-      final prepared = runtime.preparation.freezeKickOff(
-        activation: runtime.preparation.beginActivation(),
-        matchId: widget.matchId,
-        originDeviceId: captureContext.originDeviceId,
-        periodIndex: 1,
-      );
-      final outcome = await runtime.dispatcher.dispatch(prepared.envelope);
+      final held = runtime.unresolved(MobileCommandType.kickOff);
+      envelope = held ??
+          runtime.preparation
+              .freezeKickOff(
+                activation: runtime.preparation.beginActivation(),
+                matchId: widget.matchId,
+                originDeviceId: captureContext.originDeviceId,
+                periodIndex: 1,
+              )
+              .envelope;
+      final outcome = await runtime.submit(envelope);
       if (!mounted) return;
       if (outcome.status == MobileCommandStatus.saved) {
         await _refreshTemporal();
@@ -531,9 +536,16 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
       );
     } catch (_) {
       if (!mounted) return;
+      if (envelope != null) {
+        scope.mobileCommands.holdUnresolved(envelope);
+      }
       setState(() => _kickOffPending = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.kickOffNotSaved)),
+        SnackBar(
+          content: Text(
+            envelope == null ? l10n.kickOffNotSaved : l10n.outcomeUnknownLabel,
+          ),
+        ),
       );
     }
   }
@@ -910,25 +922,33 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                 onSave: (type, data) async {
                   setState(() => _captureType = null);
                   final scope = AppScope.of(context);
+                  final runtime = scope.mobileCommands;
+                  final heldGoal = runtime.unresolved(MobileCommandType.goal);
                   if (type == EventType.goal &&
                       scope.matchApplication != null &&
-                      data.teamId != null) {
-                    final captureContext = await _captureContext(scope);
-                    if (captureContext == null) return;
+                      (heldGoal != null || data.teamId != null)) {
+                    MobileCommandEnvelope? envelope = heldGoal;
                     try {
-                      final runtime = scope.mobileCommands;
-                      final draft = GoalCaptureDraft()
-                        ..scoringTeamId = data.teamId
-                        ..scorerLabel = data.player?.shirtNumber?.toString()
-                        ..displayMatchTime = null;
-                      final prepared = runtime.preparation.freezeGoal(
-                        activation: runtime.preparation.beginActivation(),
-                        matchId: widget.matchId,
-                        originDeviceId: captureContext.originDeviceId,
-                        draft: draft,
-                      );
-                      final outcome =
-                          await runtime.dispatcher.dispatch(prepared.envelope);
+                      if (envelope == null) {
+                        final captureContext = await _captureContext(scope);
+                        final teamId = data.teamId;
+                        if (captureContext == null || teamId == null) {
+                          return;
+                        }
+                        final draft = GoalCaptureDraft()
+                          ..scoringTeamId = teamId
+                          ..scorerLabel = data.player?.shirtNumber?.toString()
+                          ..displayMatchTime = null;
+                        envelope = runtime.preparation
+                            .freezeGoal(
+                              activation: runtime.preparation.beginActivation(),
+                              matchId: widget.matchId,
+                              originDeviceId: captureContext.originDeviceId,
+                              draft: draft,
+                            )
+                            .envelope;
+                      }
+                      final outcome = await runtime.submit(envelope);
                       if (!context.mounted) return;
                       if (outcome.status == MobileCommandStatus.saved) {
                         await _refreshTemporal();
@@ -944,10 +964,19 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                         ),
                       );
                     } catch (_) {
-                      // Goal not saved; no legacy fallback.
+                      // Lost result stays outcome unknown; no legacy fallback.
+                      if (envelope != null) {
+                        runtime.holdUnresolved(envelope);
+                      }
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(l10n.goalNotSaved)),
+                        SnackBar(
+                          content: Text(
+                            envelope == null
+                                ? l10n.goalNotSaved
+                                : l10n.outcomeUnknownLabel,
+                          ),
+                        ),
                       );
                     }
                     return;

@@ -36,9 +36,9 @@ Flow: UI → `MobileCommandPreparation` → `CommandAuthorityGate` → `MobileCo
 
 Freeze is first-write-wins on `commandId` inside `MobileCommandPreparation`. A later change to the draft does not retarget that activation.
 
-Status values: `draft`, `ready`, `dispatching`, `saved`, `failed`, `outcomeUnknown`, `unsupported`, `authorityUnavailable`. `saved` is recorded only after `MobileWriterSaved`, which the writer returns only for `DurableCommitSuccess`, `KickOffAuthorityCommitted`, or `KickOffAlreadyStarted`. `PeerTransportReceipt` has `notSent` and `outcomeUnknown` only. Enqueue on `MobileCommandOutbox` is not Saved.
+Status values: `draft`, `ready`, `dispatching`, `saved`, `failed`, `outcomeUnknown`, `unsupported`, `authorityUnavailable`. `saved` is recorded only after `MobileWriterSaved`. The writer returns that for `DurableCommitSuccess`, `KickOffAuthorityCommitted`, or `KickOffAlreadyStarted`, and also when a later healthy Match Memory read proves the same capture identity already committed. An unreadable or quarantined read is `outcomeUnknown`, not `failed`. `PeerTransportReceipt` has `notSent` and `outcomeUnknown` only. Enqueue on `MobileCommandOutbox` is not Saved.
 
-A known failure may be dispatched again with the same `commandId` and the same canonical body. `outcomeUnknown` is returned again and the writer is not called. The same `commandId` with a different canonical body fails closed (`command_identity_conflict`) and does not write. Sporting idempotency stays the production capture-intent key. This layer does not add a second one.
+`dispatch` of an `outcomeUnknown` receipt does not call the writer again. `reconcile` is the explicit same-identity read-back. While a command type is unresolved, `MobileCommandRuntime.submit` reuses that envelope and does not submit a new capture identity. A known failure may be dispatched again with the same `commandId` and the same canonical body. The same `commandId` with a different canonical body fails closed (`command_identity_conflict`) and does not write. Sporting idempotency stays the production capture-intent key. This layer does not add a second one. A phone-local pending-intent journal is not part of this layer.
 
 ## Availability and authority gate
 
@@ -161,7 +161,7 @@ New suites:
 - `apps/referee_phone/test/mobile_companion_readiness_test.dart` — P1–P10, plus transport receipt, single-writer block, and outbox.
 - `apps/referee_phone/test/mobile_phone_only_test.dart` — F1–F7 and a simulated companion that is visible and not authoritative.
 
-Existing kick-off and goal source checks now follow `freezeKickOff` / `freezeGoal` → `runtime.dispatcher.dispatch` → `MatchApplicationCommandWriter` → `commitKickOff` / `commitGoal`. They still forbid `session.kickOff`, `.kickOff(`, `commitMatchStarted`, `MatchSession` inside the writer, and the legacy live score line.
+Existing kick-off and goal source checks now follow `freezeKickOff` / `freezeGoal` → `runtime.submit` → `MatchApplicationCommandWriter` → `commitKickOff` / `commitGoal`. They still forbid `session.kickOff`, `.kickOff(`, `commitMatchStarted`, `MatchSession` inside the writer, and the legacy live score line.
 
 ## Remaining authority gates
 

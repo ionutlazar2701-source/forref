@@ -20,8 +20,10 @@ void main() {
   late PhoneCaptureIdentity identity;
   late PhoneMatchCaptureContext matchCaptureContext;
   late PhoneTemporalEvidenceStore evidence;
+  var closedMatchMemory = false;
 
   setUp(() async {
+    closedMatchMemory = false;
     db = LocalMatchDatabase.memory();
     temp = await Directory.systemTemp.createTemp('referee_widget_');
     composition = await MatchApplicationComposition.open(storageRoot: temp);
@@ -34,7 +36,11 @@ void main() {
   });
 
   tearDown(() async {
-    await composition.close();
+    try {
+      await composition.close();
+    } catch (_) {
+      if (!closedMatchMemory) rethrow;
+    }
     await db.close();
     if (temp.existsSync()) {
       try {
@@ -692,7 +698,8 @@ void main() {
       () => Future<void>.delayed(const Duration(seconds: 2)),
     );
     await tester.pump();
-    final continued = clockSeconds(visibleClock(tester)) - clockSeconds(started);
+    final continued =
+        clockSeconds(visibleClock(tester)) - clockSeconds(started);
     expect(continued, greaterThan(0));
     expect(continued, lessThan(15));
 
@@ -961,6 +968,38 @@ void main() {
     });
     expect(records, hasLength(4));
     expect((await db.listNewestFirst()).single.status, MatchStatus.ready);
+  });
+
+  testWidgets('unreadable match memory shows outcome unknown for kick-off',
+      (tester) async {
+    await pumpMatchesLoaded(tester, testApp());
+    await startNewMatchSetup(tester);
+    await enterLiveMatch(tester);
+    await tester.runAsync(() async {
+      await composition.boundary.durableStore.close();
+      closedMatchMemory = true;
+    });
+
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Kick-off'));
+      await Future<void>.delayed(const Duration(seconds: 2));
+    });
+    await tester.pump();
+
+    expect(find.text('Outcome unknown'), findsAtLeastNWidgets(1));
+    expect(find.text('Kick-off was not saved'), findsNothing);
+    expect(find.text('Match started'), findsNothing);
+    expect(find.text('Kick-off'), findsOneWidget);
+
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Kick-off'));
+      await Future<void>.delayed(const Duration(seconds: 2));
+    });
+    await tester.pump();
+
+    expect(find.text('Kick-off was not saved'), findsNothing);
+    expect(find.text('Match started'), findsNothing);
+    expect(find.text('Outcome unknown'), findsAtLeastNWidgets(1));
   });
 
   testWidgets('English fallback localizations load', (tester) async {

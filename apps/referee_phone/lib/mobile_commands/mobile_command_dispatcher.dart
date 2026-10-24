@@ -72,8 +72,10 @@ final class _Receipt {
 /// Routes a frozen command through the authority gate to one writer.
 ///
 /// Duplicate [MobileCommandEnvelope.commandId] after Saved is recognized and
-/// not written again. [MobileCommandStatus.outcomeUnknown] is not retried.
-/// Sporting idempotency stays inside the production commit port.
+/// not written again. [dispatch] does not retry
+/// [MobileCommandStatus.outcomeUnknown]. [reconcile] is the explicit
+/// same-identity read-back. Sporting idempotency stays inside the production
+/// commit port.
 final class MobileCommandDispatcher {
   MobileCommandDispatcher({
     required MobileAuthoritativeWriter writer,
@@ -176,6 +178,30 @@ final class MobileCommandDispatcher {
     };
     _progress[envelope.commandId] = outcome.status;
     return _remember(envelope, outcome);
+  }
+
+  /// Reads Match Memory again for an unknown receipt of this exact command.
+  ///
+  /// Does not allocate a command id. A second [dispatch] of an unknown
+  /// command still returns the stored receipt without calling the writer.
+  Future<MobileCommandOutcome> reconcile(MobileCommandEnvelope envelope) async {
+    final prior = _receipts[envelope.commandId];
+    if (prior == null) return dispatch(envelope);
+    if (prior.canonical != envelope.canonicalBody) {
+      return MobileCommandOutcome(
+        commandId: envelope.commandId,
+        status: MobileCommandStatus.failed,
+        availability: MobileCommandAvailabilityKind.unavailable,
+        writerInvoked: false,
+        completeness: MobileCommitCompleteness.none,
+        detail: MobileCommandReason.commandIdentityConflict,
+      );
+    }
+    if (prior.outcome.status != MobileCommandStatus.outcomeUnknown) {
+      return prior.outcome.copyWith(writerInvoked: false);
+    }
+    _receipts.remove(envelope.commandId);
+    return dispatch(envelope);
   }
 
   MobileCommandOutcome _remember(
