@@ -25,7 +25,8 @@ void main() {
     await boldLoader.load();
   });
 
-  testWidgets('ten cells plus unknown clock and score save reference screenshots',
+  testWidgets(
+      'ten cells plus unknown clock and score save reference screenshots',
       (tester) async {
     final shots = <String, Size>{};
     Future<void> cell({
@@ -86,10 +87,15 @@ void main() {
     const round = Size(280, 300);
     const rect = Size(240, 320);
     final people = _people();
-    final rosterState = _trusted(roster: people.players, officials: people.officials);
+    final rosterState =
+        _trusted(roster: people.players, officials: people.officials);
 
-    await cell(name: 'L-A1-centered-round', size: round, face: WatchFaceShape.round);
-    await cell(name: 'L-A2-centered-rect', size: rect, face: WatchFaceShape.rectangular);
+    await cell(
+        name: 'L-A1-centered-round', size: round, face: WatchFaceShape.round);
+    await cell(
+        name: 'L-A2-centered-rect',
+        size: rect,
+        face: WatchFaceShape.rectangular);
     await cell(
       name: 'L-C1-score-side-round',
       size: round,
@@ -189,7 +195,8 @@ void main() {
     expect(shots, hasLength(14));
   });
 
-  testWidgets('capture navigation does not activate and blocks an unsupported family',
+  testWidgets(
+      'capture navigation does not activate and blocks an unsupported family',
       (tester) async {
     final intents = <WatchIntent>[];
     await _pump(
@@ -201,6 +208,11 @@ void main() {
     );
     expect(find.text('Capture Event'), findsNothing);
     expect(find.text('Blocked'), findsOneWidget);
+    expect(find.byKey(const Key('watch-family-glyph-yellow')), findsOneWidget);
+    expect(find.byKey(const Key('watch-family-glyph-red')), findsOneWidget);
+    expect(find.byKey(const Key('watch-family-glyph-goal')), findsOneWidget);
+    expect(find.byKey(const Key('watch-family-glyph-substitution')),
+        findsOneWidget);
 
     await tester.tap(find.byKey(const Key('watch-capture-center')));
     await tester.pump();
@@ -210,7 +222,8 @@ void main() {
     await tester.pump();
     expect(intents, isEmpty);
 
-    final yellow = tester.getRect(find.byKey(const Key('watch-capture-yellow')));
+    final yellow =
+        tester.getRect(find.byKey(const Key('watch-capture-yellow')));
     final red = tester.getRect(find.byKey(const Key('watch-capture-red')));
     final sub = tester.getRect(find.byKey(const Key('watch-capture-sub')));
     expect(yellow.overlaps(red), isFalse);
@@ -225,10 +238,16 @@ void main() {
 
     await tester.tap(find.byKey(const Key('watch-capture-yellow')));
     await tester.pump();
-    expect(intents.single, isA<OfferYellowIntent>());
-    expect(intents.single.origin, IntentOrigin.watchUi);
+    expect(intents, isEmpty);
+    expect(find.byKey(const Key('watch-design-team')), findsOneWidget);
+    expect(intents.whereType<ActivateIntent>(), isEmpty);
 
     intents.clear();
+    await tester.tap(find.byKey(const Key('watch-team-back')));
+    await tester.pump();
+    expect(intents, isEmpty);
+    expect(find.byKey(const Key('watch-design-capture')), findsOneWidget);
+
     await tester.tap(find.byKey(const Key('watch-capture-back')));
     await tester.pump();
     final back = intents.single as OpenRouteIntent;
@@ -236,7 +255,8 @@ void main() {
     expect(intents.whereType<ActivateIntent>(), isEmpty);
   });
 
-  testWidgets('rectangular capture keeps the diagonal and Live Match returns without a record',
+  testWidgets(
+      'rectangular capture keeps the diagonal and Live Match returns without a record',
       (tester) async {
     final intents = <WatchIntent>[];
     await _pump(
@@ -246,7 +266,8 @@ void main() {
       onIntent: intents.add,
     );
     expect(find.text('Live Match'), findsOneWidget);
-    final yellow = tester.getRect(find.byKey(const Key('watch-capture-yellow')));
+    final yellow =
+        tester.getRect(find.byKey(const Key('watch-capture-yellow')));
     final sub = tester.getRect(find.byKey(const Key('watch-capture-sub')));
     final goal = tester.getRect(find.byKey(const Key('watch-capture-goal')));
     final red = tester.getRect(find.byKey(const Key('watch-capture-red')));
@@ -260,7 +281,8 @@ void main() {
     expect(intents.whereType<ActivateIntent>(), isEmpty);
   });
 
-  testWidgets('team selection changes context only and missing kit stays neutral',
+  testWidgets(
+      'team selection changes context only and missing kit stays neutral',
       (tester) async {
     final intents = <WatchIntent>[];
     await _pump(
@@ -291,7 +313,8 @@ void main() {
     expect(find.text('Kit colors match'), findsOneWidget);
   });
 
-  testWidgets('participant tap carries the id and a second page keeps the overflow visible',
+  testWidgets(
+      'participant tap carries the id and a second page keeps the overflow visible',
       (tester) async {
     final intents = <WatchIntent>[];
     final people = _people();
@@ -312,17 +335,20 @@ void main() {
     await tester.tap(find.byKey(const Key('watch-participant-home-71')));
     await tester.pump();
     expect(intents.single, isA<SelectParticipantIntent>());
-    expect((intents.single as SelectParticipantIntent).participantId, 'home-71');
+    expect(
+        (intents.single as SelectParticipantIntent).participantId, 'home-71');
     expect(intents.whereType<ActivateIntent>(), isEmpty);
 
     intents.clear();
-    await tester.drag(find.byKey(const Key('watch-participant-pager')), const Offset(-280, 0));
+    await tester.drag(find.byKey(const Key('watch-participant-pager')),
+        const Offset(-280, 0));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('More players'), findsOneWidget);
     expect(find.text('5'), findsOneWidget);
 
-    await tester.drag(find.byKey(const Key('watch-participant-pager')), const Offset(-280, 0));
+    await tester.drag(find.byKey(const Key('watch-participant-pager')),
+        const Offset(-280, 0));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('Team Officials'), findsOneWidget);
@@ -348,7 +374,8 @@ void main() {
     expect(find.text('Blocked'), findsWidgets);
   });
 
-  testWidgets('unknown clock does not show a boundary and conflicted score is not a numeral',
+  testWidgets(
+      'unknown clock does not show a boundary and conflicted score is not a numeral',
       (tester) async {
     await _pump(
       tester,
@@ -363,7 +390,8 @@ void main() {
       tester,
       layout: WatchLiveLayout.scoreSide,
       state: _trusted(
-        score: const ScorePresentation(available: false, label: 'Score conflicted'),
+        score: const ScorePresentation(
+            available: false, label: 'Score conflicted'),
       ),
     );
     expect(find.text('Score conflicted'), findsOneWidget);
@@ -398,7 +426,8 @@ void main() {
     expect(find.text('LISTĂ'), findsOneWidget);
   });
 
-  testWidgets('an older input epoch does not commit the capture family', (tester) async {
+  testWidgets('an older input epoch does not commit the capture family',
+      (tester) async {
     final intents = <WatchIntent>[];
     Future<void> pump(int epoch) {
       return tester.pumpWidget(

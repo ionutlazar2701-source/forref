@@ -13,6 +13,9 @@ import 'lab_support.dart';
 /// Composition changes must write nothing. The watch is the only interaction
 /// surface for sporting capture. Research and Integration Sandbox stay apart.
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(loadReadableFonts);
+
   group('default launch', () {
     testWidgets('the device is the hero and complexity is on demand', (tester) async {
       final controller = await pumpLab(tester, size: const Size(1440, 900));

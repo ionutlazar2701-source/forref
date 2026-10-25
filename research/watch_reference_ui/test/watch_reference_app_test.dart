@@ -6,7 +6,9 @@ import 'package:simulator_presentation/simulator_presentation.dart';
 import 'package:watch_reference_ui/watch_reference_ui.dart';
 
 void main() {
-  test('the reference app does not depend on the instrument or production authority', () {
+  test(
+      'the reference app does not depend on the instrument or production authority',
+      () {
     final pubspec = File('pubspec.yaml').readAsStringSync().toLowerCase();
     for (final token in [
       'hf_v2',
@@ -21,7 +23,9 @@ void main() {
     }
   });
 
-  testWidgets('capture emits a watch-ui route intent and does not invent a save', (tester) async {
+  testWidgets(
+      'capture emits a watch-ui route intent and does not invent a save',
+      (tester) async {
     final intents = <WatchIntent>[];
     await tester.pumpWidget(
       MaterialApp(
@@ -38,6 +42,8 @@ void main() {
     expect(find.text('Clock unavailable'), findsOneWidget);
     expect(find.text('Score unavailable'), findsOneWidget);
     expect(find.text(ResearchCommitPhrases.idle), findsOneWidget);
+    expect(find.text('Capture unavailable'), findsNothing);
+    expect(find.byKey(const Key('watch-capture-ring')), findsOneWidget);
     await tester.tap(find.text('Capture'));
     await tester.pump();
     final intent = intents.single as OpenRouteIntent;
@@ -45,7 +51,8 @@ void main() {
     expect(intent.origin, IntentOrigin.watchUi);
   });
 
-  testWidgets('a tiny aperture is not fit instead of shrinking the actions', (tester) async {
+  testWidgets('a tiny aperture is not fit instead of shrinking the actions',
+      (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Align(
