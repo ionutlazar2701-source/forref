@@ -6,11 +6,12 @@ import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dar
 import 'package:referee_phone/design/forref_components.dart';
 import 'package:referee_phone/design/forref_spacing.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
-import 'package:referee_phone/officiate/fixture_list.dart';
 import 'package:referee_phone/l10n/match_labels.dart';
+import 'package:referee_phone/officiate/fixture_list.dart';
 import 'package:referee_phone/match/match_session.dart';
 import 'package:referee_phone/match/new_match.dart';
 import 'package:referee_phone/routing/app_router.dart';
+import 'package:referee_phone/features/match_summary/summary_truth.dart';
 
 class MatchSummaryPage extends StatefulWidget {
   const MatchSummaryPage({super.key, required this.matchId});
@@ -111,6 +112,13 @@ class _MatchSummaryPageState extends State<MatchSummaryPage> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     final match = session.match;
+    final truth = summarizeMatchTruth(
+      boundaryPresent: AppScope.of(context).matchApplication != null,
+      projection: _scoreProjection,
+      legacyStatus: match.status,
+      homeTeamId: match.teams.home.teamId,
+      awayTeamId: match.teams.away.teamId,
+    );
     return Scaffold(
       appBar: AppBar(title: Text(l10n.summary)),
       body: ListView(
@@ -127,30 +135,48 @@ class _MatchSummaryPageState extends State<MatchSummaryPage> {
               homeNotSet: l10n.homeTeamNotSet,
               awayNotSet: l10n.awayTeamNotSet,
             ),
-            detail: '${match.date} · ${matchStatusLabel(match, l10n)}',
+            detail: truth.evidence == SummaryEvidence.known
+                ? '${match.date} · ${matchStatusLabel(match, l10n)}'
+                : match.date,
             large: true,
           ),
           const SizedBox(height: ForrefSpace.s24),
-          if (_summaryScoreHeadline(context, match, l10n) != null)
-            _summaryScoreHeadline(context, match, l10n)!,
-          Text(
-            formatMatchClock(session.displayedElapsed()),
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
-          const SizedBox(height: 12),
-          for (final event in match.events.reversed)
-            ListTile(
-              title: Text(
-                '${formatMatchClock(event.matchTime)}  ${eventTypeLabel(event.type, l10n)}'
-                '${event.status == EventStatus.incomplete ? ' · ${l10n.incomplete}' : ''}',
+          if (truth.showProjectedScore)
+            Text(
+              l10n.scoreLine(
+                homeLabel(match, l10n),
+                truth.homeGoals!,
+                truth.awayGoals!,
+                awayLabel(match, l10n),
+              ),
+              key: const Key('summary-score'),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            )
+          else
+            SummaryEvidenceNotice(evidence: truth.evidence),
+          if (truth.showMutableTimeline) ...[
+            Text(
+              formatMatchClock(session.displayedElapsed()),
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
+            const SizedBox(height: 12),
+            for (final event in match.events.reversed)
+              ListTile(
+                title: Text(
+                  '${formatMatchClock(event.matchTime)}  ${eventTypeLabel(event.type, l10n)}'
+                  '${event.status == EventStatus.incomplete ? ' · ${l10n.incomplete}' : ''}',
+                ),
+              ),
+          ],
           const SizedBox(height: 16),
-          if (match.status == MatchStatus.fullTime)
+          if (truth.showLegacyFinish)
             FilledButton(
+              key: const Key('summary-finish'),
               onPressed: _finish,
               child: Text(l10n.finishMatch),
             ),
@@ -173,45 +199,29 @@ class _MatchSummaryPageState extends State<MatchSummaryPage> {
       ),
     );
   }
+}
 
-  Widget? _summaryScoreHeadline(
-    BuildContext context,
-    Match match,
-    AppLocalizations l10n,
-  ) {
-    final boundary = AppScope.of(context).matchApplication;
-    if (boundary == null) {
-      return Text(
-        l10n.scoreLine(
-          homeLabel(match, l10n),
-          match.score.home,
-          match.score.away,
-          awayLabel(match, l10n),
-        ),
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-          fontFeatures: const [FontFeature.tabularFigures()],
-        ),
-      );
-    }
-    final projection = _scoreProjection;
-    if (projection == null || projection is! KnownScore) {
-      return null;
-    }
-    final homeId = MatchTeamId(match.teams.home.teamId);
-    final awayId = MatchTeamId(match.teams.away.teamId);
-    final homeScore = projection.goalsByTeam[homeId];
-    final awayScore = projection.goalsByTeam[awayId];
-    if (homeScore == null || awayScore == null) return null;
-    return Text(
-      l10n.scoreLine(
-        homeLabel(match, l10n),
-        homeScore,
-        awayScore,
-        awayLabel(match, l10n),
-      ),
-      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-        fontFeatures: const [FontFeature.tabularFigures()],
-      ),
+/// Unavailable, conflicted, or missing Match Memory. No numeral score.
+class SummaryEvidenceNotice extends StatelessWidget {
+  const SummaryEvidenceNotice({super.key, required this.evidence});
+
+  final SummaryEvidence evidence;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final title = switch (evidence) {
+      SummaryEvidence.boundaryMissing => l10n.matchRecordUnavailable,
+      SummaryEvidence.conflicted => l10n.matchRecordScoreConflicted,
+      SummaryEvidence.unavailable ||
+      SummaryEvidence.known =>
+        l10n.matchRecordScoreUnavailable,
+    };
+    return ForrefNotice(
+      title: title,
+      titleKey: const Key('summary-evidence'),
+      lines: [l10n.matchRecordNotComplete],
+      tone: ForrefNoticeTone.unavailable,
     );
   }
 }
