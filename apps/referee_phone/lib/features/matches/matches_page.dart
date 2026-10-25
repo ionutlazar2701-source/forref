@@ -115,6 +115,14 @@ class _MatchesPageState extends State<MatchesPage> {
         ),
         actions: [
           TextButton(
+            key: const Key('open-training'),
+            onPressed: () async {
+              await Navigator.of(context).pushNamed(AppRouter.training);
+              await _reload();
+            },
+            child: Text(l10n.trainingTitle),
+          ),
+          TextButton(
             onPressed: () =>
                 Navigator.of(context).pushNamed(AppRouter.settingsPath),
             child: Text(l10n.settings),
