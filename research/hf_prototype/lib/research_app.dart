@@ -7,6 +7,7 @@ import 'package:simulator_geometry/simulator_geometry.dart';
 import 'package:simulator_hf_bridge/simulator_hf_bridge.dart';
 import 'package:simulator_presentation/simulator_presentation.dart';
 import 'package:simulator_sandbox/simulator_sandbox.dart';
+import 'package:watch_reference_ui/watch_reference_ui.dart';
 
 import 'src/lab_bridge.dart';
 import 'src/lab_model.dart';
@@ -109,6 +110,12 @@ class ResearchController extends ChangeNotifier {
   LabWorkspace workspace = LabWorkspace.focus;
   InspectorSection? inspector;
   double stageZoom = 1;
+
+  /// Presentation-only watch design controls. They do not write research records.
+  WatchLiveLayout watchLiveLayout = WatchLiveLayout.centered;
+  WatchDesignFrame watchDesignFrame = WatchDesignFrame.flow;
+  bool watchBeyondNominal = false;
+  WatchLanguage watchLanguage = WatchLanguage.en;
   String compareProfileId = defaultCompareProfileId;
   bool compareInputOnPrimary = true;
   bool deviceSelectorOpen = false;
@@ -193,6 +200,32 @@ class ResearchController extends ChangeNotifier {
   void setStageZoom(double next) {
     stageZoom = next.clamp(0.5, 1.0);
     notifyListeners();
+  }
+
+  void _setDesign(void Function() apply) {
+    apply();
+    inputEpoch += 1;
+    notifyListeners();
+  }
+
+  void setWatchLiveLayout(WatchLiveLayout next) {
+    if (next == watchLiveLayout) return;
+    _setDesign(() => watchLiveLayout = next);
+  }
+
+  void setWatchDesignFrame(WatchDesignFrame next) {
+    if (next == watchDesignFrame) return;
+    _setDesign(() => watchDesignFrame = next);
+  }
+
+  void setWatchBeyondNominal(bool next) {
+    if (next == watchBeyondNominal) return;
+    _setDesign(() => watchBeyondNominal = next);
+  }
+
+  void setWatchLanguage(WatchLanguage next) {
+    if (next == watchLanguage) return;
+    _setDesign(() => watchLanguage = next);
   }
 
   void setDeviceSelectorOpen(bool open) {
