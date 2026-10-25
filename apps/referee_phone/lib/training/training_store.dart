@@ -33,6 +33,10 @@ final class TrainingStartBlocked extends TrainingStartResult {
 ///
 /// A file that cannot be decoded is unreadable. It is not shown as an empty
 /// history and it is not rewritten.
+///
+/// Read, decide, and write stay on one synchronous turn. An awaited lock
+/// would let two starts both observe an empty ledger, and a future created
+/// outside a widget-test zone would never resume that test.
 final class TrainingStore {
   TrainingStore({
     required this.directory,
@@ -57,7 +61,9 @@ final class TrainingStore {
     return 'training-$micros-$_sequence';
   }
 
-  Future<TrainingLedger> load() async {
+  Future<TrainingLedger> load() => Future<TrainingLedger>.value(_readLedger());
+
+  TrainingLedger _readLedger() {
     final target = file;
     if (!target.existsSync()) {
       return const TrainingLedger(sessions: []);
@@ -88,53 +94,66 @@ final class TrainingStore {
   Future<TrainingStartResult> startGeneral({
     String? title,
     String? requestId,
-  }) async {
-    final ledger = await load();
+  }) {
+    final ledger = _readLedger();
     if (ledger.unreadable) {
-      return const TrainingStartBlocked(TrainingStartDenial.ledgerUnreadable);
+      return Future<TrainingStartResult>.value(
+        const TrainingStartBlocked(TrainingStartDenial.ledgerUnreadable),
+      );
     }
     if (requestId != null) {
       final prior = ledger.byRequest(requestId);
-      if (prior != null) return TrainingAlreadyPresent(prior);
+      if (prior != null) {
+        return Future<TrainingStartResult>.value(TrainingAlreadyPresent(prior));
+      }
     }
     final open = ledger.openSession;
     if (open != null) {
-      return const TrainingStartBlocked(TrainingStartDenial.anotherSessionOpen);
+      return Future<TrainingStartResult>.value(
+        const TrainingStartBlocked(TrainingStartDenial.anotherSessionOpen),
+      );
     }
     final session = _newSession(
       kind: TrainingKind.general,
       title: title,
       requestId: requestId,
     );
-    await _write(ledger.add(session));
-    return TrainingStarted(session);
+    _write(ledger.add(session));
+    return Future<TrainingStartResult>.value(TrainingStarted(session));
   }
 
   /// One warm-up for [matchId]. A second call returns the original session.
   Future<TrainingStartResult> startWarmUp({
     required String matchId,
     String? title,
-  }) async {
-    final ledger = await load();
+  }) {
+    final ledger = _readLedger();
     if (ledger.unreadable) {
-      return const TrainingStartBlocked(TrainingStartDenial.ledgerUnreadable);
+      return Future<TrainingStartResult>.value(
+        const TrainingStartBlocked(TrainingStartDenial.ledgerUnreadable),
+      );
     }
     final existing = ledger.warmUpFor(matchId);
-    if (existing != null) return TrainingAlreadyPresent(existing);
+    if (existing != null) {
+      return Future<TrainingStartResult>.value(
+          TrainingAlreadyPresent(existing));
+    }
     if (ledger.openSession != null) {
-      return const TrainingStartBlocked(TrainingStartDenial.anotherSessionOpen);
+      return Future<TrainingStartResult>.value(
+        const TrainingStartBlocked(TrainingStartDenial.anotherSessionOpen),
+      );
     }
     final session = _newSession(
       kind: TrainingKind.preMatchWarmUp,
       title: title,
       linkedMatchId: matchId,
     );
-    await _write(ledger.add(session));
-    return TrainingStarted(session);
+    _write(ledger.add(session));
+    return Future<TrainingStartResult>.value(TrainingStarted(session));
   }
 
   Future<TrainingSession?> session(String id) async {
-    final ledger = await load();
+    final ledger = _readLedger();
     if (ledger.unreadable) return null;
     return ledger.byId(id);
   }
@@ -148,26 +167,30 @@ final class TrainingStore {
   Future<TrainingSession?> finish(String id) =>
       _transition(id, TrainingEventKind.finished);
 
-  Future<TrainingSession?> updateNote(String id, String note) async {
-    final ledger = await load();
-    if (ledger.unreadable) return null;
+  Future<TrainingSession?> updateNote(String id, String note) {
+    final ledger = _readLedger();
+    if (ledger.unreadable) return Future<TrainingSession?>.value();
     final current = ledger.byId(id);
-    if (current == null) return null;
+    if (current == null) return Future<TrainingSession?>.value();
     final updated = current.copyWith(note: note);
-    await _write(ledger.replace(updated));
-    return updated;
+    _write(ledger.replace(updated));
+    return Future<TrainingSession?>.value(updated);
   }
 
   Future<TrainingSession?> _transition(
-      String id, TrainingEventKind kind) async {
-    final ledger = await load();
-    if (ledger.unreadable) return null;
+    String id,
+    TrainingEventKind kind,
+  ) {
+    final ledger = _readLedger();
+    if (ledger.unreadable) return Future<TrainingSession?>.value();
     final current = ledger.byId(id);
-    if (current == null) return null;
+    if (current == null) return Future<TrainingSession?>.value();
     final next = _apply(current, kind, _clock().toUtc());
-    if (identical(next, current)) return current;
-    await _write(ledger.replace(next));
-    return next;
+    if (identical(next, current)) {
+      return Future<TrainingSession?>.value(current);
+    }
+    _write(ledger.replace(next));
+    return Future<TrainingSession?>.value(next);
   }
 
   TrainingSession _apply(
@@ -210,7 +233,7 @@ final class TrainingStore {
     );
   }
 
-  Future<void> _write(TrainingLedger ledger) async {
+  void _write(TrainingLedger ledger) {
     if (!directory.existsSync()) {
       directory.createSync(recursive: true);
     }

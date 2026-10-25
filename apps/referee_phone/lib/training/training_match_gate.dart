@@ -7,7 +7,22 @@ import '../officiate/fixture_evidence.dart';
 import '../officiate/fixture_list.dart';
 import 'training_session.dart';
 
-/// Reads fixture classification before a training start.
+/// Legacy full time is not, by itself, a running match.
+///
+/// An authoritative start that has not authoritatively ended still blocks.
+/// This does not mark the match complete and does not write Match Memory.
+bool trainingMatchStillRunning({
+  required Match match,
+  required FixtureEvidence evidence,
+}) {
+  if (evidence.authoritativelyEnded) return false;
+  if (evidence.authoritativelyStarted) return true;
+  return match.status == MatchStatus.live ||
+      match.status == MatchStatus.paused ||
+      match.status == MatchStatus.halfTime;
+}
+
+/// Reads match evidence before a training start.
 ///
 /// A failed Match Memory read blocks the start. This does not write a match
 /// and does not stop a match that is already open.
@@ -47,12 +62,9 @@ Future<TrainingStartDenial?> trainingMatchDenial({
       boundary: boundary,
       matchId: match.matchId,
     );
-    final group = classifyFixture(
-      match: match,
-      evidence: evidence,
-      today: today,
-    );
-    if (group == FixtureGroup.current) inProgress = true;
+    if (trainingMatchStillRunning(match: match, evidence: evidence)) {
+      inProgress = true;
+    }
   }
   return denyTrainingStart(
     anotherSessionOpen: anotherSessionOpen,
