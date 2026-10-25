@@ -249,7 +249,27 @@ class _FixtureTile extends StatelessWidget {
     return Material(
       color:
           current ? theme.colorScheme.surfaceContainerHigh : Colors.transparent,
-      child: InkWell(onTap: onTap, child: child),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InkWell(onTap: onTap, child: child),
+          if (current)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton(
+                key: Key('open-match-record-${match.matchId}'),
+                onPressed: () {
+                  Navigator.of(context).pushNamed(
+                    AppRouter.matchRecord,
+                    arguments: match.matchId,
+                  );
+                },
+                child: Text(l10n.matchRecordAction),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

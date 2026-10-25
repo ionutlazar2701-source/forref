@@ -1189,6 +1189,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Checking match state'**
   String get checkingMatchState;
+
+  /// No description provided for @matchRecordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Match record'**
+  String get matchRecordTitle;
+
+  /// No description provided for @matchRecordAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Match record'**
+  String get matchRecordAction;
+
+  /// No description provided for @matchRecordNoEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'No authoritative events'**
+  String get matchRecordNoEvents;
+
+  /// No description provided for @matchRecordUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Match record cannot be read'**
+  String get matchRecordUnavailable;
+
+  /// No description provided for @matchRecordScoreUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Score unavailable'**
+  String get matchRecordScoreUnavailable;
+
+  /// No description provided for @matchRecordScoreConflicted.
+  ///
+  /// In en, this message translates to:
+  /// **'Score conflicted'**
+  String get matchRecordScoreConflicted;
+
+  /// No description provided for @matchRecordPhaseUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Match phase cannot be established'**
+  String get matchRecordPhaseUnavailable;
+
+  /// No description provided for @matchRecordNotComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Full time is not match completion'**
+  String get matchRecordNotComplete;
+
+  /// No description provided for @matchRecordEndedFact.
+  ///
+  /// In en, this message translates to:
+  /// **'Match ended'**
+  String get matchRecordEndedFact;
+
+  /// No description provided for @matchRecordGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal · {team}'**
+  String matchRecordGoal(String team);
+
+  /// No description provided for @matchRecordPeriodStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Period {index} started'**
+  String matchRecordPeriodStarted(int index);
+
+  /// No description provided for @matchRecordPeriodEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Period {index} ended'**
+  String matchRecordPeriodEnded(int index);
+
+  /// No description provided for @matchRecordOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Committed record'**
+  String get matchRecordOther;
+
+  /// No description provided for @matchRecordReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Read only. Opening this screen does not save a record.'**
+  String get matchRecordReadOnly;
 }
 
 class _AppLocalizationsDelegate

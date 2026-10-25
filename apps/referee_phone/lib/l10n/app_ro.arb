@@ -196,5 +196,34 @@
   "fixtureGroupNeedsAttention": "Necesită atenție",
   "fixtureGroupNotStarted": "Neînceput",
   "fixtureGroupCompleted": "Încheiate",
-  "checkingMatchState": "Se verifică starea meciului"
+  "checkingMatchState": "Se verifică starea meciului",
+  "matchRecordTitle": "Fișa meciului",
+  "matchRecordAction": "Fișa meciului",
+  "matchRecordNoEvents": "Niciun eveniment autoritativ",
+  "matchRecordUnavailable": "Fișa meciului nu poate fi citită",
+  "matchRecordScoreUnavailable": "Scor indisponibil",
+  "matchRecordScoreConflicted": "Scor în conflict",
+  "matchRecordPhaseUnavailable": "Faza meciului nu poate fi stabilită",
+  "matchRecordNotComplete": "Timpul regulamentar nu înseamnă meci încheiat",
+  "matchRecordEndedFact": "Meci încheiat",
+  "matchRecordGoal": "Gol · {team}",
+  "@matchRecordGoal": {
+    "placeholders": {
+      "team": {"type": "String"}
+    }
+  },
+  "matchRecordPeriodStarted": "Repriza {index} a început",
+  "@matchRecordPeriodStarted": {
+    "placeholders": {
+      "index": {"type": "int"}
+    }
+  },
+  "matchRecordPeriodEnded": "Repriza {index} s-a încheiat",
+  "@matchRecordPeriodEnded": {
+    "placeholders": {
+      "index": {"type": "int"}
+    }
+  },
+  "matchRecordOther": "Înregistrare consemnată",
+  "matchRecordReadOnly": "Doar citire. Deschiderea acestui ecran nu salvează o înregistrare."
 }

@@ -583,4 +583,55 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get checkingMatchState => 'Se verifică starea meciului';
+
+  @override
+  String get matchRecordTitle => 'Fișa meciului';
+
+  @override
+  String get matchRecordAction => 'Fișa meciului';
+
+  @override
+  String get matchRecordNoEvents => 'Niciun eveniment autoritativ';
+
+  @override
+  String get matchRecordUnavailable => 'Fișa meciului nu poate fi citită';
+
+  @override
+  String get matchRecordScoreUnavailable => 'Scor indisponibil';
+
+  @override
+  String get matchRecordScoreConflicted => 'Scor în conflict';
+
+  @override
+  String get matchRecordPhaseUnavailable =>
+      'Faza meciului nu poate fi stabilită';
+
+  @override
+  String get matchRecordNotComplete =>
+      'Timpul regulamentar nu înseamnă meci încheiat';
+
+  @override
+  String get matchRecordEndedFact => 'Meci încheiat';
+
+  @override
+  String matchRecordGoal(String team) {
+    return 'Gol · $team';
+  }
+
+  @override
+  String matchRecordPeriodStarted(int index) {
+    return 'Repriza $index a început';
+  }
+
+  @override
+  String matchRecordPeriodEnded(int index) {
+    return 'Repriza $index s-a încheiat';
+  }
+
+  @override
+  String get matchRecordOther => 'Înregistrare consemnată';
+
+  @override
+  String get matchRecordReadOnly =>
+      'Doar citire. Deschiderea acestui ecran nu salvează o înregistrare.';
 }
