@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../features/live_match/live_match_page.dart';
+import '../features/match_record/match_record_page.dart';
 import '../features/match_setup/match_setup_page.dart';
 import '../features/match_summary/match_summary_page.dart';
 import '../features/matches/matches_page.dart';
@@ -13,6 +14,7 @@ abstract final class AppRouter {
   static const matchSetup = '/setup';
   static const liveMatch = '/live';
   static const matchSummary = '/summary';
+  static const matchRecord = '/record';
   static const settingsPath = '/settings';
   static const training = '/training';
   static const trainingSession = '/training/session';
@@ -24,6 +26,7 @@ abstract final class AppRouter {
       matchSetup when argument != null => MatchSetupPage(matchId: argument),
       liveMatch when argument != null => LiveMatchPage(matchId: argument),
       matchSummary when argument != null => MatchSummaryPage(matchId: argument),
+      matchRecord when argument != null => MatchRecordPage(matchId: argument),
       training => const TrainingListPage(),
       trainingSession when argument != null =>
         TrainingSessionPage(sessionId: argument),

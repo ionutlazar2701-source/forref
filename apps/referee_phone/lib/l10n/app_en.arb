@@ -249,5 +249,34 @@
   "trainingBlockedMatchOpen": "A match is in progress on this phone. Training was not started.",
   "trainingBlockedMatchUnverified": "Match state is not verified. Training was not started.",
   "trainingWarmUpAction": "Pre-match warm-up",
-  "trainingDuration": "Duration"
+  "trainingDuration": "Duration",
+  "matchRecordTitle": "Match record",
+  "matchRecordAction": "Match record",
+  "matchRecordNoEvents": "No authoritative events",
+  "matchRecordUnavailable": "Match record cannot be read",
+  "matchRecordScoreUnavailable": "Score unavailable",
+  "matchRecordScoreConflicted": "Score conflicted",
+  "matchRecordPhaseUnavailable": "Match phase cannot be established",
+  "matchRecordNotComplete": "Full time is not match completion",
+  "matchRecordEndedFact": "Match ended",
+  "matchRecordGoal": "Goal · {team}",
+  "@matchRecordGoal": {
+    "placeholders": {
+      "team": {"type": "String"}
+    }
+  },
+  "matchRecordPeriodStarted": "Period {index} started",
+  "@matchRecordPeriodStarted": {
+    "placeholders": {
+      "index": {"type": "int"}
+    }
+  },
+  "matchRecordPeriodEnded": "Period {index} ended",
+  "@matchRecordPeriodEnded": {
+    "placeholders": {
+      "index": {"type": "int"}
+    }
+  },
+  "matchRecordOther": "Committed record",
+  "matchRecordReadOnly": "Read only. Opening this screen does not save a record."
 }

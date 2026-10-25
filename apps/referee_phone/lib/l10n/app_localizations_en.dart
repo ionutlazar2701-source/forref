@@ -655,4 +655,53 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trainingDuration => 'Duration';
+
+  @override
+  String get matchRecordTitle => 'Match record';
+
+  @override
+  String get matchRecordAction => 'Match record';
+
+  @override
+  String get matchRecordNoEvents => 'No authoritative events';
+
+  @override
+  String get matchRecordUnavailable => 'Match record cannot be read';
+
+  @override
+  String get matchRecordScoreUnavailable => 'Score unavailable';
+
+  @override
+  String get matchRecordScoreConflicted => 'Score conflicted';
+
+  @override
+  String get matchRecordPhaseUnavailable => 'Match phase cannot be established';
+
+  @override
+  String get matchRecordNotComplete => 'Full time is not match completion';
+
+  @override
+  String get matchRecordEndedFact => 'Match ended';
+
+  @override
+  String matchRecordGoal(String team) {
+    return 'Goal · $team';
+  }
+
+  @override
+  String matchRecordPeriodStarted(int index) {
+    return 'Period $index started';
+  }
+
+  @override
+  String matchRecordPeriodEnded(int index) {
+    return 'Period $index ended';
+  }
+
+  @override
+  String get matchRecordOther => 'Committed record';
+
+  @override
+  String get matchRecordReadOnly =>
+      'Read only. Opening this screen does not save a record.';
 }

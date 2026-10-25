@@ -544,6 +544,14 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
                     titleKey: const Key('training-warm-up-denial'),
                     tone: ForrefNoticeTone.attention,
                   ),
+                TextButton(
+                  key: const Key('open-match-record'),
+                  onPressed: () => Navigator.of(context).pushNamed(
+                    AppRouter.matchRecord,
+                    arguments: widget.matchId,
+                  ),
+                  child: Text(l10n.matchRecordAction),
+                ),
               ],
             ),
           ],
