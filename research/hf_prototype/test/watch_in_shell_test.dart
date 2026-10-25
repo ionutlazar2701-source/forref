@@ -123,6 +123,10 @@ void main() {
     await tester.pump();
     await tapWatch(tester, 'Yellow');
     await tester.pump();
+    // Family selection opens the team step. The existing yellow record
+    // control is reached by the research route, still before any activate.
+    await syncWatchYellowFlow(controller);
+    await tester.pump();
     final record = find.text('Record yellow');
     await tester.ensureVisible(record);
     final gesture = await tester.startGesture(tester.getCenter(record));
@@ -187,15 +191,14 @@ void main() {
     final controller = ResearchController();
     await tester.pumpWidget(ResearchApp(controller: controller));
     await selectDevice(tester, 'amazfit-gts4');
-    final gesture =
-        await tester.startGesture(
-          tester.getCenter(
-            find.descendant(
-              of: find.byType(WatchReferenceApp),
-              matching: find.text('Capture'),
-            ),
-          ),
-        );
+    final gesture = await tester.startGesture(
+      tester.getCenter(
+        find.descendant(
+          of: find.byType(WatchReferenceApp),
+          matching: find.text('Capture'),
+        ),
+      ),
+    );
     await selectDevice(tester, 'huawei-watch-gt4-46');
     await gesture.up();
     await tester.pump();

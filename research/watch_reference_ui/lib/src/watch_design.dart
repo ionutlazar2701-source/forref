@@ -3,6 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:simulator_presentation/simulator_presentation.dart';
 
+import 'watch_aperture.dart';
+import 'watch_glyphs.dart';
+
 /// Presentation shape for the approved Jony layouts.
 ///
 /// This is not a stored match preference and it is not a measured bezel.
@@ -18,11 +21,11 @@ enum WatchLanguage { en, ro }
 
 enum WatchCaptureFamily { yellow, red, goal, substitution }
 
-/// Simulated inset so round content stays off the rim.
+/// Content margin inside an aperture the shell has already clipped.
 ///
-/// Not a published device safe area and not a physical measurement.
+/// Not a published device safe area, not a bezel width, and not a millimetre.
 double watchSimulatedInset(WatchFaceShape face) {
-  return face == WatchFaceShape.round ? 16 : 8;
+  return watchContentMargin(round: face == WatchFaceShape.round);
 }
 
 String watchCopy(WatchLanguage language, String key) {
@@ -41,8 +44,17 @@ String watchCopy(WatchLanguage language, String key) {
     'noPlayers': 'No players on this team',
     'noOfficials': 'No officials on this team',
     'captureUnavailable': 'Capture unavailable',
+    'captureEvent': 'Capture event',
     'home': 'Home',
     'away': 'Away',
+    'notSubject': 'Not this event',
+    'layoutHold': 'LAYOUT HOLD',
+    'yellow': 'Yellow',
+    'red': 'Red',
+    'goal': 'Goal',
+    'sub': 'Sub',
+    'yellowCard': 'Yellow card',
+    'redCard': 'Direct red card',
   };
   const ro = <String, String>{
     'cautions': 'AVERTISMENTE',
@@ -59,8 +71,17 @@ String watchCopy(WatchLanguage language, String key) {
     'noPlayers': 'Niciun jucător în această echipă',
     'noOfficials': 'Niciun oficial în această echipă',
     'captureUnavailable': 'Captura nu este disponibilă',
+    'captureEvent': 'Capturează evenimentul',
     'home': 'Gazde',
     'away': 'Oaspeți',
+    'notSubject': 'Nu pentru acest eveniment',
+    'layoutHold': 'LAYOUT HOLD',
+    'yellow': 'Galben',
+    'red': 'Roșu',
+    'goal': 'Gol',
+    'sub': 'Schimbare',
+    'yellowCard': 'Cartonaș galben',
+    'redCard': 'Cartonaș roșu direct',
   };
   final table = language == WatchLanguage.ro ? ro : en;
   return table[key] ?? en[key] ?? key;
@@ -130,13 +151,26 @@ class WatchLiveSurface extends StatelessWidget {
     final kickOff = state.clock.kickOffAvailable;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final tight = constraints.maxHeight < 260;
-        final ring = tight ? 52.0 : 68.0;
+        final assessment = WatchApertureAssessment.live(
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+          round: face == WatchFaceShape.round,
+          showPhase: showPhase,
+          showBeyond: beyond,
+          showResolve: onResolve != null,
+        );
+        if (assessment.holds) {
+          return WatchApertureHold(reason: assessment.reason!);
+        }
+        final ring = math.min(
+          72.0,
+          math.max(WatchApertureLimits.capture, constraints.maxWidth * 0.28),
+        );
         return ColoredBox(
           key: const Key('watch-design-live'),
           color: WatchPalette.deepNavy,
           child: Padding(
-            padding: EdgeInsets.all(tight ? 6 : watchSimulatedInset(face)),
+            padding: EdgeInsets.all(watchSimulatedInset(face)),
             child: Column(
               children: [
                 if (showPhase)
@@ -174,18 +208,6 @@ class WatchLiveSurface extends StatelessWidget {
                         )
                       : _scoreSide(clockText, verified),
                 ),
-                if (!state.navigation.canOpenCapture && !kickOff)
-                  Text(
-                    watchCopy(language, 'captureUnavailable'),
-                    key: const Key('watch-capture-unavailable'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontFamily: 'Roboto',
-                      fontSize: 10,
-                      color: WatchPalette.steel,
-                    ),
-                  ),
                 if (kickOff)
                   _DesignPress(
                     key: const Key('watch-kick-off'),
@@ -198,18 +220,14 @@ class WatchLiveSurface extends StatelessWidget {
                     diameter: ring,
                   )
                 else
-                  _DesignPress(
-                    key: const Key('watch-capture-ring'),
-                    label: 'Capture',
+                  _CaptureRing(
+                    diameter: ring,
                     inputEpoch: inputEpoch,
                     onCommit: onCapture,
-                    fill: WatchPalette.navy,
-                    ink: WatchPalette.ink,
-                    border: WatchPalette.turquoise,
-                    diameter: ring,
+                    semanticsLabel: watchCopy(language, 'captureEvent'),
                   ),
-                SizedBox(height: tight ? 2 : 4),
-                _cautionsFooter(includeDetail: !tight),
+                const SizedBox(height: 4),
+                _cautionsFooter(),
                 if (onResolve != null)
                   _DesignPress(
                     label: 'Resolve simulated outcome',
@@ -218,6 +236,7 @@ class WatchLiveSurface extends StatelessWidget {
                     fill: WatchPalette.navy,
                     ink: WatchPalette.ink,
                     height: 32,
+                    minExtent: 32,
                   ),
                 Row(
                   children: [
@@ -374,18 +393,20 @@ class WatchLiveSurface extends StatelessWidget {
     );
   }
 
-  Widget _cautionsFooter({required bool includeDetail}) {
+  Widget _cautionsFooter() {
     return _DesignPress(
       key: const Key('watch-cautions'),
       label: watchCopy(language, 'cautions'),
-      detail: includeDetail ? state.discipline.awarenessLabel : null,
+      detail: state.discipline.awarenessLabel,
       trailing: watchCopy(language, 'list'),
+      glyph: const WatchListGlyph(),
       inputEpoch: inputEpoch,
       onCommit: onCautions,
       fill: WatchPalette.deepNavy,
       ink: WatchPalette.steel,
       border: WatchPalette.steel,
-      height: includeDetail ? 56 : 36,
+      height: WatchApertureLimits.footer,
+      minExtent: WatchApertureLimits.footer,
     );
   }
 
@@ -401,7 +422,126 @@ class WatchLiveSurface extends StatelessWidget {
   }
 }
 
-/// Capture chooser. Family selection emits an offer or a route. It does not activate.
+class _CaptureRing extends StatelessWidget {
+  const _CaptureRing({
+    required this.diameter,
+    required this.inputEpoch,
+    required this.onCommit,
+    required this.semanticsLabel,
+  });
+
+  final double diameter;
+  final int inputEpoch;
+  final VoidCallback onCommit;
+  final String semanticsLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const _CaptureOrnament(side: 'left'),
+        const SizedBox(width: 8),
+        _DesignPress(
+          key: const Key('watch-capture-ring'),
+          label: 'Capture',
+          semanticsLabel: semanticsLabel,
+          glyph: const SizedBox(
+            width: 28,
+            height: 22,
+            child: WatchCaptureGlyph(),
+          ),
+          inputEpoch: inputEpoch,
+          onCommit: onCommit,
+          fill: WatchPalette.navy,
+          ink: WatchPalette.ink,
+          border: WatchPalette.turquoise,
+          diameter: diameter,
+          minExtent: WatchApertureLimits.capture,
+        ),
+        const SizedBox(width: 8),
+        const _CaptureOrnament(side: 'right'),
+      ],
+    );
+  }
+}
+
+/// Decorative bars from the live board. They are not controls.
+class _CaptureOrnament extends StatelessWidget {
+  const _CaptureOrnament({required this.side});
+
+  final String side;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: SizedBox(
+        key: Key('watch-capture-ornament-$side'),
+        width: 16,
+        height: 4,
+        child: const DecoratedBox(
+          decoration: BoxDecoration(color: WatchPalette.steel),
+        ),
+      ),
+    );
+  }
+}
+
+class WatchApertureHold extends StatelessWidget {
+  const WatchApertureHold({super.key, required this.reason});
+
+  final String reason;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      key: const Key('watch-aperture-hold'),
+      color: WatchPalette.deepNavy,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return FittedBox(
+              fit: BoxFit.scaleDown,
+              child: SizedBox(
+                width: math.max(48, constraints.maxWidth),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'LAYOUT HOLD',
+                      key: Key('watch-aperture-hold-title'),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'Roboto',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: WatchPalette.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      reason,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontFamily: 'Roboto',
+                        fontSize: 12,
+                        color: WatchPalette.steel,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// Capture chooser. Family selection starts the presentation journey.
+/// It does not activate a record.
 class WatchCaptureSurface extends StatelessWidget {
   const WatchCaptureSurface({
     super.key,
@@ -412,6 +552,7 @@ class WatchCaptureSurface extends StatelessWidget {
     required this.onFamily,
     required this.onBack,
     required this.onLiveMatch,
+    this.captureOpen = true,
   });
 
   final WatchFaceShape face;
@@ -421,95 +562,143 @@ class WatchCaptureSurface extends StatelessWidget {
   final void Function(WatchCaptureFamily family) onFamily;
   final VoidCallback onBack;
   final VoidCallback onLiveMatch;
+  final bool captureOpen;
 
   @override
   Widget build(BuildContext context) {
     final round = face == WatchFaceShape.round;
-    return ColoredBox(
-      key: const Key('watch-design-capture'),
-      color: WatchPalette.deepNavy,
-      child: Padding(
-        padding: EdgeInsets.all(watchSimulatedInset(face)),
-        child: Column(
-          children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: _DesignPress(
-                key: const Key('watch-capture-back'),
-                label: watchCopy(language, 'back'),
-                inputEpoch: inputEpoch,
-                onCommit: onBack,
-                fill: WatchPalette.deepNavy,
-                ink: WatchPalette.ink,
-                height: 32,
-              ),
-            ),
-            Expanded(
-              child: Stack(
-                children: [
-                  round ? _round() : _rect(),
-                  const Center(
-                    child: Listener(
-                      behavior: HitTestBehavior.opaque,
-                      child: SizedBox(
-                        key: Key('watch-capture-center'),
-                        width: 18,
-                        height: 18,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: WatchPalette.turquoise,
-                            shape: BoxShape.circle,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final assessment = WatchApertureAssessment.capture(
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+          round: round,
+        );
+        if (assessment.holds) {
+          return WatchApertureHold(reason: assessment.reason!);
+        }
+        final rows = round ? 3 : 2;
+        final margin = watchSimulatedInset(face) * 2;
+        final chrome = WatchApertureLimits.back +
+            (round ? 0 : WatchApertureLimits.back) +
+            16;
+        final extent = math.min(
+          84.0,
+          math.min(
+            (constraints.maxHeight - margin - chrome) / rows - 4,
+            (constraints.maxWidth - margin - 12) / 2,
+          ),
+        );
+        if (extent < WatchApertureLimits.family) {
+          return const WatchApertureHold(
+              reason: WatchApertureAssessment.holdReason);
+        }
+        return ColoredBox(
+          key: const Key('watch-design-capture'),
+          color: WatchPalette.deepNavy,
+          child: Padding(
+            padding: EdgeInsets.all(watchSimulatedInset(face)),
+            child: Column(
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: _DesignPress(
+                    key: const Key('watch-capture-back'),
+                    label: watchCopy(language, 'back'),
+                    semanticsLabel: watchCopy(language, 'back'),
+                    inputEpoch: inputEpoch,
+                    onCommit: onBack,
+                    fill: WatchPalette.deepNavy,
+                    ink: WatchPalette.ink,
+                    height: WatchApertureLimits.back,
+                    boxWidth: 96,
+                    minExtent: WatchApertureLimits.back,
+                  ),
+                ),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      round ? _round(extent) : _rect(extent),
+                      const Center(
+                        child: IgnorePointer(
+                          ignoring: false,
+                          child: Listener(
+                            behavior: HitTestBehavior.opaque,
+                            child: SizedBox(
+                              key: Key('watch-capture-center'),
+                              width: 18,
+                              height: 18,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: WatchPalette.turquoise,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                if (!round)
+                  _DesignPress(
+                    key: const Key('watch-capture-live-match'),
+                    label: watchCopy(language, 'liveMatch'),
+                    inputEpoch: inputEpoch,
+                    onCommit: onLiveMatch,
+                    fill: WatchPalette.navy,
+                    ink: WatchPalette.ink,
+                    height: WatchApertureLimits.back,
+                    minExtent: WatchApertureLimits.back,
+                  ),
+              ],
             ),
-            if (!round)
-              _DesignPress(
-                key: const Key('watch-capture-live-match'),
-                label: watchCopy(language, 'liveMatch'),
-                inputEpoch: inputEpoch,
-                onCommit: onLiveMatch,
-                fill: WatchPalette.navy,
-                ink: WatchPalette.ink,
-                height: 32,
-              ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _round() {
+  Widget _round(double extent) {
     return Column(
       children: [
-        Expanded(child: Center(child: _family(WatchCaptureFamily.yellow))),
+        Expanded(
+            child: Center(child: _family(WatchCaptureFamily.yellow, extent))),
         Expanded(
           child: Row(
             children: [
-              Expanded(child: Center(child: _family(WatchCaptureFamily.substitution))),
+              Expanded(
+                child: Center(
+                    child: _family(WatchCaptureFamily.substitution, extent)),
+              ),
               const SizedBox(width: 28),
-              Expanded(child: Center(child: _family(WatchCaptureFamily.red))),
+              Expanded(
+                  child:
+                      Center(child: _family(WatchCaptureFamily.red, extent))),
             ],
           ),
         ),
-        Expanded(child: Center(child: _family(WatchCaptureFamily.goal))),
+        Expanded(
+            child: Center(child: _family(WatchCaptureFamily.goal, extent))),
       ],
     );
   }
 
-  Widget _rect() {
+  Widget _rect(double extent) {
     return Column(
       children: [
         Expanded(
           child: Row(
             children: [
-              Expanded(child: _family(WatchCaptureFamily.yellow)),
-              const SizedBox(width: 8),
-              Expanded(child: _family(WatchCaptureFamily.substitution)),
+              Expanded(
+                  child: Center(
+                      child: _family(WatchCaptureFamily.yellow, extent))),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Center(
+                    child: _family(WatchCaptureFamily.substitution, extent)),
+              ),
             ],
           ),
         ),
@@ -517,9 +706,13 @@ class WatchCaptureSurface extends StatelessWidget {
         Expanded(
           child: Row(
             children: [
-              Expanded(child: _family(WatchCaptureFamily.goal)),
-              const SizedBox(width: 8),
-              Expanded(child: _family(WatchCaptureFamily.red)),
+              Expanded(
+                  child:
+                      Center(child: _family(WatchCaptureFamily.goal, extent))),
+              const SizedBox(width: 12),
+              Expanded(
+                  child:
+                      Center(child: _family(WatchCaptureFamily.red, extent))),
             ],
           ),
         ),
@@ -527,13 +720,19 @@ class WatchCaptureSurface extends StatelessWidget {
     );
   }
 
-  Widget _family(WatchCaptureFamily family) {
-    final blockedFamily = blocked.contains(family);
-    final (label, semantics, fill) = switch (family) {
-      WatchCaptureFamily.yellow => ('Yellow', 'Yellow card', WatchPalette.yellow),
-      WatchCaptureFamily.red => ('Red', 'Direct red card', WatchPalette.red),
-      WatchCaptureFamily.goal => ('Goal', 'Goal', WatchPalette.goal),
-      WatchCaptureFamily.substitution => ('Sub', 'Substitution', WatchPalette.sub),
+  Widget _family(WatchCaptureFamily family, double extent) {
+    final blockedFamily = blocked.contains(family) || !captureOpen;
+    final label = switch (family) {
+      WatchCaptureFamily.yellow => watchCopy(language, 'yellow'),
+      WatchCaptureFamily.red => watchCopy(language, 'red'),
+      WatchCaptureFamily.goal => watchCopy(language, 'goal'),
+      WatchCaptureFamily.substitution => watchCopy(language, 'sub'),
+    };
+    final semantics = switch (family) {
+      WatchCaptureFamily.yellow => watchCopy(language, 'yellowCard'),
+      WatchCaptureFamily.red => watchCopy(language, 'redCard'),
+      WatchCaptureFamily.goal => watchCopy(language, 'goal'),
+      WatchCaptureFamily.substitution => watchCopy(language, 'sub'),
     };
     final key = switch (family) {
       WatchCaptureFamily.yellow => const Key('watch-capture-yellow'),
@@ -543,16 +742,25 @@ class WatchCaptureSurface extends StatelessWidget {
     };
     return Semantics(
       label: semantics,
-      button: true,
+      button: !blockedFamily,
       enabled: !blockedFamily,
       child: _DesignPress(
         key: key,
         label: label,
+        glyph: SizedBox(
+          width: 36,
+          height: 28,
+          child: WatchFamilyMark(family: family, blocked: blockedFamily),
+        ),
         detail: blockedFamily ? watchCopy(language, 'blocked') : null,
         inputEpoch: inputEpoch,
         onCommit: blockedFamily ? null : () => onFamily(family),
-        fill: blockedFamily ? WatchPalette.neutral : fill,
-        ink: WatchPalette.deepNavy,
+        fill: WatchPalette.navy,
+        ink: blockedFamily ? WatchPalette.steel : WatchPalette.ink,
+        border: WatchPalette.steel,
+        boxWidth: extent,
+        boxHeight: extent,
+        minExtent: WatchApertureLimits.family,
       ),
     );
   }
@@ -570,6 +778,7 @@ class WatchTeamSurface extends StatelessWidget {
     required this.awayKit,
     required this.onTeam,
     required this.onBack,
+    this.eventLabel,
   });
 
   final WatchPresentationState state;
@@ -580,6 +789,7 @@ class WatchTeamSurface extends StatelessWidget {
   final Color? awayKit;
   final void Function(PresentationTeam team) onTeam;
   final VoidCallback onBack;
+  final String? eventLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -594,7 +804,8 @@ class WatchTeamSurface extends StatelessWidget {
     final awayFill = distinct ? awayKit! : WatchPalette.neutral;
     final body = Row(
       children: [
-        Expanded(child: _half(PresentationTeam.home, state.homeTeamLabel, homeFill)),
+        Expanded(
+            child: _half(PresentationTeam.home, state.homeTeamLabel, homeFill)),
         const SizedBox(
           key: Key('watch-team-gap'),
           width: 10,
@@ -603,9 +814,26 @@ class WatchTeamSurface extends StatelessWidget {
             child: SizedBox.expand(),
           ),
         ),
-        Expanded(child: _half(PresentationTeam.away, state.awayTeamLabel, awayFill)),
+        Expanded(
+            child: _half(PresentationTeam.away, state.awayTeamLabel, awayFill)),
       ],
     );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final assessment = WatchApertureAssessment.team(
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+          round: face == WatchFaceShape.round,
+        );
+        if (assessment.holds) {
+          return WatchApertureHold(reason: assessment.reason!);
+        }
+        return _teamBody(note, body);
+      },
+    );
+  }
+
+  Widget _teamBody(String? note, Widget body) {
     return ColoredBox(
       key: const Key('watch-design-team'),
       color: WatchPalette.deepNavy,
@@ -622,9 +850,23 @@ class WatchTeamSurface extends StatelessWidget {
                 onCommit: onBack,
                 fill: WatchPalette.deepNavy,
                 ink: WatchPalette.ink,
-                height: 32,
+                height: WatchApertureLimits.back,
+                boxWidth: 96,
+                minExtent: WatchApertureLimits.back,
               ),
             ),
+            if (eventLabel != null)
+              Text(
+                eventLabel!,
+                key: const Key('watch-team-context'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 12,
+                  color: WatchPalette.ink,
+                ),
+              ),
             if (note != null)
               Text(
                 note,
@@ -639,7 +881,8 @@ class WatchTeamSurface extends StatelessWidget {
                 ),
               ),
             Expanded(
-              child: face == WatchFaceShape.round ? ClipOval(child: body) : body,
+              child:
+                  face == WatchFaceShape.round ? ClipOval(child: body) : body,
             ),
           ],
         ),
@@ -677,6 +920,8 @@ class WatchParticipantSurface extends StatelessWidget {
     required this.onPlayer,
     required this.onOfficial,
     required this.onBack,
+    this.teamFilter,
+    this.officialsEnabled = true,
   });
 
   final WatchPresentationState state;
@@ -685,19 +930,22 @@ class WatchParticipantSurface extends StatelessWidget {
   final int inputEpoch;
   final bool selectionEnabled;
   final String eventLabel;
+  final PresentationTeam? teamFilter;
+  final bool officialsEnabled;
   final void Function(PresentationParticipant person) onPlayer;
   final void Function(PresentationOfficial official) onOfficial;
   final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
-    final team = switch (state.header.teamContext) {
-      PresentationTeamContext.home => PresentationTeam.home,
-      PresentationTeamContext.away => PresentationTeam.away,
-      PresentationTeamContext.absent ||
-      PresentationTeamContext.ambiguous =>
-        null,
-    };
+    final team = teamFilter ??
+        switch (state.header.teamContext) {
+          PresentationTeamContext.home => PresentationTeam.home,
+          PresentationTeamContext.away => PresentationTeam.away,
+          PresentationTeamContext.absent ||
+          PresentationTeamContext.ambiguous =>
+            null,
+        };
     final players = [
       for (final person in state.roster)
         if (team == null || person.team == team) person,
@@ -713,6 +961,34 @@ class WatchParticipantSurface extends StatelessWidget {
       PresentationTeam.away => state.awayTeamLabel,
       null => '',
     };
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final assessment = WatchApertureAssessment.participant(
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+          round: face == WatchFaceShape.round,
+        );
+        if (assessment.holds) {
+          return WatchApertureHold(reason: assessment.reason!);
+        }
+        return _participantBody(
+          players: players,
+          officials: officials,
+          playerPages: playerPages,
+          pageCount: pageCount,
+          teamLabel: teamLabel,
+        );
+      },
+    );
+  }
+
+  Widget _participantBody({
+    required List<PresentationParticipant> players,
+    required List<PresentationOfficial> officials,
+    required int playerPages,
+    required int pageCount,
+    required String teamLabel,
+  }) {
     return ColoredBox(
       key: const Key('watch-design-participant'),
       color: WatchPalette.deepNavy,
@@ -729,7 +1005,9 @@ class WatchParticipantSurface extends StatelessWidget {
                   onCommit: onBack,
                   fill: WatchPalette.deepNavy,
                   ink: WatchPalette.ink,
-                  height: 32,
+                  height: WatchApertureLimits.back,
+                  boxWidth: 96,
+                  minExtent: WatchApertureLimits.back,
                 ),
                 const SizedBox(width: 6),
                 Expanded(
@@ -818,7 +1096,7 @@ class WatchParticipantSurface extends StatelessWidget {
                     ),
                   ),
                 )
-              : _chipGrid(slice.length, (index) {
+              : _chipGrid(slice.length, columns: 3, (index) {
                   final person = slice[index];
                   final caption = person.team == PresentationTeam.home
                       ? state.homeTeamLabel
@@ -861,13 +1139,15 @@ class WatchParticipantSurface extends StatelessWidget {
                     ),
                   ),
                 )
-              : _chipGrid(officials.length, (index) {
+              : _chipGrid(officials.length, columns: 2, (index) {
                   final official = officials[index];
                   return _chip(
                     key: Key('watch-official-${official.id}'),
                     label: official.roleLabel,
                     detail: official.name,
-                    onCommit: selectionEnabled ? () => onOfficial(official) : null,
+                    onCommit: selectionEnabled && officialsEnabled
+                        ? () => onOfficial(official)
+                        : null,
                   );
                 }),
         ),
@@ -875,32 +1155,32 @@ class WatchParticipantSurface extends StatelessWidget {
     );
   }
 
-  Widget _chipGrid(int count, Widget Function(int index) build) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final rows = <Widget>[];
-        var index = 0;
-        while (index < count) {
-          final remaining = count - index;
-          final take = remaining >= 3 ? 3 : remaining;
-          rows.add(
-            Expanded(
-              child: Row(
-                children: [
-                  for (var slot = 0; slot < take; slot++)
-                    Expanded(child: build(index + slot)),
-                  if (take == 1) const Spacer(),
-                  if (take == 1) const Spacer(),
-                  if (take == 2) const Spacer(),
-                ],
-              ),
-            ),
-          );
-          index += take;
-        }
-        return Column(children: rows);
-      },
-    );
+  Widget _chipGrid(
+    int count,
+    Widget Function(int index) build, {
+    required int columns,
+  }) {
+    final rows = <Widget>[];
+    var index = 0;
+    while (index < count) {
+      final remaining = count - index;
+      final take = remaining >= columns ? columns : remaining;
+      final centerLast = take == 1;
+      rows.add(
+        Expanded(
+          child: Row(
+            children: [
+              if (centerLast) const Spacer(),
+              for (var slot = 0; slot < take; slot++)
+                Expanded(child: build(index + slot)),
+              if (centerLast || take < columns) const Spacer(),
+            ],
+          ),
+        ),
+      );
+      index += take;
+    }
+    return Column(children: rows);
   }
 
   Widget _chip({
@@ -914,10 +1194,14 @@ class WatchParticipantSurface extends StatelessWidget {
       child: _DesignPress(
         key: key,
         label: label,
-        detail: selectionEnabled ? detail : watchCopy(language, 'blocked'),
+        detail: onCommit == null
+            ? (selectionEnabled
+                ? watchCopy(language, 'notSubject')
+                : watchCopy(language, 'blocked'))
+            : detail,
         inputEpoch: inputEpoch,
         onCommit: onCommit,
-        fill: selectionEnabled ? WatchPalette.navy : WatchPalette.neutral,
+        fill: onCommit == null ? WatchPalette.neutral : WatchPalette.navy,
         ink: WatchPalette.ink,
         border: WatchPalette.steel,
       ),
@@ -959,6 +1243,11 @@ class _DesignPress extends StatefulWidget {
     this.diameter,
     this.height = 48,
     this.expand = false,
+    this.glyph,
+    this.semanticsLabel,
+    this.boxWidth,
+    this.boxHeight,
+    this.minExtent,
   });
 
   final String label;
@@ -973,6 +1262,11 @@ class _DesignPress extends StatefulWidget {
   final double? diameter;
   final double height;
   final bool expand;
+  final Widget? glyph;
+  final String? semanticsLabel;
+  final double? boxWidth;
+  final double? boxHeight;
+  final double? minExtent;
 
   @override
   State<_DesignPress> createState() => _DesignPressState();
@@ -992,20 +1286,31 @@ class _DesignPressState extends State<_DesignPress> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final natural = widget.diameter ?? widget.height;
         final maxHeight = constraints.maxHeight;
         final maxWidth = constraints.maxWidth;
-        final side = widget.diameter ??
-            (widget.expand && maxHeight.isFinite
-                ? maxHeight
-                : maxHeight.isFinite
-                    ? math.min(natural, maxHeight)
-                    : natural);
-        final width = widget.diameter ??
-            (maxWidth.isFinite ? maxWidth : natural);
+        final floor = widget.minExtent ?? 0;
+        late final double width;
+        late final double height;
+        if (widget.diameter != null) {
+          final side = math.max(widget.diameter!, floor);
+          width = side;
+          height = side;
+        } else if (widget.boxWidth != null || widget.boxHeight != null) {
+          width = math.max(widget.boxWidth ?? widget.height, floor);
+          height = math.max(widget.boxHeight ?? widget.height, floor);
+        } else if (widget.expand && maxHeight.isFinite) {
+          width = maxWidth.isFinite ? maxWidth : widget.height;
+          height = math.max(maxHeight, floor);
+        } else {
+          width = maxWidth.isFinite ? maxWidth : widget.height;
+          final natural = widget.height;
+          height = maxHeight.isFinite
+              ? math.max(floor, math.min(natural, maxHeight))
+              : math.max(natural, floor);
+        }
         return SizedBox(
           width: width,
-          height: side,
+          height: height,
           child: _face(),
         );
       },
@@ -1017,8 +1322,10 @@ class _DesignPressState extends State<_DesignPress> {
       decoration: BoxDecoration(
         color: widget.fill,
         shape: widget.diameter == null ? BoxShape.rectangle : BoxShape.circle,
-        borderRadius: widget.diameter == null ? BorderRadius.circular(10) : null,
-        border: widget.border == null ? null : Border.all(color: widget.border!),
+        borderRadius:
+            widget.diameter == null ? BorderRadius.circular(10) : null,
+        border:
+            widget.border == null ? null : Border.all(color: widget.border!),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -1028,6 +1335,7 @@ class _DesignPressState extends State<_DesignPress> {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (widget.glyph != null) widget.glyph!,
               Text(
                 widget.label,
                 maxLines: 2,
@@ -1069,7 +1377,7 @@ class _DesignPressState extends State<_DesignPress> {
         ),
       ),
     );
-    return Listener(
+    final control = Listener(
       behavior: HitTestBehavior.opaque,
       onPointerDown: (event) {
         if (!mounted || widget.onCommit == null) return;
@@ -1095,6 +1403,14 @@ class _DesignPressState extends State<_DesignPress> {
         if (_pointer == event.pointer) _pointer = null;
       },
       child: child,
+    );
+    final semantics = widget.semanticsLabel;
+    if (semantics == null) return control;
+    return Semantics(
+      label: semantics,
+      button: widget.onCommit != null,
+      enabled: widget.onCommit != null,
+      child: control,
     );
   }
 }

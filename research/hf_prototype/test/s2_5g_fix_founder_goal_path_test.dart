@@ -46,7 +46,8 @@ void main() {
     );
     expect(controller.instrument.goals.single.matchTimeLabel, '12:14');
     expect(controller.watchRuntime.watchState.score.label, '0 – 1');
-    expect(controller.watchRuntime.watchState.matchReport.entries, hasLength(1));
+    expect(
+        controller.watchRuntime.watchState.matchReport.entries, hasLength(1));
     expect(
       controller.watchRuntime.watchState.matchReport.entries.single.kind,
       MatchReportEntryKind.goal,
@@ -73,18 +74,22 @@ void main() {
 
     expect(controller.watchRuntime.watchState.score.label, '1 – 1');
     expect(controller.instrument.goals, hasLength(2));
-    expect(controller.watchRuntime.watchState.matchReport.entries, hasLength(2));
+    expect(
+        controller.watchRuntime.watchState.matchReport.entries, hasLength(2));
     expect(find.text('1 – 1'), findsWidgets);
     await captureLab(tester, 's25g-fix-04-live-1-1');
 
     await tester.tap(find.byKey(const Key('mobile-match-report')));
     await tester.pump();
-    expect(find.byKey(const Key('mobile-match-report-entry-1')), findsOneWidget);
-    expect(find.byKey(const Key('mobile-match-report-entry-2')), findsOneWidget);
+    expect(
+        find.byKey(const Key('mobile-match-report-entry-1')), findsOneWidget);
+    expect(
+        find.byKey(const Key('mobile-match-report-entry-2')), findsOneWidget);
     await captureLab(tester, 's25g-fix-05-match-report');
   });
 
-  testWidgets('a second Record Goal tap does not add another goal', (tester) async {
+  testWidgets('a second Record Goal tap does not add another goal',
+      (tester) async {
     final controller = await pumpLab(tester);
     await controller.operatorLoadScenario(ScenarioId.s21MatchReportOps);
     await establishFirstHalf(controller);
@@ -100,7 +105,8 @@ void main() {
     expect(controller.instrument.goals, hasLength(1));
     expect(find.byKey(const Key('mobile-record-goal')), findsNothing);
     await controller.dispatchMobile(
-      const ActivateIntent(PresentationAction.goal, origin: IntentOrigin.mobileUi),
+      const ActivateIntent(PresentationAction.goal,
+          origin: IntentOrigin.mobileUi),
     );
     await tester.pump();
     expect(controller.instrument.goals, hasLength(1));
@@ -118,17 +124,17 @@ void main() {
     await tester.pump();
     await tapWatch(tester, 'Goal');
     await tester.pump();
-    await tester.tap(find.byKey(const Key('watch-goal-team-away')));
+    await tapWatchKey(tester, const Key('watch-team-away'));
     await tester.pump();
-    await tester.ensureVisible(find.byKey(const Key('watch-goal-scorer-p-away-11')));
-    await tester.tap(find.byKey(const Key('watch-goal-scorer-p-away-11')));
+    await tapWatchKey(tester, const Key('watch-participant-p-away-11'));
     await tester.pump();
     final record = find.byKey(const Key('watch-record-goal'));
     await tester.ensureVisible(record);
     await tester.tap(record);
     await tester.pump();
     expect(controller.instrument.goals, hasLength(1));
-    expect(controller.instrument.commitLabel, ResearchCommitPhrases.simulatedSaved);
+    expect(controller.instrument.commitLabel,
+        ResearchCommitPhrases.simulatedSaved);
     expect(controller.watchRuntime.watchState.score.label, '0 – 1');
     expect(find.text('Resolve simulated outcome'), findsNothing);
   });
