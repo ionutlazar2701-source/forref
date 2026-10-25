@@ -56,12 +56,20 @@ class DeviceHeroStage extends StatelessWidget {
                   controller.instrument.pointerCancel(pointerId: pointerId);
                   controller.refresh();
                 },
-                child: WatchReferenceApp(
+                child: RepaintBoundary(
+                  key: Key('watch-viewport-$id'),
+                  child: WatchReferenceApp(
                   key: Key('watch-$id-${interactive ? 'active' : 'mirror'}'),
                   state: controller.watchRuntime.watchState,
                   inputEpoch: controller.inputEpoch,
-                  onIntent:
-                      interactive ? controller.dispatchWatch : _ignoreIntent,
+                  face: watchFaceFor(profile),
+                  liveLayout: controller.watchLiveLayout,
+                  frame: controller.watchDesignFrame,
+                  language: controller.watchLanguage,
+                  showBeyondNominal: controller.watchBeyondNominal,
+                  onPresentationBack: interactive ? _presentationBack : null,
+                  onIntent: interactive ? _dispatchWatch : _ignoreIntent,
+                ),
                 ),
               ),
             ),
@@ -81,7 +89,36 @@ class DeviceHeroStage extends StatelessWidget {
     );
   }
 
+  void _dispatchWatch(WatchIntent intent) {
+    if (intent is SetTeamIntent &&
+        controller.watchDesignFrame == WatchDesignFrame.team) {
+      controller.setWatchDesignFrame(WatchDesignFrame.participant);
+    }
+    if (intent is OpenRouteIntent &&
+        intent.route == WatchRoute.captureMenu &&
+        controller.watchDesignFrame == WatchDesignFrame.team) {
+      controller.setWatchDesignFrame(WatchDesignFrame.flow);
+    }
+    controller.dispatchWatch(intent);
+  }
+
+  void _presentationBack() {
+    if (controller.watchDesignFrame == WatchDesignFrame.participant) {
+      controller.setWatchDesignFrame(WatchDesignFrame.team);
+    }
+  }
+
   static void _ignoreIntent(WatchIntent intent) {}
+}
+
+/// Rectangular Jony layouts cover rectangle and rounded-rectangle displays.
+/// Unknown shape does not invent a round mask.
+WatchFaceShape watchFaceFor(DeviceProfileV2 profile) {
+  final shape = profile.display.shape;
+  if (!shape.hasValue || shape.value != ScreenShape.round) {
+    return WatchFaceShape.rectangular;
+  }
+  return WatchFaceShape.round;
 }
 
 /// Compact fidelity + zoom strip under a stage. Evidence detail lives in the
@@ -148,22 +185,29 @@ class StageFooter extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: LabMetrics.tight),
-        child: narrow
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  fidelity,
-                  const SizedBox(height: 6),
-                  Align(alignment: Alignment.centerRight, child: controls),
-                ],
-              )
-            : Row(
-                children: [
-                  Expanded(child: fidelity),
-                  const SizedBox(width: LabMetrics.gutter),
-                  controls,
-                ],
-              ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            narrow
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      fidelity,
+                      const SizedBox(height: 6),
+                      Align(alignment: Alignment.centerRight, child: controls),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Expanded(child: fidelity),
+                      const SizedBox(width: LabMetrics.gutter),
+                      controls,
+                    ],
+                  ),
+            const SizedBox(height: 6),
+            _DesignControls(controller: controller),
+          ],
+        ),
       ),
     );
   }
@@ -293,6 +337,67 @@ class ContextChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(LabMetrics.chipRadius),
       ),
       child: Text(text, style: LabText.caption),
+    );
+  }
+}
+
+class _DesignControls extends StatelessWidget {
+  const _DesignControls({required this.controller});
+
+  final ResearchController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 4,
+      runSpacing: 4,
+      children: [
+        _SmallButton(
+          key: const Key('stage-layout-centered'),
+          label: 'Layout A',
+          onPressed: () =>
+              controller.setWatchLiveLayout(WatchLiveLayout.centered),
+        ),
+        _SmallButton(
+          key: const Key('stage-layout-score-side'),
+          label: 'Layout C',
+          onPressed: () =>
+              controller.setWatchLiveLayout(WatchLiveLayout.scoreSide),
+        ),
+        _SmallButton(
+          key: const Key('stage-frame-flow'),
+          label: 'Flow',
+          onPressed: () =>
+              controller.setWatchDesignFrame(WatchDesignFrame.flow),
+        ),
+        _SmallButton(
+          key: const Key('stage-frame-team'),
+          label: 'Team',
+          onPressed: () =>
+              controller.setWatchDesignFrame(WatchDesignFrame.team),
+        ),
+        _SmallButton(
+          key: const Key('stage-frame-participant'),
+          label: 'Players',
+          onPressed: () =>
+              controller.setWatchDesignFrame(WatchDesignFrame.participant),
+        ),
+        _SmallButton(
+          key: const Key('stage-beyond'),
+          label: controller.watchBeyondNominal ? 'Beyond on' : 'Beyond off',
+          onPressed: () =>
+              controller.setWatchBeyondNominal(!controller.watchBeyondNominal),
+        ),
+        _SmallButton(
+          key: const Key('stage-language'),
+          label: controller.watchLanguage == WatchLanguage.en ? 'EN' : 'RO',
+          onPressed: () => controller.setWatchLanguage(
+            controller.watchLanguage == WatchLanguage.en
+                ? WatchLanguage.ro
+                : WatchLanguage.en,
+          ),
+        ),
+      ],
     );
   }
 }

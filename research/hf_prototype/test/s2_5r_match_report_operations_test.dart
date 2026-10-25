@@ -895,7 +895,7 @@ void main() {
       const OpenRouteIntent(WatchRoute.captureMenu, origin: IntentOrigin.watchUi),
     );
     await _pumpWatch(tester, controller);
-    await tester.tap(find.text('Substitution'));
+    await tester.tap(find.byKey(const Key('watch-capture-sub')));
     await tester.pump();
     await controller.dispatchWatch(
       const OpenRouteIntent(WatchRoute.substitutionFlow,

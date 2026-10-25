@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart' hide ActivateIntent;
 import 'package:simulator_presentation/simulator_presentation.dart';
 
+import 'watch_design.dart';
+
 /// Interactive FORREF watch reference surface.
 ///
 /// The same widget runs on every device profile. Geometry is the parent's
 /// constraint. Football actions are [WatchIntent]s.
+///
+/// [face], [liveLayout], and [frame] are presentation. They are not match
+/// records, clock evidence, or a stored mid-match preference.
 class WatchReferenceApp extends StatelessWidget {
   const WatchReferenceApp({
     super.key,
@@ -12,6 +17,16 @@ class WatchReferenceApp extends StatelessWidget {
     required this.onIntent,
     this.degradedLabel,
     this.inputEpoch = 0,
+    this.face = WatchFaceShape.rectangular,
+    this.liveLayout = WatchLiveLayout.centered,
+    this.frame = WatchDesignFrame.flow,
+    this.language = WatchLanguage.en,
+    this.showBeyondNominal = false,
+    this.homeKit,
+    this.awayKit,
+    this.blockedFamilies = const {},
+    this.selectionEnabled = true,
+    this.onPresentationBack,
   });
 
   final WatchPresentationState state;
@@ -22,11 +37,24 @@ class WatchReferenceApp extends StatelessWidget {
   ///
   /// A press that started on an older epoch does not commit.
   final int inputEpoch;
+  final WatchFaceShape face;
+  final WatchLiveLayout liveLayout;
+  final WatchDesignFrame frame;
+  final WatchLanguage language;
+  final bool showBeyondNominal;
+  final Color? homeKit;
+  final Color? awayKit;
+  final Set<WatchCaptureFamily> blockedFamilies;
+  final bool selectionEnabled;
+
+  /// Lab hook for the participant frame. It does not emit an activate intent.
+  final VoidCallback? onPresentationBack;
 
   @override
   Widget build(BuildContext context) {
+    final design = _designSurface;
     return Material(
-      color: const Color(0xFFF8FAFC),
+      color: design ? WatchPalette.deepNavy : const Color(0xFFF8FAFC),
       child: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth < 120 || constraints.maxHeight < 180) {
@@ -51,10 +79,27 @@ class WatchReferenceApp extends StatelessWidget {
             degradedLabel: degradedLabel,
             onIntent: onIntent,
             inputEpoch: inputEpoch,
+            face: face,
+            liveLayout: liveLayout,
+            frame: frame,
+            language: language,
+            showBeyondNominal: showBeyondNominal,
+            homeKit: homeKit,
+            awayKit: awayKit,
+            blockedFamilies: blockedFamilies,
+            selectionEnabled: selectionEnabled,
+            onPresentationBack: onPresentationBack,
+            design: design,
           );
         },
       ),
     );
+  }
+
+  bool get _designSurface {
+    if (frame != WatchDesignFrame.flow) return true;
+    final route = state.navigation.route;
+    return route == WatchRoute.liveCore || route == WatchRoute.captureMenu;
   }
 }
 
@@ -64,12 +109,34 @@ class _FitBody extends StatelessWidget {
     required this.degradedLabel,
     required this.onIntent,
     required this.inputEpoch,
+    required this.face,
+    required this.liveLayout,
+    required this.frame,
+    required this.language,
+    required this.showBeyondNominal,
+    required this.homeKit,
+    required this.awayKit,
+    required this.blockedFamilies,
+    required this.selectionEnabled,
+    required this.onPresentationBack,
+    required this.design,
   });
 
   final WatchPresentationState state;
   final String? degradedLabel;
   final void Function(WatchIntent intent) onIntent;
   final int inputEpoch;
+  final WatchFaceShape face;
+  final WatchLiveLayout liveLayout;
+  final WatchDesignFrame frame;
+  final WatchLanguage language;
+  final bool showBeyondNominal;
+  final Color? homeKit;
+  final Color? awayKit;
+  final Set<WatchCaptureFamily> blockedFamilies;
+  final bool selectionEnabled;
+  final VoidCallback? onPresentationBack;
+  final bool design;
 
   @override
   Widget build(BuildContext context) {
@@ -83,8 +150,8 @@ class _FitBody extends StatelessWidget {
               'DEGRADED — $degradedLabel',
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Color(0xFF5B7EA6),
+              style: TextStyle(
+                color: design ? WatchPalette.steel : const Color(0xFF5B7EA6),
                 fontSize: 11,
                 fontFamily: 'Roboto',
               ),
@@ -96,8 +163,8 @@ class _FitBody extends StatelessWidget {
             child: Text(
               _frozen(state.frozenCommand!),
               key: const Key('watch-frozen-command'),
-              style: const TextStyle(
-                color: Color(0xFF0B2A4A),
+              style: TextStyle(
+                color: design ? WatchPalette.ink : const Color(0xFF0B2A4A),
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 fontFamily: 'Roboto',
@@ -109,31 +176,164 @@ class _FitBody extends StatelessWidget {
           child: Text(
             state.commit.label,
             key: const Key('watch-commit-label'),
-            style: const TextStyle(
-              color: Color(0xFF0B2A4A),
+            style: TextStyle(
+              color: design ? WatchPalette.steel : const Color(0xFF0B2A4A),
               fontSize: 12,
               fontWeight: FontWeight.w700,
               fontFamily: 'Roboto',
             ),
           ),
         ),
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: _pages(),
-            ),
-          ),
-        ),
+        Expanded(child: _body()),
       ],
+    );
+  }
+
+  Widget _body() {
+    if (frame == WatchDesignFrame.team) return _teamFrame();
+    if (frame == WatchDesignFrame.participant) return _participantFrame();
+    if (state.navigation.route == WatchRoute.liveCore) {
+      return _liveSurface();
+    }
+    if (state.navigation.route == WatchRoute.captureMenu) {
+      return _captureSurface();
+    }
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: _pages(),
+      ),
+    );
+  }
+
+  Widget _liveSurface() {
+    return WatchLiveSurface(
+      state: state,
+      face: face,
+      layout: liveLayout,
+      language: language,
+      showBeyondNominal: showBeyondNominal,
+      inputEpoch: inputEpoch,
+      onCapture: () => onIntent(
+        const OpenRouteIntent(WatchRoute.captureMenu, origin: IntentOrigin.watchUi),
+      ),
+      onKickOffArm: () => onIntent(
+        const ArmKickOffIntent(origin: IntentOrigin.watchUi),
+      ),
+      onKickOffCommit: () => onIntent(
+        const ConfirmKickOffIntent(origin: IntentOrigin.watchUi),
+      ),
+      onCautions: () => onIntent(
+        const OpenRouteIntent(
+          WatchRoute.disciplinaryAwareness,
+          origin: IntentOrigin.watchUi,
+        ),
+      ),
+      onMatchReport: () => onIntent(
+        const OpenRouteIntent(WatchRoute.matchReport, origin: IntentOrigin.watchUi),
+      ),
+      onHistory: () => onIntent(
+        const OpenRouteIntent(WatchRoute.history, origin: IntentOrigin.watchUi),
+      ),
+      onResolve: state.commit.label == ResearchCommitPhrases.saving
+          ? () => onIntent(
+                const ResolveSimulatedCommitIntent(origin: IntentOrigin.watchUi),
+              )
+          : null,
+    );
+  }
+
+  Widget _captureSurface() {
+    return WatchCaptureSurface(
+      face: face,
+      language: language,
+      inputEpoch: inputEpoch,
+      blocked: blockedFamilies,
+      onBack: () => onIntent(
+        const OpenRouteIntent(WatchRoute.liveCore, origin: IntentOrigin.watchUi),
+      ),
+      onLiveMatch: () => onIntent(
+        const OpenRouteIntent(WatchRoute.liveCore, origin: IntentOrigin.watchUi),
+      ),
+      onFamily: (family) {
+        final intent = switch (family) {
+          WatchCaptureFamily.yellow =>
+            const OfferYellowIntent(origin: IntentOrigin.watchUi),
+          WatchCaptureFamily.red => const OpenRouteIntent(
+              WatchRoute.sendOffFlow,
+              origin: IntentOrigin.watchUi,
+            ),
+          WatchCaptureFamily.goal =>
+            const OfferGoalIntent(origin: IntentOrigin.watchUi),
+          WatchCaptureFamily.substitution => const OpenRouteIntent(
+              WatchRoute.substitutionFlow,
+              origin: IntentOrigin.watchUi,
+            ),
+        };
+        onIntent(intent);
+      },
+    );
+  }
+
+  Widget _teamFrame() {
+    return WatchTeamSurface(
+      state: state,
+      face: face,
+      language: language,
+      inputEpoch: inputEpoch,
+      homeKit: homeKit,
+      awayKit: awayKit,
+      onTeam: (team) => onIntent(
+        SetTeamIntent(team, origin: IntentOrigin.watchUi),
+      ),
+      onBack: () {
+        onIntent(
+          const OpenRouteIntent(WatchRoute.captureMenu, origin: IntentOrigin.watchUi),
+        );
+        onPresentationBack?.call();
+      },
+    );
+  }
+
+  Widget _participantFrame() {
+    final eventLabel = switch (state.navigation.route) {
+      WatchRoute.yellowFlow => 'Yellow Card',
+      WatchRoute.sendOffFlow => 'Red Card',
+      WatchRoute.goalFlow => 'Goal',
+      WatchRoute.substitutionFlow => 'Substitution',
+      _ => 'Participant',
+    };
+    return WatchParticipantSurface(
+      state: state,
+      face: face,
+      language: language,
+      inputEpoch: inputEpoch,
+      selectionEnabled: selectionEnabled,
+      eventLabel: eventLabel,
+      onPlayer: (person) => onIntent(
+        SelectParticipantIntent(person.id, origin: IntentOrigin.watchUi),
+      ),
+      onOfficial: (official) => onIntent(
+        SelectOfficialIntent(official.id, origin: IntentOrigin.watchUi),
+      ),
+      onBack: () {
+        final back = onPresentationBack;
+        if (back != null) {
+          back();
+          return;
+        }
+        onIntent(
+          const OpenRouteIntent(WatchRoute.captureMenu, origin: IntentOrigin.watchUi),
+        );
+      },
     );
   }
 
   List<Widget> _pages() {
     return switch (state.navigation.route) {
-      WatchRoute.liveCore => _live(),
-      WatchRoute.captureMenu => _capture(),
+      WatchRoute.liveCore => const <Widget>[],
+      WatchRoute.captureMenu => const <Widget>[],
       WatchRoute.yellowFlow => _yellow(),
       WatchRoute.sendOffFlow => _sendOff(),
       WatchRoute.goalFlow => _goal(),
@@ -142,65 +342,6 @@ class _FitBody extends StatelessWidget {
       WatchRoute.history => _history(),
       WatchRoute.matchReport => _matchReport(),
     };
-  }
-
-  List<Widget> _live() {
-    final ready = state.clock.kickOffAvailable;
-    final clockText = state.clock.label ?? state.clock.phaseLabel;
-    return [
-      Text(
-        '${state.homeTeamLabel} v ${state.awayTeamLabel}',
-        key: const Key('watch-match-title'),
-        style: const TextStyle(fontFamily: 'Roboto', fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0B2A4A)),
-      ),
-      if (state.clock.available && state.clock.phaseLabel == 'FIRST HALF')
-        Text(
-          state.clock.phaseLabel,
-          key: const Key('watch-phase'),
-          style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0B2A4A)),
-        ),
-      Text(
-        clockText,
-        key: const Key('watch-clock'),
-        style: const TextStyle(fontFamily: 'Roboto', fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF0B2A4A)),
-      ),
-      Text(
-        state.score.label,
-        key: const Key('watch-score'),
-        style: const TextStyle(fontFamily: 'Roboto', fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF0B2A4A)),
-      ),
-      if (ready) _kickOffButton(),
-      if (!ready)
-        _button('Capture', const OpenRouteIntent(WatchRoute.captureMenu, origin: IntentOrigin.watchUi)),
-      _button('Match Report', const OpenRouteIntent(WatchRoute.matchReport, origin: IntentOrigin.watchUi)),
-      if (!ready) ...[
-        _button('Awareness', const OpenRouteIntent(WatchRoute.disciplinaryAwareness, origin: IntentOrigin.watchUi)),
-        _button('History', const OpenRouteIntent(WatchRoute.history, origin: IntentOrigin.watchUi)),
-      ],
-      if (state.commit.label == ResearchCommitPhrases.saving)
-        _button(
-          'Resolve simulated outcome',
-          const ResolveSimulatedCommitIntent(origin: IntentOrigin.watchUi),
-        ),
-      Text(
-        state.header.identityLabel,
-        style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, color: Color(0xFF0B2A4A)),
-      ),
-      Text(
-        'Phase ${state.header.scope.name}',
-        style: const TextStyle(fontFamily: 'Roboto', fontSize: 13, color: Color(0xFF0B2A4A)),
-      ),
-    ];
-  }
-
-  List<Widget> _capture() {
-    return [
-      _button('Goal', const OfferGoalIntent(origin: IntentOrigin.watchUi), key: const Key('watch-capture-goal')),
-      _button('Yellow', const OfferYellowIntent(origin: IntentOrigin.watchUi)),
-      _button('Sending-off', const OpenRouteIntent(WatchRoute.sendOffFlow, origin: IntentOrigin.watchUi)),
-      _button('Substitution', const OpenRouteIntent(WatchRoute.substitutionFlow, origin: IntentOrigin.watchUi)),
-      _button('Back', const OpenRouteIntent(WatchRoute.liveCore, origin: IntentOrigin.watchUi)),
-    ];
   }
 
   List<Widget> _goal() {
@@ -437,20 +578,6 @@ class _FitBody extends StatelessWidget {
     ];
   }
 
-  Widget _kickOffButton() {
-    return _HoldButton(
-      key: const Key('watch-kick-off'),
-      label: 'Kick-off',
-      inputEpoch: inputEpoch,
-      onArm: () => onIntent(
-        const ArmKickOffIntent(origin: IntentOrigin.watchUi),
-      ),
-      onCommit: () => onIntent(
-        const ConfirmKickOffIntent(origin: IntentOrigin.watchUi),
-      ),
-    );
-  }
-
   Widget _button(String label, WatchIntent intent, {Key? key}) {
     return _HoldButton(
       key: key,
@@ -485,13 +612,11 @@ class _HoldButton extends StatefulWidget {
     required this.label,
     required this.inputEpoch,
     required this.onCommit,
-    this.onArm,
   });
 
   final String label;
   final int inputEpoch;
   final VoidCallback onCommit;
-  final VoidCallback? onArm;
 
   @override
   State<_HoldButton> createState() => _HoldButtonState();
@@ -517,7 +642,6 @@ class _HoldButtonState extends State<_HoldButton> {
           if (!mounted) return;
           _pointer = event.pointer;
           _epoch = widget.inputEpoch;
-          widget.onArm?.call();
         },
         onPointerMove: (event) {
           if (!mounted || _pointer != event.pointer) return;
