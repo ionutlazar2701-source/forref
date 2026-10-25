@@ -205,8 +205,7 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
     final inProgress = match != null &&
         (match.status == MatchStatus.live ||
             match.status == MatchStatus.paused ||
-            match.status == MatchStatus.halfTime ||
-            match.status == MatchStatus.fullTime);
+            match.status == MatchStatus.halfTime);
     final denial = ledger.unreadable
         ? TrainingStartDenial.ledgerUnreadable
         : await trainingMatchDenial(
