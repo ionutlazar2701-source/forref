@@ -7,6 +7,7 @@ import 'package:referee_phone/infrastructure/competition_rules/phone_match_captu
 import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
 import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_store.dart';
 import 'package:referee_phone/infrastructure/match_memory/match_application_composition.dart';
+import 'package:referee_phone/training/training_store.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +29,7 @@ Future<void> main() async {
       captureIdentity: identity,
       matchCaptureContext: matchCaptureContext,
       temporalEvidence: temporalEvidence,
+      training: TrainingStore(directory: storageRoot),
     ),
   );
 }

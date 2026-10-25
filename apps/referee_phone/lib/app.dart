@@ -10,6 +10,7 @@ import 'package:referee_phone/match_application/match_application_boundary.dart'
 import 'package:referee_phone/mobile_commands/mobile_command_runtime.dart';
 import 'package:referee_phone/design/forref_theme.dart';
 import 'package:referee_phone/routing/app_router.dart';
+import 'package:referee_phone/training/training_store.dart';
 
 /// Launch override for review on a host that cannot report platform
 /// brightness. Absent, the app follows the platform.
@@ -30,6 +31,7 @@ class RefereeApp extends StatefulWidget {
     this.matchCaptureContext,
     this.temporalEvidence,
     this.mobileCommands,
+    this.training,
   });
 
   final LocalMatchDatabase database;
@@ -46,6 +48,9 @@ class RefereeApp extends StatefulWidget {
 
   /// Overrides the phone-only command runtime. Tests may inject a fixture.
   final MobileCommandRuntime? mobileCommands;
+
+  /// Phone-local training ledger. Absent in tests that do not open Training.
+  final TrainingStore? training;
 
   @override
   State<RefereeApp> createState() => _RefereeAppState();
@@ -105,6 +110,7 @@ class _RefereeAppState extends State<RefereeApp> {
       matchCaptureContext: widget.matchCaptureContext,
       temporalEvidence: widget.temporalEvidence,
       mobileCommands: _mobileCommands,
+      training: widget.training,
       child: ValueListenableBuilder<Locale?>(
         valueListenable: locale,
         builder: (context, resolved, _) {

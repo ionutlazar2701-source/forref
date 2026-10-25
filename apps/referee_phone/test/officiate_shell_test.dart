@@ -88,7 +88,7 @@ void main() {
     await openMatches(tester);
     expect(find.text('No matches yet'), findsOneWidget);
     expect(find.text('New Match'), findsOneWidget);
-    expect(find.text('Training'), findsNothing);
+    expect(find.byKey(const Key('open-training')), findsOneWidget);
     expect(find.text('Dashboard'), findsNothing);
     expect(find.text('Devices'), findsNothing);
   });

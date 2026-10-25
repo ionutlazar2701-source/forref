@@ -583,4 +583,82 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get checkingMatchState => 'Se verifică starea meciului';
+
+  @override
+  String get trainingTitle => 'Antrenament';
+
+  @override
+  String get trainingEmpty => 'Niciun antrenament încă';
+
+  @override
+  String get startTraining => 'Începe antrenamentul';
+
+  @override
+  String get trainingActive => 'Activ';
+
+  @override
+  String get trainingPaused => 'Pauză';
+
+  @override
+  String get trainingFinished => 'Încheiat';
+
+  @override
+  String get trainingNotStarted => 'Neînceput';
+
+  @override
+  String get trainingPause => 'Pauză';
+
+  @override
+  String get trainingResume => 'Reia';
+
+  @override
+  String get trainingFinish => 'Încheie';
+
+  @override
+  String get trainingAnalysis => 'Analiza antrenamentului';
+
+  @override
+  String get trainingElapsedUnknown => 'Durată necunoscută';
+
+  @override
+  String trainingPauseCount(int count) {
+    return 'Pauze: $count';
+  }
+
+  @override
+  String get trainingKindGeneral => 'General';
+
+  @override
+  String get trainingKindWarmUp => 'Încălzire înainte de meci';
+
+  @override
+  String get trainingNote => 'Notă';
+
+  @override
+  String get trainingLinkedMatch => 'Meci legat';
+
+  @override
+  String get trainingNoLinkedMatch => 'Niciun meci legat';
+
+  @override
+  String get trainingUnavailable =>
+      'Stocarea antrenamentului nu este disponibilă';
+
+  @override
+  String get trainingBlockedAnother =>
+      'Un alt antrenament este încă deschis. Nu a fost oprit.';
+
+  @override
+  String get trainingBlockedMatchOpen =>
+      'Un meci este în desfășurare pe acest telefon. Antrenamentul nu a fost pornit.';
+
+  @override
+  String get trainingBlockedMatchUnverified =>
+      'Starea meciului nu este verificată. Antrenamentul nu a fost pornit.';
+
+  @override
+  String get trainingWarmUpAction => 'Încălzire înainte de meci';
+
+  @override
+  String get trainingDuration => 'Durată';
 }

@@ -12,6 +12,7 @@ import 'package:referee_phone/infrastructure/database/local_match_database.dart'
 import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
 import 'package:referee_phone/infrastructure/match_memory/match_application_composition.dart';
 import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_store.dart';
+import 'package:referee_phone/features/settings/settings_page.dart';
 import 'package:referee_phone/mobile_commands/mobile_command_runtime.dart';
 
 void main() {
@@ -173,7 +174,13 @@ void main() {
     );
     await pumpUntilFound(tester, find.text('English'));
     expect(find.text('Devices'), findsNothing);
-    expect(find.text('Training'), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byType(SettingsPage),
+        matching: find.text('Training'),
+      ),
+      findsNothing,
+    );
     expect(find.textContaining('Watch'), findsNothing);
     expect(find.textContaining('controls the match'), findsNothing);
   });

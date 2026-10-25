@@ -578,4 +578,81 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get checkingMatchState => 'Checking match state';
+
+  @override
+  String get trainingTitle => 'Training';
+
+  @override
+  String get trainingEmpty => 'No training sessions yet';
+
+  @override
+  String get startTraining => 'Start training';
+
+  @override
+  String get trainingActive => 'Active';
+
+  @override
+  String get trainingPaused => 'Paused';
+
+  @override
+  String get trainingFinished => 'Finished';
+
+  @override
+  String get trainingNotStarted => 'Not started';
+
+  @override
+  String get trainingPause => 'Pause';
+
+  @override
+  String get trainingResume => 'Resume';
+
+  @override
+  String get trainingFinish => 'Finish';
+
+  @override
+  String get trainingAnalysis => 'Training analysis';
+
+  @override
+  String get trainingElapsedUnknown => 'Elapsed unknown';
+
+  @override
+  String trainingPauseCount(int count) {
+    return 'Pauses: $count';
+  }
+
+  @override
+  String get trainingKindGeneral => 'General';
+
+  @override
+  String get trainingKindWarmUp => 'Pre-match warm-up';
+
+  @override
+  String get trainingNote => 'Note';
+
+  @override
+  String get trainingLinkedMatch => 'Linked match';
+
+  @override
+  String get trainingNoLinkedMatch => 'No linked match';
+
+  @override
+  String get trainingUnavailable => 'Training storage unavailable';
+
+  @override
+  String get trainingBlockedAnother =>
+      'Another training session is still open. It was not stopped.';
+
+  @override
+  String get trainingBlockedMatchOpen =>
+      'A match is in progress on this phone. Training was not started.';
+
+  @override
+  String get trainingBlockedMatchUnverified =>
+      'Match state is not verified. Training was not started.';
+
+  @override
+  String get trainingWarmUpAction => 'Pre-match warm-up';
+
+  @override
+  String get trainingDuration => 'Duration';
 }
