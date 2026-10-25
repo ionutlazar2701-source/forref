@@ -1189,6 +1189,234 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Checking match state'**
   String get checkingMatchState;
+
+  /// No description provided for @trainingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Training'**
+  String get trainingTitle;
+
+  /// No description provided for @trainingEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No training sessions yet'**
+  String get trainingEmpty;
+
+  /// No description provided for @startTraining.
+  ///
+  /// In en, this message translates to:
+  /// **'Start training'**
+  String get startTraining;
+
+  /// No description provided for @trainingActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get trainingActive;
+
+  /// No description provided for @trainingPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get trainingPaused;
+
+  /// No description provided for @trainingFinished.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished'**
+  String get trainingFinished;
+
+  /// No description provided for @trainingNotStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not started'**
+  String get trainingNotStarted;
+
+  /// No description provided for @trainingPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get trainingPause;
+
+  /// No description provided for @trainingResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get trainingResume;
+
+  /// No description provided for @trainingFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish'**
+  String get trainingFinish;
+
+  /// No description provided for @trainingAnalysis.
+  ///
+  /// In en, this message translates to:
+  /// **'Training analysis'**
+  String get trainingAnalysis;
+
+  /// No description provided for @trainingElapsedUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Elapsed unknown'**
+  String get trainingElapsedUnknown;
+
+  /// No description provided for @trainingPauseCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Pauses: {count}'**
+  String trainingPauseCount(int count);
+
+  /// No description provided for @trainingKindGeneral.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get trainingKindGeneral;
+
+  /// No description provided for @trainingKindWarmUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Pre-match warm-up'**
+  String get trainingKindWarmUp;
+
+  /// No description provided for @trainingNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get trainingNote;
+
+  /// No description provided for @trainingLinkedMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked match'**
+  String get trainingLinkedMatch;
+
+  /// No description provided for @trainingNoLinkedMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No linked match'**
+  String get trainingNoLinkedMatch;
+
+  /// No description provided for @trainingUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Training storage unavailable'**
+  String get trainingUnavailable;
+
+  /// No description provided for @trainingBlockedAnother.
+  ///
+  /// In en, this message translates to:
+  /// **'Another training session is still open. It was not stopped.'**
+  String get trainingBlockedAnother;
+
+  /// No description provided for @trainingBlockedMatchOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'A match is in progress on this phone. Training was not started.'**
+  String get trainingBlockedMatchOpen;
+
+  /// No description provided for @trainingBlockedMatchUnverified.
+  ///
+  /// In en, this message translates to:
+  /// **'Match state is not verified. Training was not started.'**
+  String get trainingBlockedMatchUnverified;
+
+  /// No description provided for @trainingWarmUpAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Pre-match warm-up'**
+  String get trainingWarmUpAction;
+
+  /// No description provided for @trainingDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get trainingDuration;
+
+  /// No description provided for @matchRecordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Match record'**
+  String get matchRecordTitle;
+
+  /// No description provided for @matchRecordAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Match record'**
+  String get matchRecordAction;
+
+  /// No description provided for @matchRecordNoEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'No authoritative events'**
+  String get matchRecordNoEvents;
+
+  /// No description provided for @matchRecordUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Match record cannot be read'**
+  String get matchRecordUnavailable;
+
+  /// No description provided for @matchRecordScoreUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Score unavailable'**
+  String get matchRecordScoreUnavailable;
+
+  /// No description provided for @matchRecordScoreConflicted.
+  ///
+  /// In en, this message translates to:
+  /// **'Score conflicted'**
+  String get matchRecordScoreConflicted;
+
+  /// No description provided for @matchRecordPhaseUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Match phase cannot be established'**
+  String get matchRecordPhaseUnavailable;
+
+  /// No description provided for @matchRecordNotComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Full time is not match completion'**
+  String get matchRecordNotComplete;
+
+  /// No description provided for @matchRecordEndedFact.
+  ///
+  /// In en, this message translates to:
+  /// **'Match ended'**
+  String get matchRecordEndedFact;
+
+  /// No description provided for @matchRecordGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal · {team}'**
+  String matchRecordGoal(String team);
+
+  /// No description provided for @matchRecordPeriodStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Period {index} started'**
+  String matchRecordPeriodStarted(int index);
+
+  /// No description provided for @matchRecordPeriodEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Period {index} ended'**
+  String matchRecordPeriodEnded(int index);
+
+  /// No description provided for @matchRecordOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Committed record'**
+  String get matchRecordOther;
+
+  /// No description provided for @matchRecordReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Read only. Opening this screen does not save a record.'**
+  String get matchRecordReadOnly;
 }
 
 class _AppLocalizationsDelegate

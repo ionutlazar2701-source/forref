@@ -115,6 +115,14 @@ class _MatchesPageState extends State<MatchesPage> {
         ),
         actions: [
           TextButton(
+            key: const Key('open-training'),
+            onPressed: () async {
+              await Navigator.of(context).pushNamed(AppRouter.training);
+              await _reload();
+            },
+            child: Text(l10n.trainingTitle),
+          ),
+          TextButton(
             onPressed: () =>
                 Navigator.of(context).pushNamed(AppRouter.settingsPath),
             child: Text(l10n.settings),
@@ -249,7 +257,27 @@ class _FixtureTile extends StatelessWidget {
     return Material(
       color:
           current ? theme.colorScheme.surfaceContainerHigh : Colors.transparent,
-      child: InkWell(onTap: onTap, child: child),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InkWell(onTap: onTap, child: child),
+          if (current)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton(
+                key: Key('open-match-record-${match.matchId}'),
+                onPressed: () {
+                  Navigator.of(context).pushNamed(
+                    AppRouter.matchRecord,
+                    arguments: match.matchId,
+                  );
+                },
+                child: Text(l10n.matchRecordAction),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

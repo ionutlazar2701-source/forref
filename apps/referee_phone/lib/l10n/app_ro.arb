@@ -196,5 +196,58 @@
   "fixtureGroupNeedsAttention": "Necesită atenție",
   "fixtureGroupNotStarted": "Neînceput",
   "fixtureGroupCompleted": "Încheiate",
-  "checkingMatchState": "Se verifică starea meciului"
+  "checkingMatchState": "Se verifică starea meciului",
+  "trainingTitle": "Antrenament",
+  "trainingEmpty": "Niciun antrenament încă",
+  "startTraining": "Începe antrenamentul",
+  "trainingActive": "Activ",
+  "trainingPaused": "Pauză",
+  "trainingFinished": "Încheiat",
+  "trainingNotStarted": "Neînceput",
+  "trainingPause": "Pauză",
+  "trainingResume": "Reia",
+  "trainingFinish": "Încheie",
+  "trainingAnalysis": "Analiza antrenamentului",
+  "trainingElapsedUnknown": "Durată necunoscută",
+  "trainingPauseCount": "Pauze: {count}",
+  "trainingKindGeneral": "General",
+  "trainingKindWarmUp": "Încălzire înainte de meci",
+  "trainingNote": "Notă",
+  "trainingLinkedMatch": "Meci legat",
+  "trainingNoLinkedMatch": "Niciun meci legat",
+  "trainingUnavailable": "Stocarea antrenamentului nu este disponibilă",
+  "trainingBlockedAnother": "Un alt antrenament este încă deschis. Nu a fost oprit.",
+  "trainingBlockedMatchOpen": "Un meci este în desfășurare pe acest telefon. Antrenamentul nu a fost pornit.",
+  "trainingBlockedMatchUnverified": "Starea meciului nu este verificată. Antrenamentul nu a fost pornit.",
+  "trainingWarmUpAction": "Încălzire înainte de meci",
+  "trainingDuration": "Durată",
+  "matchRecordTitle": "Fișa meciului",
+  "matchRecordAction": "Fișa meciului",
+  "matchRecordNoEvents": "Niciun eveniment autoritativ",
+  "matchRecordUnavailable": "Fișa meciului nu poate fi citită",
+  "matchRecordScoreUnavailable": "Scor indisponibil",
+  "matchRecordScoreConflicted": "Scor în conflict",
+  "matchRecordPhaseUnavailable": "Faza meciului nu poate fi stabilită",
+  "matchRecordNotComplete": "Timpul regulamentar nu înseamnă meci încheiat",
+  "matchRecordEndedFact": "Meci încheiat",
+  "matchRecordGoal": "Gol · {team}",
+  "@matchRecordGoal": {
+    "placeholders": {
+      "team": {"type": "String"}
+    }
+  },
+  "matchRecordPeriodStarted": "Repriza {index} a început",
+  "@matchRecordPeriodStarted": {
+    "placeholders": {
+      "index": {"type": "int"}
+    }
+  },
+  "matchRecordPeriodEnded": "Repriza {index} s-a încheiat",
+  "@matchRecordPeriodEnded": {
+    "placeholders": {
+      "index": {"type": "int"}
+    }
+  },
+  "matchRecordOther": "Înregistrare consemnată",
+  "matchRecordReadOnly": "Doar citire. Deschiderea acestui ecran nu salvează o înregistrare."
 }

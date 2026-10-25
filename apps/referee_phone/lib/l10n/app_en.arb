@@ -220,5 +220,63 @@
   "fixtureGroupNeedsAttention": "Needs attention",
   "fixtureGroupNotStarted": "Not started",
   "fixtureGroupCompleted": "Completed",
-  "checkingMatchState": "Checking match state"
+  "checkingMatchState": "Checking match state",
+  "trainingTitle": "Training",
+  "trainingEmpty": "No training sessions yet",
+  "startTraining": "Start training",
+  "trainingActive": "Active",
+  "trainingPaused": "Paused",
+  "trainingFinished": "Finished",
+  "trainingNotStarted": "Not started",
+  "trainingPause": "Pause",
+  "trainingResume": "Resume",
+  "trainingFinish": "Finish",
+  "trainingAnalysis": "Training analysis",
+  "trainingElapsedUnknown": "Elapsed unknown",
+  "trainingPauseCount": "Pauses: {count}",
+  "@trainingPauseCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "trainingKindGeneral": "General",
+  "trainingKindWarmUp": "Pre-match warm-up",
+  "trainingNote": "Note",
+  "trainingLinkedMatch": "Linked match",
+  "trainingNoLinkedMatch": "No linked match",
+  "trainingUnavailable": "Training storage unavailable",
+  "trainingBlockedAnother": "Another training session is still open. It was not stopped.",
+  "trainingBlockedMatchOpen": "A match is in progress on this phone. Training was not started.",
+  "trainingBlockedMatchUnverified": "Match state is not verified. Training was not started.",
+  "trainingWarmUpAction": "Pre-match warm-up",
+  "trainingDuration": "Duration",
+  "matchRecordTitle": "Match record",
+  "matchRecordAction": "Match record",
+  "matchRecordNoEvents": "No authoritative events",
+  "matchRecordUnavailable": "Match record cannot be read",
+  "matchRecordScoreUnavailable": "Score unavailable",
+  "matchRecordScoreConflicted": "Score conflicted",
+  "matchRecordPhaseUnavailable": "Match phase cannot be established",
+  "matchRecordNotComplete": "Full time is not match completion",
+  "matchRecordEndedFact": "Match ended",
+  "matchRecordGoal": "Goal · {team}",
+  "@matchRecordGoal": {
+    "placeholders": {
+      "team": {"type": "String"}
+    }
+  },
+  "matchRecordPeriodStarted": "Period {index} started",
+  "@matchRecordPeriodStarted": {
+    "placeholders": {
+      "index": {"type": "int"}
+    }
+  },
+  "matchRecordPeriodEnded": "Period {index} ended",
+  "@matchRecordPeriodEnded": {
+    "placeholders": {
+      "index": {"type": "int"}
+    }
+  },
+  "matchRecordOther": "Committed record",
+  "matchRecordReadOnly": "Read only. Opening this screen does not save a record."
 }

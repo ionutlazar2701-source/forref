@@ -11,6 +11,9 @@ import 'package:referee_phone/match/match_session.dart';
 import 'package:referee_phone/officiate/fixture_list.dart';
 import 'package:referee_phone/officiate/preparation_assessment.dart';
 import 'package:referee_phone/routing/app_router.dart';
+import 'package:referee_phone/training/training_match_gate.dart';
+import 'package:referee_phone/training/training_session.dart';
+import 'package:referee_phone/training/training_store.dart';
 
 /// One Preparation workspace for a single match.
 ///
@@ -43,6 +46,7 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
   bool _hydrating = false;
   bool _closed = false;
   Future<void> _persistChain = Future<void>.value();
+  String? _trainingDenial;
 
   @override
   void initState() {
@@ -172,10 +176,65 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
     );
   }
 
+  String _warmUpDenial(AppLocalizations l10n, TrainingStartDenial denial) {
+    return switch (denial) {
+      TrainingStartDenial.anotherSessionOpen => l10n.trainingBlockedAnother,
+      TrainingStartDenial.matchInProgress => l10n.trainingBlockedMatchOpen,
+      TrainingStartDenial.matchStateUnverified =>
+        l10n.trainingBlockedMatchUnverified,
+      TrainingStartDenial.ledgerUnreadable => l10n.trainingUnavailable,
+    };
+  }
+
   CrewMember? _member(String text) {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return null;
     return CrewMember(name: trimmed);
+  }
+
+  Future<void> _startWarmUp() async {
+    final scope = AppScope.of(context);
+    final store = scope.training;
+    final l10n = AppLocalizations.of(context);
+    if (store == null) {
+      setState(() => _trainingDenial = l10n.trainingUnavailable);
+      return;
+    }
+    final ledger = await store.load();
+    final match = _session?.match;
+    final inProgress = match != null &&
+        (match.status == MatchStatus.live ||
+            match.status == MatchStatus.paused ||
+            match.status == MatchStatus.halfTime);
+    final denial = ledger.unreadable
+        ? TrainingStartDenial.ledgerUnreadable
+        : await trainingMatchDenial(
+            database: scope.database,
+            boundary: scope.matchApplication,
+            today: DateTime.now(),
+            anotherSessionOpen: ledger.openSession != null &&
+                ledger.warmUpFor(widget.matchId) == null,
+          );
+    final blocked =
+        denial ?? (inProgress ? TrainingStartDenial.matchInProgress : null);
+    if (!mounted) return;
+    if (blocked != null && ledger.warmUpFor(widget.matchId) == null) {
+      setState(() => _trainingDenial = _warmUpDenial(l10n, blocked));
+      return;
+    }
+    final result = await store.startWarmUp(matchId: widget.matchId);
+    if (!mounted) return;
+    switch (result) {
+      case TrainingStarted(:final session):
+      case TrainingAlreadyPresent(:final session):
+        setState(() => _trainingDenial = null);
+        await Navigator.of(context).pushNamed(
+          AppRouter.trainingSession,
+          arguments: session.id,
+        );
+      case TrainingStartBlocked(:final denial):
+        setState(() => _trainingDenial = _warmUpDenial(l10n, denial));
+    }
   }
 
   Future<void> _goLive() async {
@@ -473,6 +532,25 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
                       preparationBlockerLabel(l10n, blocker),
                     l10n.optionalDetailsDoNotBlock,
                   ],
+                ),
+                TextButton(
+                  key: const Key('training-warm-up'),
+                  onPressed: _startWarmUp,
+                  child: Text(l10n.trainingWarmUpAction),
+                ),
+                if (_trainingDenial != null)
+                  ForrefNotice(
+                    title: _trainingDenial!,
+                    titleKey: const Key('training-warm-up-denial'),
+                    tone: ForrefNoticeTone.attention,
+                  ),
+                TextButton(
+                  key: const Key('open-match-record'),
+                  onPressed: () => Navigator.of(context).pushNamed(
+                    AppRouter.matchRecord,
+                    arguments: widget.matchId,
+                  ),
+                  child: Text(l10n.matchRecordAction),
                 ),
               ],
             ),
