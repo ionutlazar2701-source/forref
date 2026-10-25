@@ -1,0 +1,13 @@
+name: sync_contract
+description: >
+  Research-only phone and watch sync fact machine.
+  Not production sync, not a watch client, and not Match Memory.
+publish_to: none
+version: 0.0.1
+
+environment:
+  sdk: ^3.6.0
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.0
