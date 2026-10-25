@@ -220,5 +220,34 @@
   "fixtureGroupNeedsAttention": "Needs attention",
   "fixtureGroupNotStarted": "Not started",
   "fixtureGroupCompleted": "Completed",
-  "checkingMatchState": "Checking match state"
+  "checkingMatchState": "Checking match state",
+  "matchRecordTitle": "Match record",
+  "matchRecordAction": "Match record",
+  "matchRecordNoEvents": "No authoritative events",
+  "matchRecordUnavailable": "Match record cannot be read",
+  "matchRecordScoreUnavailable": "Score unavailable",
+  "matchRecordScoreConflicted": "Score conflicted",
+  "matchRecordPhaseUnavailable": "Match phase cannot be established",
+  "matchRecordNotComplete": "Full time is not match completion",
+  "matchRecordEndedFact": "Match ended",
+  "matchRecordGoal": "Goal · {team}",
+  "@matchRecordGoal": {
+    "placeholders": {
+      "team": {"type": "String"}
+    }
+  },
+  "matchRecordPeriodStarted": "Period {index} started",
+  "@matchRecordPeriodStarted": {
+    "placeholders": {
+      "index": {"type": "int"}
+    }
+  },
+  "matchRecordPeriodEnded": "Period {index} ended",
+  "@matchRecordPeriodEnded": {
+    "placeholders": {
+      "index": {"type": "int"}
+    }
+  },
+  "matchRecordOther": "Committed record",
+  "matchRecordReadOnly": "Read only. Opening this screen does not save a record."
 }

@@ -474,6 +474,14 @@ class _MatchSetupPageState extends State<MatchSetupPage> {
                     l10n.optionalDetailsDoNotBlock,
                   ],
                 ),
+                TextButton(
+                  key: const Key('open-match-record'),
+                  onPressed: () => Navigator.of(context).pushNamed(
+                    AppRouter.matchRecord,
+                    arguments: widget.matchId,
+                  ),
+                  child: Text(l10n.matchRecordAction),
+                ),
               ],
             ),
           ],

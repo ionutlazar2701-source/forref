@@ -155,6 +155,14 @@ class _MatchSummaryPageState extends State<MatchSummaryPage> {
               child: Text(l10n.finishMatch),
             ),
           TextButton(
+            key: const Key('open-match-record'),
+            onPressed: () => Navigator.of(context).pushNamed(
+              AppRouter.matchRecord,
+              arguments: widget.matchId,
+            ),
+            child: Text(l10n.matchRecordAction),
+          ),
+          TextButton(
             onPressed: () => Navigator.of(context).pushNamed(
               AppRouter.liveMatch,
               arguments: widget.matchId,
