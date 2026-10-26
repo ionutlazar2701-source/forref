@@ -34,7 +34,7 @@ Shirt text is a label. The intent carries the participant id.
 
 Capture, cautions, back, family, and participant targets keep a logical-pixel floor inside the simulated aperture. If that floor does not fit, the surface shows `LAYOUT HOLD` instead of shrinking those targets. The floor is not a millimetre and not a device safe area. Decorative bars beside the capture ring are not controls. The capture center dot is not a control.
 
-The capture ring draws an implementation whistle glyph. Each family draws an implementation hexagon glyph. Those glyphs are reconstructed from the approved boards. They are not frozen source SVG files and they do not mean Saved.
+The capture ring draws an implementation whistle glyph. On Live A1 round the ring has no visible word; the accessible name remains “Capture event”. That face also omits the research Idle label and the Match Report / History links so they do not compete with the clock. Those routes stay on the other layouts and on the later research pages. The quiet cautions row is a list mark, a non-count yellow dot, and the cautions label. Unresolved awareness text appears only when prior caution is unavailable or conflicted. Round Capture Event uses four pointy hexagon controls in the approved radial order. The glyphs are reconstructed from the approved boards. They are not frozen source SVG files and they do not mean Saved. A verified A1 score is one line. Unknown score stays the truthful label and is not drawn as 0–0.
 
 ## Research commit labels
 

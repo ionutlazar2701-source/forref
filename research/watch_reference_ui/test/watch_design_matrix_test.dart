@@ -40,6 +40,7 @@ void main() {
       Color? homeKit,
       Color? awayKit,
       WatchLanguage language = WatchLanguage.en,
+      Set<WatchCaptureFamily> blocked = const {},
     }) async {
       await tester.binding.setSurfaceSize(size + const Offset(40, 80));
       await tester.pumpWidget(
@@ -60,6 +61,7 @@ void main() {
                   homeKit: homeKit,
                   awayKit: awayKit,
                   language: language,
+                  blockedFamilies: blocked,
                 ),
               ),
             ),
@@ -91,7 +93,11 @@ void main() {
         _trusted(roster: people.players, officials: people.officials);
 
     await cell(
-        name: 'L-A1-centered-round', size: round, face: WatchFaceShape.round);
+      name: 'L-A1-centered-round',
+      size: round,
+      face: WatchFaceShape.round,
+      state: _quiet(),
+    );
     await cell(
         name: 'L-A2-centered-rect',
         size: rect,
@@ -165,6 +171,19 @@ void main() {
       size: round,
       face: WatchFaceShape.round,
       beyond: true,
+      state: _quiet(
+        clock: const ClockPresentation(
+          available: true,
+          label: '03:24',
+          phaseLabel: '2ND HALF',
+        ),
+      ),
+    );
+    await cell(
+      name: 'round-unresolved',
+      size: round,
+      face: WatchFaceShape.round,
+      beyond: true,
       state: _trusted(
         clock: const ClockPresentation(
           available: true,
@@ -172,6 +191,13 @@ void main() {
           phaseLabel: '2ND HALF',
         ),
       ),
+    );
+    await cell(
+      name: 'capture-blocked',
+      size: round,
+      face: WatchFaceShape.round,
+      blocked: const {WatchCaptureFamily.goal},
+      state: _quiet(route: WatchRoute.captureMenu),
     );
     await cell(
       name: 'conflicted-score',
@@ -192,7 +218,7 @@ void main() {
         .join('\n');
     File('/opt/cursor/artifacts/watch_design/app-dimensions.txt')
         .writeAsStringSync('$manifest\n');
-    expect(shots, hasLength(14));
+    expect(shots, hasLength(16));
   });
 
   testWidgets(
@@ -214,7 +240,10 @@ void main() {
     expect(find.byKey(const Key('watch-family-glyph-substitution')),
         findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('watch-capture-center')));
+    await tester.tap(
+      find.byKey(const Key('watch-capture-center')),
+      warnIfMissed: false,
+    );
     await tester.pump();
     expect(intents, isEmpty);
 
@@ -498,6 +527,7 @@ WatchPresentationState _trusted({
   List<PresentationParticipant> roster = const [],
   List<PresentationOfficial> officials = const [],
   PresentationTeamContext team = PresentationTeamContext.home,
+  DisciplinePresentation? discipline,
 }) {
   final base = WatchPresentationState.empty;
   return WatchPresentationState(
@@ -523,7 +553,7 @@ WatchPresentationState _trusted({
           awayGoals: 0,
         ),
     selection: base.selection,
-    discipline: base.discipline,
+    discipline: discipline ?? base.discipline,
     substitution: base.substitution,
     frozenCommand: null,
     commit: base.commit,
@@ -536,6 +566,27 @@ WatchPresentationState _trusted({
     matchReport: MatchReportPresentation.empty,
     homeTeamLabel: 'Home',
     awayTeamLabel: 'Away',
+  );
+}
+
+WatchPresentationState _quiet({
+  ClockPresentation? clock,
+  ScorePresentation? score,
+  WatchRoute route = WatchRoute.liveCore,
+}) {
+  return _trusted(
+    clock: clock,
+    score: score,
+    route: route,
+    discipline: const DisciplinePresentation(
+      awareness: PriorAwareness.knownNone,
+      awarenessLabel: 'Known verified absence',
+      cautionCount: 0,
+      sendOffCount: 0,
+      successorEstablished: false,
+      yellowOffered: false,
+      directSendOffOffered: false,
+    ),
   );
 }
 

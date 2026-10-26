@@ -31,7 +31,7 @@ void main() {
     await tester.tap(
       find.descendant(
         of: find.byType(WatchReferenceApp),
-        matching: find.text('Capture'),
+        matching: find.byKey(const Key('watch-capture-ring')),
       ),
     );
     await tester.pump();

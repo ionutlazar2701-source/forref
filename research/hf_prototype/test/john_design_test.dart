@@ -169,7 +169,9 @@ void main() {
       expect(controller.watchRuntime.watchState.navigation.route, WatchRoute.liveCore);
 
       // The same tap on the active device moves both shells to the same route.
-      await tester.tap(find.descendant(of: active, matching: find.text('Capture')));
+      await tester.tap(
+        find.descendant(of: active, matching: find.byKey(const Key('watch-capture-ring'))),
+      );
       await tester.pump();
       expect(controller.watchRuntime.watchState.navigation.route, WatchRoute.captureMenu);
       expect(find.descendant(of: mirror, matching: find.text('Yellow')), findsOneWidget);

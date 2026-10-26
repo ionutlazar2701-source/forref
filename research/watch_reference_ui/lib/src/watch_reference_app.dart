@@ -266,6 +266,22 @@ class _FitBody extends StatelessWidget {
   final VoidCallback onJourneyBackToChooser;
   final VoidCallback onJourneyBackToTeam;
 
+  Widget _commitLabel() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
+      child: Text(
+        state.commit.label,
+        key: const Key('watch-commit-label'),
+        style: TextStyle(
+          color: design ? WatchPalette.steel : const Color(0xFF0B2A4A),
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          fontFamily: 'Roboto',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -299,19 +315,17 @@ class _FitBody extends StatelessWidget {
               ),
             ),
           ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
-          child: Text(
-            state.commit.label,
-            key: const Key('watch-commit-label'),
-            style: TextStyle(
-              color: design ? WatchPalette.steel : const Color(0xFF0B2A4A),
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              fontFamily: 'Roboto',
-            ),
+        if (!(design && face == WatchFaceShape.round))
+          _commitLabel()
+        else if (frame != WatchDesignFrame.flow ||
+            state.navigation.route != WatchRoute.liveCore)
+          Visibility(
+            visible: false,
+            maintainSize: true,
+            maintainAnimation: true,
+            maintainState: true,
+            child: _commitLabel(),
           ),
-        ),
         Expanded(child: _body()),
       ],
     );
