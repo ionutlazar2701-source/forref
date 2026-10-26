@@ -139,6 +139,118 @@ void main() {
     expect(find.text('00:00'), findsNothing);
     await _shot(tester, 'lab-unknown-score-time', 'shell-shot');
   });
+
+  testWidgets(
+      'a shell-hosted presentation fixture is labeled outside the face',
+      (tester) async {
+    final profile = factualProfileById('huawei-watch-gt4-46');
+    expect(profile, isNotNull);
+    const quiet = DisciplinePresentation(
+      awareness: PriorAwareness.knownNone,
+      awarenessLabel: 'Known verified absence',
+      cautionCount: 0,
+      sendOffCount: 0,
+      successorEstablished: false,
+      yellowOffered: false,
+      directSendOffOffered: false,
+    );
+    WatchPresentationState live({WatchRoute route = WatchRoute.liveCore}) {
+      final base = WatchPresentationState.empty;
+      return WatchPresentationState(
+        scenarioId: 'fixture',
+        profileId: 'huawei-watch-gt4-46',
+        header: base.header,
+        clock: const ClockPresentation(
+          available: true,
+          label: '03:24',
+          phaseLabel: '2ND HALF',
+        ),
+        score: const ScorePresentation(
+          available: true,
+          label: '1 – 0',
+          homeGoals: 1,
+          awayGoals: 0,
+        ),
+        selection: base.selection,
+        discipline: quiet,
+        substitution: base.substitution,
+        frozenCommand: null,
+        commit: base.commit,
+        navigation: NavigationPresentation(route: route, canOpenCapture: true),
+        roster: base.roster,
+        officials: base.officials,
+        recoveryLabel: null,
+        lastRejection: null,
+        goalFlow: base.goalFlow,
+        matchReport: base.matchReport,
+        homeTeamLabel: 'Home',
+        awayTeamLabel: 'Away',
+      );
+    }
+
+    Future<void> pump(WatchPresentationState state) {
+      return tester.pumpWidget(
+        MaterialApp(
+          home: SizedBox(
+            width: 420,
+            height: 560,
+            child: RepaintBoundary(
+              key: const Key('lab-fixture-labeled'),
+              child: Column(
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      'SIMULATED PRESENTATION FIXTURE',
+                      key: Key('lab-fixture-caption'),
+                    ),
+                  ),
+                  Expanded(
+                    child: DeviceShellStage(
+                      profile: profile!,
+                      child: RepaintBoundary(
+                        key: const Key('lab-fixture-face'),
+                        child: WatchReferenceApp(
+                          state: state,
+                          onIntent: (_) {},
+                          face: watchFaceFor(profile),
+                          showBeyondNominal: true,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    await tester.binding.setSurfaceSize(const Size(480, 640));
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await pump(live());
+    expect(tester.takeException(), isNull);
+    expect(find.text('SIMULATED PRESENTATION FIXTURE'), findsOneWidget);
+    expect(find.text('03:24'), findsOneWidget);
+    expect(find.text('BEYOND 90:00'), findsOneWidget);
+    expect(find.text('Prior caution unavailable'), findsNothing);
+    expect(find.text('Idle'), findsNothing);
+    expect(find.text('Capture'), findsNothing);
+    final caption = tester.getRect(find.byKey(const Key('lab-fixture-caption')));
+    final face = tester.getRect(find.byKey(const Key('lab-fixture-face')));
+    expect(caption.overlaps(face), isFalse);
+    await _shot(tester, 'lab-fixture-a1-labeled', 'lab-fixture-labeled');
+    await _shot(tester, 'lab-fixture-a1', 'lab-fixture-face');
+
+    await pump(live(route: WatchRoute.captureMenu));
+    expect(find.text('Capture Event'), findsNothing);
+    expect(find.text('10:09'), findsNothing);
+    expect(find.text('Yellow'), findsOneWidget);
+    await _shot(tester, 'lab-fixture-capture', 'lab-fixture-face');
+  });
 }
 
 Future<void> _shot(WidgetTester tester, String name, String key) async {

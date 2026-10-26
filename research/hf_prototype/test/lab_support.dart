@@ -24,6 +24,10 @@ Future<void> tapWatch(WidgetTester tester, String label) async {
     of: find.byType(WatchReferenceApp),
     matching: find.text(label),
   );
+  if (label == 'Capture' && target.evaluate().isEmpty) {
+    await tapWatchKey(tester, const Key('watch-capture-ring'));
+    return;
+  }
   expect(target, findsOneWidget);
   await tester.tap(target);
 }
