@@ -75,6 +75,22 @@ export function layoutStack(info, count) {
   return tryStack(info, count, 32) || { titleY: 0, titleH: 28, rows: [] };
 }
 
+export function layoutClock(info, actionCount) {
+  const actions = actionCount === 1 ? 1 : 2;
+  const status = place(info, info.round ? 40 : SQUARE_STATUS_BAR + 4, 32, info.round ? 280 : info.width - 20);
+  const time = place(info, status.y + status.h + 2, info.round ? 72 : 64, info.round ? 320 : info.width - 16);
+  const score = place(info, time.y + time.h + 2, 28, info.round ? 280 : time.w);
+  const primary = place(info, score.y + score.h + 6, info.round ? 48 : 44, info.round ? 280 : info.width - 20);
+  let secondary = null;
+  let backY = primary.y + primary.h + 6;
+  if (actions === 2) {
+    secondary = place(info, backY, primary.h, primary.w);
+    backY = secondary.y + secondary.h + 6;
+  }
+  const back = place(info, backY, 40, info.round ? 200 : primary.w);
+  return { status: status, time: time, score: score, primary: primary, secondary: secondary, back: back };
+}
+
 export function layoutLive(info, mode) {
   const gap = 8;
   const vertical = mode === "C";
