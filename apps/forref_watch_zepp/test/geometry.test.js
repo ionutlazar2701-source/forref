@@ -5,6 +5,7 @@ import {
   layoutStack,
   layoutLive,
   layoutEvent,
+  layoutClock,
   controlsOk,
 } from "../utils/geometry.js";
 
@@ -67,6 +68,17 @@ assert(controlsOk(eventRect), "rect event");
 assertLayout(round, eventRound, "round event");
 assertLayout(rect, eventRect, "rect event");
 assert(eventRect.yellow.y >= SQUARE_STATUS_BAR, "rect event below status bar");
+
+for (let actions = 1; actions <= 2; actions++) {
+  const clockRound = layoutClock(round, actions);
+  const clockRect = layoutClock(rect, actions);
+  assert(controlsOk(clockRound), "round clock " + actions);
+  assert(controlsOk(clockRect), "rect clock " + actions);
+  assertLayout(round, clockRound, "round clock " + actions);
+  assertLayout(rect, clockRect, "rect clock " + actions);
+  assert(clockRect.status.y >= SQUARE_STATUS_BAR, "rect clock below status bar");
+  assert(clockRound.time.h >= 64, "round clock time stays glanceable");
+}
 
 console.log("FORREF_GEOMETRY_TEST pass margin=" + SAFE_MARGIN + " statusBar=" + SQUARE_STATUS_BAR);
 console.log("LIVE_C_ROUND " + JSON.stringify(layoutLive(round, "C")));
