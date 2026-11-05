@@ -1,0 +1,79 @@
+{
+  "configVersion": "v3",
+  "app": {
+    "appId": 29566,
+    "appName": "FORREF",
+    "appType": "app",
+    "version": {
+      "code": 1,
+      "name": "1.0.1"
+    },
+    "icon": "icon.png",
+    "vender": "zepp",
+    "description": "FORREF simulator demo"
+  },
+  "permissions": [
+    "data:os.device.info"
+  ],
+  "runtime": {
+    "apiVersion": {
+      "compatible": "4.0",
+      "target": "4.0",
+      "minVersion": "4.0"
+    }
+  },
+  "debug": false,
+  "targets": {
+    "gt": {
+      "module": {
+        "page": {
+          "pages": [
+            "page/gt/home/index.page",
+            "page/gt/select/index.page",
+            "page/gt/hub/index.page",
+            "page/gt/warmup/index.page",
+            "page/gt/incident/index.page",
+            "page/gt/ready/index.page",
+            "page/gt/toss/index.page",
+            "page/gt/live/index.page",
+            "page/gt/display/index.page",
+            "page/gt/event/index.page",
+            "page/gt/player/index.page",
+            "page/gt/review/index.page",
+            "page/gt/settings/index.page",
+            "page/gt/cautions/index.page",
+            "page/gt/neutral/index.page",
+            "page/gt/halftime/index.page",
+            "page/gt/recovery/index.page",
+            "page/gt/finish/index.page",
+            "page/gt/train/index.page",
+            "page/gt/train-warm/index.page",
+            "page/gt/train-live/index.page",
+            "page/gt/train-done/index.page"
+          ]
+        }
+      },
+      "platforms": [
+        {
+          "st": "r"
+        },
+        {
+          "st": "s"
+        }
+      ],
+      "designWidth": 480
+    }
+  },
+  "i18n": {
+    "en-US": {
+      "appName": "FORREF"
+    },
+    "zh-CN": {
+      "appName": "FORREF"
+    },
+    "ro-RO": {
+      "appName": "FORREF"
+    }
+  },
+  "defaultLanguage": "en-US"
+}
