@@ -37,6 +37,7 @@
             "page/gt/ready/index.page",
             "page/gt/toss/index.page",
             "page/gt/live/index.page",
+            "page/gt/controls/index.page",
             "page/gt/display/index.page",
             "page/gt/event/index.page",
             "page/gt/player/index.page",

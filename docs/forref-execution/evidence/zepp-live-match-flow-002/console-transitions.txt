@@ -1,0 +1,40 @@
+15:55:13.131 > FORREF_LIVE002_BOOT build=live-match-flow-002!
+15:55:53.781 > FORREF_DEVICE page=select width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+15:56:12.730 > FORREF_DEVICE page=hub width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+15:56:15.707 > FORREF_DEVICE page=ready width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+15:56:17.787 > FORREF_DEVICE page=live width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+15:56:17.788 > FORREF_LIVE002_BOOT build=live-match-flow-002!
+15:56:17.790 > FORREF_CLOCK001 LOAD|RDY>RDY|1794498977789|00:00|FROZEN_OBSERVED!
+15:56:54.485 > FORREF_DEVICE page=controls width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+15:56:54.486 > FORREF_LIVE002_BOOT build=live-match-flow-002!
+15:57:07.123 > FORREF_DEVICE page=display width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+15:57:09.516 > FORREF_DEVICE page=controls width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+15:57:09.517 > FORREF_LIVE002_BOOT build=live-match-flow-002!
+15:57:11.423 > FORREF_DEVICE page=live width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+15:57:11.425 > FORREF_LIVE002_BOOT build=live-match-flow-002!
+15:57:39.645 > FORREF_CLOCK001 APPLIED|RDY>H1R|1794499059643|00:00|OBSERVED_UNVERIFIED!
+15:57:44.515 > FORREF_CLOCK001 APPLIED|H1R>H1P|1794499064513|00:04|FROZEN_OBSERVED!
+15:58:02.689 > FORREF_CLOCK001 APPLIED|H1P>H1R|1794499082687|00:04|OBSERVED_UNVERIFIED!
+15:58:30.983 > FORREF_DEVICE page=live width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+15:58:30.984 > FORREF_LIVE002_BOOT build=live-match-flow-002!
+15:58:33.651 > FORREF_DEVICE page=controls width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+15:58:33.652 > FORREF_LIVE002_BOOT build=live-match-flow-002!
+15:58:47.462 > FORREF_CLOCK001 APPLIED|H1R>H1S|1794499127460|00:49|FROZEN_OBSERVED!
+15:58:47.739 > FORREF_DEVICE page=live width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+15:58:47.741 > FORREF_LIVE002_BOOT build=live-match-flow-002!
+15:58:58.974 > FORREF_DEVICE page=controls width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+15:58:58.975 > FORREF_LIVE002_BOOT build=live-match-flow-002!
+15:59:14.078 > FORREF_DEVICE page=display width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+15:59:15.430 > FORREF_DEVICE page=controls width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+15:59:15.431 > FORREF_LIVE002_BOOT build=live-match-flow-002!
+15:59:16.838 > FORREF_DEVICE page=live width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=
+15:59:16.840 > FORREF_LIVE002_BOOT build=live-match-flow-002!
+15:59:30.069 > FORREF_CLOCK001 APPLIED|H1S>H1R|1794499170068|00:49|OBSERVED_UNVERIFIED!
+15:59:34.056 > FORREF_DEVICE page=controls width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+15:59:34.057 > FORREF_LIVE002_BOOT build=live-match-flow-002!
+15:59:35.446 > FORREF_DEVICE page=live width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+15:59:35.448 > FORREF_LIVE002_BOOT build=live-match-flow-002!
+15:59:35.463 > FORREF_LIVE002 VIEW|A|HALF_TIME|00:54|FROZEN_OBSERVED!
+15:59:36.511 > FORREF_LIVE002 VIEW|A|HALF_TIME|00:54|FROZEN_OBSERVED!
+15:59:37.513 > FORREF_LIVE002 VIEW|A|HALF_TIME|00:54|FROZEN_OBSERVED!
+15:59:38.514 > FORREF_LIVE002 VIEW|A|HALF_TIME|00:54|FROZEN_OBSERVED!

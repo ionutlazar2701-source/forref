@@ -1,0 +1,726 @@
+20:55:47.919 > FORREF_DEVICE page=home width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+20:55:47.921 > FORREF_LOCALE page=home code=2 lang=en-US reason=os
+20:55:47.940 > FORREF_HIT name=stack-2 x=8 y=226 w=374 h=56 fit=1
+20:55:47.947 > FORREF_HIT name=stack-4 x=8 y=350 w=374 h=56 fit=
+20:56:06.096 > FORREF_APP onDestroy
+20:56:06.175 > FORREF_APP onCreate epoch=e1794516966175
+20:56:06.175 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+20:56:06.264 > FORREF_PAGE home language=2
+20:56:06.267 > FORREF_DEVICE page=home width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+20:56:06.269 > FORREF_LOCALE page=home code=2 lang=en-US reason=os
+20:56:06.285 > FORREF_HIT name=stack-2 x=8 y=226 w=374 h=56 fit=1
+20:56:06.295 > FORREF_HIT name=stack-4 x=8 y=350 w=374 h=56 fit=1
+20:57:29.950 > FORREF_DEVICE page=select width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+20:57:29.951 > FORREF_LOCALE page=select code=2 lang=en-US reason=os
+20:57:29.963 > FORREF_HIT name=stack-1 x=8 y=164 w=374 h=56 fit=1
+20:57:29.968 > FORREF_HIT name=stack-2 x=8 y=226 w=374 h=56 fit=1
+20:57:31.983 > FORREF_DEVICE page=hub width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+20:57:31.985 > FORREF_LOCALE page=hub code=2 lang=en-US reason=os
+20:57:32.022 > FORREF_HIT name=stack-1 x=8 y=160 w=374 h=52 fit=1
+20:57:32.025 > FORREF_HIT name=stack-2 x=8 y=218 w=374 h=52 fit=1
+20:57:32.029 > FORREF_HIT name=stack-3 x=8 y=276 w=374 h=52 fit=1
+20:57:32.031 > FORREF_HIT name=stack-4 x=8 y=334 w=374 h=52 fit=1
+20:57:32.035 > FORREF_HIT name=stack-5 x=8 y=392 w=374 h=52 fit=1
+20:57:33.993 > FORREF_DEVICE page=ready width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+20:57:33.994 > FORREF_LOCALE page=ready code=2 lang=en-US reason=os
+20:57:34.011 > FORREF_HIT name=stack-3 x=8 y=288 w=374 h=56 fit=1
+20:57:36.727 > FORREF_PAGE live onInit
+20:57:36.730 > FORREF_DEVICE page=live width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+20:57:36.732 > FORREF_LOCALE page=live code=2 lang=en-US reason=os
+20:57:36.733 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+20:57:36.735 > FORREF_CLOCK001 SRC|1794517056735!
+20:57:36.737 > FORREF_CLOCK001 LOAD|RDY>RDY|1794517056735|00:00|FROZEN_OBSERVED!
+20:57:36.750 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+20:57:36.754 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+20:57:36.758 > FORREF_HIT name=live-KICK_OFF x=10 y=392 w=181 h=46 fit=1
+20:57:36.762 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+20:57:36.765 > FORREF_LIVE002 VIEW|A|READY|00:00|FROZEN_OBSERVED!
+20:57:36.767 > FORREF_LIVE002 TIMER|createTimer!
+20:57:47.536 > FORREF_CLOCK001 APPLIED|RDY>H1R|1794517067533|00:00|OBSERVED_UNVERIFIED!
+20:57:47.570 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+20:57:47.574 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+20:57:47.581 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+20:57:47.584 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:00|OBSERVED_UNVERIFIED!
+20:57:48.818 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:01|OBSERVED_UNVERIFIED!
+20:57:49.820 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:02|OBSERVED_UNVERIFIED!
+20:57:50.824 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:03|OBSERVED_UNVERIFIED!
+20:57:51.826 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:04|OBSERVED_UNVERIFIED!
+20:57:52.827 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:05|OBSERVED_UNVERIFIED!
+20:57:53.263 > FORREF_CLOCK001 APPLIED|H1R>H1P|1794517073259|00:05|FROZEN_OBSERVED!
+20:57:53.298 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+20:57:53.302 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+20:57:53.305 > FORREF_HIT name=live-RESUME x=10 y=392 w=181 h=46 fit=1
+20:57:53.309 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=
+20:57:53.312 > FORREF_LIVE002 VIEW|A|FIRST_HALF_PAUSED|00:05|FROZEN_OBSERVED!
+20:58:07.098 > FORREF_CLOCK001 APPLIED|H1P>H1R|1794517087095|00:05|OBSERVED_UNVERIFIED!
+20:58:07.142 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+20:58:07.146 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+20:58:07.150 > FORREF_HIT name=live-PAUSE x=10 y=392 w=181 h=46 fit=1
+20:58:07.154 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+20:58:07.157 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:05|OBSERVED_UNVERIFIED!
+20:58:07.875 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:06|OBSERVED_UNVERIFIED!
+20:58:08.878 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:07|OBSERVED_UNVERIFIED!
+20:58:09.880 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:08|OBSERVED_UNVERIFIED!
+20:58:10.886 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:09|OBSERVED_UNVERIFIED!
+20:58:11.895 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:10|OBSERVED_UNVERIFIED!
+20:58:12.898 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:11|OBSERVED_UNVERIFIED!
+20:58:13.903 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:12|OBSERVED_UNVERIFIED!
+20:58:14.909 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:13|OBSERVED_UNVERIFIED!
+20:58:15.909 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:14|OBSERVED_UNVERIFIED!
+20:58:16.910 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:15|OBSERVED_UNVERIFIED!
+20:58:18.915 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:17|OBSERVED_UNVERIFIED!
+20:58:19.934 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:18|OBSERVED_UNVERIFIED!
+20:58:20.936 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:19|OBSERVED_UNVERIFIED!
+20:58:21.939 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:20|OBSERVED_UNVERIFIED!
+20:58:22.652 > FORREF_CLOCK001 APPLIED|H1R>H1P|1794517102648|00:21|FROZEN_OBSERVED!
+20:58:22.698 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+20:58:22.701 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=
+20:58:22.705 > FORREF_HIT name=live-RESUME x=10 y=392 w=181 h=46 fit=1
+20:58:22.709 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+20:58:22.712 > FORREF_LIVE002 VIEW|A|FIRST_HALF_PAUSED|00:21|FROZEN_OBSERVED!
+20:58:25.118 > FORREF_LIVE002 NAV team=HOME mode=A!
+20:58:25.118 > FORREF_LIVE002 ARM|disarm|navigate|open!
+20:58:25.140 > FORREF_LIVE002 ARM|disarm|exit|open!
+20:58:25.142 > FORREF_LIVE002 TIMER|stop!
+20:58:25.175 > FORREF_CLOCK001 PERSIST|READBACK_ONLY_NOT_D1!
+20:58:25.178 > FORREF_PAGE live onDestroy
+20:58:25.266 > FORREF_LIFE event onInit team=HOME
+20:58:25.270 > FORREF_DEVICE page=event width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+20:58:25.271 > FORREF_LOCALE page=event code=2 lang=en-US reason=os
+20:58:25.280 > FORREF_HIT name=event-yellow x=73 y=92 w=118 h=118 fit=1
+20:58:25.284 > FORREF_HIT name=event-red x=199 y=92 w=118 h=118 fit=1
+20:58:25.288 > FORREF_HIT name=event-goal x=73 y=218 w=118 h=118 fit=1
+20:58:25.292 > FORREF_HIT name=event-sub x=199 y=218 w=118 h=118 fit=1
+20:58:25.296 > FORREF_HIT name=event-back x=12 y=346 w=366 h=42 fit=1
+20:58:27.108 > FORREF_CONTEXT team=HOME event=YELLOW player=
+20:58:27.129 > FORREF_LIFE event onDestroy
+20:58:27.213 > FORREF_DEVICE page=player width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+20:58:27.215 > FORREF_LOCALE page=player code=2 lang=en-US reason=os
+20:58:27.228 > FORREF_HIT name=stack-1 x=8 y=164 w=374 h=56 fit=1
+20:58:27.231 > FORREF_HIT name=stack-2 x=8 y=226 w=374 h=56 fit=1
+20:58:27.234 > FORREF_HIT name=stack-3 x=8 y=288 w=374 h=56 fit=1
+20:58:27.237 > FORREF_HIT name=stack-4 x=8 y=350 w=374 h=56 fit=1
+20:58:29.250 > FORREF_LIFE event onInit team=HOME
+20:58:29.253 > FORREF_DEVICE page=event width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+20:58:29.254 > FORREF_LOCALE page=event code=2 lang=en-US reason=os
+20:58:29.264 > FORREF_HIT name=event-yellow x=73 y=92 w=118 h=118 fit=1
+20:58:29.268 > FORREF_HIT name=event-red x=199 y=92 w=118 h=118 fit=1
+20:58:29.272 > FORREF_HIT name=event-goal x=73 y=218 w=118 h=118 fit=1
+20:58:29.276 > FORREF_HIT name=event-sub x=199 y=218 w=118 h=118 fit=1
+20:58:29.279 > FORREF_HIT name=event-back x=12 y=346 w=366 h=42 fit=1
+20:58:31.546 > FORREF_LIFE event onDestroy
+20:58:31.747 > FORREF_PAGE live onInit
+20:58:31.750 > FORREF_DEVICE page=live width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+20:58:31.752 > FORREF_LOCALE page=live code=2 lang=en-US reason=os
+20:58:31.753 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+20:58:31.754 > FORREF_CLOCK001 SRC|1794517111753!
+20:58:31.767 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+20:58:31.771 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+20:58:31.775 > FORREF_HIT name=live-RESUME x=10 y=392 w=181 h=46 fit=1
+20:58:31.779 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=
+20:58:31.782 > FORREF_LIVE002 VIEW|A|FIRST_HALF_PAUSED|00:21|FROZEN_OBSERVED!
+20:58:31.782 > FORREF_LIVE002 TIMER|createTimer!
+20:58:41.270 > FORREF_LIVE002 ARM|disarm|navigate|open!
+20:58:41.291 > FORREF_LIVE002 ARM|disarm|exit|open!
+20:58:41.291 > FORREF_LIVE002 TIMER|stop!
+20:58:41.497 > FORREF_DEVICE page=controls width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+20:58:41.498 > FORREF_LOCALE page=controls code=2 lang=en-US reason=os
+20:58:41.499 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+20:58:41.515 > FORREF_HIT name=ctrl-END_FIRST_HALF x=8 y=164 w=374 h=56 fit=
+20:58:41.518 > FORREF_HIT name=ctrl-SUSPEND_GAME x=8 y=226 w=374 h=56 fit=1
+20:58:41.521 > FORREF_HIT name=ctrl-display x=8 y=288 w=374 h=56 fit=1
+20:58:41.524 > FORREF_HIT name=ctrl-back x=8 y=350 w=374 h=56 fit=1
+20:58:41.527 > FORREF_LIVE002 CTRL|FIRST_HALF_PAUSED|END_FIRST_HALF,SUSPEND_GAME|open!
+20:58:44.150 > FORREF_LIVE002 ARM|disarm|navigate|open!
+20:58:44.172 > FORREF_LIVE002 ARM|disarm|exit|open!
+20:58:44.173 > FORREF_PAGE controls onDestroy
+20:58:44.260 > FORREF_DEVICE page=display width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+20:58:44.261 > FORREF_LOCALE page=display code=2 lang=en-US reason=os
+20:58:44.277 > FORREF_HIT name=display-a x=8 y=226 w=374 h=56 fit=1
+20:58:44.280 > FORREF_HIT name=display-c x=8 y=288 w=374 h=56 fit=
+20:58:44.283 > FORREF_HIT name=display-back x=8 y=350 w=374 h=56 fit=1
+20:58:46.558 > FORREF_DEVICE page=controls width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+20:58:46.559 > FORREF_LOCALE page=controls code=2 lang=en-US reason=os
+20:58:46.561 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+20:58:46.576 > FORREF_HIT name=ctrl-END_FIRST_HALF x=8 y=164 w=374 h=56 fit=1
+20:58:46.579 > FORREF_HIT name=ctrl-SUSPEND_GAME x=8 y=226 w=374 h=56 fit=1
+20:58:46.582 > FORREF_HIT name=ctrl-display x=8 y=288 w=374 h=56 fit=1
+20:58:46.585 > FORREF_HIT name=ctrl-back x=8 y=350 w=374 h=56 fit=1
+20:58:46.588 > FORREF_LIVE002 CTRL|FIRST_HALF_PAUSED|END_FIRST_HALF,SUSPEND_GAME|open!
+20:58:56.699 > FORREF_LIVE002 ARM|disarm|back|open!
+20:58:56.732 > FORREF_LIVE002 ARM|disarm|exit|open!
+20:58:56.732 > FORREF_PAGE controls onDestroy
+20:58:56.934 > FORREF_PAGE live onInit
+20:58:56.938 > FORREF_DEVICE page=live width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+20:58:56.939 > FORREF_LOCALE page=live code=2 lang=en-US reason=os
+20:58:56.940 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+20:58:56.941 > FORREF_CLOCK001 SRC|1794517136941!
+20:58:56.955 > FORREF_HIT name=live-home x=10 y=72 w=370 h=80 fit=1
+20:58:56.959 > FORREF_HIT name=live-away x=10 y=260 w=370 h=80 fit=1
+20:58:56.963 > FORREF_HIT name=live-RESUME x=10 y=394 w=181 h=44 fit=1
+20:58:56.967 > FORREF_HIT name=live-controls x=199 y=394 w=181 h=44 fit=1
+20:58:56.972 > FORREF_LIVE002 VIEW|C|FIRST_HALF_PAUSED|0058:56.978 I/quickjs-libc SBEngine: FORREF_LIVE002 TIMER|createTimer!
+20:59:04.329 > FORREF_CLOCK001 APPLIED|H1P>H1R|1794517144325|00:21|OBSERVED_UNVERIFIED!
+20:59:04.384 > FORREF_HIT name=live-home x=10 y=72 w=370 h=80 fit=1
+20:59:04.388 > FORREF_HIT name=live-away x=10 y=260 w=370 h=80 fit=1
+20:59:04.391 > FORREF_HIT name=live-PAUSE x=10 y=394 w=181 h=44 fit=1
+20:59:04.395 > FORREF_HIT name=live-controls x=199 y=394 w=181 h=44 fit=1
+20:59:04.398 > FORREF_LIVE002 VIEW|C|FIRST_HALF_RUNNING|00:21|OBSERVED_UNVERIFIED!
+20:59:06.055 > FORREF_LIVE002 VIEW|C|FIRST_HALF_RUNNING|00:22|OBSERVED_UNVERIFIED!
+20:59:07.057 > FORREF_LIVE002 VIEW|C|FIRST_HALF_RUNNING|00:23|OBSERVED_UNVERIFIED!
+20:59:08.059 > FORREF_LIVE002 VIEW|C|FIRST_HALF_RUNNING|00:25|OBSERVED_UNVERIFIED!
+20:59:09.072 > FORREF_LIVE002 VIEW|C|FIRST_HALF_RUNNING|00:26|OBSERVED_UNVERIFIED!
+20:59:10.012 > FORREF_CLOCK001 APPLIED|H1R>H1P|1794517150007|00:26|FROZEN_OBSERVED!
+20:59:10.071 > FORREF_HIT name=live-home x=10 y=72 w=370 h=80 fit=1
+20:59:10.075 > FORREF_HIT name=live-away x=10 y=260 w=370 h=80 fit=1
+20:59:10.078 > FORREF_HIT name=live-RESUME x=10 y=394 w=181 h=44 fit=1
+20:59:10.083 > FORREF_HIT name=live-controls x=199 y=394 w=181 h=44 fit=1
+20:59:10.086 > FORREF_LIVE002 VIEW|C|FIRST_HALF_PAUSED|00:26|FROZEN_OBSERVED!
+20:59:30.927 > FORREF_LIVE002 ARM|disarm|navigate|open!
+20:59:30.955 > FORREF_LIVE002 ARM|disarm|exit|open!
+20:59:30.957 > FORREF_LIVE002 TIMER|stop!
+20:59:31.001 > FORREF_CLOCK001 PERSIST|READBACK_ONLY_NOT_D1!
+20:59:31.004 > FORREF_PAGE live onDestroy
+20:59:31.183 > FORREF_DEVICE page=controls width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+20:59:31.184 > FORREF_LOCALE page=controls code=2 lang=en-US reason=os
+20:59:31.186 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+20:59:31.204 > FORREF_HIT name=ctrl-SUSPEND_GAME x=8 y=226 w=374 h=56 fit=1
+20:59:31.211 > FORREF_HIT name=ctrl-display x=8 y=288 w=374 h=56 fit=1
+20:59:31.214 > FORREF_HIT name=ctrl-back x=8 y=350 w=374 h=56 fit=1
+20:59:31.217 > FORREF_LIVE002 CTRL|FIRST_HALF_PAUSED|END_FIRST_HALF,SUSPEND_GAME|open!
+20:59:32.846 > FORREF_CLOCK001 SRC|1794517172846!
+20:59:32.851 > FORREF_CLOCK001 APPLIED|H1P>HT|1794517172846|00:26|FROZEN_OBSERVED!
+20:59:32.916 > FORREF_LIVE002 ARM|disarm|exit|open!
+20:59:32.917 > FORREF_PAGE controls onDestroy
+20:59:33.102 > FORREF_PAGE live onInit
+20:59:33.105 > FORREF_DEVICE page=live width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+20:59:33.106 > FORREF_LOCALE page=live code=2 lang=en-US reason=os
+20:59:33.108 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+20:59:33.109 > FORREF_CLOCK001 SRC|1794517173108!
+20:59:33.121 > FORREF_HIT name=live-home x=10 y=72 w=370 h=80 fit=1
+20:59:33.125 > FORREF_HIT name=live-away x=10 y=260 w=370 h=80 fit=1
+20:59:33.129 > FORREF_HIT name=live-START_SECOND_HALF x=10 y=394 w=181 h=44 fit=1
+20:59:33.132 > FORREF_HIT name=live-controls x=199 y=394 w=181 h=44 fit=1
+20:59:33.135 > FORREF_LIVE002 VIEW|C|HALF_TIME|00:26|FROZEN_OBSERVED!
+20:59:34.978 > FORREF_CLOCK001 APPLIED|HT>H2R|1794517174974|45:00|OBSERVED_UNVERIFIED!
+20:59:35.049 > FORREF_HIT name=live-home x=10 y=72 w=370 h=80 fit=1
+20:59:35.053 > FORREF_HIT name=live-away x=10 y=260 w=370 h=80 fit=1
+20:59:35.056 > FORREF_HIT name=live-PAUSE x=10 y=394 w=181 h=44 fit=1
+20:59:35.060 > FORREF_HIT name=live-controls x=199 y=394 w=181 h=44 fit=1
+20:59:35.063 > FORREF_LIVE002 VIEW|C|SECOND_HALF_RUNNING|45:00|OBSERVED_UNVERIFIED!
+20:59:36.187 > FORREF_LIVE002 VIEW|C|SECOND_HALF_RUNNING|45:01|OBSERVED_UNVERIFIED!
+20:59:37.192 > FORREF_LIVE002 VIEW|C|SECOND_HALF_RUNNING|45:02|OBSERVED_UNVERIFIED!
+20:59:38.197 > FORREF_LIVE002 VIEW|C|SECOND_HALF_RUNNING|45:03|OBSERVED_UNVERIFIED!
+20:59:39.199 > FORREF_LIVE002 VIEW|C|SECOND_HALF_RUNNING|45:04|OBSERVED_UNVERIFIED!
+20:59:40.202 > FORREF_LIVE002 VIEW|C|SECOND_HALF_RUNNING|45:05|OBSERVED_UNVERIFIED!
+20:59:41.202 > FORREF_CLOCK001 APPLIED|H2R>H2P|1794517181196|45:06|FROZEN_OBSERVED!
+20:59:41.277 > FORREF_HIT name=live-home x=10 y=72 w=370 h=80 fit=1
+20:59:41.281 > FORREF_HIT name=live-away x=10 y=260 w=370 h=80 fit=1
+20:59:41.285 > FORREF_HIT name=live-RESUME x=10 y=394 w=181 h=44 fit=1
+20:59:41.289 > FORREF_HIT name=live-controls x=199 y=394 w=181 h=44 fit=1
+20:59:41.292 > FORREF_LIVE002 VIEW|C|SECOND_HALF_PAUSED|45:06|FROZEN_OBSERVED!
+21:00:02.027 > FORREF_LIVE002 ARM|disarm|navigate|open!
+21:00:02.048 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:00:02.049 > FORREF_LIVE002 TIMER|stop!
+21:00:02.107 > FORREF_CLOCK001 PERSIST|READBACK_ONLY_NOT_D1!
+21:00:02.110 > FORREF_PAGE live onDestroy
+21:00:02.282 > FORREF_DEVICE page=controls width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:00:02.283 > FORREF_LOCALE page=controls code=2 lang=en-US reason=os
+21:00:02.284 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:00:02.299 > FORREF_HIT name=ctrl-FULL_TIME x=8 y=164 w=374 h=56 fit=1
+21:00:02.302 > FORREF_HIT name=ctrl-SUSPEND_GAME x=8 y=226 w=374 h=56 fit=1
+21:00:02.305 > FORREF_HIT name=ctrl-display x=8 y=288 w=374 h=56 fit=1
+21:00:02.308 > FORREF_HIT name=ctrl-back x=8 y=350 w=374 h=56 fit=1
+21:00:02.310 > FORREF_LIVE002 CTRL|SECOND_HALF_PAUSED|FULL_TIME,SUSPEND_GAME|open!
+21:00:04.269 > FORREF_LIVE002 ARM|disarm|navigate|open!
+21:00:04.293 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:00:04.293 > FORREF_PAGE controls onDestroy
+21:00:04.407 > FORREF_DEVICE page=display width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:00:04.409 > FORREF_LOCALE page=display code=2 lang=en-US reason=os
+21:00:04.427 > FORREF_HIT name=display-a x=8 y=226 w=374 h=56 fit=1
+21:00:04.430 > FORREF_HIT name=display-c x=8 y=288 w=374 h=56 fit=1
+21:00:04.434 > FORREF_HIT name=display-back x=8 y=350 w=374 h=56 fit=1
+21:00:06.087 > FORREF_DISPLAY A via=back
+21:00:06.288 > FORREF_DEVICE page=controls width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:00:06.289 > FORREF_LOCALE page=controls code=2 lang=en-US reason=os
+21:00:06.290 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:00:06.306 > FORREF_HIT name=ctrl-FULL_TIME x=8 y=164 w=374 h=56 fit=1
+21:00:06.309 > FORREF_HIT name=ctrl-SUSPEND_GAME x=8 y=226 w=374 h=56 fit=1
+21:00:06.312 > FORREF_HIT name=ctrl-display x=8 y=288 w=374 h=56 fit=1
+21:00:06.315 > FORREF_HIT name=ctrl-back x=8 y=350 w=374 h=56 fit=1
+21:00:06.317 > FORREF_LIVE002 CTRL|SECOND_HALF_PAUSED|FULL_TIME,SUSPEND_GAME|open!
+21:00:07.886 > FORREF_LIVE002 ARM|disarm|back|open!
+21:00:07.905 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:00:07.905 > FORREF_PAGE controls onDestroy
+21:00:08.091 > FORREF_PAGE live onInit
+21:00:08.094 > FORREF_DEVICE page=live width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:00:08.096 > FORREF_LOCALE page=live code=2 lang=en-US reason=os
+21:00:08.097 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:00:08.098 > FORREF_CLOCK001 SRC|1794517208097!
+21:00:08.112 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+21:00:08.116 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+21:00:08.120 > FORREF_HIT name=live-RESUME x=10 y=392 w=181 h=46 fit=1
+21:00:08.123 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=
+21:00:08.126 > FORREF_LIVE002 VIEW|A|SECOND_HALF_PAUSED|45:06|FROZEN_OBSERVED!
+21:00:08.127 > FORREF_LIVE002 TIMER|createTimer!
+21:00:09.795 > FORREF_LIVE002 ARM|disarm|navigate|open!
+21:00:09.816 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:00:09.817 > FORREF_LIVE002 TIMER|stop!
+21:00:09.876 > FORREF_CLOCK001 PERSIST|READBACK_ONLY_NOT_D1!
+21:00:09.879 > FORREF_PAGE live onDestroy
+21:00:10.047 > FORREF_DEVICE page=controls width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:00:10.048 > FORREF_LOCALE page=controls code=2 lang=en-US reason=os
+21:00:10.050 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:00:10.065 > FORREF_HIT name=ctrl-FULL_TIME x=8 y=164 w=374 h=56 fit=1
+21:00:10.068 > FORREF_HIT name=ctrl-SUSPEND_GAME x=8 y=226 w=374 h=56 fit=1
+21:00:10.071 > FORREF_HIT name=ctrl-display x=8 y=288 w=374 h=56 fit=1
+21:00:10.074 > FORREF_HIT name=ctrl-back x=8 y=350 w=374 h=56 fit=1
+21:00:10.077 > FORREF_LIVE002 CTRL|SECOND_HALF_PAUSED|FULL_TIME,SUSPEND_GAME|open!
+21:00:12.094 > FORREF_LIVE002 ARM|disarm|navigate|open!
+21:00:12.115 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:00:12.116 > FORREF_PAGE controls onDestroy
+21:00:12.199 > FORREF_DEVICE page=display width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:00:12.200 > FORREF_LOCALE page=display code=2 lang=en-US reason=os
+21:00:12.216 > FORREF_HIT name=display-a x=8 y=226 w=374 h=56 fit=1
+21:00:12.219 > FORREF_HIT name=display-c x=8 y=288 w=374 h=56 fit=
+21:00:12.222 > FORREF_HIT name=display-back x=8 y=350 w=374 h=56 fit=1
+21:00:14.205 > FORREF_DEVICE page=controls width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:00:14.206 > FORREF_LOCALE page=controls code=2 lang=en-US reason=os
+21:00:14.207 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:00:14.223 > FORREF_HIT name=ctrl-FULL_TIME x=8 y=164 w=374 h=56 fit=1
+21:00:14.226 > FORREF_HIT name=ctrl-SUSPEND_GAME x=8 y=226 w=374 h=56 fit=1
+21:00:14.229 > FORREF_HIT name=ctrl-display x=8 y=288 w=374 h=56 fit=1
+21:00:14.232 > FORREF_HIT name=ctrl-back x=8 y=350 w=374 h=56 fit=1
+21:00:14.235 > FORREF_LIVE002 CTRL|SECOND_HALF_PAUSED|FULL_TIME,SUSPEND_GAME|open!
+21:00:16.050 > FORREF_LIVE002 ARM|disarm|navigate|open!
+21:00:16.072 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:00:16.154 > FORREF_DEVICE page=display width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:00:16.156 > FORREF_LOCALE page=display code=2 lang=en-US reason=os
+21:00:16.171 > FORREF_HIT name=display-a x=8 y=226 w=374 h=56 fit=1
+21:00:16.174 > FORREF_HIT name=display-c x=8 y=288 w=374 h=56 fit=1
+21:00:16.177 > FORREF_HIT name=display-back x=8 y=350 w=374 h=56 fit=1
+21:00:45.191 > FORREF_DISPLAY C via=back
+21:00:45.396 > FORREF_DEVICE page=controls width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:00:45.397 > FORREF_LOCALE page=controls code=2 lang=en-US reason=os
+21:00:45.398 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:00:45.414 > FORREF_HIT name=ctrl-FULL_TIME x=8 y=164 w=374 h=56 fit=1
+21:00:45.417 > FORREF_HIT
+21:00:45.420 > FORREF_HIT name=ctrl-display x=8 y=288 w=374 h=56 fit=1
+21:00:45.423 > FORREF_HIT name=ctrl-back x=8 y=350 w=374 h=56 fit=1
+21:00:45.426 > FORREF_LIVE002 CTRL|SECOND_HALF_PAUSED|FULL_TIME,SUSPEND_GAME|open!
+21:00:48.072 > FORREF_LIVE002 ARM|disarm|back|open!
+21:00:48.093 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:00:48.093 > FORREF_PAGE controls onDestroy
+21:00:48.280 > FORREF_PAGE live onInit
+21:00:48.285 > FORREF_LOCALE page=live code=2 lang=en-US reason=os
+21:00:48.286 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:00:48.287 > FORREF_CLOCK001 SRC|1794517248287!
+21:00:48.301 > FORREF_HIT name=live-home x=10 y=72 w=370 h=80 fit=1
+21:00:48.305 > FORREF_HIT name=live-away x=10 y=260 w=370 h=80 fit=1
+21:00:48.309 > FORREF_HIT name=live-RESUME x=10 y=394 w=181 h=44 fit=1
+21:00:48.313 > FORREF_HIT name=live-controls x=199 y=394 w=181 h=44 fit=1
+21:00:48.316 > FORREF_LIVE002 VIEW|C|SECOND_HALF_PAUSED|45:06|FROZEN_OBSERVED!
+/quickjs-libc SBEngine: FORREF_LIVE002 TIMER|createTimer!
+21:00:56.760 > FORREF_LIVE002 ARM|disarm|navigate|open!
+21:00:56.785 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:00:56.786 > FORREF_LIVE002 TIMER|stop!
+21:00:56.847 > FORREF_CLOCK001 PERSIST|READBACK_ONLY_NOT_D1!
+21:00:56.851 > FORREF_PAGE live onDestroy
+21:00:57.023 > FORREF_DEVICE page=controls width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:00:57.025 > FORREF_LOCALE page=controls code=2 lang=en-US reason=os
+21:00:57.026 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:00:57.041 > FORREF_HIT name=ctrl-FULL_TIME x=8 y=164 w=374 h=56 fit=1
+21:00:57.045 > FORREF_HIT name=ctrl-SUSPEND_GAME x=8 y=226 w=374 h=56 fit=1
+21:00:57.047 > FORREF_HIT name=ctrl-display x=8 y=288 w=374 h=56 fit=1
+21:00:57.050 > FORREF_HIT name=ctrl-back x=8 y=350 w=374 h=56 fit=1
+21:00:57.053 > FORREF_LIVE002 CTRL|SECOND_HALF_PAUSED|FULL_TIME,SUSPEND_GAME|open!
+21:00:59.421 > FORREF_LIVE002 ARM|disarm|navigate|open!
+21:00:59.445 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:00:59.445 > FORREF_PAGE controls onDestroy
+21:00:59.531 > FORREF_DEVICE page=display width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:00:59.532 > FORREF_LOCALE page=display code=2 lang=en-US reason=os
+21:00:59.548 > FORREF_HIT name=display-a x=8 y=226 w=374 h=56 fit=1
+21:00:59.551 > FORREF_HIT name=display-c x=8 y=288 w=374 h=56 fit=1
+21:00:59.554 > FORREF_HIT name=display-back x=8 y=350 w=374 h=56 fit=1
+21:01:01.552 > FORREF_DISPLAY A via=back
+21:01:01.752 > FORREF_DEVICE page=controls width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:01:01.754 > FORREF_LOCALE page=controls code=2 lang=en-US reason=os
+21:01:01.755 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:01:01.770 > FORREF_HIT name=ctrl-FULL_TIME x=8 y=164 w=374 h=56 fit=1
+21:01:01.773 > FORREF_HIT name=ctrl-SUSPEND_GAME x=8 y=226 w=374 h=56 fit=1
+21:01:01.779 > FORREF_HIT name=ctrl-back x=8 y=350 w=374 h=56 fit=1
+21:01:01.782 > FORREF_LIVE002 CTRL|SECOND_HALF_PAUSED|FULL_TIME,SUSPEND_GAME|open!
+21:01:03.681 > FORREF_LIVE002 ARM|disarm|back|open!
+21:01:03.701 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:01:03.701 > FORREF_PAGE controls onDestroy
+21:01:03.885 > FORREF_PAGE live onInit
+21:01:03.888 > FORREF_DEVICE page=live width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:01:03.889 > FORREF_LOCALE page=live code=2 lang=en-US reason=os
+21:01:03.890 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:01:03.891 > FORREF_CLOCK001 SRC|1794517263891!
+21:01:03.905 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+21:01:03.909 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+21:01:03.913 > FORREF_HIT name=live-RESUME x=10 y=392 w=181 h=46 fit=1
+21:01:03.917 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+21:01:03.919 > FORREF_LIVE002 VIEW|A|SECOND_HALF_PAUSED|45:06|FROZEN_OBSERVED!
+21:01:03.920 > FORREF_LIVE002 TIMER|createTimer!
+21:01:15.906 > FORREF_LIVE002 ARM|disarm|navigate|open!
+21:01:15.929 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:01:16.021 > FORREF_CLOCK001 PERSIST|READBACK_ONLY_NOT_D1!
+21:01:16.026 > FORREF_PAGE live onDestroy
+21:01:16.199 > FORREF_DEVICE page=controls width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:01:16.200 > FORREF_LOCALE page=controls code=2 lang=en-US reason=os
+21:01:16.201 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:01:16.216 > FORREF_HIT name=ctrl-FULL_TIME x=8 y=164 w=374 h=56 fit=1
+21:01:16.219 > FORREF_HIT name=ctrl-SUSPEND_GAME x=8 y=226 w=374 h=56 fit=1
+21:01:16.222 > FORREF_HIT name=ctrl-display x=8 y=288 w=374 h=56 fit=
+21:01:16.225 > FORREF_HIT name=ctrl-back x=8 y=350 w=374 h=56 fit=1
+21:01:16.228 > FORREF_LIVE002 CTRL|SECOND_HALF_PAUSED|FULL_TIME,SUSPEND_GAME|open!
+21:01:18.451 > FORREF_CLOCK001 SRC|1794517278451!
+21:01:18.456 > FORREF_CLOCK001 APPLIED|H2P>H2S|1794517278451|45:06|FROZEN_OBSERVED!
+21:01:18.538 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:01:18.538 > FORREF_PAGE controls onDestroy
+21:01:18.732 > FORREF_PAGE live onInit
+21:01:18.736 > FORREF_DEVICE page=live width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:01:18.737 > FORREF_LOCALE page=live code=2 lang=en-US reason=os
+21:01:18.738 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:01:18.739 > FORREF_CLOCK001 SRC|1794517278739!
+21:01:18.752 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+21:01:18.758 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+21:01:18.762 > FORREF_HIT name=live-RESUME_GAME x=10 y=392 w=181 h=46 fit=1
+21:01:18.765 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+21:01:18.768 > FORREF_LIVE002 VIEW|A|SECOND_HALF_SUSPENDED|45:06|FROZEN_OBSERVED!
+21:01:21.080 > FORREF_LIVE002 ARM|disarm|navigate|open!
+21:01:21.100 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:01:21.101 > FORREF_LIVE002 TIMER|stop!
+21:01:21.165 > FORREF_CLOCK001 PERSIST|READBACK_ONLY_NOT_D1!
+21:01:21.334 > FORREF_DEVICE page=controls width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:01:21.335 > FORREF_LOCALE page=controls code=2 lang=en-US reason=os
+21:01:21.336 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:01:21.349 > FORREF_HIT name=ctrl-ABANDON_GAME x=8 y=164 w=374 h=56 fit=1
+21:01:21.352 > FORREF_HIT name=ctrl-display x=8 y=226 w=374 h=56 fit=1
+21:01:21.355 > FORREF_HIT name=ctrl-back x=8 y=288 w=374 h=56 fit=1
+21:01:23.184 > FORREF_CLOCK001 SRC|1794517283183!
+21:01:23.188 > FORREF_CLOCK001 REJECT|H2S>H2S|1794517283183|45:06|FROZEN_OBSERVED!
+21:01:23.202 > FORREF_HIT name=ctrl-ABANDON_GAME x=8 y=164 w=374 h=56 fit=1
+21:01:23.205 > FORREF_HIT name=ctrl-display x=8 y=226 w=374 h=56 fit=1
+21:01:23.208 > FORREF_HIT name=ctrl-back x=8 y=288 w=374 h=56 fit=1
+21:01:23.211 > FORREF_LIVE002 CTRL|SECOND_HALF_SUSPENDED|ABANDON_GAME|armed!
+21:01:25.858 > FORREF_LIVE002 ARM|disarm|back|was-armed!
+21:01:25.877 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:01:25.877 > FORREF_PAGE controls onDe
+21:01:26.062 > FORREF_PAGE live onInit
+21:01:26.066 > FORREF_DEVICE page=live width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:01:26.067 > FORREF_LOCALE page=live code=2 lang=en-US reason=os
+21:01:26.068 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:01:26.069 > FORREF_CLOCK001 SRC|1794517286069!
+21:01:26.082 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+21:01:26.086 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+21:01:26.090 > FORREF_HIT name=live-RESUME_GAME x=10 y=392 w=181 h=46 fit=1
+21:01:26.094 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+21:01:26.097 > FORREF_LIVE002 VIEW|A|SECOND_HALF_SUSPENDED|45:06|FROZEN_OBSERVED!
+21:01:26.097 > FORREF_LIVE002 TIMER|createTimer!
+21:01:27.960 > FORREF_LIVE002 ARM|disarm|navigate|open!
+21:01:28.045 > FORREF_CLOCK001 PERSIST|READBACK_ONLY_NOT_D1!
+21:01:28.048 > FORREF_PAGE live onDestroy
+21:01:28.216 > FORREF_DEVICE page=controls width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:01:28.217 > FORREF_LOCALE page=controls code=2 lang=en-US reason=os
+21:01:28.218 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:01:28.232 > FORREF_HIT name=ctrl-ABANDON_GAME x=8 y=164 w=374 h=56 fit=1
+21:01:28.234 > FORREF_HIT name=ctrl-display x=8 y=226 w=374 h=56 fit=1
+21:01:28.237 > FORREF_HIT name=ctrl-back x=8 y=288 w=374 h=56 fit=1
+21:01:28.240 > FORREF_LIVE002 CTRL|SECOND_HALF_SUSPENDED|ABANDON_GAME|open!
+21:01:30.127 > FORREF_LIVE002 ARM|disarm|back|open!
+21:01:30.145 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:01:30.145 > FORREF_PAGE controls onDestroy
+21:01:30.335 > FORREF_PAGE live onInit
+21:01:30.338 > FORREF_DEVICE page=live width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:01:30.340 > FORREF_LOCALE page=live code=2 lang=en-US reason=os
+21:01:30.341 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:01:30.342 > FORREF_CLOCK001 SRC|1794517290342!
+21:01:30.358 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+21:01:30.366 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+21:01:30.372 > FORREF_HIT name=live-RESUME_GAME x=10 y=392 w=181 h=46 fit=1
+21:01:30.378 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+21:01:30.383 > FORREF_LIVE002 VIEW|A|SECOND_HALF_SUSPENDED|45:06|FROZEN_OBSERVED!
+21:01:30.385 > FORREF_LIVE002 TIMER|createTimer!
+21:01:32.594 > FORREF_CLOCK001 APPLIED|H2S>H2R|1794517292588|45:06|OBSERVED_UNVERIFIED!
+21:01:32.682 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+21:01:32.687 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+21:01:32.690 > FORREF_HIT name=live-PAUSE x=10 y=392 w=181 h=46 fit=1
+21:01:32.694 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+21:01:32.697 > FORREF_LIVE002 VIEW|A|SECOND_HALF_RUNNING|45:06|OBSERVED_UNVERIFIED!
+21:01:33.446 > FORREF_LIVE002 VIEW|A|SECOND_HALF_RUNNING|45:07|OBSERVED_UNVERIFIED!
+21:01:34.449 > FORREF_LIVE002 VIEW|A|SECOND_HALF_RUNNING|45:08|OBSERVED_UNVERIFIED!
+21:01:35.449 > FORREF_LIVE002 VIEW|A|SECOND_HALF_RUNNING|45:09|OBSERVED_UNVERIFIED!
+21:01:36.453 > FORREF_LIVE002 VIEW|A|SECOND_HALF_RUNNING|45:10|OBSERVED_UNVERIFIED!
+21:01:37.453 > FORREF_LIVE002 VIEW|A|SECOND_HALF_RUNNING|45:11|OBSERVED_UNVERIFIED!
+21:01:38.457 > FORREF_LIVE002 VIEW|A|SECOND_HALF_RUNNING|45:12|OBSERVED_UNVERIFIED!
+21:01:39.459 > FORREF_LIVE002 VIEW|A|SECOND_HALF_RUNNING|45:13|OBSERVED_UNVERIFIED!
+21:01:40.461 > FORREF_LIVE002 VIEW|A|SECOND_HALF_RUNNING|45:14|OBSERVED_UNVERIFIED!
+21:01:41.463 > FORREF_LIVE002 VIEW|A|SECOND_HALF_RUNNING|45:15|OBSERVED_UNVERIFIED!
+21:01:42.465 > FORREF_LIVE002 VIEW|A|SECOND_HALF_RUNNING|45:16|OBSERVED_UNVERIFIED!
+21:01:43.466 > FORREF_LIVE002 VIEW|A|SECOND_HALF_RUNNING|45:17|OBSERVED_UNVERIFIED!
+21:01:43.786 > FORREF_LIVE002 ARM|disarm|navigate|open!
+21:01:43.806 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:01:43.807 > FORREF_LIVE
+21:01:43.879 > FORREF_CLOCK001 PERSIST|READBACK_ONLY_NOT_D1!
+21:01:43.882 > FORREF_PAGE live onDestroy
+21:01:44.056 > FORREF_DEVICE page=controls width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:01:44.057 > FORREF_LOCALE page=controls code=2 lang=en-US reason=os
+21:01:44.058 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:01:44.074 > FORREF_HIT name=ctrl-FULL_TIME x=8 y=164 w=374 h=56 fit=1
+21:01:44.077 > FORREF_HIT name=ctrl-SUSPEND_GAME x=8 y=226 w=374 h=56 fit=1
+21:01:44.080 > FORREF_HIT name=ctrl-display x=8 y=288 w=374 h=56 fit=1
+21:01:44.083 > FORREF_HIT name=ctrl-back x=8 y=350 w=374 h=56 fit=1
+21:01:44.086 > FORREF_LIVE002 CTRL|SECOND_HALF_RUNNING|FULL_TIME,SUSPEND_GAME|open!
+21:01:51.481 > FORREF_LIVE002 ARM|disarm|back|open!
+21:01:51.501 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:01:51.501 > FORREF_PAGE controls onDestroy
+21:01:51.686 > FORREF_PAGE live onInit
+21:01:51.690 > FORREF_DEVICE page=live width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:01:51.691 > FORREF_LOCALE page=live code=2 lang=en-US reason=os
+21:01:51.692 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:01:51.693 > FORREF_CLOCK001 SRC|1794517311693!
+21:01:51.769 > FORREF_CLOCK001 UNVERIFIED|H2R>H2R|1794517311693|UNVERIFIED|TIME_UNVERIFIED!
+21:01:51.782 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+21:01:51.786 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+21:01:51.791 > FORREF_HIT name=live-CONTINUE_FROM_LAST x=10 y=392 w=181 h=46 fit=1
+21:01:51.795 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+21:01:51.799 > FORREF_LIVE002 TIMER|createTimer!
+21:02:43.453 > FORREF_CLOCK001 APPLIED|H2R>H2P|1794517363446|45:17|FROZEN_OBSERVED!
+21:02:43.569 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+21:02:43.572 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+21:02:43.576 > FORREF_HIT name=live-RESUME x=10 y=392 w=181 h=46 fit=1
+21:02:43.580 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+21:02:43.583 > FORREF_LIVE002 VIEW|A|SECOND_HALF_PAUSED|45:17|FROZEN_OBSERVED!
+21:03:19.411 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:03:19.412 > FORREF_LIVE002 TIMER|stop!
+21:03:19.511 > FORREF_PAGE live onDestroy
+21:03:20.098 > FORREF_APP onDestroy
+21:03:20.187 > FORREF_APP onCreate epoch=e1794517400187
+21:03:20.188 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:03:20.275 > FORREF_PAGE home language=2
+21:03:20.278 > FORREF_DEVICE page=home width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:03:20.279 > FORREF_LOCALE page=home code=2 lang=en-US reason=os
+21:03:20.294 > FORREF_HIT name=stack-2 x=8 y=226 w=374 h=56 fit=1
+21:03:20.297 > FORREF_HIT name=stack-3 x=8 y=288 w=374 h=56 fit=1
+21:03:20.300 > FORREF_HIT name=stack-4 x=8 y=350 w=374 h=56 fit=1
+21:03:24.287 > FORREF_APP onDestroy
+21:03:24.364 > FORREF_APP onCreate epoch=e1794517404364
+21:03:24.365 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb0m
+21:03:24.458 > FORREF_PAGE home language=2
+21:03:24.461 > FORREF_DEVICE page=home width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:03:24.463 > FORREF_LOCALE page=home code=2 lang=en-US reason=os
+21:03:24.477 > FORREF_HIT name=stack-2 x=8 y=226 w=374 h=56 fit=1
+21:03:24.480 > FORREF_HIT name=stack-3 x=8 y=288 w=374 h=56 fit=1
+21:03:24.483 > FORREF_HIT name=stack-4 x=8 y=350 w=374 h=56 fit=1
+21:03:39.743 > FORREF_DEVICE page=settings width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:03:39.744 > FORREF_LOCALE page=settings code=2 lang=en-US reason=os
+21:03:39.776 > FORREF_HIT name=settings-display x=8 y=160 w=374 h=52 fit=1
+21:03:39.778 > FORREF_HIT name=settings-locale x=8 y=218 w=374 h=52 fit=1
+21:03:39.781 > FORREF_HIT name=settings-g1 x=8 y=276 w=374 h=52 fit=1
+21:03:39.784 > FORREF_HIT name=settings-g2 x=8 y=334 w=374 h=52 fit=1
+21:03:39.787 > FORREF_HIT name=settings-back x=8 y=392 w=374 h=52 fit=1
+21:03:42.363 > FORREF_LOCALE_SET ro-RO
+21:03:42.366 > FORREF_DEVICE page=settings width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:03:42.367 > FORREF_LOCALE page=settings code=2 lang=ro-RO reason=TEST_ONLY
+21:03:42.399 > FORREF_HIT name=settings-display x=8 y=160 w=374 h=52 fit=1
+21:03:42.405 > FORREF_HIT name=settings-g1 x=8 y=276 w=374 h=52 fit=1
+21:03:42.408 > FORREF_HIT name=settings-g2 x=8 y=334 w=374 h=52 fit=1
+21:03:42.411 > FORREF_HIT name=settings-back x=8 y=392 w=374 h=52 fit=1
+21:03:45.183 > FORREF_PAGE home language=2
+21:03:45.186 > FORREF_DEVICE page=home width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:03:45.188 > FORREF_LOCALE page=home code=2 lang=ro-RO reason=TEST_ONLY
+21:03:45.201 > FORREF_HIT name=stack-2 x=8 y=226 w=374 h=56 fit=1
+21:03:45.204 > FORREF_HIT name=stack-3 x=8 y=288 w=374 h=56 fit=1
+21:03:45.207 > FORREF_HIT name=stack-4 x=8 y=350 w=374 h=56 fit=1
+21:03:52.436 > FORREF_DEVICE page=select width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:03:52.437 > FORREF_LOCALE page=select code=2 lang=ro-RO reason=TEST_ONLY
+21:03:52.448 > FORREF_HIT name=stack-1 x=8 y=164 w=374 h=56 fit=1
+21:03:52.451 > FORREF_HIT name=stack-2 x=8 y=226 w=374 h=56 fit=1
+21:03:54.936 > FORREF_DEVICE page=hub width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:03:54.937 > FORREF_LOCALE page=hub code=2 lang=ro-RO reason=TEST_ONLY
+21:03:54.969 > FORREF_HIT name=stack-1 x=8 y=160 w=374 h=52 fit=1
+21:03:54.972 > FORREF_HIT name=stack-2 x=8 y=218 w=374 h=52 fit=1
+21:03:54.975 > FORREF_HIT name=stack-3 x=8 y=276 w=374 h=52 fit=1
+21:03:54.978 > FORREF_HIT name=stack-4 x=8 y=334 w=374 h=52 fit=1
+21:03:54.981 > FORREF_HIT name=stack-5 x=8 y=392 w=374 h=52 fit=1
+21:03:56.969 > FORREF_DEVICE page=ready width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:03:56.970 > FORREF_LOCALE page=ready code=2 lang=ro-RO reason=TEST_ONLY
+21:03:56.983 > FORREF_HIT name=stack-2 x=8 y=226 w=374 h=56 fit=1
+21:03:56.986 > FORREF_HIT name=stack-3 x=8 y=288 w=374 h=56 fit=1
+21:03:59.118 > FORREF_PAGE live onInit
+21:03:59.121 > FORREF_DEVICE page=live width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:03:59.123 > FORREF_LOCALE page=live code=2 lang=ro-RO reason=TEST_ONLY
+21:03:59.124 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:03:59.216 > FORREF_CLOCK001 SRC|1794517439216!
+21:03:59.218 > FORREF_CLOCK001 LOAD|H2P>H2P|1794517439216|45:17|FROZEN_OBSERVED!
+21:03:59.233 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+21:03:59.237 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+21:03:59.241 > FORREF_HIT name=live-RESUME x=10 y=392 w=181 h=46 fit=1
+21:03:59.245 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+21:03:59.249 > FORREF_LIVE002 VIEW|A|SECOND_HALF_PAUSED|45:17|FROZEN_OBSERVED!
+21:03:59.250 > FORREF_LIVE002 TIMER|createTimer!
+21:04:15.004 > FORREF_CLOCK001 APPLIED|H2P>H2R|1794517454999|45:17|OBSERVED_UNVERIFIED!
+21:04:15.108 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+21:04:15.112 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+21:04:15.116 > FORREF_HIT name=live-PAUSE x=10 y=392 w=181 h=46 fit=1
+21:04:15.120 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+21:04:15.124 > FORREF_LIVE002 VIEW|A|SECOND_HALF_RUNNING|45:17|OBSERVED_UNVERIFIED!
+21:04:16.349 > FORREF_LIVE002 VIEW|A|SECOND_HALF_RUNNING|45:18|OBSERVED_UNVERIFIED!
+21:04:17.354 > FORREF_LIVE002 VIEW|A|SECOND_HALF_RUNNING|45:19|OBSERVED_UNVERIFIED!
+21:04:17.475 > FORREF_LIVE002 ARM|disarm|navigate|open!
+21:04:17.496 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:04:17.497 > FORREF_LIVE002 TIMER|stop!
+21:04:17.578 > FORREF_CLOCK001 PERSIST|READBACK_ONLY_NOT_D1!
+21:04:17.582 > FORREF_PAGE live onDestroy
+21:04:17.758 > FORREF_DEVICE page=controls width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:04:17.759 > FORREF_LOCALE page=controls code=2 lang=ro-RO reason=TEST_ONLY
+21:04:17.760 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:04:17.776 > FORREF_HIT name=ctrl-FULL_TIME x=8 y=164 w=374 h=56 fit=1
+21:04:17.779 > FORREF_HIT name=ctrl-SUSPEND_GAME x=8 y=226 w=374 h=56 fit=1
+21:04:17.785 > FORREF_HIT name=ctrl-back x=8 y=350 w=374 h=56 fit=1
+21:04:17.788 > FORREF_LIVE002 CTRL|SECOND_HALF_RUNNING|FULL_TIME,SUSPEND_GAME|open!
+21:04:24.333 > FORREF_LIVE002 ARM|disarm|back|open!
+21:04:24.355 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:04:24.356 > FORREF_PAGE controls onDestroy
+21:04:24.540 > FORREF_PAGE live onInit
+21:04:24.543 > FORREF_DEVICE page=live width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:04:24.545 > FORREF_LOCALE page=live code=2 lang=ro-RO reason=TEST_ONLY
+21:04:24.546 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:04:24.547 > FORREF_CLOCK001 SRC|1794517464546!
+21:04:24.652 > FORREF_CLOCK001 UNVERIFIED|H2R>H2R|1794517464546|UNVERIFIED|TIME_UNVERIFIED!
+21:04:24.667 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+21:04:24.672 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+21:04:24.676 > FORREF_HIT name=live-CONTINUE_FROM_LAST x=10 y=392 w=181 h=46 fit=1
+21:04:24.680 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+21:04:24.683 > FORREF_LIVE002 VIEW|A|SECOND_HALF_RUNNING|——:——|UNVERIFIED!
+21:04:47.886 > FORREF_CLOCK001 APPLIED|H2R>H2P|1794517487881|45:19|FROZEN_OBSERVED!
+21:04:48.001 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+21:04:48.005 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+21:04:48.008 > FORREF_HIT name=live-RESUME x=10 y=392 w=181 h=46 fit=1
+21:04:48.012 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+21:04:48.015 > FORREF_LIVE002 VIEW|A|SECOND_HALF_PAUSED|45:19|FROZEN_OBSERVED!
+21:04:50.632 > FORREF_LIVE002 ARM|disarm|navigate|open!
+21:04:50.656 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:04:50.657 > FORREF_LIVE002 TIMER|stop!
+21:04:50.744 > FORREF_CLOCK001 PERSIST|READBACK_ONLY_NOT_D1!
+21:04:50.748 > FORREF_PAGE live onDestroy
+21:04:50.921 > FORREF_DEVICE page=controls width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:04:50.922 > FORREF_LOCALE page=controls code=2 lang=ro-RO reason=TEST_ONLY
+21:04:50.923 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:04:50.939 > FORREF_HIT name=ctrl-FULL_TIME x=8 y=164 w=374 h=56 fit=1
+21:04:50.942 > FORREF_HIT name=ctrl-SUSPEND_GAME x=8 y=226 w=374 h=56 fit=1
+21:04:50.945 > FORREF_HIT name=ctrl-display x=8 y=288 w=374 h=56 fit=1
+21:04:50.948 > FORREF_HIT name=ctrl-back x=8 y=350 w=374 h=56 fit=1
+21:04:50.950 > FORREF_LIVE002 CTRL|SECOND_HALF_PAUSED|FULL_TIME,SUSPEND_GAME|open!
+21:04:53.234 > FORREF_CLOCK001 SRC|1794517493234!
+21:04:53.239 > FORREF_CLOCK001 APPLIED|H2P>H2S|1794517493234|45:19|FROZEN_OBSERVED!
+21:04:53.351 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:04:53.352 > FORREF_PAGE controls onDestroy
+21:04:53.535 > FORREF_PAGE live onInit
+21:04:53.538 > FORREF_DEVICE page=live width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:04:53.540 > FORREF_LOCALE page=live code=2 lang=ro-RO reason=TEST_ONLY
+21:04:53.541 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:04:53.542 > FORREF_CLOCK001 SRC|1794517493542!
+21:04:53.556 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+21:04:53.561 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+21:04:53.565 > FORREF_HIT name=live-RESUME_GAME x=10 y=392 w=181 h=46 fit=1
+21:04:53.569 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+21:04:53.572 > FORREF_LIVE002 VIEW|A|SECOND_HALF_SUSPENDED|45:19|FROZEN_OBSERVED!
+21:04:53.573 > FORREF_LIVE002 TIMER|createTimer!
+21:04:55.671 > FORREF_LIVE002 ARM|disarm|navigate|open!
+21:04:55.691 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:04:55.785 > FORREF_CLOCK001 PERSIST|READBACK_ONLY_NOT_D1!
+21:04:55.788 > FORREF_PAGE live onDestroy
+21:04:55.962 > FORREF_DEVICE page=controls width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:04:55.963 > FORREF_LOCALE page=controls code=2 lang=ro-RO reason=TEST_ONLY
+21:04:55.964 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:04:55.977 > FORREF_HIT name=ctrl-ABANDON_GAME x=8 y=164 w=374 h=56 fit=1
+21:04:55.980 > FORREF_HIT name=ctrl-display x=8 y=226 w=374 h=56 fit=1
+21:04:55.983 > FORREF_HIT name=ctrl-back x=8 y=288 w=374 h=56 fit=1
+21:04:55.986 > FORREF_LIVE002 CTRL|SECOND_HALF_SUSPENDED|ABANDON_GAME|open!
+21:04:57.691 > FORREF_CLOCK001 SRC|1794517497691!
+21:04:57.696 > FORREF_CLOCK001 REJECT|H2S>H2S|1794517497691|45:19|FROZEN_OBSERVED!
+21:04:57.710 > FORREF_HIT name=ctrl-ABANDON_GAME x=8 y=164 w=374 h=56 fit=1
+21:04:57.713 > FORREF_HIT name=ctrl-display x=8 y=226 w=374 h=56 fit=1
+21:04:57.716 > FORREF_HIT name=ctrl-back x=8 y=288 w=374 h=56 fit=1
+21:04:57.719 > FORREF_LIVE002 CTRL|SECOND_HALF_SUSPENDED|ABANDON_GAME|armed!
+21:05:00.302 > FORREF_LIVE002 ARM|disarm|back|was-armed!
+21:05:00.321 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:05:00.321 > FORREF_PAGE controls onDestroy
+21:05:00.507 > FORREF_PAGE live onInit
+21:05:00.510 > FORREF_DEVICE page=live width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:05:00.512 > FORREF_LOCALE page=live code=2 lang=ro-RO reason=TEST_ONLY
+21:05:00.513 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:05:00.514 > FORREF_CLOCK001 SRC|1794517500513!
+21:05:00.528 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+21:05:00.532 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+21:05:00.535 > FORREF_HIT name=live-RESUME_GAME x=10 y=392 w=181 h=46 fit=1
+21:05:00.539 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+21:05:00.542 > FORREF_LIVE002 VIEW|A|SECOND_HALF_SUSPENDED|45:19|FROZEN_OBSERVED!
+21:05:00.543 > FORREF_LIVE002 TIMER|createTimer!
+21:05:02.897 > FORREF_LIVE002 ARM|disarm|navigate|open!
+21:05:02.924 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:05:02.925 > FORREF_LIVE002 TIMER|stop!
+21:05:03.019 > FORREF_CLOCK001 PERSIST|READBACK_ONLY_NOT_D1!
+21:05:03.192 > FORREF_DEVICE page=controls width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=
+21:05:03.193 > FORREF_LOCALE page=controls code=2 lang=ro-RO reason=TEST_ONLY
+21:05:03.194 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:05:03.208 > FORREF_HIT name=ctrl-ABANDON_GAME x=8 y=164 w=374 h=56 fit=1
+21:05:03.211 > FORREF_HIT name=ctrl-display x=8 y=226 w=374 h=56 fit=1
+21:05:03.217 > FORREF_LIVE002 CTRL|SECOND_HALF_SUSPENDED|ABANDON_GAME|open!
+21:05:04.905 > FORREF_LIVE002 ARM|disarm|back|open!
+21:05:04.922 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:05:04.922 > FORREF_PAGE controls onDestroy
+21:05:05.107 > FORREF_PAGE live onInit
+21:05:05.112 > FORREF_LOCALE page=live code=2 lang=ro-RO reason=TEST_ONLY
+21:05:05.113 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:05:05.114 > FORREF_CLOCK001 SRC|1794517505114!
+21:05:05.128 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+21:05:05.132 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+21:05:05.136 > FORREF_HIT name=live-RESUME_GAME x=10 y=392 w=181 h=46 fit=1
+21:05:05.140 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+21:05:05.143 > FORREF_LIVE002 VIEW|A|SECOND_HALF_SUSPENDED|45:19|FROZEN_OBSERVED!
+21:05:06.862 > FORREF_CLOCK001 APPLIED|H2S>H2R|1794517506856|45:19|OBSERVED_UNVERIFIED!
+21:05:06.985 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+21:05:06.989 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+21:05:06.992 > FORREF_HIT name=live-PAUSE x=10 y=392 w=181 h=46 fit=1
+21:05:06.996 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=
+21:05:06.999 > FORREF_LIVE002 VIEW|A|SECOND_HALF_RUNNING|45:19|OBSERVED_UNVERIFIED!
+21:05:08.194 > FORREF_LIVE002 VIEW|A|SECOND_HALF_RUNNING|45:20|OBSERVED_UNVERIFIED!
+21:05:09.199 > FORREF_LIVE002 VIEW|A|SECOND_HALF_RUNNING|45:21|OBSERVED_UNVERIFIED!
+21:05:09.660 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+21:05:09.664 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+21:05:09.668 > FORREF_HIT name=live-RESUME x=10 y=392 w=181 h=46 fit=1
+21:05:09.672 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+21:05:09.675 > FORREF_LIVE002 VIEW|A|SECOND_HALF_PAUSED|45:22|FROZEN_OBSERVED!
+21:05:11.445 > FORREF_LIVE002 ARM|disarm|navigate|open!
+21:05:11.466 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:05:11.467 > FORREF_LIVE002 TIMER|stop!
+21:05:11.570 > FORREF_CLOCK001 PERSIST|READBACK_ONLY_NOT_D1!
+21:05:11.573 > FORREF_PAGE live onDestroy
+21:05:11.744 > FORREF_DEVICE page=controls width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:05:11.745 > FORREF_LOCALE page=controls code=2 lang=ro-RO reason=TEST_ONLY
+21:05:11.747 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:05:11.762 > FORREF_HIT name=ctrl-FULL_TIME x=8 y=164 w=374 h=56 fit=1
+21:05:11.765 > FORREF_HIT name=ctrl-SUSPEND_GAME x=8 y=226 w=374 h=56 fit=1
+21:05:11.768 > FORREF_HIT name=ctrl-display x=8 y=288 w=374 h=56 fit=1
+21:05:11.771 > FORREF_HIT name=ctrl-back x=8 y=350 w=374 h=56 fit=1
+21:05:11.774 > FORREF_LIVE002 CTRL|SECOND_HALF_PAUSED|FULL_TIME,SUSPEND_GAME|open!
+21:05:13.355 > FORREF_CLOCK001 SRC|1794517513355!
+21:05:13.361 > FORREF_CLOCK001 APPLIED|H2P>FT|1794517513355|45:22|FROZEN_OBSERVED!
+21:05:13.489 > FORREF_LIVE002 ARM|disarm|exit|open!
+21:05:13.490 > FORREF_PAGE controls onDestroy
+21:05:13.675 > FORREF_PAGE live onInit
+21:05:13.678 > FORREF_DEVICE page=live width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+21:05:13.679 > FORREF_LOCALE page=live code=2 lang=ro-RO reason=TEST_ONLY
+21:05:13.681 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+21:05:13.681 > FORREF_CLOCK001 SRC|1794517513681!
+21:05:13.696 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+21:05:13.700 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+21:05:13.704 > FORREF_HIT name=live-back x=10 y=392 w=181 h=46 fit=1
+21:05:13.707 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+21:05:13.710 > FORREF_LIVE002 VIEW|A|FULL_TIME|45:22|FROZEN_OBSERVED!
+21:05:13.711 > FORREF_LIVE002 TIMER|createTimer!

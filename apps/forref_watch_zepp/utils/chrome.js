@@ -5,7 +5,14 @@ import { back } from "@zos/router";
 import { SQUARE_STATUS_BAR, SAFE_MARGIN, inside, layoutStack } from "./geometry";
 import { localeChoice } from "./text";
 
-const owned = [];
+const shellOwned = [];
+const digitOwned = [];
+
+function drop(list) {
+  while (list.length) {
+    hmUI.deleteWidget(list.pop());
+  }
+}
 
 export function metrics() {
   const info = getDeviceInfo();
@@ -70,13 +77,16 @@ export function logDevice(pageName) {
 }
 
 export function clear() {
-  while (owned.length) {
-    hmUI.deleteWidget(owned.pop());
-  }
+  drop(digitOwned);
+  drop(shellOwned);
+}
+
+export function clearDigits() {
+  drop(digitOwned);
 }
 
 export function paintBase(m) {
-  owned.push(
+  shellOwned.push(
     hmUI.createWidget(hmUI.widget.FILL_RECT, {
       x: 0,
       y: 0,
@@ -87,7 +97,7 @@ export function paintBase(m) {
   );
 }
 
-export function textAt(x, y, w, h, value, size, color) {
+export function textAt(x, y, w, h, value, size, color, digits) {
   const node = hmUI.createWidget(hmUI.widget.TEXT, {
     x: x,
     y: y,
@@ -100,7 +110,7 @@ export function textAt(x, y, w, h, value, size, color) {
     align_v: hmUI.align.CENTER_V,
     text_style: hmUI.text_style.WRAP,
   });
-  owned.push(node);
+  (digits === true ? digitOwned : shellOwned).push(node);
   return node;
 }
 
@@ -132,7 +142,7 @@ export function button(x, y, w, h, label, onClick, fill, name, info) {
     ),
     click_func: onClick,
   });
-  owned.push(node);
+  shellOwned.push(node);
   return node;
 }
 
