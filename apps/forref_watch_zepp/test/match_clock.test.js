@@ -371,6 +371,21 @@ test("an unsampled gap is not shown as precise elapsed time", () => {
   assert.equal(displayText(present(continued.session, 6000)), "00:06");
 });
 
+test("a second-half gap keeps the match clock as last known", () => {
+  const ended = applyIntent(advance(kick(0), 1000), "END_FIRST_HALF", obs(1000, "half")).session;
+  const second = applyIntent(ended, "START_SECOND_HALF", obs(2000, "second")).session;
+  const played = advance(second, 19000);
+  assert.equal(displayText(present(played, 19000)), "45:17");
+  const gap = 19000 + DISPLAY_CONTINUITY_MS + 1;
+  const denied = admitDisplay(played, gap, EPOCH);
+  assert.equal(denied.admitted, false);
+  assert.equal(denied.session.secondHalfClosedMs, 17000);
+  const view = present(denied.session, gap);
+  assert.equal(view.unverified, true);
+  assert.equal(view.digits, null);
+  assert.equal(view.lastKnown, "45:17");
+});
+
 test("a late whistle does not fold the unsampled gap into the elapsed", () => {
   const session = advance(kick(0), 10000);
   const late = applyIntent(session, "PAUSE", obs(10000 + DISPLAY_CONTINUITY_MS + 50, "late-pause"));

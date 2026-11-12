@@ -566,7 +566,6 @@ export function present(session, utc) {
       mark = shown.mark;
     }
   }
-  const known = secondDisplay(session) ? session.secondHalfClosedMs : session.firstHalfClosedMs;
   return {
     unverified: unverified,
     phase: session.phase,
@@ -575,7 +574,7 @@ export function present(session, utc) {
     digits: digits,
     added: added,
     mark: mark,
-    lastKnown: formatElapsed(known),
+    lastKnown: closedFace(session),
     running: isRunning(session.phase) && !unverified,
     actions: actionsFor(session),
     firstHalfMs: session.firstHalfClosedMs,
@@ -588,6 +587,23 @@ function splitRegulation(ms, limit, mark) {
     return { digits: formatElapsed(ms - limit), added: true, mark: mark };
   }
   return { digits: formatElapsed(ms), added: false, mark: null };
+}
+
+function faceText(shown) {
+  if (shown.added) {
+    return shown.mark + " + " + shown.digits;
+  }
+  return shown.digits;
+}
+
+function closedFace(session) {
+  if (session.phase === Phase.READY) {
+    return formatElapsed(0);
+  }
+  if (secondDisplay(session)) {
+    return faceText(splitRegulation(REGULATION_HALF_MS + session.secondHalfClosedMs, REGULATION_HALF_MS * 2, 90));
+  }
+  return faceText(splitRegulation(session.firstHalfClosedMs, REGULATION_HALF_MS, 45));
 }
 
 export function displayText(view) {
