@@ -1,16 +1,19 @@
 import { push, back } from "@zos/router";
 import { createTimer, stopTimer } from "@zos/timer";
-import { logDevice, bindBack, clear, paintBase, textAt, button } from "../../../utils/chrome";
+import { logDevice, bindBack, clear, clearDigits, paintBase, textAt, button } from "../../../utils/chrome";
 import { layoutLive } from "../../../utils/geometry";
 import { t } from "../../../utils/text";
 import { state } from "../../../utils/state";
 import { displayText } from "../../../utils/match_clock";
-import { bootLive, viewNow, performIntent, sampleTick } from "../../../utils/live_session";
+import { bootLive, prepareFrame, performIntent, persistLive } from "../../../utils/live_session";
+import { createAbandonArm } from "../../../utils/abandon_arm";
 
 let timerId = null;
 let metrics = null;
 let banner = "";
-let armAbandon = false;
+let shell = null;
+let lastLogged = "";
+const arm = createAbandonArm();
 
 const ACTION_TEXT = {
   KICK_OFF: "kickOff",
@@ -27,6 +30,18 @@ const ACTION_TEXT = {
 
 function mode() {
   return state().display === "C" ? "C" : "A";
+}
+
+function contextOf(view) {
+  return mode() + "|" + view.phase;
+}
+
+function leave(reason, go) {
+  const result = arm.disarm(reason);
+  console.log("FORREF_LIVE002 ARM|disarm|" + reason + "|" + (result.disarmed ? "was-armed" : "open") + "!");
+  if (go) {
+    go();
+  }
 }
 
 function statusLabel(view) {
@@ -62,7 +77,7 @@ function detailLabel(view) {
   if (view.unverified) {
     return t("lastKnown") + " " + view.lastKnown;
   }
-  return t("scoreUnavailable");
+  return "";
 }
 
 function digitLabel(view) {
@@ -85,44 +100,50 @@ function fillFor(action) {
   return 0x0b2d5b;
 }
 
-function openTeam(team) {
-  state().team = team;
-  console.log("FORREF_LIVE002 NAV team=" + team + " mode=" + mode() + "!");
-  push({ url: "page/gt/event/index.page", params: JSON.stringify({ team: team }) });
+function shellKey(view, current) {
+  return [
+    current,
+    view.phase,
+    view.actions[0] || "",
+    arm.armed() ? "armed" : "open",
+    banner,
+    view.unverified ? "u" : "p",
+    view.added ? "a" : "n",
+  ].join("|");
 }
 
-function paintAll() {
-  const view = viewNow();
-  const current = mode();
-  const lay = layoutLive(metrics, current);
-  clear();
-  paintBase(metrics);
-  textAt(12, lay.phaseY, metrics.width - 24, 28, statusLabel(view), 20, 0x3fc3be);
+function paintDigits(view, lay, current) {
+  clearDigits();
   const timeH = current === "C" ? 36 : 48;
-  textAt(12, lay.timeY, metrics.width - 24, timeH, digitLabel(view), view.added ? 28 : current === "C" ? 32 : 40, 0xffffff);
+  textAt(12, lay.phaseY, metrics.width - 24, 28, statusLabel(view), 20, 0x3fc3be, true);
+  textAt(12, lay.timeY, metrics.width - 24, timeH, digitLabel(view), view.added ? 28 : current === "C" ? 32 : 40, 0xffffff, true);
+  const detail = detailLabel(view);
   const detailY = lay.timeY + timeH;
   const detailLimit = current === "C" ? lay.away.y : lay.home.y;
-  if (detailY + 18 <= detailLimit) {
-    textAt(12, detailY, metrics.width - 24, 18, detailLabel(view), 14, 0xc4a35a);
+  if (detail && detailY + 18 <= detailLimit) {
+    textAt(12, detailY, metrics.width - 24, 18, detail, 14, 0xc4a35a, true);
   }
-  button(lay.home.x, lay.home.y, lay.home.w, lay.home.h, t("home"), () => openTeam("HOME"), 0x0e4a48, "live-home", metrics);
-  button(lay.away.x, lay.away.y, lay.away.w, lay.away.h, t("away"), () => openTeam("AWAY"), 0x1a3a5c, "live-away", metrics);
+}
+
+function logView(view, current) {
+  const line =
+    current + "|" + view.phase + "|" + digitLabel(view) + "|" + (view.unverified ? "UNVERIFIED" : view.trust);
+  if (line === lastLogged) {
+    return;
+  }
+  lastLogged = line;
+  console.log("FORREF_LIVE002 VIEW|" + line + "!");
+}
+
+function paintShell(view, lay) {
   const primary = view.actions[0];
+  button(lay.home.x, lay.home.y, lay.home.w, lay.home.h, t("homeScore"), () => openTeam("HOME"), 0x0e4a48, "live-home", metrics);
+  button(lay.away.x, lay.away.y, lay.away.w, lay.away.h, t("awayScore"), () => openTeam("AWAY"), 0x1a3a5c, "live-away", metrics);
   if (primary) {
-    const label = primary === "ABANDON_GAME" && armAbandon ? t("confirmAbandon") : t(ACTION_TEXT[primary]);
-    button(
-      lay.display.x,
-      lay.display.y,
-      lay.display.w,
-      lay.display.h,
-      label,
-      () => onAction(primary),
-      fillFor(primary),
-      "live-" + primary,
-      metrics
-    );
+    const label = primary === "ABANDON_GAME" && arm.armed() ? t("confirmAbandon") : t(ACTION_TEXT[primary]);
+    button(lay.display.x, lay.display.y, lay.display.w, lay.display.h, label, () => onAction(primary), fillFor(primary), "live-" + primary, metrics);
   } else {
-    button(lay.display.x, lay.display.y, lay.display.w, lay.display.h, t("back"), () => back(), 0x12324d, "live-back", metrics);
+    button(lay.display.x, lay.display.y, lay.display.w, lay.display.h, t("back"), () => leave("back", () => back()), 0x12324d, "live-back", metrics);
   }
   button(
     lay.back.x,
@@ -130,34 +151,55 @@ function paintAll() {
     lay.back.w,
     lay.back.h,
     t("matchControls"),
-    () => push({ url: "page/gt/controls/index.page" }),
+    () => leave("navigate", () => push({ url: "page/gt/controls/index.page" })),
     0x0b2d5b,
     "live-controls",
     metrics
   );
-  console.log(
-    "FORREF_LIVE002 VIEW|" +
-      current +
-      "|" +
-      view.phase +
-      "|" +
-      digitLabel(view) +
-      "|" +
-      (view.unverified ? "UNVERIFIED" : view.trust) +
-      "!"
-  );
+}
+
+function openTeam(team) {
+  state().team = team;
+  console.log("FORREF_LIVE002 NAV team=" + team + " mode=" + mode() + "!");
+  leave("navigate", () => push({ url: "page/gt/event/index.page", params: JSON.stringify({ team: team }) }));
+}
+
+function paintAll() {
+  const view = prepareFrame();
+  if (!view) {
+    return;
+  }
+  arm.retain(contextOf(view));
+  const current = mode();
+  const lay = layoutLive(metrics, current);
+  const key = shellKey(view, current);
+  if (!shell || shell.key !== key) {
+    clear();
+    paintBase(metrics);
+    paintDigits(view, lay, current);
+    paintShell(view, lay);
+    shell = { key: key };
+  } else {
+    paintDigits(view, lay, current);
+  }
+  logView(view, current);
 }
 
 function onAction(intent) {
-  const confirmed = intent === "ABANDON_GAME" && armAbandon;
+  const view = prepareFrame();
+  const ctx = view ? contextOf(view) : mode();
+  if (intent !== "ABANDON_GAME") {
+    arm.disarm("other-intent");
+  }
+  const confirmed = intent === "ABANDON_GAME" && arm.confirmed(ctx);
   const result = performIntent(intent, { confirmed: confirmed });
   if (result.reason === "CONFIRM_REQUIRED") {
-    armAbandon = true;
+    arm.arm(ctx);
     banner = t("confirmAbandon");
     paintAll();
     return;
   }
-  armAbandon = false;
+  arm.disarm("resolved");
   if (!result.ok) {
     banner = result.reason === "DUPLICATE" ? t("alreadyApplied") : result.reason === "READBACK_FAIL" ? t("notCompleted") : t("notApplied");
     paintAll();
@@ -167,23 +209,12 @@ function onAction(intent) {
   paintAll();
 }
 
-function onTick() {
-  const sampled = sampleTick();
-  if (!sampled) {
-    return;
-  }
-  if (sampled.event === "UNVERIFIED" || sampled.event === "CLOCK_UNAVAILABLE") {
-    banner = t("timeUnverified");
-  }
-  paintAll();
-}
-
 function ensureTimer() {
   if (timerId != null) {
     return;
   }
   timerId = createTimer(1000, 1000, () => {
-    onTick();
+    paintAll();
   });
   console.log("FORREF_LIVE002 TIMER|createTimer!");
 }
@@ -205,12 +236,16 @@ Page({
     metrics = logDevice("live");
     bindBack(false);
     bootLive();
+    shell = null;
     paintAll();
     stopClockTimer();
     ensureTimer();
   },
   onDestroy() {
+    leave("exit");
     stopClockTimer();
+    persistLive();
+    shell = null;
     clear();
     console.log("FORREF_PAGE live onDestroy");
   },

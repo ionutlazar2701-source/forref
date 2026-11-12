@@ -2,8 +2,10 @@ import { Time } from "@zos/sensor";
 import { LocalStorage } from "@zos/storage";
 import { readFileSync, writeFileSync } from "@zos/fs";
 
-const FILE = "forref_clock001b_state.json";
-const KEY = "forref_clock001b_state";
+// 001c is a new prototype generation so a fresh READY can be tested.
+// The previous 001b full-time copy, and the probe files, are left in place.
+const FILE = "forref_clock001c_state.json";
+const KEY = "forref_clock001c_state";
 
 const time = new Time();
 const kv = new LocalStorage();

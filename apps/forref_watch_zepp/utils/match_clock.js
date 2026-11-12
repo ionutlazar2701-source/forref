@@ -4,6 +4,9 @@
 
 export const REGULATION_HALF_MS = 45 * 60 * 1000;
 export const MAX_SAME_SESSION_GAP_MS = 120 * 1000;
+// A running display may advance only across a sampled step this small.
+// Anything longer is a gap and must not be shown as precise elapsed time.
+export const DISPLAY_CONTINUITY_MS = 2500;
 export const JOURNAL_LIMIT = 30;
 
 export const Phase = {
@@ -227,6 +230,44 @@ function safeHold(phase) {
   return null;
 }
 
+function acceptsPhase(phase, intent) {
+  if (intent === "KICK_OFF") {
+    return phase === Phase.READY;
+  }
+  if (intent === "PAUSE") {
+    return isRunning(phase);
+  }
+  if (intent === "RESUME") {
+    return phase === Phase.FIRST_HALF_PAUSED || phase === Phase.SECOND_HALF_PAUSED;
+  }
+  if (intent === "END_FIRST_HALF") {
+    return phase === Phase.FIRST_HALF_RUNNING || phase === Phase.FIRST_HALF_PAUSED;
+  }
+  if (intent === "START_SECOND_HALF") {
+    return phase === Phase.HALF_TIME;
+  }
+  if (intent === "FULL_TIME") {
+    return phase === Phase.SECOND_HALF_RUNNING || phase === Phase.SECOND_HALF_PAUSED;
+  }
+  if (intent === "SUSPEND_GAME") {
+    return (
+      isRunning(phase) ||
+      phase === Phase.FIRST_HALF_PAUSED ||
+      phase === Phase.SECOND_HALF_PAUSED
+    );
+  }
+  if (intent === "RESUME_GAME") {
+    return phase === Phase.FIRST_HALF_SUSPENDED || phase === Phase.SECOND_HALF_SUSPENDED;
+  }
+  if (intent === "ABANDON_GAME") {
+    return phase === Phase.FIRST_HALF_SUSPENDED || phase === Phase.SECOND_HALF_SUSPENDED;
+  }
+  if (intent === "CONTINUE_FROM_LAST") {
+    return safeHold(phase) != null;
+  }
+  return false;
+}
+
 export function applyIntent(session, intent, observation) {
   const id = observation.intentId;
   if (!id) {
@@ -238,9 +279,19 @@ export function applyIntent(session, intent, observation) {
   if (session.trust === Trust.UNVERIFIED && intent !== "CONTINUE_FROM_LAST") {
     return reject(session, "UNVERIFIED");
   }
+  if (!acceptsPhase(session.phase, intent)) {
+    return reject(session, "ILLEGAL");
+  }
 
   let current = session;
   if (isRunning(session.phase) && session.trust !== Trust.UNVERIFIED) {
+    const anchor = session.lastUtc == null ? session.openStartUtc : session.lastUtc;
+    const step = anchor == null || observation.utcMillis == null ? null : observation.utcMillis - anchor;
+    if (step == null || step < 0 || step > DISPLAY_CONTINUITY_MS) {
+      const reason = step != null && step < 0 ? "BACKWARD" : step != null && step > DISPLAY_CONTINUITY_MS ? "UNSAMPLED_GAP" : "CLOCK_UNAVAILABLE";
+      const failed = failClosed(cloneSession(session), anchor, reason);
+      return { ok: false, duplicate: false, reason: reason, session: failed.session };
+    }
     const sampled = sample(session, observation);
     current = sampled.session;
     if (current.trust === Trust.UNVERIFIED) {
@@ -437,8 +488,60 @@ export function actionsFor(session) {
   return [];
 }
 
+export function admitDisplay(session, utc, epoch) {
+  const next = cloneSession(session);
+  if (!isRunning(next.phase) || next.trust === Trust.UNVERIFIED) {
+    return { admitted: true, session: next, reason: "HELD" };
+  }
+  if (next.epoch && epoch && epoch !== next.epoch) {
+    const failed = failClosed(next, next.lastUtc, "EPOCH");
+    return { admitted: false, session: failed.session, reason: "EPOCH" };
+  }
+  if (utc == null || next.openStartUtc == null) {
+    const failed = failClosed(next, next.lastUtc, "CLOCK_UNAVAILABLE");
+    return { admitted: false, session: failed.session, reason: "CLOCK_UNAVAILABLE" };
+  }
+  const anchor = next.lastUtc == null ? next.openStartUtc : next.lastUtc;
+  const step = utc - anchor;
+  if (step < 0) {
+    const failed = failClosed(next, anchor, "BACKWARD");
+    return { admitted: false, session: failed.session, reason: "BACKWARD" };
+  }
+  if (step > DISPLAY_CONTINUITY_MS) {
+    const failed = failClosed(next, anchor, "UNSAMPLED_GAP");
+    return { admitted: false, session: failed.session, reason: "UNSAMPLED_GAP" };
+  }
+  if (step === 0) {
+    return { admitted: true, session: next, reason: "HELD" };
+  }
+  const sampled = sample(next, { utcMillis: utc, epoch: epoch || next.epoch });
+  if (sampled.event !== "TICK") {
+    return { admitted: false, session: sampled.session, reason: sampled.session.notice || sampled.event };
+  }
+  return { admitted: true, session: sampled.session, reason: "TICK" };
+}
+
+export function liveFrame(session, utc, epoch) {
+  const admitted = admitDisplay(session, utc, epoch);
+  const view = present(admitted.session, admitted.session.lastUtc);
+  return {
+    admitted: admitted.admitted,
+    reason: admitted.reason,
+    session: admitted.session,
+    view: view,
+  };
+}
+
+function displayUtc(session, utc) {
+  if (isRunning(session.phase) && session.trust !== Trust.UNVERIFIED) {
+    return session.lastUtc;
+  }
+  return utc;
+}
+
 export function present(session, utc) {
   const unverified = session.trust === Trust.UNVERIFIED;
+  const shownAt = displayUtc(session, utc);
   let digits = null;
   let added = false;
   let mark = null;
@@ -451,13 +554,13 @@ export function present(session, utc) {
       added = shown.added;
       mark = shown.mark;
     } else if (secondDisplay(session)) {
-      const presentation = REGULATION_HALF_MS + livePeriodMs(session, utc);
+      const presentation = REGULATION_HALF_MS + livePeriodMs(session, shownAt);
       const shown = splitRegulation(presentation, REGULATION_HALF_MS * 2, 90);
       digits = shown.digits;
       added = shown.added;
       mark = shown.mark;
     } else {
-      const shown = splitRegulation(livePeriodMs(session, utc), REGULATION_HALF_MS, 45);
+      const shown = splitRegulation(livePeriodMs(session, shownAt), REGULATION_HALF_MS, 45);
       digits = shown.digits;
       added = shown.added;
       mark = shown.mark;

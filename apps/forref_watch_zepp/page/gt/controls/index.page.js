@@ -1,11 +1,13 @@
 import { push, back } from "@zos/router";
-import { logDevice, bindBack, stack } from "../../../utils/chrome";
+import { logDevice, bindBack, clear, stack } from "../../../utils/chrome";
 import { t } from "../../../utils/text";
 import { displayText } from "../../../utils/match_clock";
 import { bootLive, viewNow, performIntent } from "../../../utils/live_session";
+import { createAbandonArm } from "../../../utils/abandon_arm";
 
-let armAbandon = false;
 let banner = "";
+let metrics = null;
+const arm = createAbandonArm();
 
 const ACTION_TEXT = {
   END_FIRST_HALF: "endFirst",
@@ -30,6 +32,18 @@ function fillFor(action) {
   return 0x0b2d5b;
 }
 
+function contextOf(view) {
+  return "controls|" + view.phase;
+}
+
+function leave(reason, go) {
+  const result = arm.disarm(reason);
+  console.log("FORREF_LIVE002 ARM|disarm|" + reason + "|" + (result.disarmed ? "was-armed" : "open") + "!");
+  if (go) {
+    go();
+  }
+}
+
 function statusLine(view) {
   const digits = view.unverified ? "——:——" : displayText(view);
   let label = t("clockReady");
@@ -51,59 +65,67 @@ function statusLine(view) {
   return label + " · " + digits + (banner ? " · " + banner : "");
 }
 
-function paint(metrics) {
+function paint() {
   const view = viewNow();
+  arm.retain(contextOf(view));
   const rows = [{ label: statusLine(view), color: view.unverified ? 0xc4a35a : 0xffffff }];
   const controls = view.actions.slice(1);
   controls.forEach((action) => {
-    const label = action === "ABANDON_GAME" && armAbandon ? t("confirmAbandon") : t(ACTION_TEXT[action]);
+    const label = action === "ABANDON_GAME" && arm.armed() ? t("confirmAbandon") : t(ACTION_TEXT[action]);
     rows.push({
       label: label,
-      action: () => run(metrics, action),
+      action: () => run(action),
       fill: fillFor(action),
       name: "ctrl-" + action,
     });
   });
   rows.push({
     label: t("display"),
-    action: () => push({ url: "page/gt/display/index.page" }),
+    action: () => leave("navigate", () => push({ url: "page/gt/display/index.page" })),
     name: "ctrl-display",
   });
   rows.push({
     label: t("backToLive"),
-    action: () => back(),
+    action: () => leave("back", () => back()),
     name: "ctrl-back",
   });
+  clear();
   stack(metrics, t("matchControls"), rows);
-  console.log("FORREF_LIVE002 CTRL|" + view.phase + "|" + controls.join(",") + "!");
+  console.log("FORREF_LIVE002 CTRL|" + view.phase + "|" + controls.join(",") + "|" + (arm.armed() ? "armed" : "open") + "!");
 }
 
-function run(metrics, intent) {
-  const confirmed = intent === "ABANDON_GAME" && armAbandon;
+function run(intent) {
+  const view = viewNow();
+  const ctx = contextOf(view);
+  if (intent !== "ABANDON_GAME") {
+    arm.disarm("other-intent");
+  }
+  const confirmed = intent === "ABANDON_GAME" && arm.confirmed(ctx);
   const result = performIntent(intent, { confirmed: confirmed });
   if (result.reason === "CONFIRM_REQUIRED") {
-    armAbandon = true;
+    arm.arm(ctx);
     banner = t("confirmAbandon");
-    paint(metrics);
+    paint();
     return;
   }
-  armAbandon = false;
+  arm.disarm("resolved");
   banner = result.ok ? "" : t("notApplied");
   if (result.ok) {
     back();
     return;
   }
-  paint(metrics);
+  paint();
 }
 
 Page({
   build() {
-    const metrics = logDevice("controls");
+    metrics = logDevice("controls");
     bindBack(false);
     bootLive();
-    paint(metrics);
+    paint();
   },
   onDestroy() {
+    leave("exit");
     console.log("FORREF_PAGE controls onDestroy");
   },
 });

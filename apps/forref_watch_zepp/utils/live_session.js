@@ -7,11 +7,13 @@ import {
   trace,
   loadSession,
   commitSession,
+  liveFrame,
   Trust,
 } from "./match_clock";
 import { deviceNow, deviceAdapter } from "./clock_device";
+import { BUILD_NAME, bootLine } from "./build_stamp";
 
-export const BUILD = "live-match-flow-002";
+export const BUILD = BUILD_NAME;
 
 let bootLogged = false;
 
@@ -36,7 +38,7 @@ export function bootLive() {
   const data = bag();
   if (!bootLogged) {
     bootLogged = true;
-    console.log("FORREF_LIVE002_BOOT build=" + BUILD + "!");
+    console.log(bootLine());
   }
   if (data.clockLive && data.clockLive.epoch === data.clockEpoch && data.clockLive.session) {
     return data.clockLive.session;
@@ -48,7 +50,32 @@ export function bootLive() {
 }
 
 export function viewNow() {
-  return present(currentSession(), deviceNow());
+  const session = currentSession();
+  return present(session, session && session.lastUtc);
+}
+
+// Admission runs before any Live widgets are created for this frame.
+export function prepareFrame() {
+  const before = currentSession();
+  const utc = deviceNow();
+  const epoch = bag().clockEpoch;
+  if (!before) {
+    return null;
+  }
+  if (utc == null) {
+    const failed = sample(before, { utcMillis: null, epoch: epoch, discontinuity: "CLOCK_UNAVAILABLE" });
+    rememberSession(failed.session);
+    commitSession(deviceAdapter(), failed.session);
+    console.log(trace("CLOCK_UNAVAILABLE", before.phase, failed.session, 0));
+    return present(failed.session, failed.session.lastUtc);
+  }
+  const frame = liveFrame(before, utc, epoch);
+  rememberSession(frame.session);
+  if (!frame.admitted) {
+    commitSession(deviceAdapter(), frame.session);
+    console.log(trace("UNVERIFIED", before.phase, frame.session, utc));
+  }
+  return frame.view;
 }
 
 function observation(intent, session, extra) {
@@ -88,26 +115,15 @@ export function performIntent(intent, extra) {
 }
 
 export function sampleTick() {
-  const before = currentSession();
-  const utc = deviceNow();
-  if (!before) {
-    return null;
+  return prepareFrame();
+}
+
+export function persistLive() {
+  const session = currentSession();
+  if (!session) {
+    return { ok: false, reason: "NO_SESSION" };
   }
-  if (utc == null) {
-    const failed = sample(before, { utcMillis: null, epoch: bag().clockEpoch });
-    rememberSession(failed.session);
-    console.log(trace("CLOCK_UNAVAILABLE", before.phase, failed.session, 0));
-    return failed;
-  }
-  const sampled = sample(before, { utcMillis: utc, epoch: bag().clockEpoch });
-  rememberSession(sampled.session);
-  if (sampled.event === "UNVERIFIED") {
-    commitSession(deviceAdapter(), sampled.session);
-    console.log(trace("UNVERIFIED", before.phase, sampled.session, utc));
-    return sampled;
-  }
-  if (sampled.event === "TICK") {
-    console.log(trace("TICK", before.phase, sampled.session, utc));
-  }
-  return sampled;
+  const saved = commitSession(deviceAdapter(), session);
+  console.log("FORREF_CLOCK001 PERSIST|" + saved.reason + "!");
+  return saved;
 }

@@ -13,6 +13,9 @@ import {
   commitSession,
   advance,
   encodeSession,
+  admitDisplay,
+  liveFrame,
+  DISPLAY_CONTINUITY_MS,
 } from "../utils/match_clock.js";
 
 const EPOCH = "epoch-a";
@@ -345,4 +348,36 @@ test("second-half suspension restores as frozen and resume stays in the second h
   const resumed = applyIntent(restored.session, "RESUME_GAME", obs(200000, "resume-2", { epoch: "epoch-after-recreate" }));
   assert.equal(resumed.session.phase, Phase.SECOND_HALF_RUNNING);
   assert.equal(displayText(present(advance(resumed.session, 203000), 203000)), "45:09");
+});
+
+test("an unsampled gap is not shown as precise elapsed time", () => {
+  const session = advance(kick(0), 5000);
+  assert.equal(session.lastUtc, 5000);
+  assert.equal(displayText(present(session, 5000 + 30000)), "00:05");
+  const gap = 5000 + DISPLAY_CONTINUITY_MS + 1;
+  const denied = admitDisplay(session, gap, EPOCH);
+  assert.equal(denied.admitted, false);
+  assert.equal(denied.reason, "UNSAMPLED_GAP");
+  assert.equal(denied.session.trust, Trust.UNVERIFIED);
+  assert.equal(denied.session.firstHalfClosedMs, 5000);
+  assert.equal(displayText(present(denied.session, gap)), null);
+  const frame = liveFrame(session, gap, EPOCH);
+  assert.equal(frame.admitted, false);
+  assert.equal(frame.view.unverified, true);
+  assert.equal(frame.view.digits, null);
+  const continued = admitDisplay(session, 5000 + 1000, EPOCH);
+  assert.equal(continued.admitted, true);
+  assert.equal(continued.reason, "TICK");
+  assert.equal(displayText(present(continued.session, 6000)), "00:06");
+});
+
+test("a late whistle does not fold the unsampled gap into the elapsed", () => {
+  const session = advance(kick(0), 10000);
+  const late = applyIntent(session, "PAUSE", obs(10000 + DISPLAY_CONTINUITY_MS + 50, "late-pause"));
+  assert.equal(late.ok, false);
+  assert.equal(late.reason, "UNSAMPLED_GAP");
+  assert.equal(late.session.trust, Trust.UNVERIFIED);
+  assert.equal(late.session.firstHalfClosedMs, 10000);
+  assert.equal(displayText(present(late.session, 40000)), null);
+  assert.equal(late.session.phase, Phase.FIRST_HALF_RUNNING);
 });

@@ -1,3 +1,5 @@
+import { bootLine } from "./utils/build_stamp";
+
 App({
   globalData: {
     demo: true,
@@ -6,7 +8,7 @@ App({
     this.globalData = this.globalData || {};
     this.globalData.clockEpoch = "e" + Date.now();
     console.log("FORREF_APP onCreate epoch=" + this.globalData.clockEpoch);
-    console.log("FORREF_LIVE002_BOOT build=live-match-flow-002!");
+    console.log(bootLine());
   },
   onDestroy() {
     console.log("FORREF_APP onDestroy");

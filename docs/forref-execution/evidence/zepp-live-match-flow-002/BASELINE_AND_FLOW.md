@@ -14,7 +14,11 @@ Baseline commit: `947a2dd467f6fc5bd437775cfa24538c453f85ba` on `cursor/zepp-matc
 
 READY on Live shows `00:00` and KICK OFF. The primary control stays on Live: KICK OFF, PAUSE, RESUME, START 2ND HALF, RESUME GAME, or CONTINUE FROM LAST. END 1ST HALF, SUSPEND GAME, FULL TIME, and guarded ABANDON sit on Match Controls. HOME and AWAY open the existing event flow, which shows DEMO — NOT RECORDED and does not write a sporting record. Display A/C is on Match Controls and does not create a session.
 
-PAUSE holds the instrument. SUSPEND GAME is a separate frozen phase. ABANDON requires a second confirmed intent and lands on ABANDONED, never FULL TIME. 45:00 and 90:00 do not end a period. Unverified time shows dashes. Readback remains READBACK_ONLY_NOT_D1.
+PAUSE holds the instrument. SUSPEND GAME is a separate frozen phase. ABANDON requires a second confirmed intent and lands on ABANDONED, never FULL TIME. That confirmation latch is cleared on navigation, Back, page exit, and when the phase or mode changes. 45:00 and 90:00 do not end a period. Unverified time shows dashes. Readback remains READBACK_ONLY_NOT_D1.
+
+A running Live frame calls `liveFrame` before it creates widgets. Digits come from the last admitted sample. A step longer than 2.5 seconds is an unsampled gap: the display does not turn it into precise elapsed time, and a whistle does not fold that gap into the half. The prototype store for this build is `forref_clock001c_state`. The previous `forref_clock001b_state` copy is left in place.
+
+True Black theme work is not in this PR. The route inventory is 23, including Match Controls. See `ROUTE_INVENTORY.md`.
 
 ## Geometry
 
