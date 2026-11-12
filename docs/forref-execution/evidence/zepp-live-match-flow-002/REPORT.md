@@ -1,97 +1,94 @@
 # FORREF ZEPP LIVE MATCH FLOW 002
 
-Branch: `cursor/zepp-live-match-flow-002-30fd`, based on `947a2dd467f6fc5bd437775cfa24538c453f85ba`.
+Branch: `cursor/zepp-live-match-flow-002-30fd`. Functional commit: `6fbb3829e8054f9bf9215ffe6ce8602a421f60dc`. This file records the simulator retry after the watch emulator was available.
 
-## What changed
+## What the build does
 
-Live Match again uses `layoutLive` for A (HOME/AWAY side by side) and C (HOME, clock, AWAY). The existing `match_clock` session is the only clock. Kick Off, Pause, and Resume stay on that Live screen. Match Controls is a new route for End 1st Half, Suspend Game, Full Time, and a two-step Abandon. Formal suspension phases are `FIRST_HALF_SUSPENDED` and `SECOND_HALF_SUSPENDED`. Abandon requires `confirmed: true` and ends in `ABANDONED`, which is not Full Time and not completed.
+Live Match uses `layoutLive` for A (HOME and AWAY side by side) and C (HOME, clock, AWAY). Both are one `match_clock` session. Kick Off, Pause, Resume, Start 2nd Half, and Resume Game stay on Live. Match Controls holds End 1st Half, Suspend Game, Full Time, and a two-step Abandon. Score stays SCORE UNAVAILABLE. The event page says DEMO — NOT RECORDED.
 
-No Match Core, persistence, or phone capture files were edited. The prototype store is still a dual-copy readback, not D1. `Time.getTime()` stays an unverified wall clock. `createTimer` only refreshes the display.
-
-`tool/cloud_bootstrap.sh` and `tool/verify_cloud.sh` were mode `100644`, so `./tool/verify_cloud.sh` could not start. Their tracked mode is now executable. No script body changed.
+No Match Core, persistence, or phone files were edited. Readback is not D1. `Time.getTime()` is an unverified wall clock. `createTimer` only refreshes the display.
 
 ## Simulator
 
-Zepp OS Simulator **2.1.2** was downloaded from the official Linux amd64 package and started with `--no-sandbox` on `DISPLAY=:1`. Zeus CLI on this machine is **1.10.0** (the earlier clock session used 1.9.3). The shell window title is Huami OS Simulator and the corner reads v2.1.2.
-
-The watch guest did not start. The emulator cache is empty, and the simulator presents an account login before the firmware download:
-
-```
-Account
-Login
-Forgot password?
-No account？Sign Up
-Login with Challenge
-Get a Response in the Zepp App to sign in
-```
-
-The Apps page also says the watch emulator has not been downloaded. No QEMU guest, no Amazfit Active Max, and no Active 3 Premium profile were observed. `FORREF_LIVE002_BOOT` was not emitted because the new package was not loaded. KVM permissions were not changed. `/dev/kvm` remains `root:103` and this user is not in that group.
-
-Screenshot: `docs/forref-execution/evidence/zepp-live-match-flow-002/simulator-shell-v212.png`. Login text: `simulator-login.txt`.
-
-VISUAL SIMULATOR GATE: BLOCKED. No Live A or Live C screenshot of the new UI exists. Older clock-only screenshots are not evidence for this build.
-
-## Node tests
-
-Command: `npm test` in `apps/forref_watch_zepp`.
-
-Exit code: 0.
-
-`node test/geometry.test.js` printed `FORREF_GEOMETRY_TEST pass`. `node --test` reported 19 passed, 0 failed (12 existing clock tests, 4 new suspension/abandon tests, 3 live-surface tests).
-
-## Canonical cloud
-
-Command: `./tool/verify_cloud.sh` from the repository root.
-
-Exit code: 0. Log line: `verify_cloud: PASSED — all cloud-capable suites succeeded.`
-
-| Step | Result |
+| Item | Observed |
 | --- | --- |
-| cloud bootstrap | PASS (Flutter 3.47.2, Dart 3.13.2) |
-| analyze `packages/forref_match_core` | No issues found |
-| test `packages/forref_match_core` | 377 passed |
-| analyze `packages/forref_match_persistence` | No issues found |
-| test `packages/forref_match_persistence` | 92 passed |
-| analyze `apps/referee_phone` | No issues found |
-| test `apps/referee_phone` | 125 passed |
+| Simulator | Zepp OS Simulator 2.1.2, `--no-sandbox`, `DISPLAY=:1` |
+| Zeus | 1.10.0, `zeus dev -t "Amazfit Active 3 Premium"` |
+| Zeus device sources | 10944768, 10944769, 10944771, 10948867 |
+| Guest actually running | Amazfit Active Max, `deviceSource=10813699`, 480×480 ROUND, QEMU pid 17708, norflash `a2d75bdaa82cc958b916eab4bf0192ba` |
+| Boot marker | `FORREF_LIVE002_BOOT build=live-match-flow-002!` |
+| KVM | not changed. This user is not in group 103 |
+
+Console timestamps below are UTC. Europe/Bucharest is two hours ahead.
+
+## What was clicked
+
+One session, then a process recreate that kept the same QEMU pid.
+
+| UTC | Result |
+| --- | --- |
+| 15:56:17 | Live A READY `00:00`, then Live C READY `00:00` |
+| 15:57:39 | Kick Off on Live C. `RDY>H1R` at `00:00`. Screen reached `00:03` RUNNING |
+| 15:57:44 | Pause. `H1R>H1P` at `00:04`. Still `00:04` after 15 seconds. Label CLOCK PAUSED |
+| 15:58:02 | Resume. `H1P>H1R` at `00:04`. Screen then showed `00:06` RUNNING |
+| 15:58:15 | HOME opened. Title `HOME · DEMO — NOT RECORDED`. No score change |
+| 15:58:30 | Back to Live C, still RUNNING, now `00:34` (the gap counted as play) |
+| 15:58:47 | Suspend Game. `H1R>H1S` at `00:49`. Live C and Live A both showed MATCH SUSPENDED `00:49` |
+| 15:59:30 | Resume Game. `H1S>H1R` at `00:49`. The suspended gap was not added |
+| 15:59:35 | Half-time on Live A, frozen `00:54` |
+| 15:59:48 | Start 2nd Half. `HT>H2R` at `45:00`. Live A showed `45:01` |
+| 16:00:29 | Same session on Live C, `2ND HALF · RUNNING` `45:41` |
+| 16:00:41 | Full Time. `H2R>FT` at `45:53`. Held on a later frame. Reopen stayed `45:53` |
+| 16:02:08 | Apps-list recreate. New epoch `e1794499328915`. QEMU pid still 17708 |
+| 16:02:22 | `LOAD|FT>FT|45:53|FROZEN_OBSERVED` on Live A |
+
+Abandon was not pressed on the guest. A running-clock recreate was not performed; the recreate happened at full time. No rectangular guest was launched. The UI language was English (`en-US`).
+
+The first long recording failed because the window height 507 is odd and the encoder rejected it. `zepp-live-full-time.mp4` is 12 seconds of the frozen full-time screen and the Back click.
+
+## Node and cloud tests
+
+Unchanged from the functional commit: `npm test` exit 0 (geometry pass, 19/19). `./tool/verify_cloud.sh` exit 0 (Match Core 377, persistence 92, phone 125, analyze clean).
 
 ## T01–T26
 
 | ID | Verdict | Evidence |
 | --- | --- | --- |
-| T01 | PARTIAL | Reducer keeps READY at 00:00. No simulator screenshot. |
-| T02 | PARTIAL | Kick Off stays in the reducer and the live page does not navigate away. Not clicked on a guest. |
-| T03 | PASS | Duplicate kickoff test. |
-| T04 | PARTIAL | Pause freeze is unit-tested. No 15s simulator hold. |
-| T05 | PARTIAL | Resume unit test. No simulator. |
-| T06 | PARTIAL | Event page does not touch the session. No return-to-live capture. |
-| T07 | PARTIAL | Live shows SCORE UNAVAILABLE. Event title uses DEMO — NOT RECORDED. No screenshot. |
-| T08 | PASS | Injected clock: 45:00 stays running; `45 + 02:15` renders. |
-| T09 | PARTIAL | End 1st Half unit test. No simulator. |
-| T10 | PARTIAL | Half-time break does not add playing time in the reducer. No simulator. |
-| T11 | PARTIAL | 1H 47:15 then 2H display 45:00 in the reducer. No simulator launch. |
-| T12 | PARTIAL | 2H pause/resume unit test. A/C is the same session in source. No simulator. |
-| T13 | PASS | Injected clock: 90:00 stays running; `90 + 03:24` renders. |
-| T14 | PARTIAL | Full Time freezes and is not a completed status in the reducer. No simulator. |
-| T15 | PARTIAL | Suspend from running excludes the gap in the reducer. No simulator. |
-| T16 | PARTIAL | Suspend from paused adds no second segment. No simulator. |
-| T17 | PARTIAL | Unconfirmed abandon is refused; confirmed abandon is ABANDONED, not FULL TIME. No simulator. |
-| T18 | PARTIAL | Illegal and duplicate intents rejected in unit tests. No device log. |
-| T19 | PASS | Backward jump, forward gap, and missing sample fail closed in unit tests. |
-| T20 | PARTIAL | Live `onDestroy` stops only the UI timer. No lifecycle capture. |
-| T21 | PARTIAL | Running reload is TIME UNVERIFIED; CONTINUE FROM LAST lands paused. No process recreate on a guest. |
-| T22 | PARTIAL | Frozen pause and second-half suspension restore when both copies agree. No guest recreate. |
-| T23 | PASS | Corrupt, divergent, and missing copies fail closed in unit tests. |
-| T24 | PARTIAL | Geometry tests pass for round 480 and rect 390×450 A and C. No new UI capture. |
-| T25 | PARTIAL | New labels exist in EN and RO. Live source has no `67:12` or `1-0`. No on-device locale pass. |
-| T26 | PASS | `npm test` exit 0 (19/19 plus geometry). `./tool/verify_cloud.sh` exit 0. Match Core 377 tests, persistence 92, phone 125. Analyze clean on all three. |
+| T01 | PASS | `shots/T01-live-a-ready.png`, `shots/T01-live-c-ready.png`, both `00:00` |
+| T02 | PASS | Kick Off stayed on Live C and the clock advanced. `shots/T02-live-c-kick.png` |
+| T03 | PASS | Unit test. One kickoff in the console |
+| T04 | PASS | `00:04` held through `shots/T02-live-c-paused.png` |
+| T05 | PASS | Resume from `00:04` to `00:06`. `shots/T02-live-c-resumed.png` |
+| T06 | PASS | `shots/T05-nav-return.png` still RUNNING after HOME |
+| T07 | PASS | `shots/T05-team-home.png` and SCORE UNAVAILABLE on every live shot |
+| T08 | PASS | Injected clock. The guest half ended at `00:54`, before 45:00 |
+| T09 | PASS | `shots/T03-half-time-a.png` and `VIEW\|A\|HALF_TIME\|00:54` |
+| T10 | PASS | Half-time stayed `00:54`; 2H started at `45:00` |
+| T11 | PASS | Unit covers 1H `47:15`. Guest 2H launch is `HT>H2R` at `45:00` |
+| T12 | PARTIAL | 2H ran on A and C. Pause/Resume was exercised in the first half, not the second |
+| T13 | PASS | Injected clock for `90 + 03:24` |
+| T14 | PASS | `shots/T03-full-time-c.png` and `shots/T03-full-time-held.png`. No Kick Off |
+| T15 | PASS | `H1R>H1S` at `00:49`, `H1S>H1R` at `00:49`. `shots/T04-suspended-c.png` |
+| T16 | PARTIAL | Suspend-from-paused is a unit test. The guest suspend started from RUNNING |
+| T17 | PARTIAL | Confirmed abandon is a unit test. It was not pressed on the guest |
+| T18 | PARTIAL | Illegal and duplicate intents are unit-tested. The guest log shows accepted transitions |
+| T19 | PASS | Fault-injection unit tests |
+| T20 | PASS | Back left Live and Open Live returned `45:53` in the same process |
+| T21 | PARTIAL | Running recreate is a unit test. The guest recreate was at full time |
+| T22 | PASS | `LOAD\|FT>FT\|45:53\|FROZEN_OBSERVED`. `shots/T22-restored-full-time.png` |
+| T23 | PASS | Corrupt and divergent copies fail closed in unit tests |
+| T24 | PARTIAL | Round A and C were on the guest and inside the safe area (`fit=1`). Rectangular layout is the geometry test only |
+| T25 | PARTIAL | English labels on the guest. Romanian keys exist and were not switched on the device. No `67:12` or `1-0` |
+| T26 | PASS | Watch tests and `./tool/verify_cloud.sh` exit 0 |
+
+19 PASS, 7 PARTIAL, 0 FAIL, 0 BLOCKED, 0 NOT RUN.
 
 ## Limits
 
-Official match time is not certified. Local D1 is not certified. Hardware, power loss, and battery are not certified. UNDO FULL TIME remains unimplemented (HUMAN GATE PENDING). The watch prototype does not write Match Records.
+Official match time is not certified. Local D1 is not certified. Hardware, power loss, and battery are not certified. UNDO FULL TIME remains a human gate. The guest is Active Max even though Zeus was pointed at Active 3 Premium.
 
-TRUE BLACK THEME 001 is not started. The functional screenshots this theme needs do not exist, and the accent candidates still need Founder review before any native recolor.
+TRUE BLACK THEME 001 is not started. These screenshots are the pre-theme baseline. Accent colors still need Founder review before any native recolor.
 
 ## Next single blocker
 
-Zepp account login in Simulator 2.1.2, so the watch emulator can be downloaded and this branch can be loaded with `zeus dev`.
+Founder review of a true-black color candidate before any native recolor. On the watch, the open device gaps are a second-half pause, a confirmed abandon, a running-clock recreate, a rectangular guest, and a Romanian pass.
