@@ -32,7 +32,7 @@ Page({
     clear();
     paintBase(m);
     const lay = layoutEvent(m);
-    textAt(lay.yellow.x, lay.titleY, lay.red.x + lay.red.w - lay.yellow.x, 32, t("choose") + " · " + showTeam(state().team), Math.round(m.width * 0.04), 0x3fc3be);
+    textAt(lay.yellow.x, lay.titleY, lay.red.x + lay.red.w - lay.yellow.x, 32, showTeam(state().team) + " · " + t("notRecorded"), 16, 0xc4a35a);
     button(lay.yellow.x, lay.yellow.y, lay.yellow.w, lay.yellow.h, t("yellow"), () => pick("YELLOW"), 0x8a7430, "event-yellow", m);
     button(lay.red.x, lay.red.y, lay.red.w, lay.red.h, t("red"), () => pick("RED"), 0x6e2430, "event-red", m);
     button(lay.goal.x, lay.goal.y, lay.goal.w, lay.goal.h, t("goal"), () => pick("GOAL"), 0x0e4a48, "event-goal", m);

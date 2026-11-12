@@ -281,3 +281,68 @@ test("reaching 45:00 or 90:00 does not emit a period or match end", () => {
   assert.equal(fullMark.phase, Phase.SECOND_HALF_RUNNING);
   assert.equal(displayText(present(fullMark, 2000 + REGULATION_HALF_MS)), "90:00");
 });
+
+test("formal suspension excludes the stopped interval and is not a clock pause", () => {
+  let session = advance(kick(0), 10000);
+  const suspended = applyIntent(session, "SUSPEND_GAME", obs(10000, "suspend"));
+  assert.equal(suspended.ok, true);
+  session = suspended.session;
+  assert.equal(session.phase, Phase.FIRST_HALF_SUSPENDED);
+  assert.equal(session.trust, Trust.FROZEN);
+  assert.equal(displayText(present(session, 40000)), "00:10");
+  assert.equal(session.firstHalfClosedMs, 10000);
+  const pause = applyIntent(session, "PAUSE", obs(40000, "pause-while-suspended"));
+  assert.equal(pause.ok, false);
+  assert.equal(pause.session.phase, Phase.FIRST_HALF_SUSPENDED);
+  const resumed = applyIntent(session, "RESUME_GAME", obs(40000, "resume-game"));
+  assert.equal(resumed.ok, true);
+  assert.equal(resumed.session.phase, Phase.FIRST_HALF_RUNNING);
+  const later = advance(resumed.session, 45000);
+  assert.equal(displayText(present(later, 45000)), "00:15");
+});
+
+test("suspend from paused does not open a second playing segment", () => {
+  const paused = applyIntent(advance(kick(0), 12000), "PAUSE", obs(12000, "pause")).session;
+  const suspended = applyIntent(paused, "SUSPEND_GAME", obs(20000, "suspend-paused"));
+  assert.equal(suspended.ok, true);
+  assert.equal(suspended.session.phase, Phase.FIRST_HALF_SUSPENDED);
+  assert.equal(suspended.session.firstHalfClosedMs, 12000);
+  assert.equal(suspended.session.openStartUtc, null);
+  assert.equal(suspended.session.journal.filter((entry) => entry.intent === "SUSPEND_GAME").length, 1);
+});
+
+test("abandon is refused until confirmed and never becomes full time", () => {
+  const running = advance(kick(0), 8000);
+  const direct = applyIntent(running, "ABANDON_GAME", obs(8000, "abandon-direct", { confirmed: true }));
+  assert.equal(direct.ok, false);
+  assert.equal(direct.session.phase, Phase.FIRST_HALF_RUNNING);
+  const suspended = applyIntent(running, "SUSPEND_GAME", obs(8000, "suspend-abandon")).session;
+  const first = applyIntent(suspended, "ABANDON_GAME", obs(9000, "abandon-1"));
+  assert.equal(first.reason, "CONFIRM_REQUIRED");
+  assert.equal(first.session.phase, Phase.FIRST_HALF_SUSPENDED);
+  const abandoned = applyIntent(suspended, "ABANDON_GAME", obs(9000, "abandon-2", { confirmed: true }));
+  assert.equal(abandoned.ok, true);
+  assert.equal(abandoned.session.phase, Phase.ABANDONED);
+  assert.notEqual(abandoned.session.phase, Phase.FULL_TIME);
+  assert.equal(displayText(present(abandoned.session, 20000)), "00:08");
+  const kickAgain = applyIntent(abandoned.session, "KICK_OFF", obs(21000, "kick-after-abandon"));
+  assert.equal(kickAgain.ok, false);
+});
+
+test("second-half suspension restores as frozen and resume stays in the second half", () => {
+  const ended = applyIntent(advance(kick(0), 47000), "END_FIRST_HALF", obs(47000, "half")).session;
+  const second = applyIntent(ended, "START_SECOND_HALF", obs(80000, "second")).session;
+  const played = advance(second, 86000);
+  const suspended = applyIntent(played, "SUSPEND_GAME", obs(86000, "suspend-2")).session;
+  assert.equal(suspended.phase, Phase.SECOND_HALF_SUSPENDED);
+  assert.equal(displayText(present(suspended, 120000)), "45:06");
+  const store = memory();
+  assert.equal(commitSession(store, suspended).ok, true);
+  const restored = loadSession(store, "epoch-after-recreate");
+  assert.equal(restored.reason, "RESTORED_FROZEN");
+  assert.equal(restored.session.phase, Phase.SECOND_HALF_SUSPENDED);
+  assert.equal(displayText(present(restored.session, 200000)), "45:06");
+  const resumed = applyIntent(restored.session, "RESUME_GAME", obs(200000, "resume-2", { epoch: "epoch-after-recreate" }));
+  assert.equal(resumed.session.phase, Phase.SECOND_HALF_RUNNING);
+  assert.equal(displayText(present(advance(resumed.session, 203000), 203000)), "45:09");
+});

@@ -1,26 +1,16 @@
-import { back } from "@zos/router";
+import { push, back } from "@zos/router";
 import { createTimer, stopTimer } from "@zos/timer";
 import { logDevice, bindBack, clear, paintBase, textAt, button } from "../../../utils/chrome";
-import { layoutClock } from "../../../utils/geometry";
+import { layoutLive } from "../../../utils/geometry";
 import { t } from "../../../utils/text";
 import { state } from "../../../utils/state";
-import {
-  applyIntent,
-  sample,
-  present,
-  displayText,
-  trace,
-  loadSession,
-  commitSession,
-  Trust,
-} from "../../../utils/match_clock";
-import { deviceNow, deviceAdapter } from "../../../utils/clock_device";
+import { displayText } from "../../../utils/match_clock";
+import { bootLive, viewNow, performIntent, sampleTick } from "../../../utils/live_session";
 
 let timerId = null;
 let metrics = null;
-let widgets = null;
-let paintKey = "";
 let banner = "";
+let armAbandon = false;
 
 const ACTION_TEXT = {
   KICK_OFF: "kickOff",
@@ -30,37 +20,13 @@ const ACTION_TEXT = {
   START_SECOND_HALF: "startSecond",
   FULL_TIME: "fullTime",
   CONTINUE_FROM_LAST: "continueClock",
+  SUSPEND_GAME: "suspendGame",
+  RESUME_GAME: "resumeGame",
+  ABANDON_GAME: "abandonGame",
 };
 
-function bag() {
-  const data = state();
-  if (!data.clockEpoch) {
-    data.clockEpoch = "missing";
-  }
-  return data;
-}
-
-function current() {
-  return bag().clockLive.session;
-}
-
-function remember(session) {
-  const data = bag();
-  data.clockLive = { epoch: data.clockEpoch, session: session };
-}
-
-function boot() {
-  const data = bag();
-  if (data.clockLive && data.clockLive.epoch === data.clockEpoch && data.clockLive.session) {
-    return;
-  }
-  const loaded = loadSession(deviceAdapter(), data.clockEpoch);
-  data.clockLive = { epoch: data.clockEpoch, session: loaded.session };
-  console.log(trace("LOAD", data.clockLive.session.phase, loaded.session, deviceNow()));
-}
-
-function viewNow() {
-  return present(current(), deviceNow());
+function mode() {
+  return state().display === "C" ? "C" : "A";
 }
 
 function statusLabel(view) {
@@ -76,9 +42,17 @@ function statusLabel(view) {
   if (view.phase === "FULL_TIME") {
     return t("fullTimeState");
   }
+  if (view.phase === "ABANDONED") {
+    return t("abandoned") + " · " + t("notFullTime");
+  }
+  if (view.phase.indexOf("SUSPENDED") >= 0) {
+    return t("matchSuspended");
+  }
   const period = view.phase.indexOf("SECOND") === 0 ? t("period2") : t("period1");
-  const motion = view.running ? t("running") : t("paused");
-  return period + " · " + motion;
+  if (view.phase.indexOf("PAUSED") >= 0) {
+    return period + " · " + t("clockPaused");
+  }
+  return period + " · " + t("running");
 }
 
 function detailLabel(view) {
@@ -86,7 +60,7 @@ function detailLabel(view) {
     return banner;
   }
   if (view.unverified) {
-    return t("recoveryRequired") + " · " + t("lastKnown") + " " + view.lastKnown;
+    return t("lastKnown") + " " + view.lastKnown;
   }
   return t("scoreUnavailable");
 }
@@ -99,167 +73,109 @@ function digitLabel(view) {
 }
 
 function fillFor(action) {
-  if (action === "END_FIRST_HALF" || action === "FULL_TIME") {
-    return 0x6e2b2b;
+  if (action === "END_FIRST_HALF" || action === "FULL_TIME" || action === "ABANDON_GAME") {
+    return 0x6e2430;
   }
-  if (action === "PAUSE") {
+  if (action === "PAUSE" || action === "SUSPEND_GAME") {
     return 0x6e5418;
   }
-  if (action === "KICK_OFF" || action === "START_SECOND_HALF" || action === "RESUME") {
+  if (action === "KICK_OFF" || action === "START_SECOND_HALF" || action === "RESUME" || action === "RESUME_GAME") {
     return 0x0d5c45;
   }
   return 0x0b2d5b;
 }
 
-function paintAll(named) {
+function openTeam(team) {
+  state().team = team;
+  console.log("FORREF_LIVE002 NAV team=" + team + " mode=" + mode() + "!");
+  push({ url: "page/gt/event/index.page", params: JSON.stringify({ team: team }) });
+}
+
+function paintAll() {
   const view = viewNow();
-  const key = view.phase + "|" + view.actions.join(",") + "|" + (view.unverified ? "U" : "K");
-  paintKey = key;
+  const current = mode();
+  const lay = layoutLive(metrics, current);
   clear();
   paintBase(metrics);
-  const laid = layoutClock(metrics, view.actions.length > 1 ? 2 : 1);
-  const status = textAt(laid.status.x, laid.status.y, laid.status.w, laid.status.h, statusLabel(view), 22, 0x3fc3be);
-  const digits = textAt(
-    laid.time.x,
-    laid.time.y,
-    laid.time.w,
-    laid.time.h,
-    digitLabel(view),
-    view.added ? 36 : 52,
-    0xffffff
-  );
-  const score = textAt(laid.score.x, laid.score.y, laid.score.w, laid.score.h, detailLabel(view), 16, 0xc4a35a);
+  textAt(12, lay.phaseY, metrics.width - 24, 28, statusLabel(view), 20, 0x3fc3be);
+  const timeH = current === "C" ? 36 : 48;
+  textAt(12, lay.timeY, metrics.width - 24, timeH, digitLabel(view), view.added ? 28 : current === "C" ? 32 : 40, 0xffffff);
+  const detailY = lay.timeY + timeH;
+  const detailLimit = current === "C" ? lay.away.y : lay.home.y;
+  if (detailY + 18 <= detailLimit) {
+    textAt(12, detailY, metrics.width - 24, 18, detailLabel(view), 14, 0xc4a35a);
+  }
+  button(lay.home.x, lay.home.y, lay.home.w, lay.home.h, t("home"), () => openTeam("HOME"), 0x0e4a48, "live-home", metrics);
+  button(lay.away.x, lay.away.y, lay.away.w, lay.away.h, t("away"), () => openTeam("AWAY"), 0x1a3a5c, "live-away", metrics);
   const primary = view.actions[0];
-  if (primary && laid.primary) {
+  if (primary) {
+    const label = primary === "ABANDON_GAME" && armAbandon ? t("confirmAbandon") : t(ACTION_TEXT[primary]);
     button(
-      laid.primary.x,
-      laid.primary.y,
-      laid.primary.w,
-      laid.primary.h,
-      t(ACTION_TEXT[primary]),
+      lay.display.x,
+      lay.display.y,
+      lay.display.w,
+      lay.display.h,
+      label,
       () => onAction(primary),
       fillFor(primary),
-      named ? "clock-" + primary : "",
+      "live-" + primary,
       metrics
     );
-  }
-  const secondary = view.actions[1];
-  if (secondary && laid.secondary) {
-    button(
-      laid.secondary.x,
-      laid.secondary.y,
-      laid.secondary.w,
-      laid.secondary.h,
-      t(ACTION_TEXT[secondary]),
-      () => onAction(secondary),
-      fillFor(secondary),
-      named ? "clock-" + secondary : "",
-      metrics
-    );
+  } else {
+    button(lay.display.x, lay.display.y, lay.display.w, lay.display.h, t("back"), () => back(), 0x12324d, "live-back", metrics);
   }
   button(
-    laid.back.x,
-    laid.back.y,
-    laid.back.w,
-    laid.back.h,
-    t("back"),
-    () => back(),
-    0x12324d,
-    named ? "clock-back" : "",
+    lay.back.x,
+    lay.back.y,
+    lay.back.w,
+    lay.back.h,
+    t("matchControls"),
+    () => push({ url: "page/gt/controls/index.page" }),
+    0x0b2d5b,
+    "live-controls",
     metrics
   );
-  widgets = { status: status, digits: digits, score: score };
-}
-
-function repaint(structural) {
-  const view = viewNow();
-  const key = view.phase + "|" + view.actions.join(",") + "|" + (view.unverified ? "U" : "K");
-  if (structural || key !== paintKey || !widgets) {
-    paintAll(true);
-    return;
-  }
-  paintAll(false);
-}
-
-function finishCommit(before, result, utc) {
-  console.log(trace(result.ok ? result.reason : "REJECT", before.phase, result.session, utc));
-  if (!result.ok) {
-    if (result.duplicate) {
-      banner = t("alreadyApplied");
-    } else if (result.reason === "ILLEGAL" || result.reason === "UNVERIFIED") {
-      banner = t("notApplied");
-    } else {
-      banner = t("timeUnverified");
-    }
-    if (result.session !== before && result.session.trust === Trust.UNVERIFIED) {
-      const saved = commitSession(deviceAdapter(), result.session);
-      if (!saved.ok) {
-        banner = t("notCompleted");
-      }
-      remember(result.session);
-    }
-    repaint(true);
-    return;
-  }
-  const saved = commitSession(deviceAdapter(), result.session);
-  if (!saved.ok) {
-    banner = t("notCompleted");
-    console.log(trace("READBACK_FAIL", before.phase, before, utc));
-    repaint(true);
-    return;
-  }
-  banner = "";
-  remember(result.session);
-  repaint(true);
+  console.log(
+    "FORREF_LIVE002 VIEW|" +
+      current +
+      "|" +
+      view.phase +
+      "|" +
+      digitLabel(view) +
+      "|" +
+      (view.unverified ? "UNVERIFIED" : view.trust) +
+      "!"
+  );
 }
 
 function onAction(intent) {
-  const before = current();
-  const utc = deviceNow();
-  if (utc == null) {
-    const failed = sample(before, { utcMillis: null, epoch: bag().clockEpoch, discontinuity: "CLOCK_UNAVAILABLE" });
-    remember(failed.session);
-    banner = t("timeUnverified");
-    console.log(trace("CLOCK_UNAVAILABLE", before.phase, failed.session, 0));
-    repaint(true);
+  const confirmed = intent === "ABANDON_GAME" && armAbandon;
+  const result = performIntent(intent, { confirmed: confirmed });
+  if (result.reason === "CONFIRM_REQUIRED") {
+    armAbandon = true;
+    banner = t("confirmAbandon");
+    paintAll();
     return;
   }
-  const result = applyIntent(before, intent, {
-    utcMillis: utc,
-    epoch: bag().clockEpoch,
-    intentId: intent + "-" + utc + "-" + before.seq,
-  });
-  finishCommit(before, result, utc);
+  armAbandon = false;
+  if (!result.ok) {
+    banner = result.reason === "DUPLICATE" ? t("alreadyApplied") : result.reason === "READBACK_FAIL" ? t("notCompleted") : t("notApplied");
+    paintAll();
+    return;
+  }
+  banner = "";
+  paintAll();
 }
 
 function onTick() {
-  const before = current();
-  const utc = deviceNow();
-  if (!before) {
+  const sampled = sampleTick();
+  if (!sampled) {
     return;
   }
-  if (utc == null) {
-    const failed = sample(before, { utcMillis: null, epoch: bag().clockEpoch });
-    remember(failed.session);
-    console.log(trace("CLOCK_UNAVAILABLE", before.phase, failed.session, 0));
-    repaint(true);
-    return;
+  if (sampled.event === "UNVERIFIED" || sampled.event === "CLOCK_UNAVAILABLE") {
+    banner = t("timeUnverified");
   }
-  const sampled = sample(before, { utcMillis: utc, epoch: bag().clockEpoch });
-  remember(sampled.session);
-  if (sampled.event === "UNVERIFIED") {
-    const saved = commitSession(deviceAdapter(), sampled.session);
-    if (!saved.ok) {
-      banner = t("notCompleted");
-    }
-    console.log(trace("UNVERIFIED", before.phase, sampled.session, utc));
-    repaint(true);
-    return;
-  }
-  if (sampled.event === "TICK") {
-    console.log(trace("TICK", before.phase, sampled.session, utc));
-  }
-  repaint(false);
+  paintAll();
 }
 
 function ensureTimer() {
@@ -269,7 +185,7 @@ function ensureTimer() {
   timerId = createTimer(1000, 1000, () => {
     onTick();
   });
-  console.log("FORREF_CLOCK001 TIMER|createTimer!");
+  console.log("FORREF_LIVE002 TIMER|createTimer!");
 }
 
 function stopClockTimer() {
@@ -278,25 +194,24 @@ function stopClockTimer() {
   }
   stopTimer(timerId);
   timerId = null;
+  console.log("FORREF_LIVE002 TIMER|stop!");
 }
 
 Page({
   onInit() {
-    console.log("FORREF_PAGE live clock");
+    console.log("FORREF_PAGE live onInit");
   },
   build() {
     metrics = logDevice("live");
     bindBack(false);
-    boot();
-    paintAll(true);
+    bootLive();
+    paintAll();
     stopClockTimer();
     ensureTimer();
   },
   onDestroy() {
     stopClockTimer();
     clear();
-    widgets = null;
-    paintKey = "";
     console.log("FORREF_PAGE live onDestroy");
   },
 });

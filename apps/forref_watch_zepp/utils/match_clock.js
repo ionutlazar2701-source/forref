@@ -10,10 +10,13 @@ export const Phase = {
   READY: "READY",
   FIRST_HALF_RUNNING: "FIRST_HALF_RUNNING",
   FIRST_HALF_PAUSED: "FIRST_HALF_PAUSED",
+  FIRST_HALF_SUSPENDED: "FIRST_HALF_SUSPENDED",
   HALF_TIME: "HALF_TIME",
   SECOND_HALF_RUNNING: "SECOND_HALF_RUNNING",
   SECOND_HALF_PAUSED: "SECOND_HALF_PAUSED",
+  SECOND_HALF_SUSPENDED: "SECOND_HALF_SUSPENDED",
   FULL_TIME: "FULL_TIME",
+  ABANDONED: "ABANDONED",
 };
 
 export const Trust = {
@@ -26,16 +29,20 @@ const SHORT = {
   READY: "RDY",
   FIRST_HALF_RUNNING: "H1R",
   FIRST_HALF_PAUSED: "H1P",
+  FIRST_HALF_SUSPENDED: "H1S",
   HALF_TIME: "HT",
   SECOND_HALF_RUNNING: "H2R",
   SECOND_HALF_PAUSED: "H2P",
+  SECOND_HALF_SUSPENDED: "H2S",
   FULL_TIME: "FT",
+  ABANDONED: "ABD",
 };
 
 export function freshSession() {
   return {
     phase: Phase.READY,
     trust: Trust.FROZEN,
+    periodSlot: 1,
     firstHalfClosedMs: 0,
     secondHalfClosedMs: 0,
     openStartUtc: null,
@@ -56,14 +63,23 @@ function isSecond(phase) {
   return (
     phase === Phase.SECOND_HALF_RUNNING ||
     phase === Phase.SECOND_HALF_PAUSED ||
+    phase === Phase.SECOND_HALF_SUSPENDED ||
     phase === Phase.FULL_TIME
   );
+}
+
+function secondDisplay(session) {
+  if (session.phase === Phase.ABANDONED) {
+    return session.periodSlot === 2;
+  }
+  return isSecond(session.phase);
 }
 
 export function cloneSession(session) {
   return {
     phase: session.phase,
     trust: session.trust,
+    periodSlot: session.periodSlot === 2 ? 2 : 1,
     firstHalfClosedMs: session.firstHalfClosedMs,
     secondHalfClosedMs: session.secondHalfClosedMs,
     openStartUtc: session.openStartUtc,
@@ -174,6 +190,43 @@ function pausedPhase(phase) {
   return null;
 }
 
+function suspendedPhase(phase) {
+  if (phase === Phase.FIRST_HALF_RUNNING || phase === Phase.FIRST_HALF_PAUSED) {
+    return Phase.FIRST_HALF_SUSPENDED;
+  }
+  if (phase === Phase.SECOND_HALF_RUNNING || phase === Phase.SECOND_HALF_PAUSED) {
+    return Phase.SECOND_HALF_SUSPENDED;
+  }
+  return null;
+}
+
+function resumedPhase(phase) {
+  if (phase === Phase.FIRST_HALF_SUSPENDED) {
+    return Phase.FIRST_HALF_RUNNING;
+  }
+  if (phase === Phase.SECOND_HALF_SUSPENDED) {
+    return Phase.SECOND_HALF_RUNNING;
+  }
+  return null;
+}
+
+function safeHold(phase) {
+  const paused = pausedPhase(phase);
+  if (paused) {
+    return paused;
+  }
+  if (
+    phase === Phase.FIRST_HALF_SUSPENDED ||
+    phase === Phase.SECOND_HALF_SUSPENDED ||
+    phase === Phase.HALF_TIME ||
+    phase === Phase.FULL_TIME ||
+    phase === Phase.ABANDONED
+  ) {
+    return phase;
+  }
+  return null;
+}
+
 export function applyIntent(session, intent, observation) {
   const id = observation.intentId;
   if (!id) {
@@ -205,6 +258,7 @@ export function applyIntent(session, intent, observation) {
     }
     next.phase = Phase.FIRST_HALF_RUNNING;
     next.trust = Trust.OBSERVED;
+    next.periodSlot = 1;
     next.firstHalfClosedMs = 0;
     next.secondHalfClosedMs = 0;
     next.openStartUtc = utc;
@@ -244,6 +298,7 @@ export function applyIntent(session, intent, observation) {
     }
     next.phase = Phase.SECOND_HALF_RUNNING;
     next.trust = Trust.OBSERVED;
+    next.periodSlot = 2;
     next.secondHalfClosedMs = 0;
     next.openStartUtc = utc;
     next.lastUtc = utc;
@@ -258,8 +313,39 @@ export function applyIntent(session, intent, observation) {
     next.phase = Phase.FULL_TIME;
     next.trust = Trust.FROZEN;
     next.openStartUtc = null;
+  } else if (intent === "SUSPEND_GAME") {
+    const landed = suspendedPhase(before);
+    if (!landed) {
+      return reject(current, "ILLEGAL");
+    }
+    if (isRunning(before) && !foldOpen(next, utc)) {
+      return failIntent(next, utc, "FORWARD_GAP");
+    }
+    next.phase = landed;
+    next.trust = Trust.FROZEN;
+    next.openStartUtc = null;
+  } else if (intent === "RESUME_GAME") {
+    const landed = resumedPhase(before);
+    if (!landed) {
+      return reject(current, "ILLEGAL");
+    }
+    next.phase = landed;
+    next.trust = Trust.OBSERVED;
+    next.openStartUtc = utc;
+    next.lastUtc = utc;
+    next.epoch = observation.epoch || next.epoch;
+  } else if (intent === "ABANDON_GAME") {
+    if (before !== Phase.FIRST_HALF_SUSPENDED && before !== Phase.SECOND_HALF_SUSPENDED) {
+      return reject(current, "ILLEGAL");
+    }
+    if (observation.confirmed !== true) {
+      return reject(current, "CONFIRM_REQUIRED");
+    }
+    next.phase = Phase.ABANDONED;
+    next.trust = Trust.FROZEN;
+    next.openStartUtc = null;
   } else if (intent === "CONTINUE_FROM_LAST") {
-    const landed = pausedPhase(before);
+    const landed = safeHold(before);
     if (session.trust !== Trust.UNVERIFIED || !landed) {
       return reject(current, "ILLEGAL");
     }
@@ -306,7 +392,7 @@ function pushJournal(session, id, intent, before, utc) {
 }
 
 export function livePeriodMs(session, utc) {
-  const base = isSecond(session.phase) ? session.secondHalfClosedMs : session.firstHalfClosedMs;
+  const base = secondDisplay(session) ? session.secondHalfClosedMs : session.firstHalfClosedMs;
   if (!isRunning(session.phase) || session.trust === Trust.UNVERIFIED || session.openStartUtc == null || utc == null) {
     return base;
   }
@@ -319,7 +405,7 @@ export function livePeriodMs(session, utc) {
 
 export function actionsFor(session) {
   if (session.trust === Trust.UNVERIFIED) {
-    if (pausedPhase(session.phase)) {
+    if (safeHold(session.phase)) {
       return ["CONTINUE_FROM_LAST"];
     }
     return [];
@@ -328,19 +414,25 @@ export function actionsFor(session) {
     return ["KICK_OFF"];
   }
   if (session.phase === Phase.FIRST_HALF_RUNNING) {
-    return ["PAUSE", "END_FIRST_HALF"];
+    return ["PAUSE", "END_FIRST_HALF", "SUSPEND_GAME"];
   }
   if (session.phase === Phase.FIRST_HALF_PAUSED) {
-    return ["RESUME", "END_FIRST_HALF"];
+    return ["RESUME", "END_FIRST_HALF", "SUSPEND_GAME"];
+  }
+  if (session.phase === Phase.FIRST_HALF_SUSPENDED) {
+    return ["RESUME_GAME", "ABANDON_GAME"];
   }
   if (session.phase === Phase.HALF_TIME) {
     return ["START_SECOND_HALF"];
   }
   if (session.phase === Phase.SECOND_HALF_RUNNING) {
-    return ["PAUSE", "FULL_TIME"];
+    return ["PAUSE", "FULL_TIME", "SUSPEND_GAME"];
   }
   if (session.phase === Phase.SECOND_HALF_PAUSED) {
-    return ["RESUME", "FULL_TIME"];
+    return ["RESUME", "FULL_TIME", "SUSPEND_GAME"];
+  }
+  if (session.phase === Phase.SECOND_HALF_SUSPENDED) {
+    return ["RESUME_GAME", "ABANDON_GAME"];
   }
   return [];
 }
@@ -358,7 +450,7 @@ export function present(session, utc) {
       digits = shown.digits;
       added = shown.added;
       mark = shown.mark;
-    } else if (isSecond(session.phase)) {
+    } else if (secondDisplay(session)) {
       const presentation = REGULATION_HALF_MS + livePeriodMs(session, utc);
       const shown = splitRegulation(presentation, REGULATION_HALF_MS * 2, 90);
       digits = shown.digits;
@@ -371,7 +463,7 @@ export function present(session, utc) {
       mark = shown.mark;
     }
   }
-  const known = isSecond(session.phase) ? session.secondHalfClosedMs : session.firstHalfClosedMs;
+  const known = secondDisplay(session) ? session.secondHalfClosedMs : session.firstHalfClosedMs;
   return {
     unverified: unverified,
     phase: session.phase,
@@ -447,6 +539,7 @@ export function encodeSession(session) {
     ids: session.appliedIntentIds,
     seq: session.seq,
     notice: session.notice,
+    slot: session.periodSlot === 2 ? 2 : 1,
     journal: session.journal,
   };
   const json = JSON.stringify(body);
@@ -477,6 +570,7 @@ export function decodeSession(raw) {
   const session = freshSession();
   session.phase = body.phase;
   session.trust = body.trust || Trust.UNVERIFIED;
+  session.periodSlot = body.slot === 2 || isSecond(body.phase) ? 2 : 1;
   session.firstHalfClosedMs = numberOrZero(body.h1);
   session.secondHalfClosedMs = numberOrZero(body.h2);
   session.openStartUtc = body.open == null ? null : body.open;

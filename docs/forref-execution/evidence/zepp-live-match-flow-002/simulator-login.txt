@@ -1,0 +1,7 @@
+Account
+Login
+Forgot password?
+Login
+No account？Sign Up
+Login with Challenge
+Get a Response in the Zepp App to sign in

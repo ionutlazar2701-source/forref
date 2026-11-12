@@ -5,7 +5,7 @@
   "main": "app.js",
   "type": "module",
   "scripts": {
-    "test": "node test/geometry.test.js && node --test test/match_clock.test.js"
+    "test": "node test/geometry.test.js && node --test test/match_clock.test.js test/live_surface.test.js"
   },
   "author": "",
   "license": "ISC",
