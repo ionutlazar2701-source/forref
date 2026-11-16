@@ -37,10 +37,10 @@ Those pages document a byte count and a closed descriptor. They do not document 
 
 `readCaptureJournal` treats `ENOENT`, a not-found message, or a null `stat` as a missing journal. A zero-byte stat is a verified empty file. Any other `stat` or `read` error is unverified. The journal refuses to append after that read, including when the failure happens on the capacity re-read.
 
-Zeus on this VM: `1.10.0`. `zeus status` at 22:26 Europe/Bucharest on 16 Nov 2026 reported `login status: no login` and `simulator connect status: disconnected`. No `qemu-system` binary is installed. Guest `getDeviceInfo()` was not observed in this run.
+Zeus on this VM: `1.10.0`. At 22:26 Europe/Bucharest on 16 Nov 2026, `zeus status` reported `login status: no login` and `simulator connect status: disconnected`. The 17 Nov 2026 guest run superseded that check. Simulator 2.1.2 was already installed. `qemu-system-arm` lives in the simulator package at `resources/firmware/qemu_linux/`. The first launches failed on a missing `libaio.so.1`. After that library was present, `zeus dev` connected to `127.0.0.1:7650` with CLI login still absent. Guest `getDeviceInfo()` is in `guest/guest-console.txt`: Bip 6 `390×450` `RECT` source `10158337`, and Amazfit Active Max `480×480` `ROUND` source `10813699`.
 
 The task file was downloaded and read before the code change. The required SHA-256 is `30fb31aedf2362e66c811748dc9b0dcc2093c0e66a81095c6b66074a1de4403f`. This run did not persist a second byte copy of that download, so this folder does not claim a recomputed match.
 
 ## Toolchain observed here
 
-Dart 3.13.2, Flutter 3.47.2, Node from the npm test log, Zeus CLI 1.10.0. Firmware image, device source, and screen shape were not observed because the simulator guest is disconnected.
+Dart 3.13.2, Flutter 3.47.2, Node from the npm test log, Zeus CLI 1.10.0. The guest run observed Bip 6 firmware cache `4ae8ec66a7e2d342faf040652f4f41ff` and Active Max firmware cache `dd7ed809e0ed0ecdffc68ccf5682463b`. Screen shape and device source are in the guest console cited above.

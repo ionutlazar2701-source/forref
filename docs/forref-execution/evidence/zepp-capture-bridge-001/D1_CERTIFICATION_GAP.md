@@ -19,4 +19,6 @@ Before any later task may append authoritative Match Records or show Saved, all 
 3. Device-local D1 evidence on hardware, including power loss, not only a simulator readback.
 4. A provisioned match id, team id, and participant ids. The simulator fixture does not transfer.
 
+The 17 Nov 2026 QEMU guests printed `READBACK_MATCHED` and, after the guest process was closed and opened on the same norflash, `RECREATION_RECOVERED`. Every one of those lines also printed `d1=UNCERTIFIED`. The screen said `LOCAL CANDIDATE` or `INCOMPLETE` and `NOT A MATCH RECORD`, or `LOCAL CANDIDATE RECOVERED — D1 UNVERIFIED`. That guest readback is the same observation class as the in-process adapter. It is not a D1 certificate.
+
 Physical power loss was not run. Field certification and signing were not run.
