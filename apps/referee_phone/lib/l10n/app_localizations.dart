@@ -769,6 +769,318 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{clock} +{minutes}'**
   String clockWithAdded(String clock, int minutes);
+
+  /// No description provided for @matchReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Match report'**
+  String get matchReport;
+
+  /// No description provided for @matchReportRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh report'**
+  String get matchReportRefresh;
+
+  /// No description provided for @matchReportTimeUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Time unavailable'**
+  String get matchReportTimeUnavailable;
+
+  /// No description provided for @matchReportScoreUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Score unavailable'**
+  String get matchReportScoreUnavailable;
+
+  /// No description provided for @matchReportScoreConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Score conflict'**
+  String get matchReportScoreConflict;
+
+  /// No description provided for @matchReportClassificationKnown.
+  ///
+  /// In en, this message translates to:
+  /// **'Known'**
+  String get matchReportClassificationKnown;
+
+  /// No description provided for @matchReportClassificationConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Conflict'**
+  String get matchReportClassificationConflict;
+
+  /// No description provided for @matchReportClassificationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get matchReportClassificationUnavailable;
+
+  /// No description provided for @matchReportClassificationUnverified.
+  ///
+  /// In en, this message translates to:
+  /// **'Unverified'**
+  String get matchReportClassificationUnverified;
+
+  /// No description provided for @matchReportClassificationIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete'**
+  String get matchReportClassificationIncomplete;
+
+  /// No description provided for @matchReportYellowCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Yellow card'**
+  String get matchReportYellowCard;
+
+  /// No description provided for @matchReportSendOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Send-off'**
+  String get matchReportSendOff;
+
+  /// No description provided for @matchReportSubstitution.
+  ///
+  /// In en, this message translates to:
+  /// **'Substitution'**
+  String get matchReportSubstitution;
+
+  /// No description provided for @matchReportTemporal.
+  ///
+  /// In en, this message translates to:
+  /// **'Match time record'**
+  String get matchReportTemporal;
+
+  /// No description provided for @matchReportSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Participant'**
+  String get matchReportSubject;
+
+  /// No description provided for @matchReportTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'Team'**
+  String get matchReportTeam;
+
+  /// No description provided for @matchReportRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Record {id}'**
+  String matchReportRecord(String id);
+
+  /// No description provided for @matchReportDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct send-off'**
+  String get matchReportDirect;
+
+  /// No description provided for @matchReportSecondCaution.
+  ///
+  /// In en, this message translates to:
+  /// **'Second caution'**
+  String get matchReportSecondCaution;
+
+  /// No description provided for @matchReportDependencyReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Send-off dependencies ready'**
+  String get matchReportDependencyReady;
+
+  /// No description provided for @matchReportDependencyUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Send-off dependencies unavailable'**
+  String get matchReportDependencyUnavailable;
+
+  /// No description provided for @matchReportDependencyConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Send-off dependencies in conflict'**
+  String get matchReportDependencyConflict;
+
+  /// No description provided for @matchReportTwoYellowsAreNotSendOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Two yellow cards are not a send-off'**
+  String get matchReportTwoYellowsAreNotSendOff;
+
+  /// No description provided for @matchReportUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported record {id}'**
+  String matchReportUnsupported(String id);
+
+  /// No description provided for @matchReportNoLines.
+  ///
+  /// In en, this message translates to:
+  /// **'No report lines'**
+  String get matchReportNoLines;
+
+  /// No description provided for @matchReportUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'Match report cannot be read'**
+  String get matchReportUnreadable;
+
+  /// No description provided for @matchReportLegacyOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'This match stays on the legacy summary'**
+  String get matchReportLegacyOnly;
+
+  /// No description provided for @matchReportUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Match authority is unknown'**
+  String get matchReportUnknown;
+
+  /// No description provided for @matchReportAmbiguous.
+  ///
+  /// In en, this message translates to:
+  /// **'Match authority is ambiguous'**
+  String get matchReportAmbiguous;
+
+  /// No description provided for @matchReportRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get matchReportRetry;
+
+  /// No description provided for @matchReportOpenSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Open summary'**
+  String get matchReportOpenSummary;
+
+  /// No description provided for @matchReportLegallyEffective.
+  ///
+  /// In en, this message translates to:
+  /// **'Legally effective'**
+  String get matchReportLegallyEffective;
+
+  /// No description provided for @matchReportNotLegallyEffective.
+  ///
+  /// In en, this message translates to:
+  /// **'Not legally effective'**
+  String get matchReportNotLegallyEffective;
+
+  /// No description provided for @matchReportReadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Match report could not be loaded'**
+  String get matchReportReadFailed;
+
+  /// No description provided for @matchReportFacetScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Score'**
+  String get matchReportFacetScore;
+
+  /// No description provided for @matchReportFacetTemporal.
+  ///
+  /// In en, this message translates to:
+  /// **'Match time'**
+  String get matchReportFacetTemporal;
+
+  /// No description provided for @matchReportFacetGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal'**
+  String get matchReportFacetGoal;
+
+  /// No description provided for @matchReportFacetYellow.
+  ///
+  /// In en, this message translates to:
+  /// **'Yellow card'**
+  String get matchReportFacetYellow;
+
+  /// No description provided for @matchReportFacetSendOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Send-off'**
+  String get matchReportFacetSendOff;
+
+  /// No description provided for @matchReportFacetSubstitution.
+  ///
+  /// In en, this message translates to:
+  /// **'Substitution'**
+  String get matchReportFacetSubstitution;
+
+  /// No description provided for @matchReportFacetLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{facet}: {classification}'**
+  String matchReportFacetLine(String facet, String classification);
+
+  /// No description provided for @matchReportMatchStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Match started'**
+  String get matchReportMatchStarted;
+
+  /// No description provided for @matchReportPeriodStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Period {index} started'**
+  String matchReportPeriodStarted(int index);
+
+  /// No description provided for @matchReportPeriodEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Period {index} ended'**
+  String matchReportPeriodEnded(int index);
+
+  /// No description provided for @matchReportSuspensionStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Suspension started'**
+  String get matchReportSuspensionStarted;
+
+  /// No description provided for @matchReportSuspensionEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Suspension ended'**
+  String get matchReportSuspensionEnded;
+
+  /// No description provided for @matchReportMatchAbandoned.
+  ///
+  /// In en, this message translates to:
+  /// **'Match abandoned'**
+  String get matchReportMatchAbandoned;
+
+  /// No description provided for @matchReportMatchEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Match ended'**
+  String get matchReportMatchEnded;
+
+  /// No description provided for @matchReportTemporalCorrection.
+  ///
+  /// In en, this message translates to:
+  /// **'Temporal correction'**
+  String get matchReportTemporalCorrection;
+
+  /// No description provided for @matchReportRefereeEntered.
+  ///
+  /// In en, this message translates to:
+  /// **'Referee entered the field'**
+  String get matchReportRefereeEntered;
+
+  /// No description provided for @matchReportLabelsAreNotProof.
+  ///
+  /// In en, this message translates to:
+  /// **'Team names are labels only'**
+  String get matchReportLabelsAreNotProof;
+
+  /// No description provided for @matchReportMatchId.
+  ///
+  /// In en, this message translates to:
+  /// **'Match {id}'**
+  String matchReportMatchId(String id);
 }
 
 class _AppLocalizationsDelegate

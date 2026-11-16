@@ -363,4 +363,185 @@ class AppLocalizationsRo extends AppLocalizations {
   String clockWithAdded(String clock, int minutes) {
     return '$clock +$minutes';
   }
+
+  @override
+  String get matchReport => 'Raportul meciului';
+
+  @override
+  String get matchReportRefresh => 'Reîncarcă raportul meciului';
+
+  @override
+  String get matchReportTimeUnavailable => 'Timp indisponibil';
+
+  @override
+  String get matchReportScoreUnavailable => 'Scorul meciului este indisponibil';
+
+  @override
+  String get matchReportScoreConflict =>
+      'Scorul meciului este în conflict și nu poate fi afișat';
+
+  @override
+  String get matchReportClassificationKnown => 'Cunoscut';
+
+  @override
+  String get matchReportClassificationConflict => 'Conflict';
+
+  @override
+  String get matchReportClassificationUnavailable => 'Indisponibil';
+
+  @override
+  String get matchReportClassificationUnverified => 'Neverificat';
+
+  @override
+  String get matchReportClassificationIncomplete => 'Incomplet';
+
+  @override
+  String get matchReportYellowCard => 'Cartonaș galben';
+
+  @override
+  String get matchReportSendOff => 'Eliminare';
+
+  @override
+  String get matchReportSubstitution => 'Schimbare de jucători';
+
+  @override
+  String get matchReportTemporal => 'Înregistrare de timp a meciului';
+
+  @override
+  String get matchReportSubject => 'Participant fără nume confirmat';
+
+  @override
+  String get matchReportTeam => 'Echipă fără nume confirmat';
+
+  @override
+  String matchReportRecord(String id) {
+    return 'Identificator de înregistrare $id';
+  }
+
+  @override
+  String get matchReportDirect => 'Eliminare directă';
+
+  @override
+  String get matchReportSecondCaution => 'Al doilea avertisment';
+
+  @override
+  String get matchReportDependencyReady =>
+      'Dependențele eliminării sunt pregătite';
+
+  @override
+  String get matchReportDependencyUnavailable =>
+      'Dependențele eliminării sunt indisponibile';
+
+  @override
+  String get matchReportDependencyConflict =>
+      'Dependențele eliminării sunt în conflict';
+
+  @override
+  String get matchReportTwoYellowsAreNotSendOff =>
+      'Două cartonașe galbene nu reprezintă o eliminare';
+
+  @override
+  String matchReportUnsupported(String id) {
+    return 'Înregistrare neacceptată $id';
+  }
+
+  @override
+  String get matchReportNoLines =>
+      'Nu există linii de raport pentru acest meci';
+
+  @override
+  String get matchReportUnreadable =>
+      'Raportul meciului nu poate fi citit din înregistrările comise';
+
+  @override
+  String get matchReportLegacyOnly =>
+      'Acest meci rămâne doar în sumarul vechi și nu are un raport de Match Memory';
+
+  @override
+  String get matchReportUnknown =>
+      'Autoritatea meciului este necunoscută și raportul nu este disponibil';
+
+  @override
+  String get matchReportAmbiguous =>
+      'Autoritatea meciului este ambiguă și raportul este oprit';
+
+  @override
+  String get matchReportRetry => 'Încearcă din nou';
+
+  @override
+  String get matchReportOpenSummary => 'Deschide sumarul vechi';
+
+  @override
+  String get matchReportLegallyEffective =>
+      'Efectiv din punct de vedere regulamentar';
+
+  @override
+  String get matchReportNotLegallyEffective => 'Fără efect regulamentar';
+
+  @override
+  String get matchReportReadFailed =>
+      'Raportul meciului nu a putut fi încărcat';
+
+  @override
+  String get matchReportFacetScore => 'Scor';
+
+  @override
+  String get matchReportFacetTemporal => 'Timpul meciului';
+
+  @override
+  String get matchReportFacetGoal => 'Gol';
+
+  @override
+  String get matchReportFacetYellow => 'Cartonaș galben';
+
+  @override
+  String get matchReportFacetSendOff => 'Eliminare';
+
+  @override
+  String get matchReportFacetSubstitution => 'Schimbare de jucători';
+
+  @override
+  String matchReportFacetLine(String facet, String classification) {
+    return '$facet: $classification';
+  }
+
+  @override
+  String get matchReportMatchStarted => 'Meci început';
+
+  @override
+  String matchReportPeriodStarted(int index) {
+    return 'Repriza $index a început';
+  }
+
+  @override
+  String matchReportPeriodEnded(int index) {
+    return 'Repriza $index s-a încheiat';
+  }
+
+  @override
+  String get matchReportSuspensionStarted => 'Suspendarea meciului a început';
+
+  @override
+  String get matchReportSuspensionEnded => 'Suspendarea meciului s-a încheiat';
+
+  @override
+  String get matchReportMatchAbandoned => 'Meci abandonat';
+
+  @override
+  String get matchReportMatchEnded => 'Meci încheiat';
+
+  @override
+  String get matchReportTemporalCorrection => 'Corecție de timp';
+
+  @override
+  String get matchReportRefereeEntered => 'Arbitrul a intrat pe teren';
+
+  @override
+  String get matchReportLabelsAreNotProof =>
+      'Numele echipelor sunt doar etichete de prezentare, nu o dovadă de completitudine';
+
+  @override
+  String matchReportMatchId(String id) {
+    return 'Meci $id';
+  }
 }
