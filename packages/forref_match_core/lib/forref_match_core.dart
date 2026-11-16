@@ -21,6 +21,7 @@ export 'ports.dart';
 export 'projection/deterministic_match_projector.dart';
 export 'projection/caution_awareness.dart';
 export 'projection/effective_goal_resolver.dart';
+export 'projection/match_report_projection.dart';
 export 'projection/participant_status_projection.dart';
 export 'projection/effective_send_off_resolver.dart';
 export 'projection/effective_yellow_resolver.dart';
