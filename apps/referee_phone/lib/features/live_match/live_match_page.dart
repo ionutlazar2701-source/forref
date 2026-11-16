@@ -670,6 +670,13 @@ class _LiveMatchPageState extends State<LiveMatchPage> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
+                  OutlinedButton(
+                    onPressed: () => Navigator.of(context).pushNamed(
+                      AppRouter.matchReport,
+                      arguments: widget.matchId,
+                    ),
+                    child: Text(l10n.matchReport),
+                  ),
                   if (match.status == MatchStatus.ready &&
                       !_matchStarted &&
                       !_temporallyIncomplete)

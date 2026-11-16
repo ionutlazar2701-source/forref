@@ -108,37 +108,40 @@ class _MatchSummaryPageState extends State<MatchSummaryPage> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     final match = session.match;
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.summary)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          if (_summaryScoreHeadline(context, match, l10n) != null)
-            _summaryScoreHeadline(context, match, l10n)!,
-          Text(matchStatusLabel(match, l10n)),
-          Text(formatMatchClock(session.displayedElapsed())),
-          const SizedBox(height: 12),
-          for (final event in match.events.reversed)
-            ListTile(
-              title: Text(
-                '${formatMatchClock(event.matchTime)}  ${eventTypeLabel(event.type, l10n)}'
-                '${event.status == EventStatus.incomplete ? ' · ${l10n.incomplete}' : ''}',
+    return RepaintBoundary(
+      key: const Key('summary-capture'),
+      child: Scaffold(
+        appBar: AppBar(title: Text(l10n.summary)),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            if (_summaryScoreHeadline(context, match, l10n) != null)
+              _summaryScoreHeadline(context, match, l10n)!,
+            Text(matchStatusLabel(match, l10n)),
+            Text(formatMatchClock(session.displayedElapsed())),
+            const SizedBox(height: 12),
+            for (final event in match.events.reversed)
+              ListTile(
+                title: Text(
+                  '${formatMatchClock(event.matchTime)}  ${eventTypeLabel(event.type, l10n)}'
+                  '${event.status == EventStatus.incomplete ? ' · ${l10n.incomplete}' : ''}',
+                ),
               ),
+            const SizedBox(height: 16),
+            if (match.status == MatchStatus.fullTime)
+              FilledButton(
+                onPressed: _finish,
+                child: Text(l10n.finishMatch),
+              ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pushNamed(
+                AppRouter.liveMatch,
+                arguments: widget.matchId,
+              ),
+              child: Text(l10n.backToMatch),
             ),
-          const SizedBox(height: 16),
-          if (match.status == MatchStatus.fullTime)
-            FilledButton(
-              onPressed: _finish,
-              child: Text(l10n.finishMatch),
-            ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pushNamed(
-              AppRouter.liveMatch,
-              arguments: widget.matchId,
-            ),
-            child: Text(l10n.backToMatch),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

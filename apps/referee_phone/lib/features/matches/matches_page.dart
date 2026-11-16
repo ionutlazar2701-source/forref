@@ -4,6 +4,7 @@ import 'package:referee_phone/app_scope.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
 import 'package:referee_phone/l10n/match_labels.dart';
 import 'package:referee_phone/match/new_match.dart';
+import 'package:referee_phone/match_application/match_read_path.dart';
 import 'package:referee_phone/routing/app_router.dart';
 
 class MatchesPage extends StatefulWidget {
@@ -49,11 +50,33 @@ class _MatchesPageState extends State<MatchesPage> {
   Future<void> _open(Match match) async {
     final route = switch (match.status) {
       MatchStatus.setup => AppRouter.matchSetup,
-      MatchStatus.completed => AppRouter.matchSummary,
+      MatchStatus.completed => await _completedRoute(match),
       _ => AppRouter.liveMatch,
     };
+    if (!mounted) return;
     await Navigator.of(context).pushNamed(route, arguments: match.matchId);
     await _reload();
+  }
+
+  Future<String> _completedRoute(Match match) async {
+    try {
+      final path = await resolveMatchReadPath(
+        boundary: AppScope.of(context).matchApplication,
+        legacyMatch: match,
+        matchId: match.matchId,
+      );
+      if (path == MatchReadPath.legacyOnly) return AppRouter.matchSummary;
+    } catch (_) {
+      // The report screen shows the read failure. Do not open Summary.
+    }
+    return AppRouter.matchReport;
+  }
+
+  void _openReport(Match match) {
+    Navigator.of(context).pushNamed(
+      AppRouter.matchReport,
+      arguments: match.matchId,
+    );
   }
 
   @override
@@ -78,7 +101,7 @@ class _MatchesPageState extends State<MatchesPage> {
                   children: [
                     for (final section in _sections(l10n)) ...[
                       ListTile(title: Text(section.label)),
-                      for (final match in section.matches)
+                      for (final match in section.matches) ...[
                         ListTile(
                           title: Text(
                             AppScope.of(context).matchApplication == null
@@ -93,6 +116,14 @@ class _MatchesPageState extends State<MatchesPage> {
                           subtitle: Text(matchStatusLabel(match, l10n)),
                           onTap: () => _open(match),
                         ),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton(
+                            onPressed: () => _openReport(match),
+                            child: Text(l10n.matchReport),
+                          ),
+                        ),
+                      ],
                     ],
                   ],
                 ),

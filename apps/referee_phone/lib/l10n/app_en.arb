@@ -140,5 +140,88 @@
       "clock": {"type": "String"},
       "minutes": {"type": "int"}
     }
+  },
+  "matchReport": "Match report",
+  "matchReportRefresh": "Refresh report",
+  "matchReportTimeUnavailable": "Time unavailable",
+  "matchReportScoreUnavailable": "Score unavailable",
+  "matchReportScoreConflict": "Score conflict",
+  "matchReportClassificationKnown": "Known",
+  "matchReportClassificationConflict": "Conflict",
+  "matchReportClassificationUnavailable": "Unavailable",
+  "matchReportClassificationUnverified": "Unverified",
+  "matchReportClassificationIncomplete": "Incomplete",
+  "matchReportYellowCard": "Yellow card",
+  "matchReportSendOff": "Send-off",
+  "matchReportSubstitution": "Substitution",
+  "matchReportTemporal": "Match time record",
+  "matchReportSubject": "Participant",
+  "matchReportTeam": "Team",
+  "matchReportRecord": "Record {id}",
+  "@matchReportRecord": {
+    "placeholders": {
+      "id": {"type": "String"}
+    }
+  },
+  "matchReportDirect": "Direct send-off",
+  "matchReportSecondCaution": "Second caution",
+  "matchReportDependencyReady": "Send-off dependencies ready",
+  "matchReportDependencyUnavailable": "Send-off dependencies unavailable",
+  "matchReportDependencyConflict": "Send-off dependencies in conflict",
+  "matchReportTwoYellowsAreNotSendOff": "Two yellow cards are not a send-off",
+  "matchReportUnsupported": "Unsupported record {id}",
+  "@matchReportUnsupported": {
+    "placeholders": {
+      "id": {"type": "String"}
+    }
+  },
+  "matchReportNoLines": "No report lines",
+  "matchReportUnreadable": "Match report cannot be read",
+  "matchReportLegacyOnly": "This match stays on the legacy summary",
+  "matchReportUnknown": "Match authority is unknown",
+  "matchReportAmbiguous": "Match authority is ambiguous",
+  "matchReportRetry": "Retry",
+  "matchReportOpenSummary": "Open summary",
+  "matchReportLegallyEffective": "Legally effective",
+  "matchReportNotLegallyEffective": "Not legally effective",
+  "matchReportReadFailed": "Match report could not be loaded",
+  "matchReportFacetScore": "Score",
+  "matchReportFacetTemporal": "Match time",
+  "matchReportFacetGoal": "Goal",
+  "matchReportFacetYellow": "Yellow card",
+  "matchReportFacetSendOff": "Send-off",
+  "matchReportFacetSubstitution": "Substitution",
+  "matchReportFacetLine": "{facet}: {classification}",
+  "@matchReportFacetLine": {
+    "placeholders": {
+      "facet": {"type": "String"},
+      "classification": {"type": "String"}
+    }
+  },
+  "matchReportMatchStarted": "Match started",
+  "matchReportPeriodStarted": "Period {index} started",
+  "@matchReportPeriodStarted": {
+    "placeholders": {
+      "index": {"type": "int"}
+    }
+  },
+  "matchReportPeriodEnded": "Period {index} ended",
+  "@matchReportPeriodEnded": {
+    "placeholders": {
+      "index": {"type": "int"}
+    }
+  },
+  "matchReportSuspensionStarted": "Suspension started",
+  "matchReportSuspensionEnded": "Suspension ended",
+  "matchReportMatchAbandoned": "Match abandoned",
+  "matchReportMatchEnded": "Match ended",
+  "matchReportTemporalCorrection": "Temporal correction",
+  "matchReportRefereeEntered": "Referee entered the field",
+  "matchReportLabelsAreNotProof": "Team names are labels only",
+  "matchReportMatchId": "Match {id}",
+  "@matchReportMatchId": {
+    "placeholders": {
+      "id": {"type": "String"}
+    }
   }
 }

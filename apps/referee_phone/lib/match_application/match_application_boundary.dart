@@ -843,6 +843,25 @@ final class MatchApplicationBoundary
     );
   }
 
+  /// Read-only root and row count. Not a projection and not a sporting fact.
+  Future<MatchMemoryEvidence> readMatchMemoryEvidence(String matchId) async {
+    final root = await _store.readGenerationOneAuthorityRoot(matchId);
+    try {
+      final records = await _store.readCommittedForMatch(matchId);
+      return MatchMemoryEvidence(
+        rootPresent: root != null,
+        readable: true,
+        committedCount: records.length,
+      );
+    } on CommittedRecordQuarantineException {
+      return MatchMemoryEvidence(
+        rootPresent: root != null,
+        readable: false,
+        committedCount: 0,
+      );
+    }
+  }
+
   DurableCommitFailure? _guardCaptureIntent(
     CaptureContext context, {
     required String captureIntentId,
@@ -899,6 +918,21 @@ final class MatchApplicationBoundary
   }
 
   Future<void> close() => _store.close();
+}
+
+/// Whether a generation-one root and committed rows could be read.
+///
+/// [committedCount] is routing evidence. It is not a score and not a minute.
+final class MatchMemoryEvidence {
+  const MatchMemoryEvidence({
+    required this.rootPresent,
+    required this.readable,
+    required this.committedCount,
+  });
+
+  final bool rootPresent;
+  final bool readable;
+  final int committedCount;
 }
 
 /// Forces explicit [RecordIdentityGenerator] injection at composition root.

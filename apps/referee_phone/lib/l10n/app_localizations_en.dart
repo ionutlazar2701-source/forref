@@ -360,4 +360,175 @@ class AppLocalizationsEn extends AppLocalizations {
   String clockWithAdded(String clock, int minutes) {
     return '$clock +$minutes';
   }
+
+  @override
+  String get matchReport => 'Match report';
+
+  @override
+  String get matchReportRefresh => 'Refresh report';
+
+  @override
+  String get matchReportTimeUnavailable => 'Time unavailable';
+
+  @override
+  String get matchReportScoreUnavailable => 'Score unavailable';
+
+  @override
+  String get matchReportScoreConflict => 'Score conflict';
+
+  @override
+  String get matchReportClassificationKnown => 'Known';
+
+  @override
+  String get matchReportClassificationConflict => 'Conflict';
+
+  @override
+  String get matchReportClassificationUnavailable => 'Unavailable';
+
+  @override
+  String get matchReportClassificationUnverified => 'Unverified';
+
+  @override
+  String get matchReportClassificationIncomplete => 'Incomplete';
+
+  @override
+  String get matchReportYellowCard => 'Yellow card';
+
+  @override
+  String get matchReportSendOff => 'Send-off';
+
+  @override
+  String get matchReportSubstitution => 'Substitution';
+
+  @override
+  String get matchReportTemporal => 'Match time record';
+
+  @override
+  String get matchReportSubject => 'Participant';
+
+  @override
+  String get matchReportTeam => 'Team';
+
+  @override
+  String matchReportRecord(String id) {
+    return 'Record $id';
+  }
+
+  @override
+  String get matchReportDirect => 'Direct send-off';
+
+  @override
+  String get matchReportSecondCaution => 'Second caution';
+
+  @override
+  String get matchReportDependencyReady => 'Send-off dependencies ready';
+
+  @override
+  String get matchReportDependencyUnavailable =>
+      'Send-off dependencies unavailable';
+
+  @override
+  String get matchReportDependencyConflict =>
+      'Send-off dependencies in conflict';
+
+  @override
+  String get matchReportTwoYellowsAreNotSendOff =>
+      'Two yellow cards are not a send-off';
+
+  @override
+  String matchReportUnsupported(String id) {
+    return 'Unsupported record $id';
+  }
+
+  @override
+  String get matchReportNoLines => 'No report lines';
+
+  @override
+  String get matchReportUnreadable => 'Match report cannot be read';
+
+  @override
+  String get matchReportLegacyOnly => 'This match stays on the legacy summary';
+
+  @override
+  String get matchReportUnknown => 'Match authority is unknown';
+
+  @override
+  String get matchReportAmbiguous => 'Match authority is ambiguous';
+
+  @override
+  String get matchReportRetry => 'Retry';
+
+  @override
+  String get matchReportOpenSummary => 'Open summary';
+
+  @override
+  String get matchReportLegallyEffective => 'Legally effective';
+
+  @override
+  String get matchReportNotLegallyEffective => 'Not legally effective';
+
+  @override
+  String get matchReportReadFailed => 'Match report could not be loaded';
+
+  @override
+  String get matchReportFacetScore => 'Score';
+
+  @override
+  String get matchReportFacetTemporal => 'Match time';
+
+  @override
+  String get matchReportFacetGoal => 'Goal';
+
+  @override
+  String get matchReportFacetYellow => 'Yellow card';
+
+  @override
+  String get matchReportFacetSendOff => 'Send-off';
+
+  @override
+  String get matchReportFacetSubstitution => 'Substitution';
+
+  @override
+  String matchReportFacetLine(String facet, String classification) {
+    return '$facet: $classification';
+  }
+
+  @override
+  String get matchReportMatchStarted => 'Match started';
+
+  @override
+  String matchReportPeriodStarted(int index) {
+    return 'Period $index started';
+  }
+
+  @override
+  String matchReportPeriodEnded(int index) {
+    return 'Period $index ended';
+  }
+
+  @override
+  String get matchReportSuspensionStarted => 'Suspension started';
+
+  @override
+  String get matchReportSuspensionEnded => 'Suspension ended';
+
+  @override
+  String get matchReportMatchAbandoned => 'Match abandoned';
+
+  @override
+  String get matchReportMatchEnded => 'Match ended';
+
+  @override
+  String get matchReportTemporalCorrection => 'Temporal correction';
+
+  @override
+  String get matchReportRefereeEntered => 'Referee entered the field';
+
+  @override
+  String get matchReportLabelsAreNotProof => 'Team names are labels only';
+
+  @override
+  String matchReportMatchId(String id) {
+    return 'Match $id';
+  }
 }
