@@ -35,6 +35,8 @@ App API target in `app.json` is `4.0`. The public file API used by the adapter s
 
 Those pages document a byte count and a closed descriptor. They do not document `fsync`, a storage barrier, power-loss atomicity, wear leveling, or a durable commit. `O_APPEND` is documented as append-to-end. It is not documented as an atomic record write. This bridge treats a short `writeSync` count as unverified and does not call the result Saved.
 
+`readCaptureJournal` treats `ENOENT`, a not-found message, or a null `stat` as a missing journal. A zero-byte stat is a verified empty file. Any other `stat` or `read` error is unverified. The journal refuses to append after that read, including when the failure happens on the capacity re-read.
+
 Zeus on this VM: `1.10.0`. `zeus status` at 22:26 Europe/Bucharest on 16 Nov 2026 reported `login status: no login` and `simulator connect status: disconnected`. No `qemu-system` binary is installed. Guest `getDeviceInfo()` was not observed in this run.
 
 The task file was downloaded and read before the code change. The required SHA-256 is `30fb31aedf2362e66c811748dc9b0dcc2093c0e66a81095c6b66074a1de4403f`. This run did not persist a second byte copy of that download, so this folder does not claim a recomputed match.

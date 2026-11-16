@@ -37,7 +37,7 @@ assert(!inside(round, 96, 19, 288, 106), "old Live C HOME must fail the safe cir
 assert(!inside(round, 95, 394, 138, 57), "old Live C DISPLAY must fail the safe circle");
 assert(!inside(round, 96, 400, 288, 52), "old event BACK must fail the safe circle");
 
-for (let count = 1; count <= 6; count++) {
+for (let count = 1; count <= 7; count++) {
   const laid = layoutStack(round, count);
   assert(laid.rows.length === count, "round stack " + count);
   laid.rows.forEach((row, index) => {

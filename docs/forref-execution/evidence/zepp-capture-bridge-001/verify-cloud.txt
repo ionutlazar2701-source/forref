@@ -74,14 +74,14 @@ No issues found!
 00:00 +12: test/frozen_semantic_vocabulary_test.dart: Frozen v1 semantic vocabulary projector consumes production vocabulary without foundation payload keys
 00:00 +13: test/frozen_semantic_vocabulary_test.dart: Frozen v1 semantic vocabulary domain contract and competition rules stay distinct from schema and type
 00:00 +14: test/phase2_send_off_test.dart: two yellow records create zero SEND_OFF records
-00:00 +15: test/phase2_send_off_test.dart: direct participant SEND_OFF does not require a yellow
-00:00 +16: test/phase2_send_off_test.dart: direct team-official SEND_OFF is explicit
-00:00 +17: test/phase2_send_off_test.dart: second-caution SEND_OFF requires the named yellow roles
-00:00 +18: test/phase2_send_off_test.dart: second-caution team-official SEND_OFF uses the official subject
-00:00 +19: test/phase2_send_off_test.dart: missing, same, mismatched, and non-yellow dependencies fail closed
-00:00 +20: test/phase2_send_off_test.dart: superseding a yellow does not delete SEND_OFF history
-00:00 +21: test/phase2_send_off_test.dart: superseding the SEND_OFF clears legal effect and keeps the record
-00:00 +22: test/phase2_send_off_test.dart: a correction cycle fails closed
+00:00 +15: test/temporal_match_projection_test.dart: match start without a period is authoritative and incomplete
+00:00 +16: test/temporal_match_projection_test.dart: match start without a period is authoritative and incomplete
+00:00 +17: test/temporal_match_projection_test.dart: match start without a period is authoritative and incomplete
+00:00 +18: test/temporal_match_projection_test.dart: match start without a period is authoritative and incomplete
+00:00 +19: test/temporal_match_projection_test.dart: match start without a period is authoritative and incomplete
+00:00 +20: test/temporal_match_projection_test.dart: match start without a period is authoritative and incomplete
+00:00 +21: test/temporal_match_projection_test.dart: match start without a period is authoritative and incomplete
+00:00 +22: test/temporal_match_projection_test.dart: match start without a period is authoritative and incomplete
 00:00 +23: test/temporal_match_projection_test.dart: match start without a period is authoritative and incomplete
 00:00 +24: test/temporal_match_projection_test.dart: period 1 is active only with a causal match-start dependency
 00:00 +25: test/temporal_match_projection_test.dart: recordedAt does not choose the active period
@@ -98,27 +98,27 @@ No issues found!
 00:00 +36: test/temporal_match_projection_test.dart: a valid MATCH_ENDED projects normally ended without fixture finality
 00:00 +37: test/temporal_match_projection_test.dart: a MATCH_ENDED aimed at the wrong period end is not normally ended
 00:00 +38: test/goal_score_projection_test.dart: Goal score projection empty history is ScoreUnavailable
-00:00 +39: test/goal_score_projection_test.dart: Goal score projection valid proof with zero effective goals is KnownScore 0-0
-00:00 +40: test/goal_score_projection_test.dart: Goal score projection idempotent same intent vs conflict on different team
-00:00 +41: test/goal_score_projection_test.dart: Goal score projection missing correction target yields unavailable score
-00:00 +42: test/goal_score_projection_test.dart: Goal score projection competing corrections yield conflicted score
-00:00 +43: test/goal_score_projection_test.dart: Goal score projection supersession removes goal; reversal restores same goal id
-00:00 +44: test/goal_score_projection_test.dart: Goal score projection supersession reversal restores goal when restore record id sorts before void
-00:00 +45: test/goal_score_projection_test.dart: Goal score projection empty integrity evidence on any record forces ScoreUnavailable
-00:00 +46: test/goal_score_projection_test.dart: Goal score projection cycle yields unavailable score, not a numeral
-00:00 +47: test/goal_score_projection_test.dart: Goal score projection correction cycle yields unavailable score
-00:00 +48: test/goal_score_projection_test.dart: Goal score projection permuting record order does not change effective goals
-00:00 +49: test/goal_score_projection_test.dart: Goal score projection temporal context absent still allows goal to count with proof
-00:00 +50: test/disciplinary_subject_test.dart: empty team-official id is rejected
-00:00 +51: test/disciplinary_subject_test.dart: team-official value equality ignores display attributes
-00:00 +52: test/disciplinary_subject_test.dart: match scope distinguishes the same team-official token
-00:00 +53: test/disciplinary_subject_test.dart: participant and team official with the same raw token are distinct
-00:00 +54: test/disciplinary_subject_test.dart: team association round-trips and does not store a display name
-00:00 +55: test/disciplinary_subject_test.dart: two teams for one official are ambiguous
-00:00 +56: test/disciplinary_subject_test.dart: a binding in another match is not applicable
-00:00 +57: test/disciplinary_subject_test.dart: participant identity behavior is unchanged
+00:00 +39: test/disciplinary_subject_test.dart: empty team-official id is rejected
+00:00 +40: test/disciplinary_subject_test.dart: empty team-official id is rejected
+00:00 +41: test/disciplinary_subject_test.dart: empty team-official id is rejected
+00:00 +42: test/goal_score_projection_test.dart: Goal score projection missing correction target yields unavailable score
+00:00 +43: test/disciplinary_subject_test.dart: team-official value equality ignores display attributes
+00:00 +44: test/goal_score_projection_test.dart: Goal score projection competing corrections yield conflicted score
+00:00 +45: test/goal_score_projection_test.dart: Goal score projection competing corrections yield conflicted score
+00:00 +46: test/disciplinary_subject_test.dart: participant and team official with the same raw token are distinct
+00:00 +47: test/goal_score_projection_test.dart: Goal score projection supersession removes goal; reversal restores same goal id
+00:00 +48: test/disciplinary_subject_test.dart: team association round-trips and does not store a display name
+00:00 +49: test/disciplinary_subject_test.dart: team association round-trips and does not store a display name
+00:00 +50: test/disciplinary_subject_test.dart: team association round-trips and does not store a display name
+00:00 +51: test/goal_score_projection_test.dart: Goal score projection cycle yields unavailable score, not a numeral
+00:00 +52: test/goal_score_projection_test.dart: Goal score projection cycle yields unavailable score, not a numeral
+00:00 +53: test/disciplinary_subject_test.dart: a binding in another match is not applicable
+00:00 +54: test/goal_score_projection_test.dart: Goal score projection correction cycle yields unavailable score
+00:00 +55: test/disciplinary_subject_test.dart: participant identity behavior is unchanged
+00:00 +56: test/goal_score_projection_test.dart: Goal score projection permuting record order does not change effective goals
+00:00 +57: test/goal_score_projection_test.dart: Goal score projection temporal context absent still allows goal to count with proof
 00:00 +58: test/phase2_status_awareness_test.dart: the score adapter and the shared proof agree
-00:00 +59: test/phase2_status_awareness_test.dart: substitution does not reset a standing caution
+00:00 +59: test/phase2_yellow_v2_test.dart: v1 yellow normalizes to a participant subject and stays schema 1
 00:00 +60: test/phase2_yellow_v2_test.dart: v1 yellow normalizes to a participant subject and stays schema 1
 00:00 +61: test/phase2_yellow_v2_test.dart: v1 yellow normalizes to a participant subject and stays schema 1
 00:00 +62: test/phase2_yellow_v2_test.dart: v1 yellow normalizes to a participant subject and stays schema 1
@@ -139,78 +139,78 @@ No issues found!
 00:00 +77: test/adversarial/wave1_r_saboteur_attack_test.dart: root sequence gap 1,3 is ScoreUnavailable and not a numeral
 00:00 +78: test/adversarial/wave1_r_saboteur_attack_test.dart: root sequence gap 1,3 is ScoreUnavailable and not a numeral
 00:00 +79: test/adversarial/wave1_r_saboteur_attack_test.dart: root sequence gap 1,3 is ScoreUnavailable and not a numeral
-00:00 +80: test/adversarial/wave1_r_saboteur_attack_test.dart: root sequence gap 1,3 is ScoreUnavailable and not a numeral
-00:00 +81: test/adversarial/wave1_r_saboteur_attack_test.dart: root sequence gap 1,3 is ScoreUnavailable and not a numeral
-00:00 +82: test/adversarial/wave1_r_saboteur_attack_test.dart: root sequence gap 1,3 is ScoreUnavailable and not a numeral
-00:00 +83: test/adversarial/wave1_r_saboteur_attack_test.dart: root sequence gap 1,3 is ScoreUnavailable and not a numeral
-00:00 +84: test/adversarial/wave1_r_saboteur_attack_test.dart: root sequence gap 1,3 is ScoreUnavailable and not a numeral
-00:00 +85: test/adversarial/wave1_r_saboteur_attack_test.dart: root sequence gap 1,3 is ScoreUnavailable and not a numeral
-00:00 +86: test/adversarial/temporal_recovery_attack_test.dart: regulation display threshold is not period end a bounded span around 45:00 is not an exact period end
-00:00 +87: test/adversarial/wave1_r_saboteur_attack_test.dart: root history that starts at sequence 2 is ScoreUnavailable
-00:00 +88: test/adversarial/temporal_recovery_attack_test.dart: regulation display threshold is not period end a zero-width interval at 45:00 stays bounded
-00:00 +89: test/adversarial/wave1_r_saboteur_attack_test.dart: duplicate sequence numbers do not fill a later root gap
-00:00 +90: test/adversarial/temporal_recovery_attack_test.dart: regulation display threshold is not period end an interval wholly past 45:00 still does not end the period
-00:00 +91: test/adversarial/wave1_r_saboteur_attack_test.dart: contiguous foreign origin beside a root goal is not KnownScore 1-0
-00:00 +92: test/adversarial/temporal_recovery_attack_test.dart: regulation display threshold is not period end open suspension at 45:01 is not period end and does not add time
-00:00 +93: test/adversarial/wave1_r_saboteur_attack_test.dart: foreign-only contiguous history is not KnownScore 0-0
-00:00 +94: test/adversarial/temporal_recovery_attack_test.dart: regulation display threshold is not period end an early period end is not rewritten to 45:00
-00:00 +95: test/adversarial/temporal_recovery_attack_test.dart: regulation display threshold is not period end an early period end is not rewritten to 45:00
-00:00 +96: test/adversarial/wave1_r_saboteur_attack_test.dart: generation-2 goal beside a generation-1 goal is not a numeral
-00:00 +97: test/adversarial/temporal_recovery_attack_test.dart: exact and bounded are mutually exclusive the same records yield one mode for each evidence shape
-00:00 +98: test/adversarial/wave1_r_saboteur_attack_test.dart: a goal with no authority generation is not KnownScore
-00:00 +99: test/adversarial/temporal_recovery_attack_test.dart: exact and bounded are mutually exclusive an exact segment plus an interval sample does not collapse
-00:00 +100: test/adversarial/temporal_recovery_attack_test.dart: exact and bounded are mutually exclusive an exact segment plus an interval sample does not collapse
-00:00 +101: test/adversarial/wave1_r_saboteur_attack_test.dart: effective supersession of a goal correction is ScoreUnavailable
-00:00 +102: test/adversarial/wave1_r_saboteur_attack_test.dart: effective supersession of a goal correction is ScoreUnavailable
-00:00 +103: test/adversarial/wave1_r_saboteur_attack_test.dart: effective supersession of a goal correction is ScoreUnavailable
-00:00 +104: test/adversarial/wave1_r_saboteur_attack_test.dart: effective supersession of a goal correction is ScoreUnavailable
-00:00 +105: test/adversarial/temporal_recovery_attack_test.dart: repeated projection is deterministic recordedAt changes do not change elapsed for the same transitions
-00:00 +106: test/adversarial/wave1_r_saboteur_attack_test.dart: superseding one goal correction makes a second goal unavailable too
+00:00 +80: test/adversarial/temporal_recovery_attack_test.dart: unresolved continuity conflicted temporal authority hides a certified exact sample
+00:00 +81: test/adversarial/temporal_recovery_attack_test.dart: unresolved continuity conflicted temporal authority hides a certified exact sample
+00:00 +82: test/adversarial/wave1_r_saboteur_attack_test.dart: duplicate sequence numbers do not fill a later root gap
+00:00 +83: test/adversarial/temporal_recovery_attack_test.dart: unresolved continuity match start without a period does not invent elapsed or period end
+00:00 +84: test/adversarial/temporal_recovery_attack_test.dart: regulation display threshold is not period end exact 45:00 raises only the display flag
+00:00 +85: test/adversarial/temporal_recovery_attack_test.dart: regulation display threshold is not period end exact 45:00 raises only the display flag
+00:00 +86: test/adversarial/wave1_r_saboteur_attack_test.dart: foreign-only contiguous history is not KnownScore 0-0
+00:00 +87: test/adversarial/temporal_recovery_attack_test.dart: regulation display threshold is not period end one microsecond before 45:00 is not rounded up
+00:00 +88: test/adversarial/wave1_r_saboteur_attack_test.dart: complete root goal history is still KnownScore 1-0
+00:00 +89: test/adversarial/wave1_r_saboteur_attack_test.dart: complete root goal history is still KnownScore 1-0
+00:00 +90: test/adversarial/temporal_recovery_attack_test.dart: regulation display threshold is not period end wall clock past 90 minutes does not end a short monotonic period
+00:00 +91: test/adversarial/wave1_r_saboteur_attack_test.dart: generation-2 goal beside a generation-1 goal is not a numeral
+00:00 +92: test/adversarial/temporal_recovery_attack_test.dart: regulation display threshold is not period end a bounded span around 45:00 is not an exact period end
+00:00 +93: test/adversarial/wave1_r_saboteur_attack_test.dart: a goal with no authority generation is not KnownScore
+00:00 +94: test/adversarial/temporal_recovery_attack_test.dart: regulation display threshold is not period end a zero-width interval at 45:00 stays bounded
+00:00 +95: test/adversarial/wave1_r_saboteur_attack_test.dart: same record id cannot hide a generation-2 goal behind a generation-1 copy
+00:00 +96: test/adversarial/temporal_recovery_attack_test.dart: regulation display threshold is not period end an interval wholly past 45:00 still does not end the period
+00:00 +97: test/adversarial/wave1_r_saboteur_attack_test.dart: effective supersession of a goal correction is ScoreUnavailable
+00:00 +98: test/adversarial/wave1_r_saboteur_attack_test.dart: effective supersession of a goal correction is ScoreUnavailable
+00:00 +99: test/adversarial/wave1_r_saboteur_attack_test.dart: effective supersession of a goal correction is ScoreUnavailable
+00:00 +100: test/adversarial/wave1_r_saboteur_attack_test.dart: effective supersession of a goal correction is ScoreUnavailable
+00:00 +101: test/adversarial/temporal_recovery_attack_test.dart: exact and bounded are mutually exclusive an exact segment plus an interval sample does not collapse
+00:00 +102: test/adversarial/wave1_r_saboteur_attack_test.dart: superseding one goal correction makes a second goal unavailable too
+00:00 +103: test/adversarial/temporal_recovery_attack_test.dart: exact and bounded are mutually exclusive both interval endpoints stay bounds rather than one exact second
+00:00 +104: test/adversarial/wave1_r_saboteur_attack_test.dart: reversal of a correction supersession restores the repaired team
+00:00 +105: test/adversarial/wave1_r_saboteur_attack_test.dart: reversal of a correction supersession restores the repaired team
+00:00 +106: test/adversarial/wave1_r_saboteur_attack_test.dart: reversal of a correction supersession restores the repaired team
 00:00 +107: test/adversarial/wave1_r_saboteur_attack_test.dart: reversal of a correction supersession restores the repaired team
 00:00 +108: test/adversarial/wave1_r_saboteur_attack_test.dart: direct goal supersession removes the goal and reversal restores it
 00:00 +109: test/adversarial/wave1_r_saboteur_attack_test.dart: an unsuperseded correction still changes the scoring team
 00:00 +110: test/adversarial/wave1_r_saboteur_attack_test.dart: separately constructed scopes do not split one intent or accept another team
 00:00 +111: test/adversarial/night_program_saboteur_attack_test.dart: BANK A same shirt-looking label is not identity
-00:00 +112: test/adversarial/night_program_saboteur_attack_test.dart: BANK A empty MatchParticipantId throws
-00:00 +113: test/adversarial/night_program_saboteur_attack_test.dart: BANK A same token in two match ids is not one scoped identity
-00:00 +114: test/adversarial/night_program_saboteur_attack_test.dart: BANK A changing ParticipantSituation does not change participant equality
-00:00 +115: test/adversarial/night_program_saboteur_attack_test.dart: BANK B two standing yellows do not become SEND_OFF, RED, or SECOND_YELLOW
-00:00 +116: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur empty record list is not KnownScore 0-0
-00:00 +117: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur empty record list is not KnownScore 0-0
-00:00 +118: test/adversarial/night_program_saboteur_attack_test.dart: BANK C missing origin sequence 2 is unavailable, not KnownNo
-00:00 +119: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur caller cannot get KnownScore by passing a proof when any record has empty integrity evidence
-00:00 +120: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur caller cannot get KnownScore by passing a proof when any record has empty integrity evidence
-00:00 +121: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur caller cannot get KnownScore by passing a proof when any record has empty integrity evidence
-00:00 +122: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur caller cannot get KnownScore by passing a proof when any record has empty integrity evidence
-00:00 +123: test/adversarial/night_program_saboteur_attack_test.dart: BANK C generation-2 yellow is not a known caution or a known score
-00:00 +124: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur one capture intent cannot become two goals
-00:00 +125: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur one capture intent cannot become two goals
-00:00 +126: test/adversarial/night_program_saboteur_attack_test.dart: BANK C permuting record order does not change standingCount
-00:00 +127: test/adversarial/night_program_saboteur_attack_test.dart: BANK C permuting record order does not change standingCount
-00:00 +128: test/adversarial/night_program_saboteur_attack_test.dart: BANK C permuting record order does not change standingCount
-00:00 +129: test/adversarial/night_program_saboteur_attack_test.dart: BANK C permuting record order does not change standingCount
-00:00 +130: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur supersession reversal counts the original goal id when the restoring record id sorts first
-00:00 +131: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur supersession reversal counts the original goal id when the restoring record id sorts first
-00:00 +132: test/adversarial/night_program_saboteur_attack_test.dart: BANK D RED wires stay unregistered after SEND_OFF exists
-00:00 +133: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur a correction cycle does not yield a numeral
-00:00 +134: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur a correction cycle does not yield a numeral
-00:00 +135: test/adversarial/night_program_saboteur_attack_test.dart: BANK F field entry alone does not start the match
+00:00 +112: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur empty record list is not KnownScore 0-0
+00:00 +113: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur empty record list is not KnownScore 0-0
+00:00 +114: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur empty record list is not KnownScore 0-0
+00:00 +115: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur empty record list is not KnownScore 0-0
+00:00 +116: test/adversarial/night_program_saboteur_attack_test.dart: BANK B two standing yellows do not become SEND_OFF, RED, or SECOND_YELLOW
+00:00 +117: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur caller cannot get KnownScore by passing a proof when any record has empty integrity evidence
+00:00 +118: test/adversarial/night_program_saboteur_attack_test.dart: BANK B goal-bound capture intent conflicts with a yellow admission
+00:00 +119: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur one capture intent cannot become two goals
+00:00 +120: test/adversarial/night_program_saboteur_attack_test.dart: BANK C missing origin sequence 2 is unavailable, not KnownNo
+00:00 +121: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur separately constructed MainRefereeScope values cannot split one capture intent into two goals
+00:00 +122: test/adversarial/night_program_saboteur_attack_test.dart: BANK C MATCH yellow is KnownNo in the SHOOTOUT scope
+00:00 +123: test/adversarial/night_program_saboteur_attack_test.dart: BANK C MATCH yellow is KnownNo in the SHOOTOUT scope
+00:00 +124: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur separately constructed MainRefereeScope values still conflict for a different scoring team
+00:00 +125: test/adversarial/night_program_saboteur_attack_test.dart: BANK C legal supersession keeps the yellow id and drops standing effect
+00:00 +126: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur supersession reversal counts the original goal id when the restoring record id sorts first
+00:00 +127: test/adversarial/night_program_saboteur_attack_test.dart: BANK C superseding a participant repair is unavailable for the repaired id
+00:00 +128: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur a correction cycle does not yield a numeral
+00:00 +129: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur a correction cycle does not yield a numeral
+00:00 +130: test/adversarial/night_program_saboteur_attack_test.dart: BANK C assessCautionAwareness does not append records
+00:00 +131: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur permuting record order does not change KnownScore
+00:00 +132: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur permuting record order does not change KnownScore
+00:00 +133: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur permuting record order does not change KnownScore
+00:00 +134: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur permuting record order does not change KnownScore
+00:00 +135: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur permuting record order does not change KnownScore
 00:00 +136: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur permuting record order does not change KnownScore
 00:00 +137: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur permuting record order does not change KnownScore
 00:00 +138: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur permuting record order does not change KnownScore
-00:00 +139: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur permuting record order does not change KnownScore
-00:00 +140: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur permuting record order does not change KnownScore
-00:00 +141: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur permuting record order does not change KnownScore
-00:00 +142: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur permuting record order does not change KnownScore
-00:00 +143: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur missing origin sequence 2 yields ScoreUnavailable
+00:00 +139: test/adversarial/night_program_saboteur_attack_test.dart: BRIDGE identity-yellow-awareness shirt-looking tokens do not share a caution
+00:00 +140: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur missing origin sequence 2 yields ScoreUnavailable
+00:00 +141: test/adversarial/night_program_saboteur_attack_test.dart: BRIDGE identity-yellow-awareness situation change does not move the caution onto another id
+00:00 +142: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur ScoreUnavailable and ScoreConflicted have no homeScore and are not KnownScore
+00:00 +143: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur ScoreUnavailable and ScoreConflicted have no homeScore and are not KnownScore
 00:00 +144: test/adversarial/wave1_goal_saboteur_test.dart: WAVE 1 goal saboteur ScoreUnavailable and ScoreConflicted have no homeScore and are not KnownScore
 00:00 +145: test/adversarial/phase2_saboteur_attack_test.dart: BANK G identity participant token 123 is not team official 123
 00:00 +146: test/adversarial/disciplinary_scope_fail_closed_test.dart: Disciplinary scope stays fail-closed production v1 codes exclude disciplinary and shootout wires
 00:00 +147: test/adversarial/disciplinary_scope_fail_closed_test.dart: Disciplinary scope stays fail-closed production v1 codes exclude disciplinary and shootout wires
 00:00 +148: test/adversarial/disciplinary_scope_fail_closed_test.dart: Disciplinary scope stays fail-closed production v1 codes exclude disciplinary and shootout wires
 00:00 +149: test/adversarial/disciplinary_scope_fail_closed_test.dart: Disciplinary scope stays fail-closed production v1 codes exclude disciplinary and shootout wires
-00:00 +150: test/adversarial/disciplinary_scope_fail_closed_test.dart: Disciplinary scope stays fail-closed production v1 codes exclude disciplinary and shootout wires
-00:00 +151: test/adversarial/phase2_saboteur_attack_test.dart: BANK B2 yellow v2 official yellow keeps match schema 1 and payload schema 2
+00:00 +150: test/adversarial/phase2_saboteur_attack_test.dart: BANK B2 yellow v1 yellow stays a participant subject at schema 1
+00:00 +151: test/adversarial/disciplinary_scope_fail_closed_test.dart: Disciplinary scope stays fail-closed each committed v1 semantic leaves disciplinary untrusted
 00:00 +152: test/adversarial/disciplinary_scope_fail_closed_test.dart: Disciplinary scope stays fail-closed each committed v1 semantic leaves disciplinary untrusted
 00:00 +153: test/adversarial/disciplinary_scope_fail_closed_test.dart: Disciplinary scope stays fail-closed each committed v1 semantic leaves disciplinary untrusted
 00:00 +154: test/adversarial/disciplinary_scope_fail_closed_test.dart: Disciplinary scope stays fail-closed each committed v1 semantic leaves disciplinary untrusted
@@ -222,13 +222,12 @@ No issues found!
 00:00 +160: test/adversarial/phase2_saboteur_attack_test.dart: BANK B2 yellow a MATCH yellow is not a SHOOTOUT caution
 00:00 +161: test/adversarial/phase2_saboteur_attack_test.dart: BANK B2 yellow a MATCH yellow is not a SHOOTOUT caution
 00:00 +162: test/adversarial/phase2_saboteur_attack_test.dart: BANK B2 yellow a MATCH yellow is not a SHOOTOUT caution
-00:00 +163: test/adversarial/disciplinary_scope_fail_closed_test.dart: Disciplinary scope stays fail-closed unregistered disciplinary wires stay unsupported and untrusted
-00:00 +164: test/adversarial/phase2_saboteur_attack_test.dart: BANK B2 yellow an official yellow does not count as the participant token
-00:00 +165: test/adversarial/disciplinary_scope_fail_closed_test.dart: Disciplinary scope stays fail-closed two YELLOW payloads do not synthesize a disciplinary record
-00:00 +166: test/adversarial/phase2_saboteur_attack_test.dart: BANK D send-off two yellows create no SEND_OFF and awareness appends none
-00:00 +167: test/adversarial/disciplinary_scope_fail_closed_test.dart: Disciplinary scope stays fail-closed MATCH and SHOOTOUT_CAUTION do not collapse into trusted discipline
+00:00 +163: test/adversarial/phase2_saboteur_attack_test.dart: BANK B2 yellow a MATCH yellow is not a SHOOTOUT caution
+00:00 +164: test/adversarial/phase2_saboteur_attack_test.dart: BANK B2 yellow a MATCH yellow is not a SHOOTOUT caution
+00:00 +165: test/adversarial/disciplinary_scope_fail_closed_test.dart: Disciplinary scope stays fail-closed MATCH and SHOOTOUT_CAUTION do not collapse into trusted discipline
+00:00 +166: test/adversarial/phase2_saboteur_attack_test.dart: BANK B2 yellow an official yellow does not count as the participant token
+00:00 +167: test/adversarial/phase2_saboteur_attack_test.dart: BANK D send-off two yellows create no SEND_OFF and awareness appends none
 00:00 +168: test/adversarial/phase2_saboteur_attack_test.dart: BANK D send-off direct SEND_OFF has no yellow ids and dependency ready
-00:00 +169: loading test/adversarial/score_trust_fail_closed_test.dart
 00:00 +169: test/adversarial/phase2_saboteur_attack_test.dart: BANK D send-off a direct SEND_OFF with a causal yellow link is unavailable
 00:00 +170: test/adversarial/phase2_saboteur_attack_test.dart: BANK D send-off Y1 equal to Y2 throws
 00:00 +171: test/adversarial/phase2_saboteur_attack_test.dart: BANK D send-off missing Y2 is an unavailable dependency
@@ -263,57 +262,59 @@ No issues found!
 00:00 +200: test/adversarial/wave1_sr_saboteur_probe_test.dart: a sequence gap on a non-root origin does not yield KnownScore 0-0
 00:00 +201: test/adversarial/wave1_sr_saboteur_probe_test.dart: a sequence gap on a non-root origin does not yield KnownScore 0-0
 00:00 +202: test/adversarial/wave1_sr_saboteur_probe_test.dart: a sequence gap on a non-root origin does not yield KnownScore 0-0
-00:00 +203: test/adversarial/wave1_sr_saboteur_probe_test.dart: a sequence gap on a non-root origin does not yield KnownScore 0-0
-00:00 +204: test/adversarial/wave1_sr_saboteur_probe_test.dart: a sequence gap on a non-root origin does not yield KnownScore 0-0
-00:00 +205: test/adversarial/wave1_sr_saboteur_probe_test.dart: a sequence gap on a non-root origin does not yield KnownScore 0-0
-00:00 +206: test/adversarial/wave1_sr_saboteur_probe_test.dart: a sequence gap on a non-root origin does not yield KnownScore 0-0
-00:00 +207: test/adversarial/score_trust_fail_closed_test.dart: fail-closed score projection trust MatchProjectionState declares no home or away integer score
-00:00 +208: test/adversarial/score_trust_fail_closed_test.dart: fail-closed score projection trust MatchProjectionState declares no home or away integer score
-00:00 +209: test/adversarial/score_trust_fail_closed_test.dart: fail-closed score projection trust MatchProjectionState declares no home or away integer score
-00:00 +210: test/adversarial/score_trust_fail_closed_test.dart: fail-closed score projection trust MatchProjectionState declares no home or away integer score
-00:00 +211: test/adversarial/wave1_sr_saboteur_probe_test.dart: superseding the correction that repaired a goal does not keep that team
+00:00 +203: test/adversarial/score_trust_fail_closed_test.dart: fail-closed score projection trust GOAL and YELLOW payloads stay unsupported on every record kind
+00:00 +204: test/adversarial/score_trust_fail_closed_test.dart: fail-closed score projection trust GOAL and YELLOW payloads stay unsupported on every record kind
+00:00 +205: test/adversarial/score_trust_fail_closed_test.dart: fail-closed score projection trust GOAL and YELLOW payloads stay unsupported on every record kind
+00:00 +206: test/adversarial/wave1_sr_saboteur_probe_test.dart: a generation-2 goal is not included in KnownScore
+00:00 +207: test/adversarial/score_trust_fail_closed_test.dart: fail-closed score projection trust GOAL-like payload beside a temporal record does not trust score
+00:00 +208: test/adversarial/wave1_sr_saboteur_probe_test.dart: superseding the correction that repaired a goal does not keep that team
+00:00 +209: test/adversarial/score_trust_fail_closed_test.dart: fail-closed score projection trust score numerals smuggled onto MATCH_STARTED do not trust score
+00:00 +210: loading test/phase2_awareness_send_off_test.dart
+00:00 +210: test/adversarial/score_trust_fail_closed_test.dart: fail-closed score projection trust foundation score facet key is not production score trust
+00:00 +211: test/adversarial/score_trust_fail_closed_test.dart: fail-closed score projection trust MatchProjectionState declares no home or away integer score
 00:00 +212: test/phase2_awareness_send_off_test.dart: two standing yellows do not commit SEND_OFF
 00:00 +213: test/phase2_awareness_send_off_test.dart: explicit SEND_OFF keeps yellow history and leaves the active surface
 00:00 +214: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory append preserves immutable record
 00:00 +215: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory append preserves immutable record
 00:00 +216: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory append preserves immutable record
-00:00 +217: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory identical duplicate is idempotent no-op
-00:00 +218: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory same recordId with different content fails closed
-00:00 +219: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory records are never overwritten
-00:00 +220: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory origin sequence frontier advances only from committed records
-00:00 +221: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory rejected conflict does not consume sequence frontier slot
-00:00 +222: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory sequence gaps remain observable
-00:00 +223: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory records from multiple origins coexist without global ordering
-00:00 +224: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory older authority generation records remain historical data
-00:00 +225: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory reference Match Memory cannot claim D1 durability
-00:00 +226: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory structurally identical nested payloads are idempotent
-00:00 +227: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory nested semantic payload difference causes identity conflict
-00:00 +228: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory originSequence zero is rejected
-00:00 +229: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory originSequence negative is rejected
-00:00 +230: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory same origin slot cannot commit two distinct records
-00:00 +231: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory rejected origin sequence conflict does not alter Match Memory
+00:01 +217: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory identical duplicate is idempotent no-op
+00:01 +218: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory same recordId with different content fails closed
+00:01 +219: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory records are never overwritten
+00:01 +220: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory origin sequence frontier advances only from committed records
+00:01 +221: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory rejected conflict does not consume sequence frontier slot
+00:01 +222: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory sequence gaps remain observable
+00:01 +223: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory records from multiple origins coexist without global ordering
+00:01 +224: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory older authority generation records remain historical data
+00:01 +225: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory reference Match Memory cannot claim D1 durability
+00:01 +226: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory structurally identical nested payloads are idempotent
+00:01 +227: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory nested semantic payload difference causes identity conflict
+00:01 +228: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory originSequence zero is rejected
+00:01 +229: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory originSequence negative is rejected
+00:01 +230: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory same origin slot cannot commit two distinct records
+00:01 +231: test/reference_match_memory_test.dart: ReferenceOnlyMatchMemory rejected origin sequence conflict does not alter Match Memory
 00:01 +232: test/active_period_elapsed_test.dart: elapsed is anchor monotonic plus current monotonic evidence
 00:01 +233: test/production_semantics_resolver_test.dart: ProductionSemanticsResolver never reads foundation payload keys
 00:01 +234: test/production_semantics_resolver_test.dart: ProductionSemanticsResolver never reads foundation payload keys
 00:01 +235: test/production_semantics_resolver_test.dart: ProductionSemanticsResolver never reads foundation payload keys
 00:01 +236: test/production_semantics_resolver_test.dart: ProductionSemanticsResolver never reads foundation payload keys
 00:01 +237: test/production_semantics_resolver_test.dart: ProductionSemanticsResolver never reads foundation payload keys
-00:01 +238: test/production_semantics_resolver_test.dart: ProductionSemanticsResolver never reads foundation payload keys
-00:01 +239: test/active_period_elapsed_test.dart: ordinary play continues without a formal suspension record
+00:01 +238: test/active_period_elapsed_test.dart: an interval reading is bounded and not an exact second
+00:01 +239: test/production_semantics_resolver_test.dart: ProductionSemanticsResolver RecordKind alone cannot create sporting semantics
 00:01 +240: test/production_semantics_resolver_test.dart: ProductionSemanticsResolver RecordKind alone cannot create sporting semantics
-00:01 +241: test/production_semantics_resolver_test.dart: ProductionSemanticsResolver RecordKind alone cannot create sporting semantics
-00:01 +242: test/production_semantics_resolver_test.dart: ProductionSemanticsResolver RecordKind alone cannot create sporting semantics
-00:01 +243: test/active_period_elapsed_test.dart: formal suspension freezes playing elapsed at the boundary
+00:01 +241: test/active_period_elapsed_test.dart: 45:00 is display information and does not end the period
+00:01 +242: test/production_semantics_resolver_test.dart: ProductionSemanticsResolver known typed semantic and supported schema resolve deterministically
+00:01 +243: test/production_semantics_resolver_test.dart: ProductionSemanticsResolver known typed semantic and supported schema resolve deterministically
 00:01 +244: test/production_semantics_resolver_test.dart: ProductionSemanticsResolver known typed semantic and supported schema resolve deterministically
-00:01 +245: test/production_semantics_resolver_test.dart: ProductionSemanticsResolver known typed semantic and supported schema resolve deterministically
-00:01 +246: test/production_semantics_resolver_test.dart: ProductionSemanticsResolver known typed semantic and supported schema resolve deterministically
-00:01 +247: test/active_period_elapsed_test.dart: 45:00 during suspension does not end the period or add time
-00:01 +248: test/active_period_elapsed_test.dart: 45:00 during suspension does not end the period or add time
-00:01 +249: test/active_period_elapsed_test.dart: 45:00 during suspension does not end the period or add time
+00:01 +245: test/active_period_elapsed_test.dart: a bounded suspension boundary stays bounded after later play
+00:01 +246: test/production_semantics_resolver_test.dart: ProductionSemanticsResolver unknown semantic type returns unsupported
+00:01 +247: test/active_period_elapsed_test.dart: unresolved suspension boundary does not invent exact elapsed
+00:01 +248: test/active_period_elapsed_test.dart: unresolved suspension boundary does not invent exact elapsed
+00:01 +249: test/production_semantics_resolver_test.dart: ProductionSemanticsResolver same historical schema retains same semantic meaning
 00:01 +250: test/active_period_elapsed_test.dart: 45:00 during suspension does not end the period or add time
 00:01 +251: test/active_period_elapsed_test.dart: 45:00 during suspension does not end the period or add time
 00:01 +252: test/active_period_elapsed_test.dart: 45:00 during suspension does not end the period or add time
-00:01 +253: test/production_semantics_resolver_test.dart: ProductionSemanticsResolver projector accepts production resolver without code changes
+00:01 +253: test/active_period_elapsed_test.dart: 45:00 during suspension does not end the period or add time
+00:01 +254: loading test/night_banks_test.dart
 00:01 +254: test/active_period_elapsed_test.dart: resumption continues the frozen playing elapsed once
 00:01 +255: test/active_period_elapsed_test.dart: a new continuity domain after resumption does not invent elapsed
 00:01 +256: test/active_period_elapsed_test.dart: an end that misses the suspension lineage stays open
@@ -332,73 +333,74 @@ No issues found!
 00:01 +269: test/active_period_elapsed_test.dart: an end during an open suspension does not invent final playing elapsed
 00:01 +270: test/active_period_elapsed_test.dart: period 2 end freezes 26s and leaves period 1 at 17s
 00:01 +271: test/night_banks_test.dart: complete history with no yellow is KnownNo, not a zero count
-00:01 +272: test/temporal_display_admission_test.dart: exact positive at 12:00
-00:01 +273: test/temporal_display_admission_test.dart: exact positive at 12:00
-00:01 +274: test/temporal_display_admission_test.dart: exact positive at 12:00
-00:01 +275: test/temporal_display_admission_test.dart: exact positive at 12:00
-00:01 +276: test/temporal_display_admission_test.dart: exact positive at 12:00
-00:01 +277: test/temporal_display_admission_test.dart: exact positive at 12:00
-00:01 +278: test/night_banks_test.dart: same shirt label and different ids do not share cautions
-00:01 +279: test/night_banks_test.dart: same shirt label and different ids do not share cautions
-00:01 +280: test/temporal_display_admission_test.dart: supplied Duration.zero with full exact proof stays exact
-00:01 +281: test/night_banks_test.dart: missing origin sequence is not KnownNo
-00:01 +282: test/night_banks_test.dart: missing origin sequence is not KnownNo
-00:01 +283: test/temporal_display_admission_test.dart: exact guard: bounded continuity does not borrow an exact duration
-00:01 +284: test/night_banks_test.dart: withdrawal keeps history and removes standing effect
-00:01 +285: test/night_banks_test.dart: withdrawal keeps history and removes standing effect
-00:01 +286: test/night_banks_test.dart: withdrawal keeps history and removes standing effect
-00:01 +287: test/temporal_display_admission_test.dart: exact guard: conflicted trust
-00:01 +288: test/night_banks_test.dart: superseding the yellow correction does not keep the repaired subject
-00:01 +289: test/night_banks_test.dart: superseding the yellow correction does not keep the repaired subject
-00:01 +290: test/night_banks_test.dart: superseding the yellow correction does not keep the repaired subject
-00:01 +291: test/night_banks_test.dart: superseding the yellow correction does not keep the repaired subject
-00:01 +292: test/night_banks_test.dart: superseding the yellow correction does not keep the repaired subject
-00:01 +293: test/night_banks_test.dart: superseding the yellow correction does not keep the repaired subject
-00:01 +294: test/night_banks_test.dart: superseding the yellow correction does not keep the repaired subject
-00:01 +295: test/night_banks_test.dart: superseding the yellow correction does not keep the repaired subject
-00:01 +296: test/night_banks_test.dart: superseding the yellow correction does not keep the repaired subject
-00:01 +297: test/temporal_display_admission_test.dart: bounded guard: conflicted trust
-00:01 +298: test/night_banks_test.dart: an unsuperseded correction moves the standing caution
-00:01 +299: test/night_banks_test.dart: an unsuperseded correction moves the standing caution
-00:01 +300: test/night_banks_test.dart: an unsuperseded correction moves the standing caution
-00:01 +301: test/night_banks_test.dart: an unsuperseded correction moves the standing caution
-00:01 +302: test/temporal_display_admission_test.dart: F1 unavailable recovery carries no digits
-00:01 +303: test/night_banks_test.dart: record order does not change the caution answer
-00:01 +304: test/night_banks_test.dart: record order does not change the caution answer
-00:01 +305: test/night_banks_test.dart: record order does not change the caution answer
-00:01 +306: test/temporal_display_admission_test.dart: F6 time-zone change supplied as unresolved evidence
-00:01 +307: test/night_banks_test.dart: generation 2 yellow is not a known caution or a known score
-00:01 +308: test/night_banks_test.dart: generation 2 yellow is not a known caution or a known score
-00:01 +309: test/temporal_display_admission_test.dart: F14 ScoreUnavailable stays absent
-00:01 +310: test/night_banks_test.dart: field entry is not match start and is not inferred from it
-00:01 +311: test/night_banks_test.dart: field entry is not match start and is not inferred from it
-00:01 +312: test/night_banks_test.dart: field entry is not match start and is not inferred from it
-00:01 +313: test/night_banks_test.dart: field entry is not match start and is not inferred from it
-00:01 +314: test/temporal_display_admission_test.dart: empty known map is absent for both
-00:01 +315: test/night_banks_test.dart: a caution in another match does not answer this match
+00:01 +272: test/night_banks_test.dart: a yellow beside a complete root history stays a KnownScore
+00:01 +273: test/night_banks_test.dart: substitute and substituted situations keep the same participant id
+00:01 +274: test/night_banks_test.dart: MATCH and SHOOTOUT ledgers do not share a caution
+00:01 +275: test/night_banks_test.dart: unresolved scope does not parse as MATCH
+00:01 +276: test/night_banks_test.dart: same intent with a different participant conflicts
+00:01 +277: test/night_banks_test.dart: same shirt label and different ids do not share cautions
+00:01 +278: test/night_banks_test.dart: missing origin sequence is not KnownNo
+00:01 +279: test/night_banks_test.dart: withdrawal keeps history and removes standing effect
+00:01 +280: test/temporal_display_admission_test.dart: exact positive at 12:00
+00:01 +281: test/temporal_display_admission_test.dart: exact positive at 12:00
+00:01 +282: test/temporal_display_admission_test.dart: exact positive at 12:00
+00:01 +283: test/temporal_display_admission_test.dart: exact positive at 12:00
+00:01 +284: test/temporal_display_admission_test.dart: exact positive at 12:00
+00:01 +285: test/temporal_display_admission_test.dart: exact positive at 12:00
+00:01 +286: test/night_banks_test.dart: a caution in another match does not answer this match
+00:01 +287: test/temporal_display_admission_test.dart: F10 89:00 stays exact while periodEnded is false
+00:01 +288: loading test/foundation_test.dart
+00:01 +288: test/temporal_display_admission_test.dart: supplied Duration.zero with full exact proof stays exact
+00:01 +289: test/temporal_display_admission_test.dart: exact guard: continuity unresolved
+00:01 +290: test/temporal_display_admission_test.dart: exact guard: bounded continuity does not borrow an exact duration
+00:01 +291: test/temporal_display_admission_test.dart: exact guard: null exactElapsed
+00:01 +292: test/temporal_display_admission_test.dart: exact guard: incomplete trust
+00:01 +293: test/temporal_display_admission_test.dart: exact guard: conflicted trust
+00:01 +294: test/temporal_display_admission_test.dart: exact guard: untrusted
+00:01 +295: test/temporal_display_admission_test.dart: exact guard: precision not safe
+00:01 +296: test/temporal_display_admission_test.dart: exact guard: certified false
+00:01 +297: test/temporal_display_admission_test.dart: bounded positive, trusted, certified false
+00:01 +298: test/temporal_display_admission_test.dart: bounded positive, incomplete, equal bounds
+00:01 +299: test/temporal_display_admission_test.dart: bounded guard: missing lower
+00:01 +300: test/temporal_display_admission_test.dart: bounded guard: missing upper
+00:01 +301: test/temporal_display_admission_test.dart: bounded guard: inverted bounds
+00:01 +302: test/temporal_display_admission_test.dart: bounded guard: conflicted trust
+00:01 +303: test/temporal_display_admission_test.dart: bounded guard: untrusted
+00:01 +304: test/temporal_display_admission_test.dart: bounded guard: precision not safe
+00:01 +305: test/temporal_display_admission_test.dart: continuity mismatch: exact continuity with only a range
+00:01 +306: test/temporal_display_admission_test.dart: F1 unavailable recovery carries no digits
+00:01 +307: test/temporal_display_admission_test.dart: F4 wall-clock jump supplied as unresolved evidence
+00:01 +308: test/temporal_display_admission_test.dart: F5 wall-clock step back does not become Duration.zero
+00:01 +309: test/temporal_display_admission_test.dart: F6 time-zone change supplied as unresolved evidence
+00:01 +310: test/temporal_display_admission_test.dart: periodEnded true does not erase a certified exact elapsed
+00:01 +311: test/temporal_display_admission_test.dart: F14 ScoreUnavailable stays absent
+00:01 +312: test/temporal_display_admission_test.dart: ScoreConflicted stays absent
+00:01 +313: test/temporal_display_admission_test.dart: known home does not invent away as zero
+00:01 +314: test/temporal_display_admission_test.dart: known pair is preserved
+00:01 +315: test/temporal_display_admission_test.dart: empty known map is absent for both
 00:01 +316: test/foundation_test.dart: MatchRecord immutability fields and relationship list are fixed at construction
 00:01 +317: test/foundation_test.dart: MatchRecord immutability structured payload map is unmodifiable
 00:01 +318: test/foundation_test.dart: stable identity recordId is assigned independently from recordedAt
-00:01 +319: test/deterministic_projector_test.dart: DeterministicMatchProjector identical Match Memory produces identical projection
-00:01 +320: test/deterministic_projector_test.dart: DeterministicMatchProjector identical Match Memory produces identical projection
-00:01 +321: test/deterministic_projector_test.dart: DeterministicMatchProjector identical Match Memory produces identical projection
-00:01 +322: test/foundation_test.dart: authority generation V1 usable authority scope is MAIN_REFEREE only
-00:01 +323: test/deterministic_projector_test.dart: DeterministicMatchProjector read order does not alter projection for equivalent records
-00:01 +324: test/foundation_test.dart: integrity metadata no required signature or hash algorithm fields
-00:01 +325: test/deterministic_projector_test.dart: DeterministicMatchProjector missing dependency degrades only affected facet
-00:01 +326: test/foundation_test.dart: DurableCommitPort contract commit accepts one immutable record
-00:01 +327: test/deterministic_projector_test.dart: DeterministicMatchProjector same-scope authority conflict conflicts affected facet
-00:01 +328: test/deterministic_projector_test.dart: DeterministicMatchProjector same-scope authority conflict conflicts affected facet
-00:01 +329: test/deterministic_projector_test.dart: DeterministicMatchProjector same-scope authority conflict conflicts affected facet
-00:01 +330: test/foundation_test.dart: correction and supersession via relationships legal supersession links forward without mutating the prior record
-00:01 +331: test/deterministic_projector_test.dart: DeterministicMatchProjector later arrival of missing dependency restores deterministic projection
-00:01 +332: test/foundation_test.dart: relationship typing RelatesTo is distinct from CausalDependency in the type system
-00:01 +333: test/deterministic_projector_test.dart: DeterministicMatchProjector projection can be discarded and rebuilt from Match Memory
-00:01 +334: test/foundation_test.dart: MatchProjector contract projector consumes MatchMemory, not mutable current state
-00:01 +335: test/foundation_test.dart: MatchProjector contract projector consumes MatchMemory, not mutable current state
-00:01 +336: test/deterministic_projector_test.dart: DeterministicMatchProjector recordedAt cannot act as Last Write Wins
-00:01 +337: test/deterministic_projector_test.dart: DeterministicMatchProjector recordedAt cannot act as Last Write Wins
-00:01 +338: test/foundation_test.dart: dependency guard library sources do not import forbidden packages
+00:01 +319: test/foundation_test.dart: stable identity matchId and recordId are separate stable identities
+00:01 +320: test/foundation_test.dart: authority generation generation is explicit on authority context
+00:01 +321: test/foundation_test.dart: authority generation V1 usable authority scope is MAIN_REFEREE only
+00:01 +322: test/deterministic_projector_test.dart: DeterministicMatchProjector identical Match Memory produces identical projection
+00:01 +323: test/deterministic_projector_test.dart: DeterministicMatchProjector identical Match Memory produces identical projection
+00:01 +324: test/deterministic_projector_test.dart: DeterministicMatchProjector identical Match Memory produces identical projection
+00:01 +325: test/deterministic_projector_test.dart: DeterministicMatchProjector identical Match Memory produces identical projection
+00:01 +326: test/foundation_test.dart: correction and supersession via relationships correction is a new record linked to the prior record
+00:01 +327: test/deterministic_projector_test.dart: DeterministicMatchProjector read order does not alter projection for equivalent records
+00:01 +328: test/deterministic_projector_test.dart: DeterministicMatchProjector read order does not alter projection for equivalent records
+00:01 +329: test/foundation_test.dart: relationship typing RelatesTo is distinct from CausalDependency in the type system
+00:01 +330: test/deterministic_projector_test.dart: DeterministicMatchProjector missing dependency degrades only affected facet
+00:01 +331: test/foundation_test.dart: MatchProjector contract projector consumes MatchMemory, not mutable current state
+00:01 +332: test/deterministic_projector_test.dart: DeterministicMatchProjector same-scope authority conflict conflicts affected facet
+00:01 +333: test/deterministic_projector_test.dart: DeterministicMatchProjector same-scope authority conflict conflicts affected facet
+00:01 +334: test/foundation_test.dart: dependency guard library sources do not import forbidden packages
+00:01 +335: test/foundation_test.dart: dependency guard library sources do not import forbidden packages
+00:01 +336: test/foundation_test.dart: dependency guard library sources do not import forbidden packages
+00:01 +337: test/foundation_test.dart: dependency guard library sources do not import forbidden packages
+00:01 +338: test/deterministic_projector_test.dart: DeterministicMatchProjector recordedAt cannot act as Last Write Wins
 00:01 +339: test/deterministic_projector_test.dart: DeterministicMatchProjector does not depend on legacy Match or currentState types
 00:01 +340: test/deterministic_projector_test.dart: DeterministicMatchProjector projector has no direct knowledge of foundation payload keys
 00:01 +341: test/deterministic_projector_test.dart: DeterministicMatchProjector alternative resolver maps same record differently without projector change
@@ -413,7 +415,7 @@ No issues found!
 00:01 +350: test/phase2_substitution_test.dart: ambiguous binding is rejected
 00:01 +351: test/phase2_substitution_test.dart: completed substitution projects OUT substituted and IN on field
 00:01 +352: test/phase2_substitution_test.dart: a later entry restores on-field for the same id
-00:01 +353: test/phase2_substitution_test.dart: two origins cannot order a status
+00:01 +353: test/normal_match_end_eligibility_test.dart: NONE_REQUIRED can make an ended-period lineage terminal-eligible
 00:01 +354: test/normal_match_end_eligibility_test.dart: NONE_REQUIRED can make an ended-period lineage terminal-eligible
 00:01 +355: test/normal_match_end_eligibility_test.dart: NONE_REQUIRED can make an ended-period lineage terminal-eligible
 00:01 +356: test/normal_match_end_eligibility_test.dart: NONE_REQUIRED can make an ended-period lineage terminal-eligible
@@ -449,18 +451,18 @@ No issues found!
 Running build hooks...Running build hooks...00:00 +0: loading test/wave1_r_saboteur_attack_test.dart
 00:00 +0: test/wave1_r_saboteur_attack_test.dart: root sequence gap stored beside a goal is not KnownScore
 00:00 +1: test/typed_v1_persistence_test.dart: every production typed V1 payload survives close and reopen
-00:00 +2: test/wave1_r_saboteur_attack_test.dart: contiguous foreign origin beside a stored root goal is not KnownScore
-00:00 +3: test/typed_v1_persistence_test.dart: recovered record resolves and projects identically
+00:00 +2: test/typed_v1_persistence_test.dart: every production typed V1 payload survives close and reopen
+00:00 +3: test/wave1_r_saboteur_attack_test.dart: wrong principal, wrong device, and generation 2 store nothing
 00:00 +4: test/typed_v1_persistence_test.dart: recovered record resolves and projects identically
 00:00 +5: test/wave1_r_saboteur_attack_test.dart: commitAtNextOriginSequence rejects bad goals and does not skip a slot
 00:00 +6: test/typed_v1_persistence_test.dart: malformed typed storage fails closed without synthesizing a record
-00:00 +7: test/wave1_r_saboteur_attack_test.dart: same-command generation-1 retry still returns the existing goal
-00:00 +8: test/typed_v1_persistence_test.dart: unknown schema version for a typed payload fails closed
-00:00 +9: test/wave1_r_saboteur_attack_test.dart: two MainRefereeScope instances cannot split one intent in the store
-00:00 +10: test/typed_v1_persistence_test.dart: failed encoding writes no authoritative row
+00:00 +7: test/typed_v1_persistence_test.dart: malformed typed storage fails closed without synthesizing a record
+00:00 +8: test/wave1_r_saboteur_attack_test.dart: two MainRefereeScope instances cannot split one intent in the store
+00:00 +9: test/typed_v1_persistence_test.dart: unknown schema version for a typed payload fails closed
+00:00 +10: test/wave1_r_saboteur_attack_test.dart: a raw generation-2 goal row beside a valid goal is not KnownScore
 00:00 +11: test/wave1_r_saboteur_attack_test.dart: a raw generation-2 goal row beside a valid goal is not KnownScore
-00:00 +12: test/wave1_r_saboteur_attack_test.dart: a raw generation-2 goal row beside a valid goal is not KnownScore
-00:00 +13: test/typed_v1_persistence_test.dart: structured payload is not upgraded from record kind
+00:00 +12: test/typed_v1_persistence_test.dart: idempotent duplicate still works after reopen
+00:00 +13: test/wave1_r_saboteur_attack_test.dart: stored superseded correction is not KnownScore for the repaired team
 00:00 +14: test/wave1_r_saboteur_attack_test.dart: stored superseded correction is not KnownScore for the repaired team
 00:00 +15: test/wave1_r_saboteur_attack_test.dart: stored superseded correction is not KnownScore for the repaired team
 00:00 +16: test/typed_v1_persistence_test.dart: TEMPORARY_SUSPENSION_STARTED keeps its period and fails without it
@@ -482,15 +484,15 @@ Running build hooks...Running build hooks...00:00 +0: loading test/wave1_r_sabot
 00:00 +32: test/phase2_substitution_admission_test.dart: a second team for one participant conflicts
 00:00 +33: test/night_yellow_admission_test.dart: failed D1 stores no yellow and no admission
 00:00 +34: test/goal_capture_intent_admission_test.dart: abortBeforeCommitForTest rolls back record and capture intent
-00:00 +35: test/night_yellow_admission_test.dart: same yellow intent retries as one row
-00:00 +36: test/goal_capture_intent_admission_test.dart: after DurableCommitSuccess close reopen keeps record and intent
-00:00 +37: test/night_yellow_admission_test.dart: same intent rebound to another participant conflicts
-00:00 +38: test/goal_capture_intent_admission_test.dart: same capture intent retry returns original record id without second row
-00:00 +39: test/night_yellow_admission_test.dart: generation 2 yellow is not admitted
-00:00 +40: test/goal_capture_intent_admission_test.dart: conflicting scoring team on same intent fails with one row
-00:00 +41: test/night_yellow_admission_test.dart: field entry round-trips and is not MATCH_STARTED
-00:00 +42: test/goal_capture_intent_admission_test.dart: concurrent duplicate intent commits end with one admission row
-00:00 +43: test/night_yellow_admission_test.dart: reopen keeps the yellow row
+00:00 +35: test/goal_capture_intent_admission_test.dart: abortBeforeCommitForTest rolls back record and capture intent
+00:00 +36: test/night_yellow_admission_test.dart: same intent rebound to another participant conflicts
+00:00 +37: test/goal_capture_intent_admission_test.dart: after DurableCommitSuccess close reopen keeps record and intent
+00:00 +38: test/goal_capture_intent_admission_test.dart: after DurableCommitSuccess close reopen keeps record and intent
+00:00 +39: test/night_yellow_admission_test.dart: field entry round-trips and is not MATCH_STARTED
+00:00 +40: test/goal_capture_intent_admission_test.dart: same capture intent retry returns original record id without second row
+00:00 +41: test/night_yellow_admission_test.dart: reopen keeps the yellow row
+00:00 +42: test/goal_capture_intent_admission_test.dart: conflicting scoring team on same intent fails with one row
+00:00 +43: test/goal_capture_intent_admission_test.dart: concurrent duplicate intent commits end with one admission row
 00:00 +44: test/goal_capture_intent_admission_test.dart: missing generation-1 root is not recreated when records exist
 00:00 +45: test/goal_capture_intent_admission_test.dart: generation-1 root commits before records and survives reopen
 00:00 +46: test/goal_capture_intent_admission_test.dart: second generation-1 root with different principal fails
@@ -500,31 +502,31 @@ Running build hooks...Running build hooks...00:00 +0: loading test/wave1_r_sabot
 00:00 +50: test/research/session_iii_recovery_probe_test.dart: a committed yellow survives closing and reopening the same file
 00:00 +51: test/research/session_iii_recovery_probe_test.dart: a committed yellow survives closing and reopening the same file
 00:00 +52: test/research/session_iii_recovery_probe_test.dart: a committed yellow survives closing and reopening the same file
-00:00 +53: test/adversarial/phase2_saboteur_persistence_attack_test.dart: BANK D persistence send-off then yellow with the same intent conflicts
-00:00 +54: test/research/session_iii_recovery_probe_test.dart: the same capture intent retries as the existing yellow
-00:00 +55: test/research/session_iii_recovery_probe_test.dart: the same capture intent retries as the existing yellow
-00:00 +56: test/adversarial/phase2_saboteur_persistence_attack_test.dart: CROSS-DOMAIN persistence D1 abort stores no yellow row and no capture intent
-00:00 +57: test/research/session_iii_recovery_probe_test.dart: a known D1 failure leaves no yellow and is not an unknown outcome
-00:00 +58: test/adversarial/phase2_saboteur_persistence_attack_test.dart: CROSS-DOMAIN persistence D1 abort of a later send-off keeps the committed yellow only
-00:00 +59: test/adversarial/phase2_saboteur_persistence_attack_test.dart: CROSS-DOMAIN persistence D1 abort of a later send-off keeps the committed yellow only
+00:00 +53: test/research/session_iii_recovery_probe_test.dart: a committed yellow survives closing and reopening the same file
+00:00 +54: test/research/session_iii_recovery_probe_test.dart: a committed yellow survives closing and reopening the same file
+00:00 +55: test/research/session_iii_recovery_probe_test.dart: a committed yellow survives closing and reopening the same file
+00:00 +56: test/adversarial/phase2_saboteur_persistence_attack_test.dart: CROSS-DOMAIN persistence D1 abort of a later send-off keeps the committed yellow only
+00:00 +57: test/research/session_iii_recovery_probe_test.dart: the same capture intent retries as the existing yellow
+00:00 +58: test/research/session_iii_recovery_probe_test.dart: a known D1 failure leaves no yellow and is not an unknown outcome
+00:00 +59: test/research/session_iii_recovery_probe_test.dart: a missing row without a failure result is not a known failure
 00:00 +60: test/wave1_goal_saboteur_test.dart: one capture intent cannot become two goals
 00:00 +61: test/phase2_send_off_admission_test.dart: direct SEND_OFF retries as one row
-00:00 +62: test/wave1_goal_saboteur_test.dart: concurrent store connections cannot persist two goals for one capture intent
-00:00 +63: test/phase2_send_off_admission_test.dart: same intent with a different pathway conflicts
-00:00 +64: test/wave1_goal_saboteur_test.dart: same intent with a different scoring team is a conflict and does not append
-00:00 +65: test/wave1_goal_saboteur_test.dart: same intent with a different scoring team is a conflict and does not append
+00:00 +62: test/phase2_send_off_admission_test.dart: direct SEND_OFF retries as one row
+00:00 +63: test/wave1_goal_saboteur_test.dart: same intent with a different scoring team is a conflict and does not append
+00:00 +64: test/phase2_send_off_admission_test.dart: same intent with a different pathway conflicts
+00:00 +65: test/phase2_send_off_admission_test.dart: same intent with a changed Y2 conflicts
 00:00 +66: test/phase2_send_off_admission_test.dart: generation other than 1 is not saved
 00:00 +67: test/phase2_send_off_admission_test.dart: foreign origin is not saved
 00:00 +68: test/phase2_send_off_admission_test.dart: failed D1 stores no SEND_OFF
 00:00 +69: test/phase2_send_off_admission_test.dart: team-official SEND_OFF requires a binding
 00:00 +70: test/phase2_send_off_admission_test.dart: two yellow commits do not synthesize SEND_OFF
 00:00 +71: test/sqlite_durable_match_store_test.dart: successful append survives close and reopen
-00:01 +72: test/phase2_yellow_v2_admission_test.dart: v1 yellow bytes stay participant-only
+00:00 +72: test/phase2_yellow_v2_admission_test.dart: v1 yellow bytes stay participant-only
 00:01 +73: test/phase2_yellow_v2_admission_test.dart: v1 yellow bytes stay participant-only
 00:01 +74: test/phase2_yellow_v2_admission_test.dart: v1 yellow bytes stay participant-only
 00:01 +75: test/phase2_yellow_v2_admission_test.dart: v1 yellow bytes stay participant-only
-00:01 +76: test/sqlite_durable_match_store_test.dart: failed transaction creates no committed record
-00:01 +77: test/phase2_yellow_v2_admission_test.dart: v1 bytes that already contain a v2 subject do not decode
+00:01 +76: test/phase2_yellow_v2_admission_test.dart: v1 yellow bytes stay participant-only
+00:01 +77: test/sqlite_durable_match_store_test.dart: adapter commit cannot update or delete a committed record
 00:01 +78: test/sqlite_durable_match_store_test.dart: adapter commit cannot update or delete a committed record
 00:01 +79: test/phase2_yellow_v2_admission_test.dart: team-official v2 round-trips
 00:01 +80: test/sqlite_durable_match_store_test.dart: recovery does not depend on projection or current-state tables
@@ -534,8 +536,8 @@ Running build hooks...Running build hooks...00:00 +0: loading test/wave1_r_sabot
 00:01 +84: test/sqlite_durable_match_store_test.dart: multiple matches remain isolated
 00:01 +85: test/phase2_yellow_v2_admission_test.dart: same intent across participant and official conflicts
 00:01 +86: test/sqlite_durable_match_store_test.dart: legacy Drift tables are untouched
-00:01 +87: test/sqlite_durable_match_store_test.dart: legacy Drift tables are untouched
-00:01 +88: test/phase2_yellow_v2_admission_test.dart: failed D1 stores no official yellow
+00:01 +87: test/phase2_yellow_v2_admission_test.dart: same official intent retries as one row
+00:01 +88: test/sqlite_durable_match_store_test.dart: originSequence below 1 is rejected and stores nothing
 00:01 +89: test/phase2_yellow_v2_admission_test.dart: failed D1 stores no official yellow
 00:01 +90: test/wave1_sr_saboteur_probe_test.dart: generation other than 1 cannot commit a Goal
 00:01 +91: test/wave1_sr_saboteur_probe_test.dart: a stored sequence gap on a non-root origin does not yield KnownScore 0-0
@@ -586,7 +588,7 @@ Got dependencies in `/workspace`!
 37 packages have newer versions incompatible with dependency constraints.
 Try `flutter pub outdated` for more information.
 Analyzing referee_phone...                                      
-No issues found! (ran in 3.9s)
+No issues found! (ran in 3.6s)
 === PASS: analyze apps/referee_phone ===
 
 === test apps/referee_phone ===
@@ -638,128 +640,128 @@ Try `flutter pub outdated` for more information.
 00:00 +2: /workspace/apps/referee_phone/test/match_started_cutover_test.dart: failed kick-off leaves no started projection
 00:00 +3: /workspace/apps/referee_phone/test/match_started_cutover_test.dart: reopen reconstructs trusted started projection
 00:00 +4: /workspace/apps/referee_phone/test/match_started_cutover_test.dart: kick-off commits MATCH_STARTED then PERIOD_STARTED in sequence
-00:00 +5: /workspace/apps/referee_phone/test/match_started_cutover_test.dart: period failure keeps MATCH_STARTED and retry writes only the period
-00:00 +6: /workspace/apps/referee_phone/test/match_started_cutover_test.dart: reopen after both commits reconstructs period 1
-00:00 +7: /workspace/apps/referee_phone/test/match_started_cutover_test.dart: reopen after MATCH_STARTED only stays incomplete
-00:00 +8: /workspace/apps/referee_phone/test/match_started_cutover_test.dart: duplicate kick-off does not write a second start or period
-00:00 +9: /workspace/apps/referee_phone/test/authoritative_capture_test.dart: Authoritative capture captureAndCommit assigns sequences 1 then 2
-00:00 +10: /workspace/apps/referee_phone/test/authoritative_capture_test.dart: Authoritative capture captureAndCommit assigns sequences 1 then 2
-00:00 +11: /workspace/apps/referee_phone/test/authoritative_capture_test.dart: Authoritative capture captureAndCommit assigns sequences 1 then 2
-00:00 +12: /workspace/apps/referee_phone/test/authoritative_capture_test.dart: Authoritative capture captureAndCommit assigns sequences 1 then 2
-00:00 +13: /workspace/apps/referee_phone/test/authoritative_capture_test.dart: Authoritative capture captureAndCommit assigns sequences 1 then 2
-00:00 +14: /workspace/apps/referee_phone/test/authoritative_capture_test.dart: Authoritative capture captureAndCommit assigns sequences 1 then 2
-00:00 +15: /workspace/apps/referee_phone/test/authoritative_capture_test.dart: Authoritative capture recordId is independent from timestamp
-00:00 +16: /workspace/apps/referee_phone/test/authoritative_capture_test.dart: Authoritative capture constructed record carries explicit principal scope and generation
-00:00 +17: /workspace/apps/referee_phone/test/authoritative_capture_test.dart: Authoritative capture projection generation is supplied explicitly
+00:00 +5: /workspace/apps/referee_phone/test/authoritative_capture_test.dart: Authoritative capture captureAndCommit assigns sequences 1 then 2
+00:00 +6: /workspace/apps/referee_phone/test/authoritative_capture_test.dart: Authoritative capture captureAndCommit assigns sequences 1 then 2
+00:00 +7: /workspace/apps/referee_phone/test/authoritative_capture_test.dart: Authoritative capture captureAndCommit assigns sequences 1 then 2
+00:00 +8: /workspace/apps/referee_phone/test/authoritative_capture_test.dart: Authoritative capture captureAndCommit assigns sequences 1 then 2
+00:00 +9: /workspace/apps/referee_phone/test/match_started_cutover_test.dart: duplicate kick-off does not write a second start or period
+00:00 +10: /workspace/apps/referee_phone/test/authoritative_capture_test.dart: Authoritative capture recordId is independent from timestamp
+00:00 +11: /workspace/apps/referee_phone/test/authoritative_capture_test.dart: Authoritative capture recordId is independent from timestamp
+00:00 +12: /workspace/apps/referee_phone/test/match_started_cutover_test.dart: PERIOD_STARTED with the wrong start id fails closed
+00:00 +13: /workspace/apps/referee_phone/test/authoritative_capture_test.dart: Authoritative capture constructed record carries explicit principal scope and generation
+00:00 +14: /workspace/apps/referee_phone/test/match_started_cutover_test.dart: recordedAt does not choose sporting order
+00:00 +15: /workspace/apps/referee_phone/test/authoritative_capture_test.dart: Authoritative capture projection generation is supplied explicitly
+00:00 +16: /workspace/apps/referee_phone/test/match_started_cutover_test.dart: phone capture identity is stable and not a display name
+00:00 +17: /workspace/apps/referee_phone/test/authoritative_capture_test.dart: Authoritative capture feature pages do not activate captureAndCommit
 00:00 +18: /workspace/apps/referee_phone/test/authoritative_capture_test.dart: Authoritative capture feature pages do not activate captureAndCommit
 00:00 +19: /workspace/apps/referee_phone/test/authoritative_capture_test.dart: Authoritative capture legacy MatchSession remains untouched
-00:01 +20: /workspace/apps/referee_phone/test/widget_test.dart: shell builds
-00:02 +21: /workspace/apps/referee_phone/test/widget_test.dart: shell builds
-00:02 +22: /workspace/apps/referee_phone/test/widget_test.dart: shell builds
-00:02 +23: /workspace/apps/referee_phone/test/widget_test.dart: shell builds
-00:02 +24: /workspace/apps/referee_phone/test/widget_test.dart: shell builds
-00:02 +25: /workspace/apps/referee_phone/test/widget_test.dart: shell builds
-00:02 +26: /workspace/apps/referee_phone/test/widget_test.dart: shell builds
-00:02 +27: /workspace/apps/referee_phone/test/widget_test.dart: shell builds
-00:02 +28: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:02 +29: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:02 +30: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:03 +31: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:03 +32: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:03 +33: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:03 +34: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:03 +35: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:03 +36: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:03 +37: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:03 +38: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:03 +39: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:03 +40: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:03 +41: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:03 +42: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:03 +43: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:03 +44: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:03 +45: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:04 +46: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:04 +47: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:04 +48: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:04 +49: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:04 +50: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:04 +51: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:04 +52: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:04 +53: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:04 +54: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:04 +55: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:04 +56: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:04 +57: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:04 +58: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:04 +59: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:04 +60: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:04 +61: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:04 +62: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:05 +63: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:05 +64: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:05 +65: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:05 +66: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:05 +67: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:05 +68: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:06 +69: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:06 +70: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:06 +71: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:06 +72: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:06 +73: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:06 +74: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:06 +75: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:06 +76: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:06 +77: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:06 +78: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:07 +79: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:07 +80: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:07 +81: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:07 +82: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:07 +83: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:07 +84: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:07 +85: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:07 +86: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:07 +87: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:07 +88: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:07 +89: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:07 +90: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:08 +91: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
-00:08 +92: /workspace/apps/referee_phone/test/period_two_test.dart: period 1 suspension history does not enter period 2 elapsed
-00:08 +93: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
-00:08 +94: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
-00:08 +95: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
-00:09 +96: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
-00:09 +97: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
-00:09 +98: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
-00:09 +99: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
-00:09 +100: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
-00:09 +101: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
-00:09 +102: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
-00:09 +103: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
-00:09 +104: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
-00:09 +105: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
-00:09 +106: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
-00:09 +107: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
-00:09 +108: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
-00:09 +109: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
-00:10 +110: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
-00:10 +111: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
-00:10 +112: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
-00:10 +113: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
-00:14 +114: /workspace/apps/referee_phone/test/widget_test.dart: incomplete period start is recoverable without a second match start
-00:25 +115: /workspace/apps/referee_phone/test/widget_test.dart: Suspend match freezes Period 1 without a legacy pause
-00:35 +116: /workspace/apps/referee_phone/test/widget_test.dart: failed suspension does not show suspended state
-00:46 +117: /workspace/apps/referee_phone/test/widget_test.dart: Resume match continues Period 1 without legacy resume
-01:11 +118: /workspace/apps/referee_phone/test/widget_test.dart: failed resume stays suspended
-01:27 +119: /workspace/apps/referee_phone/test/widget_test.dart: End period freezes Period 1 without legacy half-time
-01:37 +120: /workspace/apps/referee_phone/test/widget_test.dart: Start Period 2 leaves the interval only after D1
-01:55 +121: /workspace/apps/referee_phone/test/widget_test.dart: failed Period 2 start stays on the interval
-02:10 +122: /workspace/apps/referee_phone/test/widget_test.dart: failed period end stays on active Period 1
-02:21 +123: /workspace/apps/referee_phone/test/widget_test.dart: End period 2 freezes the clock without finishing the match
-02:42 +124: /workspace/apps/referee_phone/test/widget_test.dart: failed Period 2 end stays on active Period 2
-03:02 +125: /workspace/apps/referee_phone/test/widget_test.dart: English fallback localizations load
-03:02 +126: All tests passed!
+00:00 +20: /workspace/apps/referee_phone/test/widget_test.dart: shell builds
+00:01 +21: /workspace/apps/referee_phone/test/widget_test.dart: shell builds
+00:01 +22: /workspace/apps/referee_phone/test/widget_test.dart: shell builds
+00:01 +23: /workspace/apps/referee_phone/test/widget_test.dart: shell builds
+00:01 +24: /workspace/apps/referee_phone/test/widget_test.dart: shell builds
+00:01 +25: /workspace/apps/referee_phone/test/widget_test.dart: shell builds
+00:01 +26: /workspace/apps/referee_phone/test/widget_test.dart: shell builds
+00:01 +27: /workspace/apps/referee_phone/test/widget_test.dart: shell builds
+00:01 +28: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:01 +29: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:01 +30: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:02 +31: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:02 +32: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:02 +33: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:02 +34: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:02 +35: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:02 +36: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:02 +37: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:02 +38: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:02 +39: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:02 +40: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:02 +41: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:02 +42: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:02 +43: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:02 +44: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:02 +45: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:03 +46: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:03 +47: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:03 +48: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:03 +49: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:03 +50: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:03 +51: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:03 +52: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:03 +53: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:03 +54: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:03 +55: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:03 +56: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:03 +57: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:03 +58: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:03 +59: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:03 +60: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:03 +61: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:03 +62: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:04 +63: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:04 +64: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:04 +65: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:04 +66: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:04 +67: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:04 +68: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:05 +69: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:05 +70: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:05 +71: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:05 +72: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:05 +73: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:05 +74: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:05 +75: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:05 +76: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:05 +77: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:05 +78: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:06 +79: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:06 +80: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:06 +81: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:06 +82: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:06 +83: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:06 +84: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:06 +85: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:06 +86: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:06 +87: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:06 +88: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:06 +89: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:06 +90: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:07 +91: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:07 +92: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:07 +93: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:07 +94: /workspace/apps/referee_phone/test/widget_test.dart: New Match → Live Match → Kick-off → Goal
+00:07 +95: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
+00:07 +96: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
+00:07 +97: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
+00:07 +98: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
+00:07 +99: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
+00:08 +100: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
+00:08 +101: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
+00:08 +102: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
+00:08 +103: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
+00:08 +104: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
+00:08 +105: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
+00:08 +106: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
+00:08 +107: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
+00:08 +108: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
+00:08 +109: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
+00:09 +110: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
+00:09 +111: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
+00:09 +112: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
+00:09 +113: /workspace/apps/referee_phone/test/widget_test.dart: failed kick-off does not show started state
+00:13 +114: /workspace/apps/referee_phone/test/widget_test.dart: incomplete period start is recoverable without a second match start
+00:23 +115: /workspace/apps/referee_phone/test/widget_test.dart: Suspend match freezes Period 1 without a legacy pause
+00:34 +116: /workspace/apps/referee_phone/test/widget_test.dart: failed suspension does not show suspended state
+00:45 +117: /workspace/apps/referee_phone/test/widget_test.dart: Resume match continues Period 1 without legacy resume
+01:10 +118: /workspace/apps/referee_phone/test/widget_test.dart: failed resume stays suspended
+01:26 +119: /workspace/apps/referee_phone/test/widget_test.dart: End period freezes Period 1 without legacy half-time
+01:36 +120: /workspace/apps/referee_phone/test/widget_test.dart: Start Period 2 leaves the interval only after D1
+01:54 +121: /workspace/apps/referee_phone/test/widget_test.dart: failed Period 2 start stays on the interval
+02:09 +122: /workspace/apps/referee_phone/test/widget_test.dart: failed period end stays on active Period 1
+02:20 +123: /workspace/apps/referee_phone/test/widget_test.dart: End period 2 freezes the clock without finishing the match
+02:40 +124: /workspace/apps/referee_phone/test/widget_test.dart: failed Period 2 end stays on active Period 2
+03:01 +125: /workspace/apps/referee_phone/test/widget_test.dart: English fallback localizations load
+03:01 +126: All tests passed!
 === PASS: test apps/referee_phone ===
 
 verify_cloud: PASSED — all cloud-capable suites succeeded.

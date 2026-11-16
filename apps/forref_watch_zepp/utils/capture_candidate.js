@@ -311,15 +311,23 @@ export function parseJournal(raw) {
   };
 }
 
-function rejected(reason, admission, snapshot) {
+export function intentForCaptureTap(openIntentId, fresh) {
+  if (fresh === true) {
+    return "";
+  }
+  return openIntentId || "";
+}
+
+function rejected(reason, admission, snapshot, attemptedId) {
   return {
     ok: false,
     duplicate: false,
     admissionState: admission,
     reason: reason,
-    evidence: reason === "CONFLICT" ? Evidence.WRITTEN_UNVERIFIED : Evidence.WRITTEN_UNVERIFIED,
+    evidence: Evidence.WRITTEN_UNVERIFIED,
     d1: Evidence.HARDWARE_D1_UNCERTIFIED,
     entry: null,
+    attemptedId: attemptedId || "",
     entries: snapshot || [],
     readablePrefix: snapshot || [],
   };
@@ -341,7 +349,13 @@ export function createJournal(adapter, options) {
 
   function snapshot() {
     try {
-      return parseJournal(adapter.readAll());
+      const raw = adapter.readAll();
+      if (typeof raw !== "string") {
+        return failRead("READ_EXCEPTION", null, []);
+      }
+      const parsed = parseJournal(raw);
+      parsed.raw = raw;
+      return parsed;
     } catch (err) {
       return failRead("READ_EXCEPTION", null, []);
     }
@@ -362,6 +376,7 @@ export function createJournal(adapter, options) {
         entries: after.readablePrefix || [],
         readablePrefix: after.readablePrefix || [],
         entry: null,
+        attemptedId: "",
         duplicate: false,
       };
     }
@@ -376,6 +391,7 @@ export function createJournal(adapter, options) {
         entries: after.readablePrefix || [],
         readablePrefix: after.readablePrefix || [],
         entry: null,
+        attemptedId: "",
         duplicate: false,
       };
     }
@@ -385,12 +401,13 @@ export function createJournal(adapter, options) {
   function append(input) {
     const before = snapshot();
     if (!before.ok) {
-      return rejected(before.reason || "QUARANTINE", Admission.CORRUPT, before.readablePrefix);
+      const admission = before.reason === "READ_EXCEPTION" ? Admission.UNVERIFIED_STORAGE : Admission.CORRUPT;
+      return rejected(before.reason || "QUARANTINE", admission, before.readablePrefix, input && input.captureIntentId);
     }
     const draft = assessCapture(input);
     const supplied = input && input.captureIntentId ? String(input.captureIntentId) : "";
     if (supplied && !ID_PATTERN.test(supplied)) {
-      return rejected("BAD_ID", Admission.UNVERIFIED_STORAGE, before.entries);
+      return rejected("BAD_ID", Admission.UNVERIFIED_STORAGE, before.entries, supplied);
     }
     if (supplied) {
       for (let i = 0; i < before.entries.length; i++) {
@@ -405,16 +422,17 @@ export function createJournal(adapter, options) {
               evidence: Evidence.READBACK_MATCHED,
               d1: Evidence.HARDWARE_D1_UNCERTIFIED,
               entry: existing,
+              attemptedId: existing.captureIntentId,
               entries: before.entries,
               readablePrefix: before.entries,
             };
           }
-          return rejected("CONFLICT", Admission.CONFLICT, before.entries);
+          return rejected("CONFLICT", Admission.CONFLICT, before.entries, supplied);
         }
       }
     }
     if (before.entries.length >= maxEntries) {
-      return rejected("CAPACITY", Admission.UNVERIFIED_STORAGE, before.entries);
+      return rejected("CAPACITY", Admission.UNVERIFIED_STORAGE, before.entries, supplied);
     }
     const seq = before.entries.length + 1;
     const intentId = supplied || "CB1-" + draft.localOriginDeviceId + "-" + String(seq).padStart(4, "0");
@@ -435,17 +453,28 @@ export function createJournal(adapter, options) {
     };
     const line = entryLine(envelope);
     const header = before.header ? "" : headerLine(diagnostic);
-    if ((adapter.readAll() || "").length + header.length + line.length > maxBytes) {
-      return rejected("CAPACITY", Admission.UNVERIFIED_STORAGE, before.entries);
+    let measured;
+    try {
+      measured = adapter.readAll();
+    } catch (err) {
+      return rejected("READ_EXCEPTION", Admission.UNVERIFIED_STORAGE, before.readablePrefix, intentId);
+    }
+    if (typeof measured !== "string" || measured !== before.raw) {
+      return rejected("READ_EXCEPTION", Admission.UNVERIFIED_STORAGE, before.readablePrefix, intentId);
+    }
+    if (measured.length + header.length + line.length > maxBytes) {
+      return rejected("CAPACITY", Admission.UNVERIFIED_STORAGE, before.entries, intentId);
     }
     if (header) {
       const headerFault = writeChunk(header);
       if (headerFault) {
+        headerFault.attemptedId = intentId;
         return headerFault;
       }
     }
     const entryFault = writeChunk(line);
     if (entryFault) {
+      entryFault.attemptedId = intentId;
       return entryFault;
     }
     const after = snapshot();
@@ -459,6 +488,7 @@ export function createJournal(adapter, options) {
         evidence: Evidence.WRITTEN_UNVERIFIED,
         d1: Evidence.HARDWARE_D1_UNCERTIFIED,
         entry: null,
+        attemptedId: intentId,
         entries: after.readablePrefix || [],
         readablePrefix: after.readablePrefix || [],
       };
@@ -471,6 +501,7 @@ export function createJournal(adapter, options) {
       evidence: Evidence.READBACK_MATCHED,
       d1: Evidence.HARDWARE_D1_UNCERTIFIED,
       entry: found[0],
+      attemptedId: found[0].captureIntentId,
       entries: after.entries,
       readablePrefix: after.entries,
     };

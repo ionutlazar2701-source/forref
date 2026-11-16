@@ -10,210 +10,220 @@ TAP version 13
 # Subtest: the second tap confirms only while the same context stays armed
 ok 1 - the second tap confirms only while the same context stays armed
   ---
-  duration_ms: 0.537458
+  duration_ms: 0.520675
   ...
 # Subtest: navigation, back, and page exit disarm the confirmation
 ok 2 - navigation, back, and page exit disarm the confirmation
   ---
-  duration_ms: 0.117625
+  duration_ms: 0.117204
   ...
 # Subtest: a changed phase or mode disarms before the next tap can confirm
 ok 3 - a changed phase or mode disarms before the next tap can confirm
   ---
-  duration_ms: 0.096457
+  duration_ms: 0.098027
   ...
 # Subtest: a disarmed latch arms again instead of confirming
 ok 4 - a disarmed latch arms again instead of confirming
   ---
-  duration_ms: 0.077179
+  duration_ms: 0.076839
   ...
 # Subtest: a fixture goal is a structured candidate without a display label or shirt number
 ok 5 - a fixture goal is a structured candidate without a display label or shirt number
   ---
-  duration_ms: 4.532465
+  duration_ms: 0.957791
   ...
 # Subtest: ordinary HOME and AWAY stay incomplete and are not team ids
 ok 6 - ordinary HOME and AWAY stay incomplete and are not team ids
   ---
-  duration_ms: 0.209197
+  duration_ms: 0.190932
   ...
 # Subtest: yellow, red, substitution, and second caution are not promoted
 ok 7 - yellow, red, substitution, and second caution are not promoted
   ---
-  duration_ms: 0.524242
+  duration_ms: 0.499352
   ...
 # Subtest: append readback keeps id, sequence, and order across a new journal instance
 ok 8 - append readback keeps id, sequence, and order across a new journal instance
   ---
-  duration_ms: 1.023467
+  duration_ms: 1.036946
   ...
 # Subtest: the same id and payload is idempotent and a different payload conflicts
 ok 9 - the same id and payload is idempotent and a different payload conflicts
   ---
-  duration_ms: 1.048306
+  duration_ms: 1.053739
   ...
 # Subtest: a short write and a thrown write are not acknowledged as valid
 ok 10 - a short write and a thrown write are not acknowledged as valid
   ---
-  duration_ms: 0.779951
+  duration_ms: 0.705886
   ...
 # Subtest: torn, corrupt, gapped, and unknown schema journals fail closed
 ok 11 - torn, corrupt, gapped, and unknown schema journals fail closed
   ---
-  duration_ms: 0.504989
+  duration_ms: 0.413896
   ...
 # Subtest: capacity exhaustion preserves the earlier entries
 ok 12 - capacity exhaustion preserves the earlier entries
   ---
-  duration_ms: 0.414662
+  duration_ms: 1.060979
   ...
 # Subtest: match ids stay isolated and two yellows do not create a send-off
 ok 13 - match ids stay isolated and two yellows do not create a send-off
   ---
-  duration_ms: 1.355864
+  duration_ms: 0.447096
+  ...
+# Subtest: the same player can have two yellows, while a retry keeps one id
+ok 14 - the same player can have two yellows, while a retry keeps one id
+  ---
+  duration_ms: 0.462145
+  ...
+# Subtest: a missing journal is empty and an unknown stat or read failure does not append
+ok 15 - a missing journal is empty and an unknown stat or read failure does not append
+  ---
+  duration_ms: 0.663631
   ...
 # Subtest: the committed envelope fixture matches a fresh append
-ok 14 - the committed envelope fixture matches a fresh append
+ok 16 - the committed envelope fixture matches a fresh append
   ---
-  duration_ms: 0.568976
+  duration_ms: 0.34557
   ...
 # Subtest: the watch surface stays on the review route and off the clock files
-ok 15 - the watch surface stays on the review route and off the clock files
+ok 17 - the watch surface stays on the review route and off the clock files
   ---
-  duration_ms: 0.386177
+  duration_ms: 0.311616
   ...
 # Subtest: live A and C keep teams, the clock region, and both controls inside the safe area
-ok 16 - live A and C keep teams, the clock region, and both controls inside the safe area
+ok 18 - live A and C keep teams, the clock region, and both controls inside the safe area
   ---
-  duration_ms: 1.465895
+  duration_ms: 2.475072
   ...
 # Subtest: the live surface is one session shared by A and C, with no fabricated time or score
-ok 17 - the live surface is one session shared by A and C, with no fabricated time or score
+ok 19 - the live surface is one session shared by A and C, with no fabricated time or score
   ---
-  duration_ms: 0.159686
+  duration_ms: 0.194108
   ...
 # Subtest: every new match-control label exists in English and Romanian
-ok 18 - every new match-control label exists in English and Romanian
+ok 20 - every new match-control label exists in English and Romanian
   ---
-  duration_ms: 0.13484
+  duration_ms: 0.154655
   ...
 # Subtest: abandon confirmation is dropped on navigation, back, and page exit
-ok 19 - abandon confirmation is dropped on navigation, back, and page exit
+ok 21 - abandon confirmation is dropped on navigation, back, and page exit
   ---
-  duration_ms: 0.107479
+  duration_ms: 0.110463
   ...
 # Subtest: the first live paint admits the clock before it creates widgets
-ok 20 - the first live paint admits the clock before it creates widgets
+ok 22 - the first live paint admits the clock before it creates widgets
   ---
-  duration_ms: 0.163668
+  duration_ms: 0.139003
   ...
 # Subtest: the boot line carries a revision and the route inventory is 23 including controls
-ok 21 - the boot line carries a revision and the route inventory is 23 including controls
+ok 23 - the boot line carries a revision and the route inventory is 23 including controls
   ---
-  duration_ms: 0.085042
+  duration_ms: 0.082835
   ...
 # Subtest: ready stays 00:00 and a second kickoff does not start another clock
-ok 22 - ready stays 00:00 and a second kickoff does not start another clock
+ok 24 - ready stays 00:00 and a second kickoff does not start another clock
   ---
-  duration_ms: 1.176316
+  duration_ms: 1.088165
   ...
 # Subtest: elapsed follows the injected clock rather than the number of callbacks
-ok 23 - elapsed follows the injected clock rather than the number of callbacks
+ok 25 - elapsed follows the injected clock rather than the number of callbacks
   ---
-  duration_ms: 0.297481
+  duration_ms: 0.291143
   ...
 # Subtest: pause freezes and resume continues from the frozen value
-ok 24 - pause freezes and resume continues from the frozen value
+ok 26 - pause freezes and resume continues from the frozen value
   ---
-  duration_ms: 0.714932
+  duration_ms: 0.252232
   ...
 # Subtest: half-time is an explicit whistle before or after 45:00 and the break does not play
-ok 25 - half-time is an explicit whistle before or after 45:00 and the break does not play
+ok 27 - half-time is an explicit whistle before or after 45:00 and the break does not play
   ---
-  duration_ms: 0.485597
+  duration_ms: 0.246924
   ...
 # Subtest: second half starts once at 45:00 and keeps the real first-half elapsed
-ok 26 - second half starts once at 45:00 and keeps the real first-half elapsed
+ok 28 - second half starts once at 45:00 and keeps the real first-half elapsed
   ---
-  duration_ms: 0.198159
+  duration_ms: 0.166195
   ...
 # Subtest: full time is explicit at 89:00 or 90+ and never a completed match
-ok 27 - full time is explicit at 89:00 or 90+ and never a completed match
+ok 29 - full time is explicit at 89:00 or 90+ and never a completed match
   ---
-  duration_ms: 0.594869
+  duration_ms: 0.579194
   ...
 # Subtest: illegal transitions and a reloaded running clock do not create a second kickoff
-ok 28 - illegal transitions and a reloaded running clock do not create a second kickoff
+ok 30 - illegal transitions and a reloaded running clock do not create a second kickoff
   ---
-  duration_ms: 0.51613
+  duration_ms: 0.53245
   ...
 # Subtest: regulation boundaries stay exact to the second and do not end the period
-ok 29 - regulation boundaries stay exact to the second and do not end the period
+ok 31 - regulation boundaries stay exact to the second and do not end the period
   ---
-  duration_ms: 0.249431
+  duration_ms: 0.238775
   ...
 # Subtest: clock jumps, timezone, sleep, and bad recovery suppress exact digits
-ok 30 - clock jumps, timezone, sleep, and bad recovery suppress exact digits
+ok 32 - clock jumps, timezone, sleep, and bad recovery suppress exact digits
   ---
-  duration_ms: 0.404234
+  duration_ms: 0.503884
   ...
 # Subtest: storage failure and a partial write fail closed
-ok 31 - storage failure and a partial write fail closed
+ok 33 - storage failure and a partial write fail closed
   ---
-  duration_ms: 1.025196
+  duration_ms: 1.097237
   ...
 # Subtest: a new continuity epoch restores a frozen pause and does not invent running time
-ok 32 - a new continuity epoch restores a frozen pause and does not invent running time
+ok 34 - a new continuity epoch restores a frozen pause and does not invent running time
   ---
-  duration_ms: 0.315423
+  duration_ms: 0.288775
   ...
 # Subtest: reaching 45:00 or 90:00 does not emit a period or match end
-ok 33 - reaching 45:00 or 90:00 does not emit a period or match end
+ok 35 - reaching 45:00 or 90:00 does not emit a period or match end
   ---
-  duration_ms: 0.139298
+  duration_ms: 0.107109
   ...
 # Subtest: formal suspension excludes the stopped interval and is not a clock pause
-ok 34 - formal suspension excludes the stopped interval and is not a clock pause
+ok 36 - formal suspension excludes the stopped interval and is not a clock pause
   ---
-  duration_ms: 0.12692
+  duration_ms: 0.097976
   ...
 # Subtest: suspend from paused does not open a second playing segment
-ok 35 - suspend from paused does not open a second playing segment
+ok 37 - suspend from paused does not open a second playing segment
   ---
-  duration_ms: 0.064516
+  duration_ms: 0.061284
   ...
 # Subtest: abandon is refused until confirmed and never becomes full time
-ok 36 - abandon is refused until confirmed and never becomes full time
+ok 38 - abandon is refused until confirmed and never becomes full time
   ---
-  duration_ms: 0.086665
+  duration_ms: 0.082109
   ...
 # Subtest: second-half suspension restores as frozen and resume stays in the second half
-ok 37 - second-half suspension restores as frozen and resume stays in the second half
+ok 39 - second-half suspension restores as frozen and resume stays in the second half
   ---
-  duration_ms: 0.174375
+  duration_ms: 0.161903
   ...
 # Subtest: an unsampled gap is not shown as precise elapsed time
-ok 38 - an unsampled gap is not shown as precise elapsed time
+ok 40 - an unsampled gap is not shown as precise elapsed time
   ---
-  duration_ms: 0.149019
+  duration_ms: 0.14634
   ...
 # Subtest: a second-half gap keeps the match clock as last known
-ok 39 - a second-half gap keeps the match clock as last known
+ok 41 - a second-half gap keeps the match clock as last known
   ---
-  duration_ms: 0.066846
+  duration_ms: 0.066724
   ...
 # Subtest: a late whistle does not fold the unsampled gap into the elapsed
-ok 40 - a late whistle does not fold the unsampled gap into the elapsed
+ok 42 - a late whistle does not fold the unsampled gap into the elapsed
   ---
-  duration_ms: 0.052817
+  duration_ms: 0.051829
   ...
-1..40
-# tests 40
+1..42
+# tests 42
 # suites 0
-# pass 40
+# pass 42
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 97.860035
+# duration_ms 92.221363
 NPM_EXIT:0

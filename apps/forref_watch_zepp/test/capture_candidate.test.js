@@ -8,10 +8,12 @@ import {
   JOURNAL_FILE,
   assessCapture,
   createJournal,
+  intentForCaptureTap,
   memoryAdapter,
   parseJournal,
   stableStringify,
 } from "../utils/capture_candidate.js";
+import { isAbsentFileError, readCaptureJournal } from "../utils/capture_storage.js";
 
 function journal(limits) {
   return createJournal(memoryAdapter(), limits);
@@ -192,6 +194,170 @@ test("match ids stay isolated and two yellows do not create a send-off", () => {
   assert.equal(all.entries.filter((entry) => entry.kind === "YELLOW").length, 2);
 });
 
+test("the same player can have two yellows, while a retry keeps one id", () => {
+  const book = journal();
+  const yellow = { eventToken: "YELLOW", teamToken: "HOME", playerToken: "PLAYER 9", fixtureMode: false };
+  const first = book.append(Object.assign({}, yellow, { captureIntentId: intentForCaptureTap("", false) }));
+  assert.equal(first.ok, true);
+  assert.equal(first.entry.kind, "YELLOW");
+  const open = first.entry.captureIntentId;
+  const retry = book.append(Object.assign({}, yellow, { captureIntentId: intentForCaptureTap(open, false) }));
+  assert.equal(retry.duplicate, true);
+  assert.equal(retry.entry.captureIntentId, open);
+  assert.equal(book.read().entries.length, 1);
+  const fresh = book.append(Object.assign({}, yellow, { captureIntentId: intentForCaptureTap(open, true) }));
+  assert.equal(fresh.ok, true);
+  assert.equal(fresh.duplicate, false);
+  assert.notEqual(fresh.entry.captureIntentId, open);
+  const entries = book.read().entries;
+  assert.equal(entries.length, 2);
+  assert.equal(entries[0].kind, "YELLOW");
+  assert.equal(entries[1].kind, "YELLOW");
+  assert.equal(stableStringify(entries[0].canonicalCandidatePayload), stableStringify(entries[1].canonicalCandidatePayload));
+});
+
+test("a missing journal is empty and an unknown stat or read failure does not append", () => {
+  assert.equal(isAbsentFileError({ code: "ENOENT" }), true);
+  assert.equal(isAbsentFileError(new Error("no such file")), true);
+  assert.equal(isAbsentFileError(new Error("EIO: input/output error")), false);
+  const absent = readCaptureJournal({
+    stat() {
+      throw new Error("ENOENT: no such file");
+    },
+    open() {
+      throw new Error("opened");
+    },
+    read() {
+      throw new Error("read");
+    },
+    close() {
+      return 0;
+    },
+  });
+  assert.equal(absent.status, "absent");
+  assert.equal(absent.bytes, "");
+  const nullStat = readCaptureJournal({
+    stat() {
+      return null;
+    },
+    open() {
+      throw new Error("opened");
+    },
+    read() {
+      throw new Error("read");
+    },
+    close() {
+      return 0;
+    },
+  });
+  assert.equal(nullStat.status, "absent");
+  let opened = 0;
+  assert.throws(() => {
+    readCaptureJournal({
+      stat() {
+        throw new Error("EIO: input/output error");
+      },
+      open() {
+        opened += 1;
+        return 1;
+      },
+      read() {
+        return { length: 0, text: "" };
+      },
+      close() {
+        return 0;
+      },
+    });
+  });
+  assert.equal(opened, 0);
+  let closed = 0;
+  assert.throws(() => {
+    readCaptureJournal({
+      stat() {
+        return { size: 4 };
+      },
+      open() {
+        return 7;
+      },
+      read() {
+        throw new Error("EIO read");
+      },
+      close() {
+        closed += 1;
+        return 0;
+      },
+    });
+  });
+  assert.equal(closed, 1);
+
+  let statAppends = 0;
+  const statAdapter = {
+    readAll() {
+      return readCaptureJournal({
+        stat() {
+          throw new Error("EIO: input/output error");
+        },
+        open() {
+          throw new Error("open");
+        },
+        read() {
+          return { length: 0, text: "" };
+        },
+        close() {
+          return 0;
+        },
+      }).bytes;
+    },
+    append() {
+      statAppends += 1;
+      return 0;
+    },
+  };
+  const statFailed = createJournal(statAdapter).append(goal());
+  assert.equal(statFailed.ok, false);
+  assert.equal(statFailed.reason, "READ_EXCEPTION");
+  assert.equal(statFailed.admissionState, Admission.UNVERIFIED_STORAGE);
+  assert.equal(statAppends, 0);
+
+  let reads = 0;
+  let appends = 0;
+  const disk = { raw: "" };
+  const adapter = {
+    readAll() {
+      reads += 1;
+      if (reads === 2) {
+        throw new Error("EIO during capacity");
+      }
+      return readCaptureJournal({
+        stat() {
+          return disk.raw.length === 0 ? null : { size: disk.raw.length };
+        },
+        open() {
+          return 1;
+        },
+        read() {
+          return { length: disk.raw.length, text: disk.raw };
+        },
+        close() {
+          return 0;
+        },
+      }).bytes;
+    },
+    append(text) {
+      appends += 1;
+      disk.raw += text;
+      return text.length;
+    },
+  };
+  const failed = createJournal(adapter).append(goal({ captureIntentId: "SIM_INTENT_CAPACITY" }));
+  assert.equal(failed.ok, false);
+  assert.equal(failed.reason, "READ_EXCEPTION");
+  assert.equal(failed.admissionState, Admission.UNVERIFIED_STORAGE);
+  assert.equal(failed.attemptedId, "SIM_INTENT_CAPACITY");
+  assert.equal(appends, 0);
+  assert.equal(disk.raw, "");
+});
+
 test("the committed envelope fixture matches a fresh append", () => {
   const adapter = memoryAdapter();
   const book = createJournal(adapter, { diagnosticDeviceSource: "10158337" });
@@ -222,10 +388,15 @@ test("the watch surface stays on the review route and off the clock files", () =
   assert.equal(device.includes("writeSync"), true);
   assert.equal(device.includes("readSync"), true);
   assert.equal(device.includes("closeSync"), true);
+  assert.equal(device.includes("readCaptureJournal"), true);
+  const readFn = device.slice(device.indexOf("readAll"), device.indexOf("append(text)"));
+  assert.equal(readFn.includes("return \"\""), false);
   assert.equal(device.includes("JOURNAL_FILE"), true);
   assert.equal(JOURNAL_FILE, "forref_capture_bridge_001.journal");
   assert.equal(device.includes("forref_clock"), false);
-  for (const key of ["captureTest", "viewLocal", "simFixtureOff", "localCandidate", "notMatchRecord", "candidateRecovered", "candidateIncomplete", "captureFailed"]) {
+  assert.equal(review.includes("review-new"), true);
+  assert.equal(review.includes("intentForCaptureTap"), true);
+  for (const key of ["captureTest", "newCapture", "viewLocal", "simFixtureOff", "localCandidate", "notMatchRecord", "candidateRecovered", "candidateIncomplete", "captureFailed"]) {
     assert.equal(text.split(key + ":").length - 1 >= 2, true, key);
   }
 });

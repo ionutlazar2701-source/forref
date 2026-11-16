@@ -10,7 +10,7 @@
 | QEMU | No `qemu-system` binary on this VM |
 | `getDeviceInfo()` | Not observed |
 
-Round Amazfit Active Max and rectangular Amazfit Bip 6 were not launched. No guest screenshot, console capture, or app-recreation trace exists for this change. ZC15 and ZC16 are BLOCKED. This is not a PASS and not a decorative stand-in.
+The follow-up checked the same VM again. Zeus still reports `login status: no login` and `simulator connect status: disconnected`. No `qemu-system` binary is installed. Round Amazfit Active Max and rectangular Amazfit Bip 6 were not launched. No guest screenshot, console capture, or app-recreation trace exists for this change. ZC15 and ZC16 stay BLOCKED. This is not a simulator PASS.
 
 The raw status text is `zeus-status.txt` beside this file. The node suite log is `zepp-npm-test.log`.
 
@@ -18,7 +18,7 @@ The raw status text is `zeus-status.txt` beside this file. The node suite log is
 
 | Command | Exit | Count |
 | --- | --- | --- |
-| `npm test` in `apps/forref_watch_zepp` | 0 | geometry script pass, then 40 node tests, 0 failed. The 40 include the previous clock, abandon, and live-surface tests plus 11 capture tests. |
+| `npm test` in `apps/forref_watch_zepp` | 0 | geometry script pass, including stacks of 7 rows, then 42 node tests, 0 failed. The 42 include the previous clock, abandon, and live-surface tests plus the capture tests. |
 | `./tool/verify_cloud.sh` from the repository root | 0 | Match Core 377, persistence 92, phone analyze clean, phone tests 126 |
 
 Dart 3.13.2. Flutter 3.47.2. SQLite durability settings were not changed.

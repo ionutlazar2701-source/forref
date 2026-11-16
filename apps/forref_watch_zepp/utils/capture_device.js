@@ -11,6 +11,7 @@ import {
 } from "@zos/fs";
 import { getDeviceInfo } from "@zos/device";
 import { JOURNAL_FILE } from "./capture_candidate";
+import { readCaptureJournal } from "./capture_storage";
 
 function encode(text) {
   const buffer = new ArrayBuffer(text.length);
@@ -21,10 +22,13 @@ function encode(text) {
   return buffer;
 }
 
-function decode(buffer, length) {
+function decodeExact(buffer, length) {
   const bytes = new Uint8Array(buffer);
   let out = "";
   for (let i = 0; i < length; i++) {
+    if (bytes[i] > 127) {
+      throw new Error("non-ascii");
+    }
     out += String.fromCharCode(bytes[i]);
   }
   return out;
@@ -43,31 +47,26 @@ export function watchDiagnosticSource() {
 export function watchCaptureAdapter() {
   return {
     readAll() {
-      let size = 0;
-      try {
-        const stat = statSync({ path: JOURNAL_FILE });
-        if (!stat || !stat.size) {
-          return "";
-        }
-        size = stat.size;
-      } catch (err) {
-        return "";
-      }
-      const fd = openSync({ path: JOURNAL_FILE, flag: O_RDONLY });
-      try {
-        const buffer = new ArrayBuffer(size);
-        const count = readSync({
-          fd: fd,
-          buffer: buffer,
-          options: { offset: 0, length: size, position: 0 },
-        });
-        if (count !== size) {
-          throw new Error("short read");
-        }
-        return decode(buffer, count);
-      } finally {
-        closeSync({ fd: fd });
-      }
+      return readCaptureJournal({
+        stat() {
+          return statSync({ path: JOURNAL_FILE });
+        },
+        open() {
+          return openSync({ path: JOURNAL_FILE, flag: O_RDONLY });
+        },
+        read(fd, size) {
+          const buffer = new ArrayBuffer(size);
+          const count = readSync({
+            fd: fd,
+            buffer: buffer,
+            options: { offset: 0, length: size, position: 0 },
+          });
+          return { length: count, text: decodeExact(buffer, count) };
+        },
+        close(fd) {
+          return closeSync({ fd: fd });
+        },
+      }).bytes;
     },
     append(text) {
       const buffer = encode(text);

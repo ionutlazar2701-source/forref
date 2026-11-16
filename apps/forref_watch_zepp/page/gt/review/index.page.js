@@ -2,7 +2,7 @@ import { back } from "@zos/router";
 import { logDevice, bindBack, clear, stack } from "../../../utils/chrome";
 import { t, showTeam, showEvent, showPlayer } from "../../../utils/text";
 import { state } from "../../../utils/state";
-import { Admission, Evidence, createJournal } from "../../../utils/capture_candidate";
+import { Admission, Evidence, createJournal, intentForCaptureTap } from "../../../utils/capture_candidate";
 import { watchCaptureAdapter, watchDiagnosticSource } from "../../../utils/capture_device";
 
 function journal() {
@@ -103,8 +103,13 @@ function paintForm(m, s, loaded) {
     },
     {
       label: t("captureTest"),
-      action: () => capture(s),
+      action: () => capture(s, false),
       name: "review-capture",
+    },
+    {
+      label: t("newCapture"),
+      action: () => capture(s, true),
+      name: "review-new",
     },
     {
       label: t("viewLocal"),
@@ -142,18 +147,22 @@ function paintView(m, s, loaded) {
   stack(m, t("viewLocal"), rows);
 }
 
-function capture(s) {
+function capture(s, fresh) {
   const result = journal().append({
     eventToken: s.event,
     teamToken: s.team,
     playerToken: s.player,
     fixtureMode: s.captureFixture === true,
-    captureIntentId: s.captureIntentId || "",
+    captureIntentId: intentForCaptureTap(s.captureIntentId, fresh),
   });
   logCapture(result);
-  if (result.ok && result.entry) {
+  if (result.entry && result.entry.captureIntentId) {
     s.captureIntentId = result.entry.captureIntentId;
     s.captureIndex = result.entry.localSequence;
+  } else if (result.attemptedId) {
+    s.captureIntentId = result.attemptedId;
+  }
+  if (result.ok && result.entry) {
     s.captureNote = result.entry.admissionState === Admission.VALID_STRUCTURED_CANDIDATE ? "readback" : "incomplete";
   } else if (result.admissionState === Admission.CONFLICT) {
     s.captureNote = "conflict";

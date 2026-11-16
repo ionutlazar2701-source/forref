@@ -23,7 +23,9 @@ These are not `DurableCommitSuccess` and not Match Report classifications.
 
 ## Idempotency and ids
 
-`captureIntentId` and `candidateId` are the same string. A caller may pass an id matching `[A-Z0-9_-]{4,64}`. Otherwise the journal allocates `CB1-<deviceId>-<sequence>` from the next sequence. The id is not a UTC timestamp. The same id and the same payload return the existing line and do not append. A new deliberate capture uses the next sequence.
+`captureIntentId` and `candidateId` are the same string. A caller may pass an id matching `[A-Z0-9_-]{4,64}`. Otherwise the journal allocates `CB1-<deviceId>-<sequence>` from the next sequence. The id is not a UTC timestamp. The same id and the same payload return the existing line and do not append. A different id with the same canonical payload is a new candidate. Two yellows for the same player are two lines when each tap asks for a new capture. A retry tap passes the open id and stays on one line.
+
+The review screen keeps those actions apart. `CAPTURE TEST` retries the open intent. `NEW CAPTURE` starts another intent even when team, event, and player are unchanged.
 
 ## Capacity
 
