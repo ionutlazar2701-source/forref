@@ -1,0 +1,219 @@
+
+> helloworld@1.0.0 test
+> node test/geometry.test.js && node --test test/match_clock.test.js test/abandon_arm.test.js test/live_surface.test.js test/capture_candidate.test.js
+
+FORREF_GEOMETRY_TEST pass margin=12 statusBar=64
+LIVE_C_ROUND {"phaseY":146,"timeY":184,"home":{"x":103,"y":58,"w":274,"h":72,"ok":true},"away":{"x":103,"y":250,"w":274,"h":72,"ok":true},"display":{"x":103,"y":352,"w":133,"h":44,"ok":true},"back":{"x":244,"y":352,"w":133,"h":44,"ok":true}}
+EVENT_ROUND {"yellow":{"x":108,"y":78,"w":128,"h":128,"ok":true},"red":{"x":244,"y":78,"w":128,"h":128,"ok":true},"goal":{"x":108,"y":214,"w":128,"h":128,"ok":true},"sub":{"x":244,"y":214,"w":128,"h":128,"ok":true},"back":{"x":130,"y":352,"w":220,"h":42,"ok":true},"titleY":36}
+LIVE_A_RECT {"phaseY":70,"timeY":108,"home":{"x":10,"y":196,"w":181,"h":108,"ok":true},"away":{"x":199,"y":196,"w":181,"h":108,"ok":true},"display":{"x":10,"y":392,"w":181,"h":46,"ok":true},"back":{"x":199,"y":392,"w":181,"h":46,"ok":true}}
+TAP version 13
+# Subtest: the second tap confirms only while the same context stays armed
+ok 1 - the second tap confirms only while the same context stays armed
+  ---
+  duration_ms: 0.537458
+  ...
+# Subtest: navigation, back, and page exit disarm the confirmation
+ok 2 - navigation, back, and page exit disarm the confirmation
+  ---
+  duration_ms: 0.117625
+  ...
+# Subtest: a changed phase or mode disarms before the next tap can confirm
+ok 3 - a changed phase or mode disarms before the next tap can confirm
+  ---
+  duration_ms: 0.096457
+  ...
+# Subtest: a disarmed latch arms again instead of confirming
+ok 4 - a disarmed latch arms again instead of confirming
+  ---
+  duration_ms: 0.077179
+  ...
+# Subtest: a fixture goal is a structured candidate without a display label or shirt number
+ok 5 - a fixture goal is a structured candidate without a display label or shirt number
+  ---
+  duration_ms: 4.532465
+  ...
+# Subtest: ordinary HOME and AWAY stay incomplete and are not team ids
+ok 6 - ordinary HOME and AWAY stay incomplete and are not team ids
+  ---
+  duration_ms: 0.209197
+  ...
+# Subtest: yellow, red, substitution, and second caution are not promoted
+ok 7 - yellow, red, substitution, and second caution are not promoted
+  ---
+  duration_ms: 0.524242
+  ...
+# Subtest: append readback keeps id, sequence, and order across a new journal instance
+ok 8 - append readback keeps id, sequence, and order across a new journal instance
+  ---
+  duration_ms: 1.023467
+  ...
+# Subtest: the same id and payload is idempotent and a different payload conflicts
+ok 9 - the same id and payload is idempotent and a different payload conflicts
+  ---
+  duration_ms: 1.048306
+  ...
+# Subtest: a short write and a thrown write are not acknowledged as valid
+ok 10 - a short write and a thrown write are not acknowledged as valid
+  ---
+  duration_ms: 0.779951
+  ...
+# Subtest: torn, corrupt, gapped, and unknown schema journals fail closed
+ok 11 - torn, corrupt, gapped, and unknown schema journals fail closed
+  ---
+  duration_ms: 0.504989
+  ...
+# Subtest: capacity exhaustion preserves the earlier entries
+ok 12 - capacity exhaustion preserves the earlier entries
+  ---
+  duration_ms: 0.414662
+  ...
+# Subtest: match ids stay isolated and two yellows do not create a send-off
+ok 13 - match ids stay isolated and two yellows do not create a send-off
+  ---
+  duration_ms: 1.355864
+  ...
+# Subtest: the committed envelope fixture matches a fresh append
+ok 14 - the committed envelope fixture matches a fresh append
+  ---
+  duration_ms: 0.568976
+  ...
+# Subtest: the watch surface stays on the review route and off the clock files
+ok 15 - the watch surface stays on the review route and off the clock files
+  ---
+  duration_ms: 0.386177
+  ...
+# Subtest: live A and C keep teams, the clock region, and both controls inside the safe area
+ok 16 - live A and C keep teams, the clock region, and both controls inside the safe area
+  ---
+  duration_ms: 1.465895
+  ...
+# Subtest: the live surface is one session shared by A and C, with no fabricated time or score
+ok 17 - the live surface is one session shared by A and C, with no fabricated time or score
+  ---
+  duration_ms: 0.159686
+  ...
+# Subtest: every new match-control label exists in English and Romanian
+ok 18 - every new match-control label exists in English and Romanian
+  ---
+  duration_ms: 0.13484
+  ...
+# Subtest: abandon confirmation is dropped on navigation, back, and page exit
+ok 19 - abandon confirmation is dropped on navigation, back, and page exit
+  ---
+  duration_ms: 0.107479
+  ...
+# Subtest: the first live paint admits the clock before it creates widgets
+ok 20 - the first live paint admits the clock before it creates widgets
+  ---
+  duration_ms: 0.163668
+  ...
+# Subtest: the boot line carries a revision and the route inventory is 23 including controls
+ok 21 - the boot line carries a revision and the route inventory is 23 including controls
+  ---
+  duration_ms: 0.085042
+  ...
+# Subtest: ready stays 00:00 and a second kickoff does not start another clock
+ok 22 - ready stays 00:00 and a second kickoff does not start another clock
+  ---
+  duration_ms: 1.176316
+  ...
+# Subtest: elapsed follows the injected clock rather than the number of callbacks
+ok 23 - elapsed follows the injected clock rather than the number of callbacks
+  ---
+  duration_ms: 0.297481
+  ...
+# Subtest: pause freezes and resume continues from the frozen value
+ok 24 - pause freezes and resume continues from the frozen value
+  ---
+  duration_ms: 0.714932
+  ...
+# Subtest: half-time is an explicit whistle before or after 45:00 and the break does not play
+ok 25 - half-time is an explicit whistle before or after 45:00 and the break does not play
+  ---
+  duration_ms: 0.485597
+  ...
+# Subtest: second half starts once at 45:00 and keeps the real first-half elapsed
+ok 26 - second half starts once at 45:00 and keeps the real first-half elapsed
+  ---
+  duration_ms: 0.198159
+  ...
+# Subtest: full time is explicit at 89:00 or 90+ and never a completed match
+ok 27 - full time is explicit at 89:00 or 90+ and never a completed match
+  ---
+  duration_ms: 0.594869
+  ...
+# Subtest: illegal transitions and a reloaded running clock do not create a second kickoff
+ok 28 - illegal transitions and a reloaded running clock do not create a second kickoff
+  ---
+  duration_ms: 0.51613
+  ...
+# Subtest: regulation boundaries stay exact to the second and do not end the period
+ok 29 - regulation boundaries stay exact to the second and do not end the period
+  ---
+  duration_ms: 0.249431
+  ...
+# Subtest: clock jumps, timezone, sleep, and bad recovery suppress exact digits
+ok 30 - clock jumps, timezone, sleep, and bad recovery suppress exact digits
+  ---
+  duration_ms: 0.404234
+  ...
+# Subtest: storage failure and a partial write fail closed
+ok 31 - storage failure and a partial write fail closed
+  ---
+  duration_ms: 1.025196
+  ...
+# Subtest: a new continuity epoch restores a frozen pause and does not invent running time
+ok 32 - a new continuity epoch restores a frozen pause and does not invent running time
+  ---
+  duration_ms: 0.315423
+  ...
+# Subtest: reaching 45:00 or 90:00 does not emit a period or match end
+ok 33 - reaching 45:00 or 90:00 does not emit a period or match end
+  ---
+  duration_ms: 0.139298
+  ...
+# Subtest: formal suspension excludes the stopped interval and is not a clock pause
+ok 34 - formal suspension excludes the stopped interval and is not a clock pause
+  ---
+  duration_ms: 0.12692
+  ...
+# Subtest: suspend from paused does not open a second playing segment
+ok 35 - suspend from paused does not open a second playing segment
+  ---
+  duration_ms: 0.064516
+  ...
+# Subtest: abandon is refused until confirmed and never becomes full time
+ok 36 - abandon is refused until confirmed and never becomes full time
+  ---
+  duration_ms: 0.086665
+  ...
+# Subtest: second-half suspension restores as frozen and resume stays in the second half
+ok 37 - second-half suspension restores as frozen and resume stays in the second half
+  ---
+  duration_ms: 0.174375
+  ...
+# Subtest: an unsampled gap is not shown as precise elapsed time
+ok 38 - an unsampled gap is not shown as precise elapsed time
+  ---
+  duration_ms: 0.149019
+  ...
+# Subtest: a second-half gap keeps the match clock as last known
+ok 39 - a second-half gap keeps the match clock as last known
+  ---
+  duration_ms: 0.066846
+  ...
+# Subtest: a late whistle does not fold the unsampled gap into the elapsed
+ok 40 - a late whistle does not fold the unsampled gap into the elapsed
+  ---
+  duration_ms: 0.052817
+  ...
+1..40
+# tests 40
+# suites 0
+# pass 40
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 97.860035
+NPM_EXIT:0
