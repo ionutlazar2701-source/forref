@@ -59,7 +59,8 @@ final class MatchApplicationBoundary
     if (matchStarted == null) {
       final started = await commitMatchStarted(context);
       if (started is! DurableCommitSuccess) {
-        final afterFailure = await _store.readCommittedForMatch(context.matchId);
+        final afterFailure =
+            await _store.readCommittedForMatch(context.matchId);
         matchStarted = _matchStartedRecord(afterFailure);
         if (matchStarted == null) {
           final reason = started is DurableCommitFailure
@@ -372,8 +373,7 @@ final class MatchApplicationBoundary
         if (lineage.activeStart != null) {
           return 'PERIOD_STARTED requires no active period';
         }
-        if (!lineage.intervalActive ||
-            lineage.latestEnded?.index != 1) {
+        if (!lineage.intervalActive || lineage.latestEnded?.index != 1) {
           return 'PERIOD_STARTED requires Period 1 ended';
         }
         final periodOne = lineage.starts.single;
@@ -621,7 +621,8 @@ final class MatchApplicationBoundary
       return Future<DurableCommitResult>.value(
         DurableCommitFailure(
           recordId: request.recordId,
-          reason: 'TEMPORARY_SUSPENSION_ENDED requires temporal anchor evidence',
+          reason:
+              'TEMPORARY_SUSPENSION_ENDED requires temporal anchor evidence',
         ),
       );
     }
@@ -667,6 +668,201 @@ final class MatchApplicationBoundary
     );
   }
 
+  /// Authoritative participant Yellow. Team-official Yellow stays on the v2 payload.
+  ///
+  /// Same [captureIntentId] returns the original success when that Yellow is
+  /// already in Match Memory. A failed commit adds no report line.
+  Future<DurableCommitResult> commitYellow(
+    CaptureContext context, {
+    required MatchParticipantId participantId,
+    required DisciplinaryAccountingScope accountingScope,
+    required String captureIntentId,
+  }) async {
+    final guarded = _guardCaptureIntent(
+      context,
+      captureIntentId: captureIntentId,
+      label: 'Yellow',
+    );
+    if (guarded != null) return guarded;
+    final rootFailure = await _ensureGenerationOneAuthorityRoot(context);
+    if (rootFailure != null) return rootFailure;
+    final request = _recordBuilder.build(
+      context: context,
+      recordKind: RecordKind.humanDetermination,
+      payload: YellowCardPayload(
+        participantId: participantId,
+        accountingScope: accountingScope,
+        captureIntentId: captureIntentId,
+      ),
+      integrity: const IntegrityMetadata(),
+    );
+    return _store.commitAtNextOriginSequence(request);
+  }
+
+  /// Explicit direct send-off. Two Yellow records do not create this record.
+  Future<DurableCommitResult> commitDirectSendOff(
+    CaptureContext context, {
+    required DisciplinarySubjectRef subject,
+    required DisciplinaryAccountingScope accountingScope,
+    required String captureIntentId,
+  }) async {
+    final guarded = _guardCaptureIntent(
+      context,
+      captureIntentId: captureIntentId,
+      label: 'Send-off',
+    );
+    if (guarded != null) return guarded;
+    final rootFailure = await _ensureGenerationOneAuthorityRoot(context);
+    if (rootFailure != null) return rootFailure;
+    final request = _recordBuilder.build(
+      context: context,
+      recordKind: RecordKind.humanDetermination,
+      payload: SendOffPayload(
+        disciplinarySubject: subject,
+        disciplinaryScope: accountingScope,
+        pathway: SendOffPathway.direct,
+        captureIntentId: captureIntentId,
+      ),
+      integrity: const IntegrityMetadata(),
+    );
+    return _store.commitAtNextOriginSequence(request);
+  }
+
+  /// Explicit second-caution send-off. The two Yellow records must already exist.
+  Future<DurableCommitResult> commitSecondCautionSendOff(
+    CaptureContext context, {
+    required DisciplinarySubjectRef subject,
+    required DisciplinaryAccountingScope accountingScope,
+    required String captureIntentId,
+    required String firstYellowRecordId,
+    required String secondYellowRecordId,
+  }) async {
+    final guarded = _guardCaptureIntent(
+      context,
+      captureIntentId: captureIntentId,
+      label: 'Send-off',
+    );
+    if (guarded != null) return guarded;
+    if (firstYellowRecordId.isEmpty ||
+        secondYellowRecordId.isEmpty ||
+        firstYellowRecordId == secondYellowRecordId) {
+      return DurableCommitFailure(
+        recordId: '',
+        reason: 'Second-caution send-off requires two distinct Yellow records',
+      );
+    }
+    final rootFailure = await _ensureGenerationOneAuthorityRoot(context);
+    if (rootFailure != null) return rootFailure;
+    final request = _recordBuilder.build(
+      context: context,
+      recordKind: RecordKind.humanDetermination,
+      payload: SendOffPayload(
+        disciplinarySubject: subject,
+        disciplinaryScope: accountingScope,
+        pathway: SendOffPathway.secondCaution,
+        captureIntentId: captureIntentId,
+        firstStandingCautionRecordId: firstYellowRecordId,
+        secondCautionRecordId: secondYellowRecordId,
+      ),
+      relationships: [
+        CausalDependency(targetRecordId: firstYellowRecordId),
+        CausalDependency(targetRecordId: secondYellowRecordId),
+      ],
+      integrity: const IntegrityMetadata(),
+    );
+    return _store.commitAtNextOriginSequence(request);
+  }
+
+  /// Completed substitution. Missing or cross-team bindings are not saved.
+  Future<DurableCommitResult> commitSubstitution(
+    CaptureContext context, {
+    required MatchParticipantId outgoingParticipantId,
+    required MatchParticipantId incomingParticipantId,
+    required MatchTeamId teamId,
+    required String captureIntentId,
+  }) async {
+    final guarded = _guardCaptureIntent(
+      context,
+      captureIntentId: captureIntentId,
+      label: 'Substitution',
+    );
+    if (guarded != null) return guarded;
+    if (outgoingParticipantId == incomingParticipantId) {
+      return DurableCommitFailure(
+        recordId: '',
+        reason: 'same identity',
+      );
+    }
+    final rootFailure = await _ensureGenerationOneAuthorityRoot(context);
+    if (rootFailure != null) return rootFailure;
+    final request = _recordBuilder.build(
+      context: context,
+      recordKind: RecordKind.humanDetermination,
+      payload: SubstitutionPayload(
+        outgoingParticipantId: outgoingParticipantId,
+        incomingParticipantId: incomingParticipantId,
+        teamId: teamId,
+        captureIntentId: captureIntentId,
+      ),
+      integrity: const IntegrityMetadata(),
+    );
+    return _store.commitAtNextOriginSequence(request);
+  }
+
+  /// Rebuilds the match report from Match Memory. This is not a stored report.
+  Future<MatchReportProjection> readMatchReport({
+    required String matchId,
+    required int evaluatedAuthorityGeneration,
+    required MatchTeamId homeTeamId,
+    required MatchTeamId awayTeamId,
+  }) async {
+    final root = await _store.readGenerationOneAuthorityRoot(matchId);
+    final List<MatchRecord> records;
+    try {
+      records = await _store.readCommittedForMatch(matchId);
+    } on CommittedRecordQuarantineException {
+      return MatchReportProjection.unreadable(matchId);
+    }
+    final proof = root == null
+        ? null
+        : ScoreCompletenessProof(
+            matchAuthorityMode: MatchAuthorityMode.matchMemory,
+            teamBindings: [
+              MatchTeamBinding(matchId: matchId, teamId: homeTeamId),
+              MatchTeamBinding(matchId: matchId, teamId: awayTeamId),
+            ],
+            generationOneRoot: root,
+          );
+    return projectMatchReport(
+      matchId: matchId,
+      records: records,
+      context: ProjectionContext(
+        evaluatedAuthorityGeneration: evaluatedAuthorityGeneration,
+        scoreCompletenessProof: proof,
+      ),
+    );
+  }
+
+  DurableCommitFailure? _guardCaptureIntent(
+    CaptureContext context, {
+    required String captureIntentId,
+    required String label,
+  }) {
+    if (captureIntentId.isEmpty) {
+      return DurableCommitFailure(
+        recordId: '',
+        reason: '$label captureIntentId cannot be empty',
+      );
+    }
+    if (context.authorityGeneration != 1) {
+      return DurableCommitFailure(
+        recordId: '',
+        reason: '$label requires generation-1 capture authority',
+      );
+    }
+    return null;
+  }
+
   /// Constructs an authoritative record, allocates the next origin sequence
   /// atomically, and durable-commits. UI must not choose originSequence.
   Future<DurableCommitResult> captureAndCommit(
@@ -697,7 +893,8 @@ final class MatchApplicationBoundary
     return _projector.project(
       _store,
       matchId,
-      ProjectionContext(evaluatedAuthorityGeneration: evaluatedAuthorityGeneration),
+      ProjectionContext(
+          evaluatedAuthorityGeneration: evaluatedAuthorityGeneration),
     );
   }
 
