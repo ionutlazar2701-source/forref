@@ -5,6 +5,7 @@ export const MAX_PLAUSIBLE_SPEED_MPS = 12;
 export const STATIONARY_METERS = 4;
 export const MIN_SPEED_DT_MS = 1000;
 export const SPIKE_SPEED_MPS = 6;
+export const HR_HOLD_MS = 5000;
 
 const EARTH_RADIUS_M = 6371000;
 
@@ -34,14 +35,82 @@ function sameFix(a, b) {
   return a.lat === b.lat && a.lon === b.lon && a.diagnosticElapsedMs === b.diagnosticElapsedMs;
 }
 
-export function analyzeTrack(entries) {
+export function latestSessionId(entries) {
+  const list = entries || [];
+  for (let i = list.length - 1; i >= 0; i--) {
+    if (list[i] && typeof list[i].sessionId === "string" && list[i].sessionId !== "") {
+      return list[i].sessionId;
+    }
+  }
+  return "";
+}
+
+function elapsedOf(entry) {
+  return entry && typeof entry.diagnosticElapsedMs === "number" && isFinite(entry.diagnosticElapsedMs) ? entry.diagnosticElapsedMs : null;
+}
+
+function sessionSpanMs(list) {
+  let min = null;
+  let max = null;
+  for (let i = 0; i < list.length; i++) {
+    const elapsed = elapsedOf(list[i]);
+    if (elapsed == null) {
+      continue;
+    }
+    if (min == null || elapsed < min) {
+      min = elapsed;
+    }
+    if (max == null || elapsed > max) {
+      max = elapsed;
+    }
+  }
+  if (min == null || max == null || max <= min) {
+    return null;
+  }
+  return max - min;
+}
+
+function emptyReport(sessionId, sessionScope) {
+  return {
+    experimental: true,
+    medicalInterpretation: false,
+    certifiedDistance: false,
+    certifiedSpeed: false,
+    sessionId: sessionId,
+    sessionScope: sessionScope,
+    accepted: [],
+    discarded: [],
+    gaps: [],
+    segments: [],
+    distanceMeters: 0,
+    maxSpeedMps: null,
+    maxSpeedReliable: false,
+    missingMs: 0,
+    hrSamples: 0,
+    hrValidSamples: 0,
+    hrSampleRatio: null,
+    hrTimeCoverage: null,
+    hrTimeCoveredMs: null,
+    hrSessionSpanMs: null,
+    hrNote: "NOT_A_HEALTH_DIAGNOSIS",
+    distanceSensorSamples: 0,
+    distanceSensorUnit: "UNRESOLVED",
+    distanceSensorAttribution: "UNRESOLVED",
+    distanceSensorUsedInGnss: false,
+  };
+}
+
+export function analyzeTrack(entries, sessionId) {
+  if (typeof sessionId !== "string" || sessionId === "") {
+    return emptyReport("", "SESSION_REQUIRED");
+  }
+  const list = (entries || []).filter((entry) => entry && entry.sessionId === sessionId);
   const discarded = [];
   const gaps = [];
   const segments = [];
   const accepted = [];
   let previous = null;
   let pauseOpen = false;
-  const list = entries || [];
   for (let i = 0; i < list.length; i++) {
     const entry = list[i];
     if (entry.kind === "LIFECYCLE" && (entry.name === "PAUSE" || entry.name === "DISPLAY_OFF")) {
@@ -146,12 +215,32 @@ export function analyzeTrack(entries) {
   }
   const hr = list.filter((entry) => entry.kind === "HR");
   const hrValid = hr.filter((entry) => entry.hrBpm != null && entry.hrBpm >= 30 && entry.hrBpm <= 230);
+  const span = sessionSpanMs(list);
+  let covered = 0;
+  if (span != null) {
+    const timed = [];
+    for (let i = 0; i < hrValid.length; i++) {
+      const elapsed = elapsedOf(hrValid[i]);
+      if (elapsed != null) {
+        timed.push(elapsed);
+      }
+    }
+    timed.sort((a, b) => a - b);
+    for (let i = 0; i + 1 < timed.length; i++) {
+      const gap = timed[i + 1] - timed[i];
+      if (gap > 0) {
+        covered += Math.min(gap, HR_HOLD_MS);
+      }
+    }
+  }
   const distanceSensor = list.filter((entry) => entry.kind === "DISTANCE");
   return {
     experimental: true,
     medicalInterpretation: false,
     certifiedDistance: false,
     certifiedSpeed: false,
+    sessionId: sessionId,
+    sessionScope: "SESSION",
     accepted: accepted,
     discarded: discarded,
     gaps: gaps,
@@ -162,7 +251,10 @@ export function analyzeTrack(entries) {
     missingMs: gaps.reduce((sum, gap) => sum + (gap.missingMs || 0), 0),
     hrSamples: hr.length,
     hrValidSamples: hrValid.length,
-    hrCoverage: hr.length === 0 ? null : hrValid.length / hr.length,
+    hrSampleRatio: hr.length === 0 ? null : hrValid.length / hr.length,
+    hrTimeCoverage: span == null ? null : covered / span,
+    hrTimeCoveredMs: span == null ? null : covered,
+    hrSessionSpanMs: span,
     hrNote: "NOT_A_HEALTH_DIAGNOSIS",
     distanceSensorSamples: distanceSensor.length,
     distanceSensorUnit: "UNRESOLVED",

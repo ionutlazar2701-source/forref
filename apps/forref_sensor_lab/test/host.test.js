@@ -106,7 +106,7 @@ test("continuous HR starts and tears down, and a screen-off gap is quantified", 
   rig.clock.ms = 25000;
   rig.geo.lat = 0.0001;
   rig.geo.emit();
-  const report = analyzeTrack(rig.book.read().entries);
+  const report = analyzeTrack(rig.book.read().entries, rig.host.sessionId());
   assert.equal(report.gaps.some((gap) => gap.reason === "SCREEN_OFF_OR_PAUSE" && gap.missingMs === 23000), true);
   assert.equal(rig.hr.listeners.length, 1);
   rig.host.stop();
@@ -134,6 +134,6 @@ test("a restart with a reversed clock does not invent the missing interval", () 
   const gap = rig.book.read().entries.find((entry) => entry.kind === "GAP");
   assert.equal(gap.gapReason, "RESTART_UNMEASURED");
   assert.equal(gap.missingMs, null);
-  const report = analyzeTrack(rig.book.read().entries);
+  const report = analyzeTrack(rig.book.read().entries, rig.host.sessionId());
   assert.equal(report.discarded.some((item) => item.reason === "NON_POSITIVE_TIME"), true);
 });

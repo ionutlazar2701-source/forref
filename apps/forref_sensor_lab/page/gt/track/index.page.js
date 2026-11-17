@@ -2,7 +2,7 @@ import { back } from "@zos/router";
 import { getLanguage } from "@zos/settings";
 import { bindBack, clear, logDevice, stack } from "../../../utils/chrome";
 import { t } from "../../../utils/text";
-import { analyzeTrack } from "../../../lib/analytics";
+import { analyzeTrack, latestSessionId } from "../../../lib/analytics";
 import { createJournal } from "../../../lib/journal";
 import { deviceAdapter } from "../../../utils/device_fs";
 
@@ -34,16 +34,29 @@ function paint() {
     ]);
     return;
   }
-  const report = analyzeTrack(loaded.entries);
+  const sessionId = latestSessionId(loaded.entries);
+  const report = analyzeTrack(loaded.entries, sessionId);
+  if (report.sessionScope !== "SESSION") {
+    stack(m, t("track", lang), [
+      { label: t("sessionRequired", lang), color: 0xc4a35a },
+      { label: t("notMatch", lang) },
+      { label: t("back", lang), name: "sens-back", action: () => back() },
+    ]);
+    return;
+  }
   const distance = Math.round(report.distanceMeters) + " m " + t("experimental", lang);
   const speed = report.maxSpeedReliable ? report.maxSpeedMps.toFixed(1) + " m/s " + t("experimental", lang) : t("noReliableSpeed", lang);
   const missing = t("gap", lang) + " " + report.gaps.length + " / " + Math.round(report.missingMs / 1000) + "s";
+  const samples = report.hrSampleRatio == null ? t("hrUnavailable", lang) : t("hrSamples", lang) + " " + report.hrValidSamples + "/" + report.hrSamples;
+  const time = report.hrTimeCoverage == null ? t("hrTimeUnmeasured", lang) : t("hrTime", lang) + " " + Math.round(report.hrTimeCoverage * 100) + "%";
   stack(m, t("track", lang), [
-    { label: distance, color: 0xc4a35a },
+    { label: t("session", lang) + " " + report.sessionId, color: 0xc4a35a },
+    { label: distance },
     { label: speed },
     { label: missing },
     { label: t("distanceUnresolved", lang) },
-    { label: "HR " + (report.hrCoverage == null ? t("hrUnavailable", lang) : Math.round(report.hrCoverage * 100) + "%") },
+    { label: samples },
+    { label: time },
     { label: t("notMatch", lang) },
     { label: t("back", lang), name: "sens-back", action: () => back() },
   ]);

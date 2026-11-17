@@ -24,4 +24,6 @@ Bip 6 QEMU guest, 17 Nov 2026, 20:22–20:25 Europe/Bucharest (simulator clock U
 
 `HARDWARE_EVIDENCE_PENDING`
 
+Physical install gate: `PHYSICAL_INSTALL_PENDING`. Preview without login opened a browser login page and did not print an install QR. Track analytics take an explicit `sessionId`. A 90-minute 1 Hz GNSS plus heart-rate session does not fit the journal (`enduranceReady: false`).
+
 Foreground GNSS is wired. Screen-off survival on a physical Bip 6 was not measured. App Service cannot supply background GNSS. A Workout Extension is not a Bip 6 plan until the device is on the published support list and a hardware session shows it.

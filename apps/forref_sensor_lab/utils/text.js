@@ -30,6 +30,11 @@ const EN = {
   corrupt: "JOURNAL UNVERIFIED",
   gnssUnavailable: "GNSS UNAVAILABLE",
   noReliableSpeed: "MAX SPEED UNAVAILABLE",
+  session: "SESSION",
+  hrSamples: "HR SAMPLES",
+  hrTime: "HR TIME",
+  hrTimeUnmeasured: "HR TIME UNMEASURED",
+  sessionRequired: "SESSION REQUIRED",
 };
 
 const RO = {
@@ -64,6 +69,11 @@ const RO = {
   corrupt: "JURNAL NEVERIFICAT",
   gnssUnavailable: "GNSS INDISPONIBIL",
   noReliableSpeed: "VITEZĂ MAX INDISPONIBILĂ",
+  session: "SESIUNE",
+  hrSamples: "EȘANTIOANE PULS",
+  hrTime: "TIMP PULS",
+  hrTimeUnmeasured: "TIMP PULS NEMĂSURAT",
+  sessionRequired: "SESIUNE NECESARĂ",
 };
 
 export function localeChoice(code) {

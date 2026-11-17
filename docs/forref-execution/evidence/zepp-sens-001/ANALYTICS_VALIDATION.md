@@ -14,6 +14,14 @@
 - `SCREEN_OFF_OR_PAUSE` is used only when a `DISPLAY_OFF` or `PAUSE` lifecycle sits between the GNSS samples. Otherwise the reason is `STALL`.
 - A reversed diagnostic clock is `RESTART_UNMEASURED` with `missingMs` null.
 
+## Session scope
+
+`analyzeTrack(entries, sessionId)` keeps rows whose `sessionId` equals the argument. GNSS from another session cannot add distance or speed. Omitting the id returns `sessionScope: "SESSION_REQUIRED"`, an empty acceptance list, and distance 0. The track, status, and heat pages pass `latestSessionId`, the last non-empty id in the journal.
+
+## Heart rate
+
+`hrSampleRatio` is valid samples divided by heart-rate samples in that session. Valid means a finite BPM from 30 through 230. `hrTimeCoverage` is covered milliseconds divided by the session span. A valid sample covers time only until the next valid sample, and only up to 5,000 ms. The last sample adds no invented hold. If the session has no positive elapsed span, `hrTimeCoverage` is null and the watch shows `HR TIME UNMEASURED`. The sample ratio is never printed as a percentage.
+
 ## Distance sensor
 
 `Distance` samples stay in `distanceSensorSamples`. Unit and attribution remain `UNRESOLVED`. `distanceSensorUsedInGnss` is false. A raw value of 9999 in the test is not added to the GNSS distance.
@@ -26,4 +34,4 @@ The synthetic test uses a pitch near latitude 0, longitude 0: southwest at the o
 
 ## Test run
 
-`npm test` in `apps/forref_sensor_lab`: 15 passed, 0 failed. The analytics file covers invalid and no-fix points, stationary drift, teleport, a 10-minute trace with a `DISPLAY_OFF` hole, an isolated spike, heart-rate coverage 0.5, the unused distance sensor, and the synthetic heat map including `NO_TRACK` and `NO_CALIBRATION`.
+`npm test` in `apps/forref_sensor_lab` covers invalid and no-fix points, stationary drift, teleport, a 10-minute trace with a `DISPLAY_OFF` hole, an isolated spike, a sample ratio of 0.5 with time coverage 0, a 10-minute span whose time coverage stays under 2% while the sample ratio is 1, separate session distances, the unused distance sensor, the 90-minute storage refusal, and the synthetic heat map including `NO_TRACK` and `NO_CALIBRATION`.

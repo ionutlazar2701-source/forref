@@ -2,6 +2,7 @@ import { back } from "@zos/router";
 import { getLanguage } from "@zos/settings";
 import { bindBack, clear, logDevice, stack } from "../../../utils/chrome";
 import { t } from "../../../utils/text";
+import { latestSessionId } from "../../../lib/analytics";
 import { createJournal } from "../../../lib/journal";
 import { deviceAdapter } from "../../../utils/device_fs";
 
@@ -30,9 +31,11 @@ function paint() {
     ]);
     return;
   }
-  const gnss = latest(loaded.entries, "GNSS");
-  const hr = latest(loaded.entries, "HR");
-  const battery = latest(loaded.entries, "GNSS");
+  const sessionId = latestSessionId(loaded.entries);
+  const session = loaded.entries.filter((entry) => entry.sessionId === sessionId);
+  const gnss = latest(session, "GNSS");
+  const hr = latest(session, "HR");
+  const battery = latest(session, "GNSS");
   const gnssLine = !gnss ? t("noSamples", lang) : (gnss.gpsStatus === "A" ? t("fix", lang) : t("noFix", lang));
   const hrLine = hr && hr.hrBpm != null ? t("hrPresent", lang) + " " + hr.hrBpm : t("hrUnavailable", lang);
   const batteryLine = battery && battery.batteryPercent != null ? "BAT " + battery.batteryPercent + "%" : t("batteryUnavailable", lang);

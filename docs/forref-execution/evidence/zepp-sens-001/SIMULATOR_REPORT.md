@@ -16,6 +16,10 @@ Heat (`guest/heat.png`): `NO FIELD CALIBRATION`, `NOT A MATCH RECORD`, `EXPERIME
 
 Opening Status destroyed home and logged `LIFECYCLE APP_EXIT`. GNSS lines stopped at that boundary. That is in-app navigation, not screen-off and not power loss.
 
+## Session-scoped track
+
+After the session-scope change, the same Bip 6 guest refreshed and `TRACK` showed `SESSION LAB-0001`, an experimental meter line, `MAX SPEED UNAVAILABLE`, `GAP 0 / 0s`, `DISTANCE UNIT UNRESOLVED`, `HR UNAVAILABLE`, `HR TIME 0%`, and `NOT A MATCH RECORD` (`guest/track-session.png`). The 0% is time coverage for a session span with no valid heart-rate sample. It is not a sample-ratio percentage. The screen has no coordinate.
+
 ## What the guest did not show
 
 - No physical screen-off interval. That observation is **BLOCKED**.

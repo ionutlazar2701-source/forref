@@ -5,6 +5,7 @@ export const NAMESPACE = "forref_sens_001";
 export const JOURNAL_FILE = "forref_sens_001.journal";
 export const MAX_ENTRIES = 4096;
 export const MAX_BYTES = 1048576;
+export const REFEREE_SESSION_MS = 90 * 60 * 1000;
 
 export function fnv1a(text) {
   let hash = 0x811c9dc5;
@@ -220,6 +221,55 @@ export function createJournal(adapter, limits) {
   }
 
   return { fileName: JOURNAL_FILE, read: snapshot, append: append, clear: clear, nextSessionId: nextSessionId };
+}
+
+function budgetRecord(kind) {
+  return {
+    kind: kind,
+    sessionId: "LAB-0001",
+    gpsStatus: kind === "GNSS" ? "A" : "",
+    lat: kind === "GNSS" ? 0 : null,
+    lon: kind === "GNSS" ? 0 : null,
+    hrBpm: kind === "HR" ? 120 : null,
+    diagnosticElapsedMs: REFEREE_SESSION_MS,
+    diagnosticUtcMs: 0,
+    batteryPercent: kind === "GNSS" ? 50 : null,
+    satellites: kind === "GNSS" ? 12 : null,
+    signal: kind === "GNSS" ? 30 : null,
+    source: "DEVICE_APP",
+    flags: [],
+  };
+}
+
+export function refereeStorageLimit() {
+  const header = headerLine().length;
+  const gnssLineBytes = entryLine(normalizeRecord(budgetRecord("GNSS"), MAX_ENTRIES)).length;
+  const hrLineBytes = entryLine(normalizeRecord(budgetRecord("HR"), MAX_ENTRIES)).length;
+  const pairBytes = gnssLineBytes + hrLineBytes;
+  const pairsByEntries = Math.floor(MAX_ENTRIES / 2);
+  const pairsByBytes = Math.floor((MAX_BYTES - header) / pairBytes);
+  const practicalPairs = Math.min(pairsByEntries, pairsByBytes);
+  const sessionSeconds = REFEREE_SESSION_MS / 1000;
+  const entriesRequired = sessionSeconds * 2;
+  const bytesRequired = header + pairBytes * sessionSeconds;
+  return {
+    enduranceReady: false,
+    assumedHz: { gnss: 1, hr: 1 },
+    sessionSeconds: sessionSeconds,
+    entriesRequired: entriesRequired,
+    bytesRequired: bytesRequired,
+    gnssLineBytes: gnssLineBytes,
+    hrLineBytes: hrLineBytes,
+    pairBytes: pairBytes,
+    maxEntries: MAX_ENTRIES,
+    maxBytes: MAX_BYTES,
+    pairsByEntries: pairsByEntries,
+    pairsByBytes: pairsByBytes,
+    practicalPairs: practicalPairs,
+    practicalSeconds: practicalPairs,
+    limitingFactor: pairsByBytes < pairsByEntries ? "BYTES" : "ENTRIES",
+    fitsNinetyMinutes: entriesRequired <= MAX_ENTRIES && bytesRequired <= MAX_BYTES,
+  };
 }
 
 export function memoryAdapter() {
