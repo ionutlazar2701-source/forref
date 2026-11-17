@@ -1,0 +1,10 @@
+{
+  "name": "forref-sensor-lab",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/journal.test.js test/analytics.test.js test/host.test.js test/layout.test.js test/privacy.test.js"
+  },
+  "license": "ISC"
+}
