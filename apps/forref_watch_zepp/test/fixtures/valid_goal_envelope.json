@@ -1,0 +1,18 @@
+{
+  "admissionState": "VALID_STRUCTURED_CANDIDATE",
+  "candidateId": "SIM_INTENT_GOAL",
+  "candidateSchemaVersion": 1,
+  "canonicalCandidatePayload": {
+    "kind": "GOAL",
+    "matchTeamId": "SIM_TEAM_HOME"
+  },
+  "captureIntentId": "SIM_INTENT_GOAL",
+  "checksum": "e33f0088",
+  "createdUtcDiagnosticOnly": null,
+  "identityTrust": "VERIFIED_FIXTURE",
+  "kind": "GOAL",
+  "localOriginDeviceId": "SIM_DEVICE_001",
+  "localSequence": 1,
+  "matchId": "SIM_MATCH_001",
+  "serializedLength": 45
+}

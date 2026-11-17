@@ -105,6 +105,21 @@ const EN = {
   localeOs: "TEST ONLY: OS",
   localeRo: "TEST ONLY: RO",
   localeEn: "TEST ONLY: EN",
+  captureTest: "CAPTURE TEST",
+  newCapture: "NEW CAPTURE",
+  viewLocal: "VIEW LOCAL",
+  simFixtureOff: "SIM FIXTURE OFF",
+  simFixtureOn: "SIM FIXTURE ON",
+  localCandidate: "LOCAL CANDIDATE",
+  notMatchRecord: "NOT A MATCH RECORD",
+  candidateRecovered: "LOCAL CANDIDATE RECOVERED — D1 UNVERIFIED",
+  candidateIncomplete: "INCOMPLETE — NOT A MATCH RECORD",
+  captureFailed: "CAPTURE FAILED / JOURNAL UNVERIFIED",
+    candidateConflict: "CONFLICT — NOT A MATCH RECORD",
+    reconcileRequired: "RECONCILE — NOT A MATCH RECORD",
+    boundCandidate: "BOUND LOCAL CANDIDATE",
+  candidateNone: "NO LOCAL CANDIDATE",
+  reviewCapture: "BACK TO REVIEW",
 };
 
 const RO = {
@@ -211,6 +226,21 @@ const RO = {
   localeOs: "TEST ONLY: OS",
   localeRo: "TEST ONLY: RO",
   localeEn: "TEST ONLY: EN",
+  captureTest: "CAPTEAZĂ TEST",
+  newCapture: "CAPTURA NOUĂ",
+  viewLocal: "VEZI LOCAL",
+  simFixtureOff: "FIXTURĂ SIM OPRITĂ",
+  simFixtureOn: "FIXTURĂ SIM PORNITĂ",
+  localCandidate: "CANDIDAT LOCAL",
+  notMatchRecord: "NU E RECORD DE MECI",
+  candidateRecovered: "CANDIDAT LOCAL RECUPERAT — D1 NEVERIFICAT",
+  candidateIncomplete: "INCOMPLET — NU E RECORD DE MECI",
+  captureFailed: "CAPTURĂ EȘUATĂ / JURNAL NEVERIFICAT",
+    candidateConflict: "CONFLICT — NU E RECORD DE MECI",
+    reconcileRequired: "RECONCILIERE — NU E RECORD DE MECI",
+    boundCandidate: "CANDIDAT LOCAL LEGAT",
+  candidateNone: "FĂRĂ CANDIDAT LOCAL",
+  reviewCapture: "ÎNAPOI LA VERIFICARE",
 };
 
 export function language() {

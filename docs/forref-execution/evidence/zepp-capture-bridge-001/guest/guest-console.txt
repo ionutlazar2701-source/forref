@@ -1,0 +1,662 @@
+[FIRMWARE_SIMULATOR] simulator opening...
+[FIRMWARE_SIMULATOR] ./qemu_linux/qemu-system-arm: error while loading shared libraries: libaio.so.1: cannot open shared object file: No such file or directory
+[FIRMWARE_SIMULATOR] simulator opening...
+[FIRMWARE_SIMULATOR] ./qemu_linux/qemu-system-arm: error while loading shared libraries: libaio.so.1: cannot open shared object file: No such file or directory
+[FIRMWARE_SIMULATOR] simulator opening...
+22:12:04.616 > current filepath: /app.js
+22:12:04.640 > FORREF_APP onCreate epoch=e1794867124640
+22:12:04.640 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+22:12:04.640 > FORREF_CAPTURE_BOOT namespace=forref_capture_bridge_001 schema=1 d1=UNCERTIF
+22:12:04.705 > current filepath: /page/gt/home/index.page.js
+22:12:04.737 > FORREF_PAGE home language=2
+22:12:04.741 > FORREF_DEVICE page=home width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:12:04.742 > FORREF_LOCALE page=home code=2 lang=en-US reason=os
+22:12:04.762 > FORREF_HIT name=stack-2 x=8 y=226 w=374 h=56 fit=1
+22:12:04.766 > FORREF_HIT name=stack-3 x=8 y=288 w=374 h=56 fit=1
+22:12:04.769 > FORREF_HIT name=stack-4 x=8 y=350 w=374 h=56 fit=1
+22:16:27.704 > current filepath: /page/gt/select/index.page.js
+22:16:27.746 > FORREF_DEVICE page=select width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:16:27.747 > FORREF_LOCALE page=select code=2 lang=en-US reason=os
+22:16:27.760 > FORREF_HIT name=stack-1 x=8 y=164 w=374 h=56 fit=1
+22:16:27.764 > FORREF_HIT name=stack-2 x=8 y=226 w=374 h=56 fit=1
+22:16:52.442 > current filepath: /page/gt/hub/index.page.js
+22:16:52.478 > FORREF_DEVICE page=hub width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:16:52.479 > FORREF_LOCALE page=hub code=2 lang=en-US reason=os
+22:16:52.513 > FORREF_HIT name=stack-1 x=8 y=160 w=374 h=52 fit=1
+22:16:52.516 > FORREF_HIT name=stack-2 x=8 y=218 w=374 h=52 fit=1
+22:16:52.519 > FORREF_HIT name=stack-3 x=8 y=276 w=374 h=52 fit=
+22:16:52.523 > FORREF_HIT name=stack-4 x=8 y=334 w=374 h=52 fit=1
+22:16:52.527 > FORREF_HIT name=stack-5 x=8 y=392 w=374 h=52 fit=1
+22:17:28.667 > current filepath: /page/gt/ready/index.page.js
+22:17:28.704 > FORREF_DEVICE page=ready width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:17:28.707 > FORREF_LOCALE page=ready code=2 lang=en-US reason=os
+22:17:28.724 > FORREF_HIT name=stack-2 x=8 y=226 w=374 h=56 fit=1
+22:17:28.727 > FORREF_HIT name=stack-3 x=8 y=288 w=374 h=56 fit=1
+22:19:06.425 > current filepath: /page/gt/live/index.page.js
+22:19:06.476 > FORREF_PAGE live onInit
+22:19:06.477
+22:19:06.483 > FORREF_DEVICE page=live width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=
+22:19:06.484 > FORREF_LOCALE page=live code=2 lang=en-US reason=os
+22:19:06.486 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+22:19:06.488 > FORREF_CLOCK001 SRC|1794867546487!
+22:19:06.489 > FORREF_CLOCK001 LOAD|RDY>RDY|1794867546487|00:00|FROZEN_OBSERVED!
+22:19:06.504 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+22:19:06.509 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+22:19:06.514 > FORREF_HIT name=live-KICK_OFF x=10 y=392 w=181 h=46 fit=1
+22:19:06.517 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+22:19:06.520 > FORREF_LIVE002 VIEW|A|READY|00:00|FROZEN_OBSERVED!
+22:19:06.522 > FORREF_LIVE002 TIMER|createTimer!
+22:19:06.523 > js_screen_a
+22:19:35.350 > FORREF_LIVE002 NAV team=HOME mode=A!
+22:19:35.352 > FORREF_LIVE002 ARM|disarm|navigate|open!
+22:19:35.353 > js_app_goto_page entry
+22:19:35.387 > FORREF_LIVE002 ARM|disarm|exit|open!
+22:19:35.388 > FORREF_LIVE002 TIMER|stop!
+22:19:35.404 > FORREF_CLOCK001 PERSIST|READBACK_ONLY_NOT_D1!
+22:19:35.413 > FORREF_PAGE live onDestroy
+22:19:35.488 > current filepath: /page/gt/event/index.page.js
+22:19:35.525 > FORREF_LIFE event onInit team=HOME
+22:19:35.529 > FORREF_DEVICE page=event width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:19:35.530 > FORREF_LOCALE page=event code=2 lang=en-US reason=os
+22:19:35.539 > FORREF_HIT name=event-yellow x=73 y=92 w=118 h=118 fit=1
+22:19:35.543 > FORREF_HIT name=event-red x=199 y=92 w=118 h=118 fit=1
+22:19:35.548 > FORREF_HIT name=event-goal x=73 y=218 w=118 h=118 fit=1
+22:19:35.553 > FORREF_HIT name=event-sub x=199 y=218 w=118 h=118 fit=1
+22:19:35.556 > FORREF_HIT name=event-back x=12 y=346 w=366 h=42 fit=1
+22:21:54.821 > current filepath: /page/gt/live/index.page.js
+22:21:54.865 > FORREF_PAGE live onInit
+22:21:54.869 > FORREF_DEVICE page=live width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:21:54.870 > FORREF_LOCALE page=live code=2 lang=en-US reason=os
+22:21:54.871 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+22:21:54.872 > FORREF_CLOCK001 SRC|1794867714872!
+22:21:54.884 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+22:21:54.888 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+22:21:54.892 > FORREF_HIT name=live-KICK_OFF x=10 y=392 w=181 h=46 fit=1
+22:21:54.896 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+22:21:54.899 > FORREF_LIVE002 VIEW|A|READY|00:00|FROZEN_OBSERVED!
+22:21:54.900 > FORREF_LIVE002 TIMER|createTimer!
+22:21:54.900 > perf_update buildT
+22:22:24.463 > FORREF_CLOCK001 APPLIED|RDY>H1R|1794867744457|00:00|OBSERVED_UNVERIFIED!
+22:22:24.501 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+22:22:24.505 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+22:22:24.513 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+22:22:24.516 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:00|OBSERVED_UNVERIFIED!
+22:22:26.095 > FORREF_LIVE002 VIEW|A|FIRS
+22:22:27.432 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:02|OBSERVED_UNVERIFIED!
+22:22:29.240 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:04|OBSERVED_UNVERIFIED!
+22:22:30.786 > I/quickjs-libc SBEng
+22:22:32.147 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:07|OBSERVED_UNVERIFIED!
+22:22:33.614 > FORREF_LIVE002 VIEW|A|FI
+22:22:34.843 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:10|OBSERVED_UNVERIFIED!
+22:22:36.058 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:11|OBSERVED_UNVERIFIED!
+22:22:37.612 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:13|OBSERVED_UNVERIFIED!
+22:22:39.177 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:14|OBSERVED_UNVERIFIED!
+22:22:40.530 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:16|OBSERVED_UNVERIFIED!
+22:22:41.623 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:17|OBSERVED_UNVERIFIED!
+22:22:42.752 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:18|OBSERVED_UNVERIFIED!
+22:22:43.841 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:19|OBSERVED_UNVERIFIED!
+22:22:45.428 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:20|OBSERVED_UNVERIFIED!
+22:22:46.980 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:22|OBSERVED_UNVERIFIED!
+22:22:48.502 > I/quickjs-libc SBEng
+22:22:50.163 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:25|OBSERVED_UNVERIFIED!
+22:22:51.740 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:27|OBSERVED_UNVERIFIED!
+22:22:52.946 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:28|OBSERVED_UNVERIFIED!
+22:22:54.552 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:30|OBSERVED_UNVERIFIED!
+22:22:56.220 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:31|OBSERVED_UNVERIFIED!
+22:22:57.630 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:33|OBSERVED_UNVERIFIED!
+22:22:59.079 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:34|OBSERVED_UNVERIFIED!
+22:23:00.329 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:35|OBSERVED_UNVERIFIED!
+22:23:01.668 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:37|OBSERVED_UNVERIFIED!
+22:23:03.214 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:38|OBSERVED_UNVERIFIED!
+22:23:04.558 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:40|OBSERVED_UNVERIFIED!
+22:23:05.790 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:41|OBSERVED_UNVERIFIED!
+22:23:07.124 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:42|OBSERVED_UNVERIFIED!
+22:23:08.702 > FORREF_LIVE
+22:23:10.123 > FORREF_LIVE002 VIEW|A|
+22:23:11.467 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:46|OBSERVED_UNVERIFIED!
+22:23:13.042 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:48|OBSERVED_UNVERIFIED!
+22:23:14.401 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:49|OBSERVED_UNVERIFIED!
+22:23:15.776 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:51|OBSERVED_UNVERIFIED!
+22:23:17.476 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:52|OBSERVED_UNVERIFIED!
+22:23:19.362 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:54|OBSERVED_UNVERIFIED!
+22:23:20.833 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:56|OBSERVED_UNVERIFIED!
+22:23:21.160 > FORREF_LIVE002 NAV team=HOME mode=A!
+22:23:21.160 > FORREF_LIVE002 ARM|disarm|navigate|open!
+22:23:21.187 > FORREF_LIVE002 ARM|disarm|exit|open!
+22:23:21.188 > FORREF_LIVE002 TIMER|stop!
+22:23:21.211 > FORREF_PAGE live onDestroy
+22:23:21.274 > current filepath: /page/gt/event/index.page.js
+22:23:21.308 > FORREF_LIFE event onInit team=HOME
+22:23:21.312 > FORREF_DEVICE page=event width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:23:21.314 > FORREF_LOCALE page=event code=2 lang=en-US reason=os
+22:23:21.324 > FORREF_HIT name=event-yellow x=73 y=92 w=118 h=118 fit=1
+22:23:21.330 > FORREF_HIT name=event-red x=199 y=92 w=118 h=118 fit=1
+22:23:21.334 > FORREF_HIT name=event-goal x=73 y=218 w=118 h=118 fit=1
+22:23:21.338 > FORREF_HIT name=event-sub x=199 y=218 w=118 h=118 fit=1
+22:23:21.342 > FORREF_HIT name=event-back x=12 y=346 w=366 h=42 fit=1
+22:23:34.020 > FORREF_CONTEXT team=HOME event=YELLOW player=
+22:23:34.044 > FORREF_LIFE event onDestroy
+22:23:34.109 > current filepath: /page/gt/player/index.page.js
+22:23:34.146 > FORREF_DEVICE page=player width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:23:34.148 > FORREF_LOCALE page=player code=2 lang=en-US reason=os
+22:23:34.163 > FORREF_HIT name=stack-1 x=8 y=164 w=374 h=56 fit=1
+22:23:34.167 > FORREF_HIT name=stack-2 x=8 y=226 w=374 h=56 fit=1
+22:23:34.170 > FORREF_HIT name=stack-3 x=8 y=288 w=374 h=56 fit=1
+22:23:34.173 > FORREF_HIT name=stack-4 x=8 y=350 w=374 h=56 fit=1
+22:24:50.499 > FORREF_DEVICE page=review width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:24:50.501 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+22:24:50.507 > FORREF_CONTEXT team=HOME event=YELLOW player=PLAYER 9
+22:24:50.588 > FORREF_HIT name=review-fixture x=8 y=202 w=374 h=44 fit=1
+22:24:50.591 > FORREF_HIT name=review-capture x=8 y=252 w=374 h=44 fit=1
+22:24:50.594 > FORREF_HIT name=review-new x=8 y=302 w=374 h=44 fit=1
+22:24:50.597 > FORREF_HIT name=review-view x=8 y=352 w=374 h=44 fit=1
+22:24:50.601 > FORREF_HIT name=review-back x=8 y=402 w=374 h=44 fit=1
+22:25:45.162 > FORREF_CAPTURE seq=1 id=CB1-UNPROVISIONED_DEVICE-0001 admission=INCOMPLETE_IDENTITY evidence=READBACK_MATCHED reason= duplicate=0 d1=UNCERTIFIED
+22:25:45.166 > FORREF_DEVICE page=review width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:25:45.168 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+22:25:45.225 > FORREF_CONTEXT team=HOME event=YELLOW player=PLAYER 9
+22:25:45.298 > FORREF_HIT name=review-fixture x=8 y=202 w=374 h=44 fit=1
+22:25:45.304 > FORREF_HIT name=review-capture x=8 y=252 w=374 h=44 fit=1
+22:25:45.307 > FORREF_HIT name=review-new x=8 y=302 w=374 h=44 fit=1
+22:25:45.310 > FORREF_HIT name=review-view x=8 y=352 w=374 h=44 fit=1
+22:25:45.313 > FORREF_HIT name=review-back x=8 y=402 w=374 h=44 fit=1
+22:26:32.287 > amQueryPermission
+22:26:32.294 > FORREF_DEVICE page=review width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:26:32.296 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+22:26:32.360 > FORREF_CONTEXT team=HOME event=YELLOW player=PLAYER 9
+22:26:32.435 > FORREF_HIT name=review-fixture x=8 y=202 w=374 h=44 fit=1
+22:26:32.438 > FORREF_HIT name=review-capture x=8 y=252 w=374 h=44 fit=1
+22:26:32.441 > FORREF_HIT name=review-new x=8 y=302 w=374 h=44 fit=1
+22:26:32.444 > FORREF_HIT name=review-view x=8 y=352 w=374 h=44 fit=1
+22:26:32.447 > FORREF_HIT name=review-back x=8 y=402 w=374 h=44 fit=1
+22:27:16.242 > FORREF_CAPTURE seq=2 id=CB1-UNPROVISIONED_DEVICE-0002 admission=INCOMPLETE_IDENTITY evidence=READBACK_MATCHED reason= duplicate=0 d1=UNCERTIFIED
+22:27:16.246 > FORREF_DEVICE page=review width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:27:16.247 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+22:27:16.351 > FORREF_CONTEXT team=HOME event=YELLOW player=PLAYER 9
+22:27:16.424 > FORREF_HIT name=review-fixture x=8 y=202 w=374 h=44 fit=1
+22:27:16.427 > FORREF_HIT name=review-capture x=8 y=252 w=374 h=44 fit=1
+22:27:16.430 > FORREF_HIT name=review-new x=8 y=302 w=374 h=44 fit=1
+22:27:16.433 > FORREF_HIT name=review-view x=8 y=352 w=374 h=44 fit=1
+22:27:16.439 > FORREF_HIT name=review-back x=8 y=402 w=374 h=44 fit=1
+22:28:09.344 > FORREF_CAPTURE seq=2 id=CB1-UNPROVISIONED_DEVICE-0002 admission=INCOMPLETE_IDENTITY evidence=READBACK_MATCHED reason=IDEMPOTENT duplicate=1 d1=UNCERTIFIED
+22:28:09.348 > FORREF_DEVICE page=review width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:28:09.350 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+22:28:09.448 > FORREF_CONTEXT team=HOME event=YELLOW player=PLAYER 9
+22:28:09.525 > I/quickjs-libc SBEn
+22:28:09.528 > FORREF_HIT name=review-capture x=8 y=252 w=374 h=44 fit=1
+22:28:09.531 > FORREF_HIT name=review-new x=8 y=302 w=374 h=44 fit=1
+22:28:09.534 > FORREF_HIT name=review-view x=8 y=352 w=374 h=44 fit=1
+22:28:09.539 > FORREF_HIT name=review-back x=8 y=402 w=374 h=44 fit=1
+22:29:02.777 > current filepath: /page/gt/player/index.page.js
+22:29:02.814 > FORREF_DEVICE page=player width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=
+22:29:02.815 > FORREF_LOCALE page=player code=2 lang=en-US reason=os
+22:29:02.830 > FORREF_HIT name=stack-1 x=8 y=164 w=374 h=56 fit=1
+22:29:02.833 > FORREF_HIT name=stack-2 x=8 y=226 w=374 h=56 fit=1
+22:29:02.837 > FORREF_HIT name=stack-3 x=8 y=288 w=374 h=56 fit=1
+22:29:02.840 > FORREF_HIT name=stack-4 x=8 y=350 w=374 h=56 fit=1
+22:29:17.089 > current filepath: /page/gt/event/index.page.js
+22:29:17.123 > FORREF_LIFE event onInit team=HOME
+22:29:17.129 > FORREF_LOCALE page=event code=2 lang=en-US reason=os
+22:29:17.139 > FORREF_HIT name=event-yellow x=73 y=92 w=118 h=118 fit=1
+22:29:17.143 > FORREF_HIT name=event-red x=199 y=92 w=118 h=118 fit=
+22:29:17.147 > FORREF_HIT name=event-goal x=73 y=218 w=118 h=118 fit=1
+22:29:17.152 > FORREF_HIT name=event-sub x=199 y=218 w=118 h=118 fit=1
+22:29:17.157 > FORREF_HIT name=event-back x=12 y=346 w=366 h=42 fit=1
+22:29:25.386 > FORREF_CONTEXT team=HOME event=GOAL player=
+22:29:25.387 > js_app_goto_page entry
+22:29:25.387 > js_app_goto_page flag: 00000000
+22:29:25.412 > FORREF_LIFE event onDestroy
+22:29:25.475 > current filepath: /page/gt/player/index.page.js
+22:29:25.511 > FORREF_DEVICE page=player width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:29:25.512 > FORREF_LOCALE page=player code=2 lang=en-US reason=os
+22:29:25.528 > FORREF_HIT name=stack-1 x=8 y=164 w=374 h=56 fit=1
+22:29:25.531 > FORREF_HIT name=stack-2 x=8 y=226 w=374 h=56 fit=1
+22:29:25.534 > FORREF_HIT name=stack-3 x=8 y=288 w=374 h=56 fit=1
+22:29:25.538 > FORREF_HIT name=stack-4 x=8 y=350 w=374 h=56 fit=1
+22:29:39.026 > FORREF_DEVICE page=review width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:29:39.029 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+22:29:39.141 > FORREF_CONTEXT team=HOME event=GOAL player=PLAYER 9
+22:29:39.142 > FORREF_CAPTURE evidence=RECREATION_RECOVERED count=2 id=CB1-UNPROVISIONED_DEVICE-0001,CB1-UNPROVISIONED_DEVICE-0002 d1=UNCERTIFIED
+22:29:39.226 > FORREF_HIT name=review-fixture x=8 y=202 w=374 h=44 fit=1
+22:29:39.231 > FORREF_HIT name=review-capture x=8 y=252 w=374 h=44 fit=1
+22:29:39.234 > FORREF_HIT name=review-new x=8 y=302 w=374 h=44 fit=1
+22:29:39.236 > FORREF_HIT name=review-view x=8 y=352 w=374 h=44 fit=1
+22:29:39.240 > FORREF_HIT name=review-back x=8 y=402 w=374 h=44 fit=1
+22:30:03.835 > FORREF_CAPTURE fixture=SIM
+22:30:03.838 > FORREF_DEVICE page=review width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:30:03.941 > FORREF_CONTEXT team=HOME event=GOAL player=PLAYER 9
+22:30:04.016 > FORREF_HIT name=review-fixture x=8 y=202 w=374 h=44 fit=1
+22:30:04.019 > FORREF_HIT name=review-capture x=8 y=252 w=374 h=44 fit=1
+22:30:04.021 > FORREF_HIT name=review-new x=8 y=302 w=374 h=44 fit=1
+22:30:04.027 > FORREF_HIT name=review-view x=8 y=352 w=374 h=44 fit=1
+22:30:04.030 > FORREF_HIT name=review-back x=8 y=402 w=374 h=44 fit=1
+22:30:38.321 > FORREF_CAPTURE seq=3 id=CB1-SIM_DEVICE_001-0003 admission=VALID_STRUCTURED_CANDIDATE evidence=READBACK_MATCHED reason= duplicate=0 d1=UNCERTIFIED
+22:30:38.326 > FORREF_DEVICE page=review width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:30:38.327 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+22:30:38.331 > sim_get_config_path: con
+22:30:38.479 > FORREF_CONTEXT team=HOME event=GOAL player=PLAYER
+22:30:38.556 > FORREF_HIT name=review-fixture x=8 y=202 w=374 h=44 fit=1
+22:30:38.562 > FORREF_HIT name=review-capture x=8 y=252 w=374 h=44 fit=1
+22:30:38.565 > FORREF_HIT name=review-new x=8 y=302 w=374 h=44 fit=1
+22:30:38.568 > FORREF_HIT name=review-view x=8 y=352 w=374 h=44 fit=1
+22:30:38.574 > FORREF_HIT name=review-back x=8 y=402 w=374 h=44 fit=1
+22:31:07.805 > FORREF_DEVICE page=review width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:31:07.806 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+22:31:07.956 > FORREF_CONTEXT team=HOME event=GOAL player=PLAYER 9
+22:31:08.000 > FORREF_HIT name=review-return x=8 y=334 w=374 h=52 fit=1
+22:31:08.003 > FORREF_HIT name=review-back x=8 y=392 w=374 h=52 fit=1
+22:32:49.716 > current filepath: /page/gt/player/index.page.js
+22:32:49.753 > FORREF_DEVICE page=player width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:32:49.754 > FORREF_LOCALE page=player code=2 lang=en-US reason=os
+22:32:49.770 > FORREF_HIT name=stack-1 x=8 y=164 w=374 h=56 fit=1
+22:32:49.774 > FORREF_HIT name=stack-2 x=8 y=226 w=374 h=56 fit=1
+22:32:49.779 > FORREF_HIT name=stack-3 x=8 y=288 w=374 h=56 fit=1
+22:32:49.783 > FORREF_HIT name=stack-4 x=8 y=350 w=374 h=56 fit=1
+22:33:13.194 > current filepath: /page/gt/event/index.page.js
+22:33:13.228 > FORREF_LIFE event onInit team=HOME
+22:33:13.232 > FORREF_DEVICE page=event width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:33:13.234 > FORREF_LOCALE page=event code=2 lang=en-US reason=os
+22:33:13.243 > FORREF_HIT name=event-yellow x=73 y=92 w=118 h=118 fit=1
+22:33:13.248 > FORREF_HIT name=event-red x=199 y=92 w=118 h=118 fit=1
+22:33:13.252 > FORREF_HIT name=event-goal x=73 y=218 w=118 h=118 fit=1
+22:33:13.256 > FORREF_HIT name=event-sub x=199 y=218 w=118 h=118 fit=1
+22:33:13.261 > FORREF_HIT name=event-back x=12 y=346 w=366 h=42 fit=1
+22:33:29.270 > FORREF_LIFE event onDestroy
+22:33:29.495 > FORREF_PAGE live onInit
+22:33:29.501 > FORREF_DEVICE page=live width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:33:29.502 > FORREF_LOCALE page=live code=2 lang=en-US reason=os
+22:33:29.503 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+22:33:29.504 > FORREF_CLOCK001 SRC|1794868409504!
+22:33:29.532 > FORREF_CLOCK001 UNVERIFIED|H1R>H1R|1794868409504|UNVERIFIED|TIME_UNVERIFIED!
+22:33:29.550 > I/quic
+22:33:29.557 > FORREF_HIT name=live-CONTINUE_FROM_LAST x=10 y=392 w=181 h=46 fit=1
+22:33:29.561 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+22:33:29.565 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|——:——|UNVERIFIED!
+22:33:29.565 > FORREF_LIVE002 TIMER|createTimer!
+[FIRMWARE_SIMULATOR] simulator closing...
+[FIRMWARE_SIMULATOR] ./start_qemu.sh: line 125: 31281 Killed                  ./$qemu_bin -M mps2-an521 -semihosting -drive file="$storage",bus=0,unit=0,format=raw -kernel "$firmware" $opt_network $opt_display -name "$name" -serial stdio
+[FIRMWARE_SIMULATOR] simulator opening...
+22:40:52.213 > current filepath: /app.js
+22:40:52.237 > FORREF_APP onCreate epoch=e
+22:40:52.237 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+22:40:52.237 > FORREF_CAPTURE_BOOT namespace=forref_capture_bridge_001 schema=1 d1=UNCERTIFIED
+22:40:52.304 > current filepath: /page/gt/home/index.page.js
+22:40:52.335 > FORREF_PAGE home language=2
+22:40:52.344 > FORREF_DEVICE page=home width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:40:52.345 > FORREF_LOCALE page=home code=2 lang=en-US reason=os
+22:40:52.363 > FORREF_HIT name=stack-2 x=8 y=226 w=374 h=56 fit=1
+22:40:52.368 > FORREF_HIT name=stack-3 x=8 y=288 w=374 h=56 fit=1
+22:40:52.371 > FORREF_HIT name=stack-4 x=8 y=350 w=374 h=56 fit=1
+22:41:38.172 > current filepath: /page/gt/select/index.page.js
+22:41:38.230 > FORREF_DEVICE page=select width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:41:38.248 > FORREF_HIT name=stack-1 x=8 y=164 w=374 h=56 fit=1
+22:41:38.252 > FORREF_HIT name=stack-2 x=8 y=226 w=374 h=56 fit=1
+22:41:39.173 > current filepath: /page/gt/hub/index.page.js
+22:41:39.209 > FORREF_DEVICE page=hub width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:41:39.210 > FORREF_LOCALE page=hub code=2 lang=en-US reason=os
+22:41:39.242 > FORREF_HIT name=stack-1 x=8 y=160 w=374 h=52 fit=1
+22:41:39.245 > FORREF_HIT name=stack-2 x=8 y=218 w=374 h=52 fit=1
+22:41:39.249 > FORREF_HIT name=stack-3 x=8 y=276 w=374 h=52 fit=1
+22:41:39.251 > FORREF_HIT name=stack-4 x=8 y=334 w=374 h=52 fit=1
+22:41:39.254 > FORREF_HIT name=stack-5 x=8 y=392 w=374 h=52 fit=1
+22:41:40.220 > current filepath: /page/gt/ready/index.page.js
+22:41:40.253 > FORREF_DEVICE page=ready width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:41:40.255 > FORREF_LOCALE page=ready code=2 lang=en-US reason=os
+22:41:40.269 > I/quickjs-libc SBEngine
+22:41:40.273 > FORREF_HIT name=stack-3 x=8 y=288 w=374 h=56 fit=1
+22:41:41.401 > current filepath: /page/gt/live/index.page.js
+22:41:41.449 > FORREF_PAGE live onInit
+22:41:41.454 > FORREF_LOCALE page=live code=2 lang=en-US reason=os
+22:41:41.456 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+22:41:41.480 > FORREF_CLOCK001 SRC|1794868901479!
+22:41:41.481 > FORREF_CLOCK001 LOAD|H1R>H1R|1794868901479|UNVERIFIED|TIME_UNVERIFIED!
+22:41:41.499 > FORREF_HIT name=live-home x=10 y=196 w=181 h=108 fit=1
+22:41:41.503 > FORREF_HIT name=live-away x=199 y=196 w=181 h=108 fit=1
+22:41:41.507 > FORREF_HIT name=live-CONTINUE_FROM_LAST x=10 y=392 w=181 h=46 fit=1
+22:41:41.512 > FORREF_HIT name=live-controls x=199 y=392 w=181 h=46 fit=1
+22:41:41.516 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|——:���—|UNVERIFIED!
+22:42:08.544 > FORREF_LIVE002 NAV team=HOME mode=A!
+22:42:08.545 > FORREF_LIVE002 ARM|disarm|navigate|open!
+22:42:08.546 > js_app_goto_page entry
+22:42:08.546 > js_app_goto_page flag: 00000000
+22:42:08.577 > FORREF_LIVE002 ARM|disarm|exit|open!:42:08.580 I/quickjs-libc SBEngine: FORREF_LIVE002 TIMER|stop!
+22:42:08.603 > FORREF_CLOCK001 PERSIST|READBACK_ONLY_NOT_D1!
+22:42:08.606 > FORREF_PAGE live onDestroy
+22:42:08.684 > current filepath: /page/gt/event/index.page.js
+22:42:08.720 > FORREF_LIFE event onInit team=HOME
+22:42:08.723 > FORREF_DEVICE page=event width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:42:08.724 > FORREF_LOCALE page=event code=2 lang=en-US reason=os
+22:42:08.735 > FORREF_HIT name=event-yellow x=73 y=92 w=118 h=118 fit=1
+22:42:08.739 > FORREF_HIT name=event-red x=199 y=92 w=118 h=118 fit=1
+22:42:08.744 > FORREF_HIT name=event-goal x=73 y=218 w=118 h=118 fit=1
+22:42:08.748 > FORREF_HIT name=event-sub x=199 y=218 w=118 h=118 fit=1
+22:42:08.752 > FORREF_HIT name=event-back x=12 y=346 w=366 h=42 fit=1
+22:42:09.585 > FORREF_CONTEXT team=HOME event=GOAL player=
+22:42:09.609 > FORREF_LIFE event onDestroy
+22:42:09.711 > FORREF_DEVICE page=player width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=
+22:42:09.712 > FORREF_LOCALE page=player code=2 lang=en-US reason=os
+22:42:09.729 > FORREF_HIT name=stack-1 x=8 y=164 w=374 h=56 fit=1
+22:42:09.732 > FORREF_HIT name=stack-2 x=8 y=226 w=374 h=56 fit=1
+22:42:09.735 > FORREF_HIT name=stack-3 x=8 y=288 w=374 h=56 fit=1
+22:42:09.738 > FORREF_HIT name=stack-4 x=8 y=350 w=374 h=56 fit=1
+22:42:10.791 > current filepath: /page/gt/review/index.page.js
+22:42:10.838 > FORREF_DEVICE page=review width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:42:10.840 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+22:42:10.981 > FORREF_CONTEXT team=HOME event=GOAL player=PLAYER 9
+22:42:10.982 > FORREF_CAPTURE evidence=RECREATION_RECOVERED count=3 id=CB1-UNPROVISIONED_DEVICE-0001,CB1-UNPROVISIONED_DEVICE-0002,CB1-SIM_DEVICE_001-0003 d1=UNCERTIFIED
+22:42:11.058 > FORREF_HIT n
+22:42:11.061 > FORREF_HIT name=review-capture x=8 y=252 w=374 h=44 fit=1
+22:42:11.064 > FORREF_HIT name=review-new x=8 y=302 w=374 h=44 fit=1
+22:42:11.067 > FORREF_HIT name=review-view x=8 y=352 w=374 h=44 fit=1
+22:42:11.071 > FORREF_HIT name=review-back x=8 y=402 w=374 h=44 fit=1
+22:42:40.416 > FORREF_DEVICE page=review width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12
+22:42:40.418 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+22:42:40.550 > FORREF_CONTEXT team=HOME event=GOAL player=PLAYER 9
+22:42:40.592 > FORREF_HIT name=review-return x=8 y=334 w=374 h=52 fit=1
+22:42:40.599 > FORREF_HIT name=review-back x=8 y=392 w=374 h=52 fit=1
+[FIRMWARE_SIMULATOR] ./start_qemu.sh: line 125: 39342 Killed                  ./$qemu_bin -M mps2-an521 -semihosting -drive file="$storage",bus=0,unit=0,format=raw -kernel "$firmware" $opt_network $opt_display -name "$name" -serial stdio
+[FIRMWARE_SIMULATOR] simulator opening...
+22:46:15.127 > index page.js on build invoke
+22:46:15.134 > ui pause
+22:46:19.590 > current filepath: /app.js
+22:46:19.606 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+22:46:19.606 > I/quickjs-libc SBEn
+22:46:19.646 > current filepath: /page/gt/home/index.page.js
+22:46:19.664 > FORREF_PAGE home language=2
+22:46:19.664 > D/js_
+22:46:19.667 > FORREF_DEVICE page=home width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+22:46:19.668 > FORREF_LOCALE page=home code=2 lang=en-US reason=os
+22:46:19.698 > FORREF_HIT name=stack-2 x=19 y=186 w=442 h=56 fit=1
+22:46:19.701 > FORREF_HI
+22:46:19.704 > FORREF_HIT name=stack-4 x=50 y=310 w=380 h=56 fit=1
+22:46:19.714 > ui pause
+22:46:59.931 > current filepath: /page/gt/select/index.page.js
+22:46:59.946 > FORREF_DEVICE page=select width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+22:46:59.947 > FORREF_LOCALE page=select code=2 lang=en-US reason=os
+22:46:59.966 > FORREF_HIT name=stack-1 x=44 y=124 w=392 h=56 fit=
+22:46:59.968 > FORREF_HIT name=stack-2 x=19 y=186 w=442 h=56 fit=1
+22:47:25.896 > current filepath: /page/gt/hub/index.page.js
+22:47:25.912 > FORREF_DEVICE page=hub width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+22:47:25.913 > FORREF_LOCALE page=hub code=2 lang=en-US reason=os
+22:47:25.952 > FORREF_HIT name=stack-1 x=44 y=124 w=392 h=56 fit=1
+22:47:25.954 > FORREF_HIT name=stack-2 x=19 y=186 w=442 h=56 fit=1
+22:47:25.956 > FORREF_HIT name=stack-3 x=21 y=248 w=438 h=56 fit=1
+22:47:25.958 > FORREF_HIT name=stack-4 x=50 y=310 w=380 h=56 fit=1
+22:47:25.959 > FORREF_HIT name=stack-5 x=110 y=372 w=260 h=56 fit=1
+22:47:51.306 > FORREF_DEVICE page=ready width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+22:47:51.307 > FORREF_LOCALE page=ready code=2 lang=en-US reason=os
+22:47:51.329 > FORREF_HIT name=stack-2 x=19 y=186 w=442 h=56 fit=1
+22:47:51.331 > FORREF_HIT name=stack-3 x=21 y=248 w=438 h=56 fit=1
+22:48:27.256 > current filepath: /page/gt/live/index.page.js
+22:48:27.273 > FORREF_PAGE live onInit
+22:48:27.275 > FORREF_DEVICE page=live width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+22:48:27.276 > FORREF_LOCALE page=live code=2 lang=en-US reason=os
+22:48:27.276 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+22:48:27.277 > FORREF_CLOCK001 SRC|1794869307277!
+22:48:27.278 > FORREF_CLOCK001 LOAD|RDY>RDY|1794869307277|00:00|FROZEN_OBSERVED!
+22:48:27.285 > FORREF_HIT name=live-home x=70 y=188 w=166 h=100 fit=1
+22:48:27.287 > FORREF_HIT name=live-away x=244 y=188 w=166 h=100 fit=1
+22:48:27.289 > FORREF_HIT name=live-KICK_OFF x=70 y=328 w=166 h=46 fit=1
+22:48:27.291 > FORREF_HIT name=live-controls x=244 y=328 w=166 h=46 fit=1
+22:48:27.293 > FORREF_LIVE002 VIEW|A|READY|00:00|FROZEN_OBSERVED!
+22:48:50.483 > FORREF_CLOCK001 APPLIED|RDY>H1R|1794869330481|00:00|OBSERVED_UNVERIFIED!
+22:48:50.501 > I/quickjs-libc SBEngine
+22:48:50.507 > FORREF_HIT name=live-away x=244 y=188 w=166 h=100 fit=1
+22:48:50.509 > FORREF_HIT name=live-PAUSE x=70 y=328 w=166 h=46 fit=1
+22:48:50.511 > FORREF_HIT name=live-controls x=244 y=328 w=166 h=46 fit=1
+22:48:50.513 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:00|OBSERVED_UNVERIFIED!
+22:48:51.743 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:01|OBSERVED_UNVERIFIED!
+22:48:51.744 > adjustPeriod id(1) duration:9 ema:
+22:48:52.847 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:02|OBSERVED_UNVERIFIED!
+22:48:54.203 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:03|OBSERVED_UNVERIFIED!
+22:48:54.204 > D/js_timer SBE
+22:48:55.859 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:05|OBSERVED_UNVERIFIED!
+22:48:57.167 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:06|OBSERVED_UNVERIFIED!
+22:48:57.167 > adjustPeriod id(1) durati
+22:48:58.459 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:07|OBSERVED_UNVERIFIED!
+22:48:59.938 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:09|OBSERVED_UNVERIFIED!
+22:49:01.670 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:11|OBSERVED_UNVERIFIED!
+22:49:03.302 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:12|OBSERVED_UNVERIFIED!
+22:49:03.302 > D/js_timer SBE
+22:49:04.718 > I/quickjs-libc SBEn
+22:49:06.395 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:15|OBSERVED_UNVERIFIED!
+22:49:08.196 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:17|OBSERVED_UNVERIFIED!
+22:49:09.710 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:19|OBSERVED_UNVERIFIED!
+22:49:10.840 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:20|OBSERVED_UNVERIFIED!
+22:49:11.984 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:21|OBSERVED_UNVERIFIED!
+22:49:13.097 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:22|OBSERVED_UNVERIFIED!
+22:49:14.831 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:24|OBSERVED_UNVERIFIED!
+22:49:16.534 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:26|OBSERVED_UNVERIF
+22:49:18.019 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:27|OBSERVED_UNVERIFIED!
+22:49:18.020 > adjustPeriod id(1) duration:20 ema:17 current
+22:49:19.385 > F
+22:49:21.049 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:30|OBSERVED_UNVERIFIED!
+22:49:21.049 > adjustPeriod id(1) duration:
+22:49:22.500 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:31|OBSERVED_UNVERIFIED!
+22:49:22.500 > adjustPeri
+22:49:24.363 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|00:33|OBSERVED_UNVERIFIED!
+22:49:25.362 > FORREF_LIVE002 ARM|disarm|navigate|open!
+22:49:25.682 > FORREF_LIVE002 ARM|disarm|exit|open!
+22:49:25.685 > FORREF_LIVE002 TIMER|stop!
+22:49:25.694 > FORREF_CLOCK001 PERSIST|READBACK_ONLY_NOT_D1!
+22:49:25.696 > FORREF_PAGE live onDestroy
+22:49:25.744 > FORREF_LIFE event onInit team=HOME
+22:49:25.747 > FORREF_DEVICE page=event width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+22:49:25.747 > FORREF_LOCALE page=event code=2 lang=en-US reason=os
+22:49:25.756 > FORREF_HIT name=event-yellow x=108 y=78 w=128 h=128 fit=1
+22:49:25.761 > FORREF_HIT name=event-red x=244 y=78 w=128 h=128 fit=1
+22:49:25.763 > FORREF_HIT name=event-goal x=108 y=214 w=128 h=128 fit=1
+22:49:25.765 > FORREF_HIT name=event-sub x=244 y=214 w=128 h=128 fit=1
+22:49:25.767 > FORREF_HIT name=event-back x=130 y=352 w=220 h=42 fit=1
+22:50:30.446 > FORREF_CONTEXT team=HOME event=YELLOW player=
+22:50:30.711 > FORREF_LIFE event onDestroy
+22:50:30.740 > current filepath: /page/gt/player/index.page.js
+22:50:30.757 > FORREF_DEVICE page=player width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=
+22:50:30.757 > FORREF_LOCALE page=player code=2 lang=en-US reason=os
+22:50:30.784 > FORREF_HIT name=stack-1 x=44 y=124 w=392 h=56 fit=1
+22:50:30.786 > FORREF_HIT name=stack-2 x=19 y=186 w=442 h=56 fit=1
+22:50:30.788 > FORREF_HIT name=stack-3 x=21 y=248 w=438 h=56 fit=1
+22:50:30.790 > FORREF_HIT name=stack-4 x=50 y=310 w=380 h=56 fit=
+22:50:50.197 > current filepath: /page/gt/review/index.page.js
+22:50:50.215 > FORREF_DEVICE page=review width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+22:50:50.216 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+file: file: /storage/system/simulator_cfg.json
+22:50:50.219 > FORREF_CONTEXT team=HOME event=YELLOW player=PLAYER 4
+22:50:50.385 > FORREF_HIT name=review-fixture x=21 y=178 w=438 h=52 fit=1
+22:50:50.387 > FORREF_HIT name=review-capture x=17 y=236 w=446 h=52 fit=1
+22:50:50.389 > FORREF_HIT name=review-new x=38 y=294 w=404 h=52 fit=1
+22:50:50.390 > FORREF_HIT name=review-view x=81 y=352 w=318 h=52 fit=1
+22:50:50.393 > FORREF_HIT name=review-back x=184 y=410 w=112 h=52 fit=1
+22:51:30.617 > FORREF_DEVICE page=player width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+22:51:30.619 > FORREF_LOCALE page=player code=2 lang=en-US reason=os
+22:51:30.649 > FORREF_HIT name=stack-1 x=44 y=124 w=392 h=56 fit=1
+22:51:30.651 > FORREF_HIT name=stack-2 x=19 y=186 w=442 h=56 fit=1
+22:51:30.655 > FORREF_HIT name=stack-3 x=21 y=248 w=438 h=56 fit=
+22:51:30.657 > FORREF_HIT name=stack-4 x=50 y=310 w=380 h=56 fit=1
+22:51:30.658 > D/js_ui SBEngin
+22:51:47.329 > current filepath: /page/gt/review/index.page.js
+22:51:47.346 > FORREF_DEVICE page=review width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+22:51:47.347 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+22:51:47.349 > FORREF_CONTEXT team=HOME event=YELLOW player=PLAYER 9
+22:51:47.500 > FORREF_HIT name=review-fixture x=21 y=178 w=438 h=52 fit=1
+22:51:47.502 > FORREF_HIT name=review-capture x=17 y=236 w=446 h=52 fit=1
+22:51:47.504 > FORREF_HIT name=review-new x=38 y=294 w=404 h=52 fit=1
+22:51:47.506 > FORREF_HIT name=review-view x=81 y=352 w=318 h=52 fit=1
+22:51:47.508 > FORREF_HIT name=review-back x=184 y=410 w=112 h=52 fit=1
+22:52:26.250 > FORREF_CAPTURE seq=1 id=CB1-UNPROVISIONED_DEVICE-0001 admission=INCOMPLETE_IDENTITY evidence=READBACK_MATCHED reason= duplicate=0 d1=UNCERTIFIED
+22:52:26.252 > FORREF_DEVICE page=review width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+22:52:26.253 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+22:52:26.275 > FORREF_CONTEXT team=HOME event=YELLOW player=PLAYER 9
+22:52:26.427 > FORREF_HIT name=review-fixture x=21 y=178 w=438 h=52 fit=
+22:52:26.429 > FORREF_HIT name=review-capture x=17 y=236 w=446 h=52 fit=
+22:52:26.430 > FORREF_HIT name=review-new x=38 y=294 w=404 h=52 fit=1
+22:52:26.432 > FORREF_HIT name=review-view x=81 y=352 w=318 h=52 fit=1
+22:52:26.434 > FORREF_HIT name=review-back x=184 y=410 w=112 h=52 fit=1
+22:53:20.291 > FORREF_CAPTURE seq=1 id=CB1-UNPROVISIONED_DEVICE-0001 admission=INCOMPLETE_IDENTITY evidence=READBACK_MATCHED reason=IDEMPOTENT duplicate=1 d1=UNCERTIFIED
+22:53:20.296 > FORREF_DEVICE page=review width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+22:53:20.298 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+22:53:20.319 > FORREF_CONTEXT team=HOME event=YELLOW player=PLAYER 9
+22:53:20.473 > FORREF_HIT name=review-fixture x=21 y=178 w=438 h=52 fit=1
+22:53:20.475 > FORREF_HIT name=review-capture x=17 y=236 w=446 h=52 fit=1
+22:53:20.476 > FORREF_HIT name=review-new x=38 y=294 w=404 h=52 fit=1
+22:53:20.478 > FORREF_HIT name=review-view x=81 y=352 w=318 h=52 fit=1
+22:53:20.480 > FORREF_HIT name=review-back x=184 y=410 w=112 h=52 fit=1
+22:54:18.302 > FORREF_CAPTURE seq=2 id=CB1-UNPROVISIONED_DEVICE-0002 admission=INCOMPLETE_IDENTITY evidence=READBACK_MATCHED reason= duplicate=0 d1=UNCERTIFIED
+22:54:18.304 > FOR
+22:54:18.307 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+22:54:18.346 > FORREF_CONTEXT team=HOME event=YELLOW player=PLAYER 9
+22:54:18.515 > FORREF_HIT name=review-fixture x=21 y=178 w=438 h=52 fit=1
+22:54:18.518 > FORREF_HIT name=review-capture x=17 y=236 w=446 h=52 fit=1
+22:54:18.520 > I/quickjs-libc
+22:54:18.525 > FORREF_HIT name=review-view x=81 y=352 w=318 h=52 fit=1
+22:54:18.527 > FORREF_HIT name=review-back x=184 y=410 w=112 h=52 fit=1
+22:55:17.383 > current filepath: /page/gt/player/index.page.js
+22:55:17.397 > FORREF_DEVICE page=player width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+22:55:17.398 > FORREF_LOCALE page=player code=2 lang=en-US reason=os
+22:55:17.425 > FORREF_HIT name=stack-1 x=44 y=124 w=392 h=56 fit=1
+22:55:17.427 > FORREF_HIT name=stack-2 x=19 y=186 w=442 h=56 fit=1
+22:55:17.428 > FORREF_HIT name=stack-3 x=21 y=248 w=438 h=56 fit=
+22:55:17.430 > FORREF_HIT name=stack-4 x=50 y=310 w=380 h=56 fit=1
+22:55:40.089 > current filepath: /page/gt/event/index.page.js
+22:55:40.104 > FORREF_LIFE event onInit team=HOME
+22:55:40.110 > FORREF_LOCALE page=event code=2 lang=en-US reason=os
+22:55:40.118 > FORREF_HIT name=event-yellow x=108 y=78 w=128 h=128 fit=1
+22:55:40.120 > FORREF_HIT name=event-red x=244 y=78 w=128 h=128 fit=1
+22:55:40.122 > FORREF_HIT name=event-goal x=108 y=214 w=128 h=128 fit=1
+22:55:40.125 > FORREF_HIT name=event-sub x=244 y=214 w=128 h=128 fit=1
+22:55:40.129 > FORREF_HIT name=event-back x=130 y=352 w=220 h=42 fit=1
+22:55:52.769 > FORREF_CONTEXT team=HOME event=GOAL player=
+22:55:53.006 > FORREF_LIFE event onDestroy
+22:55:53.036 > current filepath: /page/gt/player/index.page.js
+22:55:53.049 > FORREF_DEVICE page=player width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+22:55:53.050 > FORREF_LOCALE page=player code=2 lang=en-US reason=os
+22:55:53.077 > FORREF_HIT name=stack-1 x=44 y=124 w=392 h=56 fit=1
+22:55:53.078 > FORREF_HIT name=stack-2 x=19 y=186 w=442 h=56 fit=1
+22:55:53.081 > FORREF_HIT name=stack-3 x=21 y=248 w=438 h=56 fit=1
+22:55:53.082 > FORREF_HIT name=stack-4 x=50 y=310 w=380 h=56 fit=1
+22:56:16.326 > current filepath: /page/gt/review/index.page.js
+22:56:16.341 > FORREF_DEVICE page=review width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+22:56:16.342 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+22:56:16.342 > sim_get_config_path: con
+22:56:16.377 > FORREF_CONTEXT team=HOME event=GOAL player=PLAYER 9
+22:56:16.378 > FORREF_CAPTURE evidence=RECREATION_RECOVERED count=2 id=CB1-UNPROVISIONED_DEVICE-0001,CB1-UNPROVISIONED_DEVICE-0002 d1=UNCERTIFIED
+22:56:16.528 > FORREF_HIT name=review-fixture x=21 y=178 w=438 h=52 fit=1
+22:56:16.530 > FORREF_HIT name=review-capture x=17 y=236 w=446 h=52 fit=1
+22:56:16.534 > FORREF_HIT name=review-view x=81 y=352 w=318 h=52 fit=1
+22:56:16.536 > FORREF_HIT name=review-back x=184 y=410 w=112 h=52 fit=
+22:57:12.854 > FORREF_CAPTURE fixture=SIM
+22:57:12.859 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+22:57:12.897 > FORREF_CONTEXT team=HOME event=GOAL player=PLAYER 9
+22:57:13.064 > FORREF_HIT name=review-fixture x=21 y=178 w=438 h=52 fit=1
+22:57:13.066 > FORREF_HIT name=review-capture x=17 y=236 w=446 h=52 fit=1
+22:57:13.068 > FORREF_HIT name=review-new x=38 y=294 w=404 h=52 fit=1
+22:57:13.069 > FORREF_HIT name=review-view x=81 y=352 w=318 h=52 fit=1
+22:57:13.071 > FORREF_HIT name=review-back x=184 y=410 w=112 h=52 fit=1
+22:58:19.320 > FORREF_CAPTURE seq=3 id=CB1-SIM_DEVICE_001-0003 admission=VALID_STRUCTURED_CANDIDATE evidence=READBACK_MATCHED reason= duplicate=0 d1=UNCERTIFIED
+22:58:19.321 > sim_get_c
+22:58:19.322 > FORREF_DEVICE page=review width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+22:58:19.323 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+22:58:19.380 > FORREF_CONTEXT team=HOME event=GOAL player=PLAYER 9
+22:58:19.550 > FORREF_HIT name=review-fixture x=21 y=178 w=438 h=52 fit=1
+22:58:19.552 > FORREF_HIT name=review-capture x=17 y=236 w=446 h=52 fit=1
+22:58:19.554 > FORREF_HIT name=review-new x=38 y=294 w=404 h=52 fit=1
+22:58:19.556 > FORREF_HIT name=review-view x=81 y=352 w=318 h=52 fit=1
+22:58:19.557 > FORREF_HIT name=review-back x=184 y=410 w=112 h=52 fit=1
+22:59:14.670 > FORREF_CAPTURE fixture=OFF
+22:59:14.674 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+22:59:14.675 > amQueryPermissions get 2 permission au
+22:59:14.722 > FORREF_CONTEXT team=HOME event=GOAL player=PLAYER 9
+22:59:14.871 > FORREF_HIT name=review-fixture x=21 y=178 w=438 h=52 fit=1
+22:59:14.873 > FORREF_HIT name=review-capture x=17 y=236 w=446 h=52 fit=1
+22:59:14.874 > FORREF_HIT name=review-new x=38 y=294 w=404 h=52 fit=1
+22:59:14.876 > FORREF_HIT name=review-view x=81 y=352 w=318 h=52 fit=1
+22:59:14.878 > FORREF_HIT name=review-back x=184 y=410 w=112 h=52 fit=1
+23:00:17.874 > FORREF_DEVICE page=review width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+23:00:17.875 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+23:00:17.941 > FORREF_CONTEXT team=HOME event=GOAL player=PLAYER 9
+23:00:17.990 > FORREF_HIT name=review-return x=50 y=310 w=380 h=56 fit=1
+23:00:17.992 > FORREF_HIT name=review-back x=110 y=372 w=260 h=56 fit=1
+[FIRMWARE_SIMULATOR] simulator closing...
+[FIRMWARE_SIMULATOR] ./start_qemu.sh: line 125: 41480 Killed                  ./$qemu_bin -M mps2-an521 -semihosting -drive file="$storage",bus=0,unit=0,format=raw -kernel "$firmware" $opt_network $opt_display -name "$name" -serial stdio
+[FIRMWARE_SIMULATOR] simulator opening...
+23:02:33.587 > js_data_transfe
+23:02:36.436 > index page.js on build invoke
+23:02:36.438 > ui pause
+23:02:40.704 > current filepath: /app.js
+23:02:40.717 > FORREF_APP onCreate epoch=e1794870160717
+23:02:40.717 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+23:02:40.718 > FORREF_CAPTURE_BOOT namespace=forref_capture_bridge_001 schema=1 d1=UNCERTIFIED
+23:02:40.718 > malloc_size:
+23:02:40.751 > current filepath: /page/gt/home/index.page.js
+23:02:40.770 > FORREF_PAGE home language=2
+23:02:40.775 > FORREF_LOCALE page=home code=2 lang=en-US reason=os
+23:02:40.807 > FORREF_HIT name=stack-2 x=19 y=186 w=442 h=56 fit=1
+23:02:40.811 > FORREF_HIT name=stack-3 x=21 y=248 w=438 h=56 fit=1
+23:02:40.812 > FORREF_HIT name=stack-4 x=50 y=310 w=380 h=56 fit=1
+23:02:40.826 > ui pause
+23:03:15.894 > current filepath: /page/gt/select/index.page.js
+23:03:15.910 > FORREF_DEVICE page=select width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=
+23:03:15.910 > FORREF_LOCALE page=select code=2 lang=en-US reason=os
+23:03:15.931 > FORREF_HIT name=stack-1 x=44 y=124 w=392 h=56 fit=1
+23:03:15.932 > FORREF_HIT name=stack-2 x=19 y=186 w=442 h=56 fit=1
+23:03:41.365 > current filepath: /page/gt/hub/index.page.js
+23:03:41.379 > FORREF_DEVICE page=hub width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+23:03:41.379 > FORREF_LOCALE page=hub code=2 lang=en-US reason=os
+23:03:41.417 > FORREF_HIT name=stack-1 x=44 y=124 w=392 h=56 fit=1
+23:03:41.418 > FORREF_HIT name=stack-2 x=19 y=186 w=442 h=56 fit=1
+23:03:41.420 > FORREF_HIT name=stack-3 x=21 y=248 w=438 h=56 fit=1
+23:03:41.421 > FORREF_HIT name=stack-4 x=50 y=310 w=380 h=56 fit=1
+23:03:41.423 > I/quickjs-li
+23:03:58.786 > current filepath: /page/gt/ready/index.page.js
+23:03:58.805 > FORREF_DEVICE page=ready width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+23:03:58.805 > FORREF_LOCALE page=ready code=2 lang=en-US reason=os
+23:03:58.830 > FORREF_HIT name=stack-2 x=19 y=186 w=442 h=56 fit=1
+23:03:58.832 > FORREF_HIT name=stack-3 x=21 y=248 w=438 h=56 fit=1
+23:04:22.161 > current filepath: /page/gt/live/index.page.js
+23:04:22.180 > FORREF_PAGE live onInit
+23:04:22.185 > FORREF_LOCALE page=live code=2 lang=en-US reason=os
+23:04:22.185 > FORREF_LIVE002_BOOT build=live-match-flow-002 rev=a754ae451abf480c0a1045222b1eb2cddb756d25!
+23:04:22.193 > FORREF_CLOCK001 SRC|1794870262192!
+23:04:22.193 > FORREF_CLOCK001 LOAD|H1R>H1R|1794870262192|UNVERIFIED|TIME_UNVERIFIED!
+23:04:22.201 > FORREF_HIT name=live-home x=70 y=188 w=166 h=100 fit=1
+23:04:22.203 > FORREF_HIT name=live-away x=244 y=188 w=166 h=100 fit=1
+23:04:22.205 > FORREF_HIT name=live-CONTINUE_FROM_LAST x=70 y=328 w=166 h=46 fit=1
+23:04:22.207 > FORREF_HIT name=live-controls x=244 y=328 w=166 h=46 fit=1
+23:04:22.209 > FORREF_LIVE002 VIEW|A|FIRST_HALF_RUNNING|——:——|UNVERIFIED!
+23:04:22.210 > FORREF_LIVE002 TIMER|createTimer!
+23:04:50.628 > FORREF_LIVE002 NAV team=HOME mode=A!
+23:04:50.628 > FORREF_LIVE002 ARM|disarm|navigate|open!
+23:04:50.856 > FORREF_LIVE002 ARM|disarm|exit|open!
+23:04:50.857 > FORREF_LIVE002 TIMER|stop!
+23:04:50.866 > FORREF_CLOCK001 PERSIST|READBACK_ONLY_NOT_D1!
+23:04:50.869 > FORREF_PAGE live onDestroy
+23:04:50.901 > current filepath: /page/gt/event/index.page.js
+23:04:50.914 > FORREF_LIFE event onInit team=HOME
+23:04:50.917 > FORREF_LOCALE page=event code=2 lang=en-US reason=os
+23:04:50.922 > FORREF_HIT name=event-yellow x=108 y=78 w=128 h=128 fit=1
+23:04:50.924 > FORREF_HIT name=event-red x=244 y=78 w=128 h=128 fit=1
+23:04:50.926 > I/quic
+23:04:50.933 > FORREF_HIT name=event-sub x=244 y=214 w=128 h=128 fit=1
+23:04:50.939 > FORREF_HIT name=event-back x=130 y=352 w=220 h=42 fit=1
+23:05:01.849 > FORREF_CONTEXT team=HOME event=GOAL player=
+23:05:02.082 > FORREF_LIFE event onDestroy
+23:05:02.122 > FORREF_DEVICE page=player width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+23:05:02.122 > FORREF_LOCALE page=player code=2 lang=en-US reason=os
+23:05:02.149 > FORREF_HIT name=stack-1 x=44 y=124 w=392 h=56 fit=1
+23:05:02.151 > FORREF_HIT name=stack-2 x=19 y=186 w=442 h=56 fit=1
+23:05:02.153 > FORREF_HIT name=stack-3 x=21 y=248 w=438 h=56 fit=1
+23:05:02.154 > FORREF_HIT name=stack-4 x=50 y=310 w=380 h=56 fit=1
+23:05:20.940 > current filepath: /page/gt/review/index.page.js
+23:05:20.954 > FORREF_DEVICE page=review width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+23:05:20.956 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+23:05:21.011 > FORREF_CONTEXT team=HOME event=GOAL player=PLAYER 9
+23:05:21.011 > FORREF_CAPTURE evidence=RECREATION_RECOVERED count=3 id=CB1-UNPROVISIONED_DEVICE-0001,CB1-UNPROVISIONED_DEVICE-0002,CB1-SIM_DEVICE_001-0003 d1=UNCERTIFIED
+23:05:21.180 > FORREF_HIT name=review-fixture x=21 y=178 w=438 h=52 fit=1
+23:05:21.182 > FORREF_HIT name=review-capture x=17 y=236 w=446 h=52 fit=1
+23:05:21.184 > FORREF_HIT name=review-new x=38 y=294 w=404 h=52 fit=1
+23:05:21.185 > FORREF_HIT name=review-view x=81 y=352 w=318 h=52 fit=1
+23:05:21.188 > FORREF_HIT name=review-back x=184 y=410 w=112 h=52 fit=1
+23:06:16.081 > FORREF_DEVICE page=review width=480 height=480 shape=ROUND screenShape=1 keyNumber=2 keyType=normal_20 deviceSource=10813699 deviceName=Amazfit Active Max statusBar=0 safeMargin=12
+23:06:16.082 > FORREF_LOCALE page=review code=2 lang=en-US reason=os
+23:06:16.178 > FORREF_HIT name=review-return x=50 y=310 w=380 h=56 fit=1
+23:06:16.180 > FORREF_HIT name=review-back x=110 y=372 w=260 h=56 fit=1

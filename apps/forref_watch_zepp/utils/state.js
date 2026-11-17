@@ -24,5 +24,26 @@ export function state() {
   if (data.localeTest == null) {
     data.localeTest = "";
   }
+  if (data.captureFixture == null) {
+    data.captureFixture = false;
+  }
+  if (data.captureIntentId == null) {
+    data.captureIntentId = "";
+  }
+  if (data.captureIntentKey == null) {
+    data.captureIntentKey = "";
+  }
+  if (data.captureView == null) {
+    data.captureView = false;
+  }
+  if (data.captureNote == null) {
+    data.captureNote = "";
+  }
+  if (data.captureRecoveryLogged == null) {
+    data.captureRecoveryLogged = false;
+  }
+  if (data.captureQuarantineLogged == null) {
+    data.captureQuarantineLogged = false;
+  }
   return data;
 }

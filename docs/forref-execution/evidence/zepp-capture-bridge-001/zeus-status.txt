@@ -1,0 +1,4 @@
+login status: no login
+simulator connect status: connected
+simulator host: 127.0.0.1
+simulator port: 7650
