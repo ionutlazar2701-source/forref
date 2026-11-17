@@ -27,6 +27,22 @@ These are not `DurableCommitSuccess` and not Match Report classifications.
 
 The review screen keeps those actions apart. `CAPTURE TEST` retries the open intent. `NEW CAPTURE` starts another intent even when team, event, and player are unchanged.
 
+## Crash window
+
+`captureIntentId` in `state()` is volatile. A process restart drops it after the journal line is already readable. `decideCaptureTap` runs before any append:
+
+| Inputs | Decision |
+| --- | --- |
+| Journal read is not `ok` | `REFUSE`. Nothing is appended. |
+| `NEW CAPTURE` | `APPEND` with an empty id, so the journal allocates a new id. |
+| An open id is bound | `APPEND` with that id. The same payload is `IDEMPOTENT`. A different payload is `CONFLICT` and the file stays unchanged. |
+| No open id, and a readable line has the same canonical payload | `REFUSE`, reason `RECONCILE_REQUIRED`. The screen asks for an explicit bind or a new capture. |
+| No open id, and no line has that canonical payload | `APPEND` with an empty id. |
+
+A yellow canonical payload is `{"kind":"YELLOW","participantId":null}`. Shirt number and HOME/AWAY are not in it, so a different displayed player is not proof of a different occurrence. `CAPTURE TEST` then refuses until a listed id is bound or `NEW CAPTURE` is used. Binding a row calls `bindRecoveredCandidate` and does not append. Two yellows stay two lines only when the second tap is `NEW CAPTURE`. They are not converted to a send-off.
+
+Historical lines are not rewritten to mark acknowledgement. Schema stays `1`.
+
 ## Capacity
 
 Default bounds are 32 entries and 16384 bytes. A further append returns `CAPACITY`, writes nothing, and leaves the earlier lines in place. There is no rotation and no startup deletion.
@@ -39,6 +55,8 @@ Default bounds are 32 entries and 16384 bytes. A further append returns `CAPACIT
 | Validated readback of a structured candidate | `LOCAL CANDIDATE #N — NOT A MATCH RECORD` | `CANDIDAT LOCAL #N — NU E RECORD DE MECI` |
 | Missing identity | `INCOMPLETE — NOT A MATCH RECORD` | `INCOMPLET — NU E RECORD DE MECI` |
 | App recreation of a readable journal | `LOCAL CANDIDATE RECOVERED — D1 UNVERIFIED` | `CANDIDAT LOCAL RECUPERAT — D1 NEVERIFICAT` |
+| Unbound tap while a matching candidate exists | `RECONCILE — NOT A MATCH RECORD` | `RECONCILIERE — NU E RECORD DE MECI` |
+| A listed id was bound and not rewritten | `BOUND LOCAL CANDIDATE #N — NOT A MATCH RECORD` | `CANDIDAT LOCAL LEGAT #N — NU E RECORD DE MECI` |
 | Write or journal failure | `CAPTURE FAILED / JOURNAL UNVERIFIED` | `CAPTURĂ EȘUATĂ / JURNAL NEVERIFICAT` |
 
 The screen does not say Saved, official, match report, or a numeric score, and it does not render an exact match minute. Live A/C and the clock files are unchanged. The review actions stay on the existing review route. The app still has 23 routes.

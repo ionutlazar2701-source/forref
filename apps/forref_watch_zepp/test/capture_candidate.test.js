@@ -7,7 +7,9 @@ import {
   FIXTURE,
   JOURNAL_FILE,
   assessCapture,
+  bindRecoveredCandidate,
   createJournal,
+  decideCaptureTap,
   intentForCaptureTap,
   memoryAdapter,
   parseJournal,
@@ -358,6 +360,146 @@ test("a missing journal is empty and an unknown stat or read failure does not ap
   assert.equal(disk.raw, "");
 });
 
+test("a lost intent id after a verified append duplicates until reconcile refuses", () => {
+  const yellow = { eventToken: "YELLOW", teamToken: "HOME", playerToken: "PLAYER 9", fixtureMode: false };
+  const otherShirt = { eventToken: "YELLOW", teamToken: "AWAY", playerToken: "PLAYER 4", fixtureMode: false };
+  const source = memoryAdapter();
+  const firstBook = createJournal(source);
+  const first = firstBook.append(Object.assign({}, yellow, { captureIntentId: "" }));
+  assert.equal(first.ok, true);
+  const bytesAfterFirst = source.store.raw;
+
+  const naive = memoryAdapter();
+  naive.store.raw = bytesAfterFirst;
+  const duplicated = createJournal(naive).append(Object.assign({}, yellow, { captureIntentId: "" }));
+  assert.equal(duplicated.ok, true);
+  assert.equal(duplicated.entry.localSequence, 2);
+  assert.notEqual(duplicated.entry.captureIntentId, first.entry.captureIntentId);
+
+  const guarded = memoryAdapter();
+  guarded.store.raw = bytesAfterFirst;
+  const book = createJournal(guarded);
+  const loaded = book.read();
+  assert.equal(loaded.evidence, Evidence.RECREATION_RECOVERED);
+  const refused = decideCaptureTap({ fresh: false, openIntentId: "", loaded: loaded, input: yellow });
+  assert.equal(refused.action, "REFUSE");
+  assert.equal(refused.reason, "RECONCILE_REQUIRED");
+  assert.equal(guarded.store.raw, bytesAfterFirst);
+  const shifted = decideCaptureTap({ fresh: false, openIntentId: "", loaded: loaded, input: otherShirt });
+  assert.equal(shifted.action, "REFUSE");
+  assert.equal(shifted.reason, "RECONCILE_REQUIRED");
+  const inspected = bindRecoveredCandidate(loaded, first.entry.captureIntentId);
+  assert.equal(inspected.ok, true);
+  assert.equal(inspected.entry.captureIntentId, first.entry.captureIntentId);
+  assert.equal(guarded.store.raw, bytesAfterFirst);
+  const retryDecision = decideCaptureTap({
+    fresh: false,
+    openIntentId: inspected.captureIntentId,
+    loaded: book.read(),
+    input: yellow,
+  });
+  assert.equal(retryDecision.action, "APPEND");
+  assert.equal(retryDecision.reason, "RETRY_OPEN");
+  const retry = book.append(Object.assign({}, yellow, { captureIntentId: retryDecision.captureIntentId }));
+  assert.equal(retry.duplicate, true);
+  assert.equal(retry.entry.captureIntentId, first.entry.captureIntentId);
+  assert.equal(book.read().entries.length, 1);
+  const freshDecision = decideCaptureTap({
+    fresh: true,
+    openIntentId: inspected.captureIntentId,
+    loaded: book.read(),
+    input: yellow,
+  });
+  assert.equal(freshDecision.action, "APPEND");
+  assert.equal(freshDecision.reason, "NEW_OCCURRENCE");
+  assert.equal(freshDecision.captureIntentId, "");
+  const second = book.append(Object.assign({}, yellow, { captureIntentId: freshDecision.captureIntentId }));
+  assert.equal(second.ok, true);
+  assert.equal(second.duplicate, false);
+  assert.notEqual(second.entry.captureIntentId, first.entry.captureIntentId);
+  assert.equal(book.read().entries.filter((entry) => entry.kind === "YELLOW").length, 2);
+  assert.equal(book.read().entries.some((entry) => entry.kind.indexOf("SEND_OFF") >= 0), false);
+});
+
+test("changed context, a corrupt journal, and staged faults do not claim a new candidate", () => {
+  const yellow = { eventToken: "YELLOW", teamToken: "HOME", playerToken: "PLAYER 9", fixtureMode: false };
+  const book = journal();
+  const first = book.append(Object.assign({}, yellow, { captureIntentId: "SIM_INTENT_Y1" }));
+  assert.equal(first.ok, true);
+  const before = book.read().entries[0].canonicalCandidatePayload;
+  const conflict = book.append(goal({ captureIntentId: "SIM_INTENT_Y1" }));
+  assert.equal(conflict.ok, false);
+  assert.equal(conflict.admissionState, Admission.CONFLICT);
+  assert.equal(stableStringify(book.read().entries[0].canonicalCandidatePayload), stableStringify(before));
+  const stillOpen = decideCaptureTap({
+    fresh: false,
+    openIntentId: "SIM_INTENT_Y1",
+    loaded: book.read(),
+    input: goal(),
+  });
+  assert.equal(stillOpen.action, "APPEND");
+  assert.equal(stillOpen.captureIntentId, "SIM_INTENT_Y1");
+
+  const corruptAdapter = memoryAdapter();
+  corruptAdapter.store.raw = "CB1|E|1|5|deadbeef|";
+  const corruptBook = createJournal(corruptAdapter);
+  const corrupt = corruptBook.read();
+  assert.equal(corrupt.ok, false);
+  const blocked = decideCaptureTap({ fresh: false, openIntentId: "", loaded: corrupt, input: yellow });
+  assert.equal(blocked.action, "REFUSE");
+  assert.notEqual(blocked.reason, "RECONCILE_REQUIRED");
+  const bytes = corruptAdapter.store.raw;
+  const refusedAppend = corruptBook.append(yellow);
+  assert.equal(refusedAppend.ok, false);
+  assert.equal(corruptAdapter.store.raw, bytes);
+  assert.equal(bindRecoveredCandidate(corrupt, "SIM_INTENT_Y1").ok, false);
+
+  let reads = 0;
+  const disk = { raw: "" };
+  const tornRead = {
+    readAll() {
+      reads += 1;
+      if (reads >= 3) {
+        throw new Error("EIO after append");
+      }
+      return disk.raw;
+    },
+    append(text) {
+      disk.raw += text;
+      return text.length;
+    },
+  };
+  const uncertain = createJournal(tornRead).append(Object.assign({}, yellow, { captureIntentId: "SIM_INTENT_WINDOW" }));
+  assert.equal(uncertain.ok, false);
+  assert.equal(uncertain.reason, "READBACK_MISMATCH");
+  assert.equal(uncertain.admissionState, Admission.UNVERIFIED_STORAGE);
+  assert.equal(uncertain.attemptedId, "SIM_INTENT_WINDOW");
+  assert.equal(disk.raw.includes("SIM_INTENT_WINDOW"), true);
+  const recovered = createJournal({
+    readAll() {
+      return disk.raw;
+    },
+    append() {
+      throw new Error("inspect must not append");
+    },
+  }).read();
+  const silent = decideCaptureTap({ fresh: false, openIntentId: "", loaded: recovered, input: yellow });
+  assert.equal(silent.action, "REFUSE");
+  assert.equal(silent.reason, "RECONCILE_REQUIRED");
+  const bound = bindRecoveredCandidate(recovered, uncertain.attemptedId);
+  assert.equal(bound.ok, true);
+  const replay = createJournal({
+    readAll() {
+      return disk.raw;
+    },
+    append() {
+      throw new Error("retry must not append");
+    },
+  }).append(Object.assign({}, yellow, { captureIntentId: bound.captureIntentId }));
+  assert.equal(replay.duplicate, true);
+  assert.equal(replay.ok, true);
+});
+
 test("the committed envelope fixture matches a fresh append", () => {
   const adapter = memoryAdapter();
   const book = createJournal(adapter, { diagnosticDeviceSource: "10158337" });
@@ -395,8 +537,10 @@ test("the watch surface stays on the review route and off the clock files", () =
   assert.equal(JOURNAL_FILE, "forref_capture_bridge_001.journal");
   assert.equal(device.includes("forref_clock"), false);
   assert.equal(review.includes("review-new"), true);
-  assert.equal(review.includes("intentForCaptureTap"), true);
-  for (const key of ["captureTest", "newCapture", "viewLocal", "simFixtureOff", "localCandidate", "notMatchRecord", "candidateRecovered", "candidateIncomplete", "captureFailed"]) {
+  assert.equal(review.includes("decideCaptureTap"), true);
+  assert.equal(review.includes("bindRecoveredCandidate"), true);
+  assert.equal(review.includes("decision.action !== \"APPEND\""), true);
+  for (const key of ["captureTest", "newCapture", "viewLocal", "simFixtureOff", "localCandidate", "notMatchRecord", "candidateRecovered", "candidateIncomplete", "captureFailed", "reconcileRequired", "boundCandidate"]) {
     assert.equal(text.split(key + ":").length - 1 >= 2, true, key);
   }
 });

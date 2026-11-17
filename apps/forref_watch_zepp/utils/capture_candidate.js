@@ -318,6 +318,77 @@ export function intentForCaptureTap(openIntentId, fresh) {
   return openIntentId || "";
 }
 
+export function decideCaptureTap(options) {
+  const source = options || {};
+  const loaded = source.loaded;
+  const fresh = source.fresh === true;
+  const openIntentId = source.openIntentId || "";
+  if (!loaded || loaded.ok !== true) {
+    return {
+      action: "REFUSE",
+      reason: (loaded && loaded.reason) || "UNREADABLE",
+      captureIntentId: openIntentId,
+    };
+  }
+  if (fresh) {
+    return {
+      action: "APPEND",
+      reason: "NEW_OCCURRENCE",
+      captureIntentId: intentForCaptureTap(openIntentId, true),
+    };
+  }
+  if (openIntentId) {
+    return {
+      action: "APPEND",
+      reason: "RETRY_OPEN",
+      captureIntentId: intentForCaptureTap(openIntentId, false),
+    };
+  }
+  const draft = assessCapture(source.input || {});
+  const matches = [];
+  const entries = loaded.entries || [];
+  for (let i = 0; i < entries.length; i++) {
+    if (samePayload(entries[i], draft)) {
+      matches.push(entries[i].captureIntentId);
+    }
+  }
+  if (matches.length > 0) {
+    return {
+      action: "REFUSE",
+      reason: "RECONCILE_REQUIRED",
+      captureIntentId: "",
+      matches: matches,
+    };
+  }
+  return { action: "APPEND", reason: "FIRST_SELECTION", captureIntentId: "" };
+}
+
+export function bindRecoveredCandidate(loaded, captureIntentId) {
+  const id = captureIntentId || "";
+  if (!loaded || loaded.ok !== true) {
+    return { ok: false, reason: "UNREADABLE", captureIntentId: "" };
+  }
+  if (!ID_PATTERN.test(id)) {
+    return { ok: false, reason: "AMBIGUOUS_ID", captureIntentId: "" };
+  }
+  const found = [];
+  const entries = loaded.entries || [];
+  for (let i = 0; i < entries.length; i++) {
+    if (entries[i].captureIntentId === id) {
+      found.push(entries[i]);
+    }
+  }
+  if (found.length !== 1) {
+    return { ok: false, reason: "AMBIGUOUS_ID", captureIntentId: "" };
+  }
+  return {
+    ok: true,
+    reason: "BOUND",
+    captureIntentId: found[0].captureIntentId,
+    entry: found[0],
+  };
+}
+
 function rejected(reason, admission, snapshot, attemptedId) {
   return {
     ok: false,

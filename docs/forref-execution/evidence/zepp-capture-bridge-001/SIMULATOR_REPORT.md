@@ -102,3 +102,43 @@ ZC15 and ZC16, the two guest-shape gates that were blocked while no QEMU guest e
 | `./tool/verify_cloud.sh` from the repository root | 0 | Match Core 377, persistence 92, phone analyze clean, phone tests 126 |
 
 This guest update did not change application code. Dart 3.13.2. Flutter 3.47.2. SQLite durability settings were not changed.
+
+## ZC21 guest reconcile
+
+A later session on 17 Nov 2026 used the same simulator, the same norflash files, and the reconcile controller. The simulator clock stayed UTC. Unedited panel text for that window is `guest/zc21/zc21-console.txt`.
+
+The exact stop between `writeSync` returning and the next JavaScript assignment of `captureIntentId` was not available. Those two steps run in one QuickJS turn, and the guest has no breakpoint there. A production delay was not added. That injection is BLOCKED. What follows is a full guest refresh on the existing norflash, then inspect, bind, retry, and a deliberate new yellow.
+
+### Active Max, round
+
+Refresh at 11:35 Europe/Bucharest. `getDeviceInfo` stayed `width=480 height=480 shape=ROUND screenShape=1 deviceSource=10813699 deviceName=Amazfit Active Max`.
+
+Review at 11:41 recovered the earlier three ids and showed `LOCAL CANDIDATE RECOVERED — D1 UNVERIFIED` (`guest/zc21/active-max-recovered.png`). Live A still said `TIME UNVERIFIED` and `LAST KNOWN 00:33`.
+
+| Tap | Console |
+| --- | --- |
+| `CAPTURE TEST` with no bound id | `decide=REFUSE reason=RECONCILE_REQUIRED`. The screen said `RECONCILE — NOT A MATCH RECORD` (`guest/zc21/active-max-reconcile.png`). No new sequence. |
+| `VIEW LOCAL` | The three earlier ids, including `#3 LOCAL CANDIDATE CB1-SIM_DEVICE_001-0003` (`guest/zc21/active-max-view.png`). |
+| Bind `#1` | `reconcile=bind seq=1 id=CB1-UNPROVISIONED_DEVICE-0001`. Screen: `BOUND LOCAL CANDIDATE #1` (`guest/zc21/active-max-bound.png`). |
+| `CAPTURE TEST` | `reason=IDEMPOTENT duplicate=1` on that same id (`guest/zc21/active-max-retry.png`). |
+| `NEW CAPTURE` | `seq=4 id=CB1-UNPROVISIONED_DEVICE-0004 admission=INCOMPLETE_IDENTITY evidence=READBACK_MATCHED duplicate=0 d1=UNCERTIFIED` (`guest/zc21/active-max-new.png`). |
+
+### Bip 6, rectangular
+
+`zeus dev -t "Amazfit Bip 6"` rebuilt sources `9765120`, `9765121`, `10158337` onto the existing `4ae8ec66a7e2d342faf040652f4f41ff` norflash. Boot at 11:50 Europe/Bucharest:
+
+`FORREF_DEVICE page=home width=390 height=450 shape=RECT screenShape=0 keyNumber=2 keyType=normal_20 deviceSource=10158337 deviceName=Bip 6 statusBar=64 safeMargin=12`
+
+Review recovered the same three ids (`guest/zc21/bip6-recovered.png`). Live return still said `LAST KNOWN 00:56`.
+
+| Tap | Console |
+| --- | --- |
+| `CAPTURE TEST` with no bound id | `decide=REFUSE reason=RECONCILE_REQUIRED` and `reason=RECONCILE_REQUIRED duplicate=0`. Screen: `RECONCILE — NOT A MATCH RECORD` (`guest/zc21/bip6-reconcile.png`). |
+| `VIEW LOCAL` | `#3 LOCAL CANDIDATE CB1-SIM_DEVICE_001-0003` plus the two incomplete yellows (`guest/zc21/bip6-view.png`). |
+| Bind `#1` | `reconcile=bind seq=1 id=CB1-UNPROVISIONED_DEVICE-0001` (`guest/zc21/bip6-bound.png`). |
+| `CAPTURE TEST` | `seq=1` `reason=IDEMPOTENT duplicate=1` (`guest/zc21/bip6-retry.png`). |
+| `NEW CAPTURE` | `seq=4 id=CB1-UNPROVISIONED_DEVICE-0004` (`guest/zc21/bip6-new.png`). |
+
+Neither guest showed Saved, a score, or an official minute. The new yellow stayed `INCOMPLETE_IDENTITY`. `d1=UNCERTIFIED` stayed on every capture line.
+
+ZC21 commands, after the controller change: `npm test` geometry pass and 44 node tests, 0 failed. `./tool/verify_cloud.sh` exit 0, Match Core 377, persistence 92, phone 126.

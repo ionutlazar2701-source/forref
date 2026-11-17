@@ -2,7 +2,7 @@ import { back } from "@zos/router";
 import { logDevice, bindBack, clear, stack } from "../../../utils/chrome";
 import { t, showTeam, showEvent, showPlayer } from "../../../utils/text";
 import { state } from "../../../utils/state";
-import { Admission, Evidence, createJournal, intentForCaptureTap } from "../../../utils/capture_candidate";
+import { Admission, Evidence, bindRecoveredCandidate, createJournal, decideCaptureTap } from "../../../utils/capture_candidate";
 import { watchCaptureAdapter, watchDiagnosticSource } from "../../../utils/capture_device";
 
 function journal() {
@@ -43,6 +43,12 @@ function statusLine(s, loaded) {
   }
   if (s.captureNote === "incomplete") {
     return t("candidateIncomplete");
+  }
+  if (s.captureNote === "reconcile") {
+    return t("reconcileRequired");
+  }
+  if (s.captureNote === "bound" && s.captureIndex) {
+    return t("boundCandidate") + " #" + s.captureIndex + " — " + t("notMatchRecord");
   }
   if (s.captureNote === "readback" && s.captureIndex) {
     return t("localCandidate") + " #" + s.captureIndex + " — " + t("notMatchRecord");
@@ -130,7 +136,31 @@ function paintView(m, s, loaded) {
   for (let i = 0; i < shown.length; i++) {
     const entry = shown[i];
     const mark = entry.admissionState === Admission.VALID_STRUCTURED_CANDIDATE ? t("localCandidate") : t("candidateIncomplete");
-    rows.push({ label: "#" + entry.localSequence + " " + mark + " " + entry.captureIntentId });
+    rows.push({
+      label: "#" + entry.localSequence + " " + mark + " " + entry.captureIntentId,
+      action: () => {
+        const bound = bindRecoveredCandidate(loaded, entry.captureIntentId);
+        if (!bound.ok) {
+          s.captureNote = "failed";
+          s.captureView = false;
+          paint();
+          return;
+        }
+        s.captureIntentId = bound.captureIntentId;
+        s.captureIndex = bound.entry.localSequence;
+        s.captureNote = "bound";
+        s.captureView = false;
+        console.log(
+          "FORREF_CAPTURE reconcile=bind seq=" +
+            bound.entry.localSequence +
+            " id=" +
+            bound.captureIntentId +
+            " d1=UNCERTIFIED"
+        );
+        paint();
+      },
+      name: "review-bind-" + entry.localSequence,
+    });
   }
   while (rows.length < 4) {
     rows.push({ label: " " });
@@ -147,13 +177,52 @@ function paintView(m, s, loaded) {
   stack(m, t("viewLocal"), rows);
 }
 
-function capture(s, fresh) {
-  const result = journal().append({
+function captureInput(s) {
+  return {
     eventToken: s.event,
     teamToken: s.team,
     playerToken: s.player,
     fixtureMode: s.captureFixture === true,
-    captureIntentId: intentForCaptureTap(s.captureIntentId, fresh),
+  };
+}
+
+function capture(s, fresh) {
+  const input = captureInput(s);
+  const loaded = journal().read();
+  const decision = decideCaptureTap({
+    fresh: fresh,
+    openIntentId: s.captureIntentId,
+    loaded: loaded,
+    input: input,
+  });
+  console.log(
+    "FORREF_CAPTURE decide=" +
+      decision.action +
+      " reason=" +
+      decision.reason +
+      " id=" +
+      (decision.captureIntentId || "")
+  );
+  if (decision.action !== "APPEND") {
+    s.captureNote = decision.reason === "RECONCILE_REQUIRED" ? "reconcile" : "failed";
+    console.log(
+      "FORREF_CAPTURE seq= id= admission=" +
+        (loaded.admissionState || "") +
+        " evidence=" +
+        (loaded.evidence || "") +
+        " reason=" +
+        decision.reason +
+        " duplicate=0 d1=UNCERTIFIED"
+    );
+    paint();
+    return;
+  }
+  const result = journal().append({
+    eventToken: input.eventToken,
+    teamToken: input.teamToken,
+    playerToken: input.playerToken,
+    fixtureMode: input.fixtureMode,
+    captureIntentId: decision.captureIntentId,
   });
   logCapture(result);
   if (result.entry && result.entry.captureIntentId) {

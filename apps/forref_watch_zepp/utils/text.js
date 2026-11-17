@@ -115,7 +115,9 @@ const EN = {
   candidateRecovered: "LOCAL CANDIDATE RECOVERED — D1 UNVERIFIED",
   candidateIncomplete: "INCOMPLETE — NOT A MATCH RECORD",
   captureFailed: "CAPTURE FAILED / JOURNAL UNVERIFIED",
-  candidateConflict: "CONFLICT — NOT A MATCH RECORD",
+    candidateConflict: "CONFLICT — NOT A MATCH RECORD",
+    reconcileRequired: "RECONCILE — NOT A MATCH RECORD",
+    boundCandidate: "BOUND LOCAL CANDIDATE",
   candidateNone: "NO LOCAL CANDIDATE",
   reviewCapture: "BACK TO REVIEW",
 };
@@ -234,7 +236,9 @@ const RO = {
   candidateRecovered: "CANDIDAT LOCAL RECUPERAT — D1 NEVERIFICAT",
   candidateIncomplete: "INCOMPLET — NU E RECORD DE MECI",
   captureFailed: "CAPTURĂ EȘUATĂ / JURNAL NEVERIFICAT",
-  candidateConflict: "CONFLICT — NU E RECORD DE MECI",
+    candidateConflict: "CONFLICT — NU E RECORD DE MECI",
+    reconcileRequired: "RECONCILIERE — NU E RECORD DE MECI",
+    boundCandidate: "CANDIDAT LOCAL LEGAT",
   candidateNone: "FĂRĂ CANDIDAT LOCAL",
   reviewCapture: "ÎNAPOI LA VERIFICARE",
 };

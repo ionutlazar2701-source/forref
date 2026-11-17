@@ -23,5 +23,12 @@ The capture cases are `test/capture_candidate.test.js`. The adapter under test i
 | `stat` or `read` throws `EIO` | `READ_EXCEPTION`, `UNVERIFIED_STORAGE`. `append` is not called. |
 | The capacity re-read throws | `READ_EXCEPTION` before any append. The attempted id is kept for a retry. The file stays empty. |
 | Match filter | `SIM_MATCH_002` matches nothing. The fixture match does not absorb the unprovisioned line. |
+| Empty id after a verified yellow, the pre-fix page path | A second append allocates sequence `2` and a different id. |
+| Same bytes, `decideCaptureTap` with no open id | `REFUSE` / `RECONCILE_REQUIRED`. The buffer is unchanged. A different shirt token still refuses, because the yellow payload does not carry it. |
+| Bind the recovered id, then retry | No append on bind. The retry is `IDEMPOTENT` and the id stays. |
+| `fresh: true` after that bind | Sequence `2`, a different id, still `YELLOW`, no send-off kind. |
+| Open yellow id replayed as a goal | `CONFLICT`. The first payload bytes stay. |
+| Corrupt prefix | `decideCaptureTap` returns `REFUSE`. A following append does not change the bytes. Bind returns not ok. |
+| Read throws after the entry bytes are written | `READBACK_MISMATCH`, `ok: false`, `UNVERIFIED_STORAGE`, attempted id kept. A later empty-id decision refuses. Replaying the attempted id is `IDEMPOTENT` and does not append. |
 
 The Dart reader `apps/referee_phone/test/capture_candidate_envelope_test.dart` parses `test/fixtures/valid_goal_envelope.json` and checks the wire fields only. It does not call the phone commit boundary and does not execute the JavaScript app.
