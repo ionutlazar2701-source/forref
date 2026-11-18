@@ -21,7 +21,7 @@ test("the lab is a separate app and does not touch the production watch contract
   assert.equal(app.permissions.indexOf("data:user.hd.heart_rate") >= 0, true);
   assert.equal(app.permissions.indexOf("data:user.hd.distance") >= 0, true);
   assert.equal(app.targets.gt.module.page.pages.length, 2);
-  assert.equal(app.app.version.name, "2.0.0");
+  assert.equal(app.app.version.name, "2.1.0");
   assert.equal(app.permissions.indexOf("device:os.bg_service"), -1);
   assert.equal(JSON.stringify(app).includes("app-service"), false);
   assert.equal(service.includes("Geolocation"), false);
