@@ -9,6 +9,22 @@ export const HR_HOLD_MS = 5000;
 
 const EARTH_RADIUS_M = 6371000;
 
+export function measureSegment(anchor, point) {
+  const dt = point.elapsedMs - anchor.elapsedMs;
+  if (!(dt > 0)) {
+    return { accept: false, moveAnchor: false, reason: "NON_POSITIVE_TIME", meters: 0, speed: null, dt: dt };
+  }
+  const meters = haversineMeters(anchor, point);
+  const speed = meters / (dt / 1000);
+  if (speed > MAX_PLAUSIBLE_SPEED_MPS) {
+    return { accept: false, moveAnchor: false, reason: "TELEPORT", meters: meters, speed: speed, dt: dt };
+  }
+  if (meters < STATIONARY_METERS) {
+    return { accept: false, moveAnchor: false, reason: "STATIONARY", meters: meters, speed: speed, dt: dt };
+  }
+  return { accept: true, moveAnchor: true, reason: "ACCEPT", meters: meters, speed: speed, dt: dt };
+}
+
 export function haversineMeters(a, b) {
   const toRad = (value) => (value * Math.PI) / 180;
   const dLat = toRad(b.lat - a.lat);
@@ -171,19 +187,21 @@ export function analyzeTrack(entries, sessionId) {
       continue;
     }
     if (previous) {
-      const meters = haversineMeters(previous, entry);
-      const speed = meters / (dt / 1000);
-      if (speed > MAX_PLAUSIBLE_SPEED_MPS) {
-        discarded.push({ seq: entry.seq, reason: "TELEPORT" });
+      const decision = measureSegment(
+        { lat: previous.lat, lon: previous.lon, elapsedMs: previous.diagnosticElapsedMs },
+        { lat: entry.lat, lon: entry.lon, elapsedMs: entry.diagnosticElapsedMs },
+      );
+      if (decision.reason === "TELEPORT" || decision.reason === "STATIONARY") {
+        discarded.push({ seq: entry.seq, reason: decision.reason });
         continue;
       }
       segments.push({
         fromSeq: previous.seq,
         toSeq: entry.seq,
-        meters: meters,
-        dt: dt,
-        speed: speed,
-        stationary: meters < STATIONARY_METERS,
+        meters: decision.meters,
+        dt: decision.dt,
+        speed: decision.speed,
+        stationary: false,
         spike: false,
       });
     }

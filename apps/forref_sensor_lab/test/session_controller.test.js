@@ -6,6 +6,19 @@ function point(lat, lon, elapsedMs) {
   return { type: "sample", status: "A", lat: lat, lon: lon, elapsedMs: elapsedMs, metaPresent: false };
 }
 
+test("three meter walking steps are kept on the anchor until they clear four meters", () => {
+  const session = createSession();
+  session.startRecording({ hrOnly: false, sessionId: "V2-0009" });
+  session.markGpsStart();
+  const origin = { lat: 0, lon: 0 };
+  for (let step = 0; step <= 4; step++) {
+    const north = step * 3;
+    const lat = origin.lat + (north / 6371000) * (180 / Math.PI);
+    session.onGps(point(lat, 0, 1000 + step * 2000));
+  }
+  assert.ok(Math.abs(session.view().distanceMeters - 12) < 1);
+});
+
 test("invalid GNSS does not block heart rate or add distance across a gap", () => {
   const session = createSession();
   session.startRecording({ hrOnly: false, sessionId: "V2-0001" });

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { analyzeTrack, buildHeatMap, haversineMeters, HR_HOLD_MS, toLocalMeters } from "../lib/analytics.js";
+import { analyzeTrack, buildHeatMap, haversineMeters, HR_HOLD_MS, measureSegment, toLocalMeters } from "../lib/analytics.js";
 
 function gnss(seq, elapsed, lat, lon, status) {
   return {
@@ -34,6 +34,29 @@ test("invalid coordinates, no fix, duplicates, and non-positive time are discard
   assert.equal(report.accepted.length, 1);
   assert.equal(report.distanceMeters, 0);
   assert.equal(report.certifiedDistance, false);
+});
+
+test("short walking steps accumulate from a held anchor and jitter under four meters does not", () => {
+  const origin = { lat: 0, lon: 0 };
+  const walked = [0, 3, 6, 9, 12].map((east, index) => {
+    const point = metersPoint(origin, east, 0);
+    return gnss(index + 1, index * 2000, point.lat, point.lon);
+  });
+  const report = analyzeTrack(walked, "LAB-0001");
+  assert.ok(report.discarded.some((item) => item.reason === "STATIONARY"));
+  assert.ok(Math.abs(report.distanceMeters - 12) < 1);
+  const held = measureSegment(
+    { lat: origin.lat, lon: origin.lon, elapsedMs: 0 },
+    { lat: metersPoint(origin, 3, 0).lat, lon: metersPoint(origin, 3, 0).lon, elapsedMs: 2000 },
+  );
+  assert.equal(held.reason, "STATIONARY");
+  assert.equal(held.moveAnchor, false);
+  const jitter = [0, 1, -1, 2, 0].map((east, index) => {
+    const point = metersPoint(origin, east, 0);
+    return gnss(index + 1, index * 5000, point.lat, point.lon);
+  });
+  const still = analyzeTrack(jitter, "LAB-0001");
+  assert.equal(still.distanceMeters, 0);
 });
 
 test("stationary drift does not add distance and a teleport is not a max speed", () => {
