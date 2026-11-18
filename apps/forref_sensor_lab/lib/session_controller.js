@@ -1,6 +1,6 @@
 // In-memory session. Sensor callbacks enqueue a bounded batch. They do not read storage.
 
-import { haversineMeters, MAX_PLAUSIBLE_SPEED_MPS, MIN_SPEED_DT_MS, SPIKE_SPEED_MPS, STATIONARY_METERS } from "./analytics.js";
+import { measureSegment, MIN_SPEED_DT_MS, SPIKE_SPEED_MPS } from "./analytics.js";
 import { attachGpsMeta, initialGps, reduceGps } from "./gps_state.js";
 import { initialHr, reduceHr } from "./hr_state.js";
 
@@ -76,17 +76,17 @@ export function createSession() {
       anchor = next;
       return;
     }
-    const dt = next.elapsedMs - anchor.elapsedMs;
-    if (!(dt > 0)) {
+    const decision = measureSegment(anchor, next);
+    if (decision.reason === "NON_POSITIVE_TIME" || decision.reason === "TELEPORT") {
       counters.rejected += 1;
       return;
     }
-    const meters = haversineMeters(anchor, next);
-    const speed = meters / (dt / 1000);
-    if (speed > MAX_PLAUSIBLE_SPEED_MPS) {
-      counters.rejected += 1;
+    if (decision.reason === "STATIONARY") {
       return;
     }
+    const meters = decision.meters;
+    const speed = decision.speed;
+    const dt = decision.dt;
     const previous = recentSpeeds.length ? recentSpeeds[recentSpeeds.length - 1] : null;
     const isolated = recentSpeeds.length === 0 && speed > SPIKE_SPEED_MPS;
     const spike = isolated || (previous != null && speed > SPIKE_SPEED_MPS && speed > previous * 2);
@@ -95,7 +95,7 @@ export function createSession() {
       recentSpeeds.shift();
     }
     anchor = next;
-    if (spike || meters < STATIONARY_METERS || dt < MIN_SPEED_DT_MS) {
+    if (spike || dt < MIN_SPEED_DT_MS) {
       return;
     }
     distanceMeters += meters;
