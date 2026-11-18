@@ -20,7 +20,10 @@ test("the lab is a separate app and does not touch the production watch contract
   assert.equal(app.permissions.indexOf("device:os.geolocation") >= 0, true);
   assert.equal(app.permissions.indexOf("data:user.hd.heart_rate") >= 0, true);
   assert.equal(app.permissions.indexOf("data:user.hd.distance") >= 0, true);
-  assert.equal(app.targets.gt.module.page.pages.length, 4);
+  assert.equal(app.targets.gt.module.page.pages.length, 2);
+  assert.equal(app.app.version.name, "2.0.0");
+  assert.equal(app.permissions.indexOf("device:os.bg_service"), -1);
+  assert.equal(JSON.stringify(app).includes("app-service"), false);
   assert.equal(service.includes("Geolocation"), false);
   assert.equal(service.includes("HeartRate"), true);
   assert.equal(host.includes("@zos/sensor"), false);
@@ -40,9 +43,7 @@ test("console lines do not print coordinates or pulse values", () => {
     "../app.js",
     "../app-service/hr_only.js",
     "../page/gt/home/index.page.js",
-    "../page/gt/status/index.page.js",
-    "../page/gt/track/index.page.js",
-    "../page/gt/heat/index.page.js",
+    "../page/gt/diagnostics/index.page.js",
     "../utils/device_fs.js",
   ];
   for (let i = 0; i < files.length; i++) {

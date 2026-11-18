@@ -1,163 +1,154 @@
-// Foreground sensor session. Geolocation stays here. App Service cannot run it.
+// Sensor host. Callbacks update memory and arm a timer. They do not read the journal.
 
-import { GAP_MS } from "./analytics.js";
+import { createChunkStore } from "./chunk_store.js";
+import { createSession } from "./session_controller.js";
 
-function numberOrNull(value) {
-  return typeof value === "number" && isFinite(value) ? value : null;
+function logLine(message) {
+  console.log("FORREF_SENS_V2 " + message + " d1=UNCERTIFIED");
 }
 
-function logSample(entry) {
-  const flags = entry.flags && entry.flags.length ? entry.flags.join(",") : "";
-  console.log(
-    "FORREF_SENS kind=" + entry.kind +
-    " name=" + (entry.name || "") +
-    " seq=" + (entry.seq == null ? "" : entry.seq) +
-    " status=" + (entry.gpsStatus || "") +
-    " flags=" + flags +
-    " gap=" + (entry.gapReason || "") +
-    " d1=UNCERTIFIED"
-  );
-}
-
-export function createSensorHost(sdk, journal, clock) {
+export function createSensorHost(sdk, adapter, clock, timers) {
+  const session = createSession();
+  const store = createChunkStore(adapter);
   const geo = new sdk.Geolocation();
   const hr = new sdk.HeartRate();
-  let distance = null;
   let battery = null;
-  try {
-    distance = sdk.Distance ? new sdk.Distance() : null;
-  } catch (err) {
-    distance = null;
-  }
   try {
     battery = sdk.Battery ? new sdk.Battery() : null;
   } catch (err) {
     battery = null;
   }
-  let gnssCb = null;
-  let gnssInfoCb = null;
-  let hrCb = null;
-  let distCb = null;
-  let displayCb = null;
-  let running = false;
-  let sessionId = "";
-  let lastSignal = null;
-  let lastSatellites = null;
-  let lastError = "";
+  let gpsListening = false;
+  let hrListening = false;
+  let displayListening = false;
+  let flushTimer = null;
+  let flushArmed = false;
+  let startedGps = false;
+  let released = false;
 
-  function stamp() {
-    return {
-      diagnosticElapsedMs: clock.elapsed(),
-      diagnosticUtcMs: clock.utc(),
-      sessionId: sessionId,
-      source: "DEVICE_APP",
-    };
+  function elapsed() {
+    try {
+      return clock.elapsed();
+    } catch (err) {
+      return 0;
+    }
   }
 
-  function store(record) {
-    const result = journal.append(Object.assign(stamp(), record));
-    if (result.entry) {
-      logSample(result.entry);
+  function armFlush() {
+    if (flushArmed || !timers || released) {
+      return;
+    }
+    flushArmed = true;
+    flushTimer = timers.set(() => {
+      flushArmed = false;
+      flushTimer = null;
+      flush();
+    }, 1000);
+  }
+
+  function flush() {
+    const batch = session.takeBatch();
+    if (batch.length === 0) {
+      return { ok: true, empty: true };
+    }
+    const result = store.flush(session.view().sessionId, batch);
+    session.noteFlush(result);
+    if (!result.ok) {
+      logLine("flush=0 reason=" + (result.reason || "UNVERIFIED") + " lost=" + (result.uncertified || 0));
     } else {
-      lastError = result.reason || "WRITE_FAILED";
-      console.log("FORREF_SENS kind=" + (record.kind || "") + " stored=0 reason=" + lastError + " d1=UNCERTIFIED");
+      logLine("flush=1 bytes=" + (result.bytes || 0) + " saved=0");
     }
     return result;
   }
 
-  function lastGnss() {
-    const loaded = journal.read();
-    if (!loaded.ok) {
-      return null;
-    }
-    const rows = loaded.entries.filter((entry) => entry.kind === "GNSS" && entry.sessionId === sessionId);
-    return rows.length ? rows[rows.length - 1] : null;
-  }
-
-  function onGnss() {
-    let status = "";
+  function onGps() {
+    const started = elapsed();
     try {
-      status = geo.getStatus() || "";
-    } catch (err) {
-      status = "";
-    }
-    const fix = status === "A";
-    let lat = null;
-    let lon = null;
-    if (fix) {
-      try {
-        lat = numberOrNull(geo.getLatitude());
-        lon = numberOrNull(geo.getLongitude());
-      } catch (err) {
-        lat = null;
-        lon = null;
+      const status = geo.getStatus() || "";
+      let lat = null;
+      let lon = null;
+      if (status === "A") {
+        lat = geo.getLatitude();
+        lon = geo.getLongitude();
       }
+      session.onGps({ type: "sample", status: status, lat: lat, lon: lon, elapsedMs: elapsed(), metaPresent: false });
+    } catch (err) {
+      session.markGpsError();
+      logLine("gps=ERROR");
     }
-    const flags = [];
-    if (!fix) {
-      flags.push("NO_FIX");
-    }
-    const prev = lastGnss();
-    const elapsed = clock.elapsed();
-    if (prev && prev.diagnosticElapsedMs != null && elapsed != null && elapsed < prev.diagnosticElapsedMs) {
-      store({ kind: "GAP", gapReason: "RESTART_UNMEASURED", missingMs: null, fromSeq: prev.seq, flags: ["UNMEASURED"] });
-    } else if (prev && prev.diagnosticElapsedMs != null && elapsed != null && elapsed - prev.diagnosticElapsedMs > GAP_MS) {
-      const loaded = journal.read();
-      const between = loaded.ok ? loaded.entries.filter((entry) => entry.seq > prev.seq && entry.kind === "LIFECYCLE" && (entry.name === "DISPLAY_OFF" || entry.name === "PAUSE")) : [];
-      store({
-        kind: "GAP",
-        gapReason: between.length ? "SCREEN_OFF_OR_PAUSE" : "STALL",
-        missingMs: elapsed - prev.diagnosticElapsedMs,
-        fromSeq: prev.seq,
-        flags: [],
-      });
-    }
-    const batteryPercent = battery && battery.getCurrent ? numberOrNull(battery.getCurrent()) : null;
-    const stored = store({
-      kind: "GNSS",
-      gpsStatus: status || "UNAVAILABLE",
-      lat: lat,
-      lon: lon,
-      satellites: lastSatellites,
-      signal: lastSignal,
-      batteryPercent: batteryPercent,
-      flags: flags,
-    });
-    if (!stored.ok && stored.reason === "CAPACITY") {
-      stop();
-    }
+    session.noteLatency(elapsed() - started);
+    armFlush();
   }
 
-  function onHr() {
+  function onGnssInfo(info) {
+    const body = info || {};
+    session.onGpsMeta({
+      satellitesUsed: typeof body.nb_used_satellite === "number" ? body.nb_used_satellite : null,
+      satellitesValid: typeof body.nb_valid_satellite === "number" ? body.nb_valid_satellite : null,
+      signal: typeof body.top4_cn_val === "number" ? body.top4_cn_val : null,
+      agpsTimestamp: typeof body.agps_timestamp === "number" ? body.agps_timestamp : null,
+    });
+  }
+
+  function onHeart() {
+    const started = elapsed();
     let bpm = null;
     try {
-      bpm = numberOrNull(hr.getCurrent());
+      bpm = hr.getCurrent();
     } catch (err) {
       bpm = null;
     }
-    const flags = bpm == null ? ["HR_UNAVAILABLE"] : [];
-    store({ kind: "HR", hrBpm: bpm, flags: flags });
+    session.onHr(bpm, elapsed());
+    session.noteLatency(elapsed() - started);
+    armFlush();
   }
 
-  function onDistance() {
-    let raw = null;
-    try {
-      raw = numberOrNull(distance.getCurrent());
-    } catch (err) {
-      raw = null;
+  function onDisplay(status) {
+    const raw = status == null ? "" : String(status);
+    const off = raw === "0" || raw.toLowerCase() === "off";
+    logLine("display=" + (off ? "OFF" : "OTHER"));
+  }
+
+  function ensureHr() {
+    if (hrListening) {
+      return { ok: true, already: true };
     }
-    store({
-      kind: "DISTANCE",
-      distanceRaw: raw,
-      distanceUnit: "UNRESOLVED",
-      distanceAttribution: "UNRESOLVED",
-      flags: ["UNIT_UNRESOLVED"],
-    });
+    session.markMeasuring();
+    try {
+      hr.onCurrentChange(onHeart);
+      hrListening = true;
+    } catch (err) {
+      session.markHrError();
+      logLine("hr=UNAVAILABLE");
+      return { ok: false, reason: "HR_UNAVAILABLE" };
+    }
+    try {
+      if (!session.view().hrLive && hr.getLast) {
+        session.markHrLast(hr.getLast());
+      }
+    } catch (err) {
+      session.markHrUnavailable();
+    }
+    logLine("hr=ON gps=" + session.view().gpsState);
+    return { ok: true };
   }
 
-  function start() {
-    if (running) {
-      return { ok: true, already: true, sessionId: sessionId };
+  function ensureGps() {
+    if (gpsListening || startedGps) {
+      return { ok: true, already: true };
+    }
+    let supported = true;
+    try {
+      if (sdk.checkSensor) {
+        supported = sdk.checkSensor(sdk.Geolocation) !== false;
+      }
+    } catch (err) {
+      supported = false;
+    }
+    if (!supported) {
+      session.markGpsUnsupported();
+      logLine("gps=UNSUPPORTED");
+      return { ok: false, reason: "UNSUPPORTED" };
     }
     let enabled = true;
     try {
@@ -167,130 +158,190 @@ export function createSensorHost(sdk, journal, clock) {
     } catch (err) {
       enabled = false;
     }
-    sessionId = journal.nextSessionId();
     if (!enabled) {
-      store({ kind: "LIFECYCLE", name: "PERMISSION_DENIED", flags: ["PERMISSION_DENIED"] });
-      sessionId = "";
-      return { ok: false, reason: "PERMISSION_DENIED" };
+      session.markGpsPermission();
+      logLine("gps=PERMISSION_REQUIRED");
+      return { ok: false, reason: "PERMISSION_REQUIRED" };
     }
-    store({ kind: "LIFECYCLE", name: "START", flags: [] });
-    gnssCb = onGnss;
-    hrCb = onHr;
     try {
+      geo.onChange(onGps);
+      gpsListening = true;
+      if (geo.onGnssChange) {
+        geo.onGnssChange(onGnssInfo);
+      }
       geo.start();
-      geo.onChange(gnssCb);
+      startedGps = true;
+      session.markGpsStart();
     } catch (err) {
-      lastError = "GNSS_START_FAILED";
-      store({ kind: "LIFECYCLE", name: "GNSS_START_FAILED", flags: ["GNSS_UNAVAILABLE"] });
-    }
-    if (geo.onGnssChange) {
-      gnssInfoCb = (info) => {
-        const body = info || {};
-        lastSatellites = numberOrNull(body.nb_used_satellite);
-        lastSignal = numberOrNull(body.top4_cn_val);
-      };
       try {
-        geo.onGnssChange(gnssInfoCb);
-      } catch (err) {
-        gnssInfoCb = null;
+        if (geo.offChange) geo.offChange(onGps);
+      } catch (stopErr) {
+        session.markGpsError();
       }
+      gpsListening = false;
+      startedGps = false;
+      session.markGpsError();
+      logLine("gps=ERROR");
+      return { ok: false, reason: "ERROR" };
     }
-    try {
-      hr.onCurrentChange(hrCb);
-    } catch (err) {
-      store({ kind: "HR", hrBpm: null, flags: ["HR_UNAVAILABLE"] });
-      hrCb = null;
+    logLine("gps=SEARCHING");
+    return { ok: true };
+  }
+
+  function enableHr() {
+    if (released) {
+      return { ok: false, reason: "RELEASED" };
     }
-    if (distance && distance.onChange) {
-      distCb = onDistance;
-      try {
-        distance.onChange(distCb);
-      } catch (err) {
-        distCb = null;
-        store({ kind: "DISTANCE", distanceRaw: null, distanceUnit: "UNRESOLVED", distanceAttribution: "UNRESOLVED", flags: ["DISTANCE_UNAVAILABLE"] });
-      }
+    session.enableHr();
+    watchDisplay();
+    return ensureHr();
+  }
+
+  function startSession(options) {
+    if (released) {
+      return { ok: false, reason: "RELEASED" };
+    }
+    const hrOnly = !!(options && options.hrOnly);
+    const allocated = store.nextSessionId();
+    const sessionId = allocated.ok ? allocated.sessionId : "V2-UNVERIFIED";
+    session.startRecording({ hrOnly: hrOnly || !allocated.ok, sessionId: sessionId });
+    watchDisplay();
+    const hrResult = ensureHr();
+    let gpsResult = { ok: false, reason: "HR_ONLY" };
+    if (!hrOnly) {
+      gpsResult = ensureGps();
     } else {
-      store({ kind: "DISTANCE", distanceRaw: null, distanceUnit: "UNRESOLVED", distanceAttribution: "UNRESOLVED", flags: ["DISTANCE_UNAVAILABLE"] });
+      logLine("mode=HR_ONLY gps=OFF");
     }
-    if (sdk.display && sdk.display.onStatusChange) {
-      displayCb = (status) => {
-        const raw = status == null ? "" : String(status);
-        const off = raw === "0" || raw.toLowerCase() === "off";
-        store({ kind: "LIFECYCLE", name: off ? "DISPLAY_OFF" : "DISPLAY_" + raw, flags: [] });
-      };
+    if (!allocated.ok) {
+      session.noteFlush({ ok: false, reason: "UNVERIFIED", uncertified: 0 });
+    }
+    logLine("session=" + sessionId + " phase=" + session.view().phase);
+    return { ok: hrResult.ok || gpsResult.ok || hrOnly, sessionId: sessionId, gps: session.view().gpsState, hr: session.view().hrState };
+  }
+
+  function detach() {
+    if (flushTimer != null && timers) {
+      timers.clear(flushTimer);
+      flushTimer = null;
+    }
+    flushArmed = false;
+    if (gpsListening) {
       try {
-        sdk.display.onStatusChange(displayCb);
+        if (geo.offChange) geo.offChange(onGps);
       } catch (err) {
-        displayCb = null;
+        session.markGpsError();
       }
+      try {
+        if (geo.offGnssChange) geo.offGnssChange(onGnssInfo);
+      } catch (err) {
+        session.markGpsError();
+      }
+      gpsListening = false;
     }
-    running = true;
-    return { ok: true, sessionId: sessionId };
+    if (startedGps) {
+      try {
+        geo.stop();
+      } catch (err) {
+        session.markGpsError();
+      }
+      startedGps = false;
+    }
+    if (hrListening) {
+      try {
+        if (hr.offCurrentChange) hr.offCurrentChange(onHeart);
+      } catch (err) {
+        session.markHrError();
+      }
+      hrListening = false;
+    }
+    if (displayListening && sdk.display && sdk.display.offStatusChange) {
+      try {
+        sdk.display.offStatusChange(onDisplay);
+      } catch (err) {
+        logLine("display=STOP_FAILED");
+      }
+      displayListening = false;
+    }
   }
 
   function stop() {
-    if (gnssCb && geo.offChange) {
-      try {
-        geo.offChange(gnssCb);
-      } catch (err) {
-        lastError = "GNSS_STOP_FAILED";
-      }
-    }
-    gnssCb = null;
-    if (gnssInfoCb && geo.offGnssChange) {
-      try {
-        geo.offGnssChange(gnssInfoCb);
-      } catch (err) {
-        lastError = "GNSS_STOP_FAILED";
-      }
-    }
-    gnssInfoCb = null;
-    try {
-      geo.stop();
-    } catch (err) {
-      lastError = "GNSS_STOP_FAILED";
-    }
-    if (hrCb && hr.offCurrentChange) {
-      try {
-        hr.offCurrentChange(hrCb);
-      } catch (err) {
-        lastError = "HR_STOP_FAILED";
-      }
-    }
-    hrCb = null;
-    if (distCb && distance && distance.offChange) {
-      try {
-        distance.offChange(distCb);
-      } catch (err) {
-        lastError = "DISTANCE_STOP_FAILED";
-      }
-    }
-    distCb = null;
-    if (displayCb && sdk.display && sdk.display.offStatusChange) {
-      try {
-        sdk.display.offStatusChange(displayCb);
-      } catch (err) {
-        lastError = "DISPLAY_STOP_FAILED";
-      }
-    }
-    displayCb = null;
-    if (running) {
-      store({ kind: "LIFECYCLE", name: "STOP", flags: [] });
-    }
-    running = false;
+    session.beginStop();
+    detach();
+    flush();
+    session.finishStop();
+    globalThis.__FORREF_SENS_DIAG = session.diagnostics();
+    logLine("session=STOPPED gps=STOPPED hr=STOPPED");
+    return { ok: true, saved: false };
   }
 
-  function noteLifecycle(name) {
-    store({ kind: "LIFECYCLE", name: name, flags: [] });
+  function release() {
+    if (released) {
+      return { ok: true, already: true };
+    }
+    stop();
+    released = true;
+    return { ok: true };
   }
+
+  function watchDisplay() {
+    if (displayListening || !sdk.display || !sdk.display.onStatusChange) {
+      return;
+    }
+    try {
+      sdk.display.onStatusChange(onDisplay);
+      displayListening = true;
+    } catch (err) {
+      displayListening = false;
+    }
+  }
+
+  function sampleBattery() {
+    if (!battery || !battery.getCurrent) {
+      return null;
+    }
+    try {
+      const value = battery.getCurrent();
+      session.noteBattery(typeof value === "number" ? value : null);
+    } catch (err) {
+      session.noteBattery(null);
+    }
+    return session.view().batteryPercent;
+  }
+
+  globalThis.__FORREF_SENS_RELEASE = release;
 
   return {
-    start: start,
+    enableHr: enableHr,
+    startSession: startSession,
     stop: stop,
-    noteLifecycle: noteLifecycle,
-    running: () => running,
-    sessionId: () => sessionId,
-    lastError: () => lastError,
-    listeners: () => ({ gnss: gnssCb, hr: hrCb, distance: distCb }),
+    release: release,
+    flush: flush,
+    tick: (ms) => session.tick(ms),
+    sampleBattery: sampleBattery,
+    view: () => session.view(),
+    diagnostics: () => session.diagnostics(),
+    markPaint() {
+      session.notePaint();
+    },
+    listeners: () => ({ gps: gpsListening ? 1 : 0, hr: hrListening ? 1 : 0, gpsStarted: startedGps ? 1 : 0 }),
   };
+}
+
+export function readPerformance(sdk) {
+  try {
+    if (!sdk || !sdk.getPerformance) {
+      return { available: false };
+    }
+    const raw = sdk.getPerformance() || {};
+    const out = { available: true };
+    ["memory", "cpu", "fps"].forEach((key) => {
+      if (typeof raw[key] === "number" && isFinite(raw[key])) {
+        out[key] = raw[key];
+      }
+    });
+    return out;
+  } catch (err) {
+    return { available: false };
+  }
 }

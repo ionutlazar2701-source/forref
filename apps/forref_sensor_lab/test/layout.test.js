@@ -14,4 +14,9 @@ test("the Bip 6 stack stays below the status bar", () => {
   for (let i = 0; i < track.rows.length; i++) {
     assert.equal(rowFits(info, track.rows[i]), true, "track row " + i);
   }
+  const session = layoutLab(info, 10);
+  assert.ok(session.rowH >= 28);
+  for (let i = 0; i < session.rows.length; i++) {
+    assert.equal(rowFits(info, session.rows[i]), true, "session row " + i);
+  }
 });

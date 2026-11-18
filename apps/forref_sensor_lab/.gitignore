@@ -14,4 +14,8 @@ selenium-debug.log
 *.njsproj
 *.sln
 *.journal
+*.chk
+forref_sens_v2.counter
 *.log
+
+forref-sens-test/

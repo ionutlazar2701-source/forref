@@ -1,3 +1,4 @@
+// SENS V2 does not register this file. It must not be started after an unstable trial.
 import { HeartRate } from "@zos/sensor";
 import { createJournal } from "../lib/journal";
 import { deviceAdapter } from "../utils/device_fs";

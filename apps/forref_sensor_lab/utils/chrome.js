@@ -82,3 +82,52 @@ export function stack(m, title, rows) {
     }
   });
 }
+
+export function mountSession(m, title, rows) {
+  clear();
+  const laid = layoutLab(m, rows.length);
+  const guide = laid.rows[0] || { x: 12, w: m.width - 24 };
+  const texts = {};
+  owned.push(hmUI.createWidget(hmUI.widget.FILL_RECT, { x: 0, y: 0, w: m.width, h: m.height, color: 0x071d33 }));
+  owned.push(hmUI.createWidget(hmUI.widget.TEXT, {
+    x: guide.x, y: laid.titleY, w: guide.w, h: laid.titleH,
+    color: 0x3fc3be, text: title, text_size: 22, align_h: hmUI.align.CENTER_H, align_v: hmUI.align.CENTER_V,
+  }));
+  rows.forEach((row, index) => {
+    const slot = laid.rows[index];
+    if (!slot) {
+      return;
+    }
+    if (row.action) {
+      console.log("FORREF_SENS_V2 hit=" + (row.name || "row-" + index) + " d1=UNCERTIFIED");
+      owned.push(hmUI.createWidget(hmUI.widget.BUTTON, {
+        x: slot.x, y: slot.y, w: slot.w, h: slot.h, radius: 12,
+        normal_color: 0x0b2d5b, press_color: 0x3fc3be, color: 0xffffff,
+        text: row.label, text_size: slot.h < 40 ? 14 : 18, click_func: row.action,
+      }));
+      return;
+    }
+    const widget = hmUI.createWidget(hmUI.widget.TEXT, {
+      x: slot.x, y: slot.y, w: slot.w, h: slot.h,
+      color: row.color || 0xffffff, text: row.label, text_size: slot.h < 40 ? 14 : 16,
+      align_h: hmUI.align.CENTER_H, align_v: hmUI.align.CENTER_V, text_style: hmUI.text_style.WRAP,
+    });
+    owned.push(widget);
+    if (row.name) {
+      texts[row.name] = widget;
+    }
+  });
+  return {
+    texts: texts,
+    setText(name, value) {
+      const widget = texts[name];
+      try {
+        if (widget && widget.setProperty && hmUI.prop && hmUI.prop.TEXT != null) {
+          widget.setProperty(hmUI.prop.TEXT, value);
+        }
+      } catch (err) {
+        console.log("FORREF_SENS_V2 ui=TEXT_FAILED d1=UNCERTIFIED");
+      }
+    },
+  };
+}

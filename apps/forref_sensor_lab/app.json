@@ -2,23 +2,22 @@
   "configVersion": "v3",
   "app": {
     "appId": 30101,
-    "appName": "FORREF SENS",
+    "appName": "SENS V2",
     "appType": "app",
     "version": {
-      "code": 1,
-      "name": "1.0.0"
+      "code": 2,
+      "name": "2.0.0"
     },
     "icon": "icon.png",
     "vender": "zepp",
-    "description": "FORREF experimental sensor lab. Not a match record."
+    "description": "SENS V2 diagnostic build. Not a match record."
   },
   "permissions": [
     "data:os.device.info",
     "device:os.local_storage",
     "device:os.geolocation",
     "data:user.hd.heart_rate",
-    "data:user.hd.distance",
-    "device:os.bg_service"
+    "data:user.hd.distance"
   ],
   "runtime": {
     "apiVersion": {
@@ -34,14 +33,7 @@
         "page": {
           "pages": [
             "page/gt/home/index.page",
-            "page/gt/status/index.page",
-            "page/gt/track/index.page",
-            "page/gt/heat/index.page"
-          ]
-        },
-        "app-service": {
-          "services": [
-            "app-service/hr_only"
+            "page/gt/diagnostics/index.page"
           ]
         }
       },
@@ -52,8 +44,8 @@
     }
   },
   "i18n": {
-    "en-US": { "appName": "FORREF SENS" },
-    "ro-RO": { "appName": "FORREF SENS" }
+    "en-US": { "appName": "SENS V2" },
+    "ro-RO": { "appName": "SENS V2" }
   },
   "defaultLanguage": "en-US"
 }
