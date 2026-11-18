@@ -1,0 +1,57 @@
+Simulator console extract. Guest clock is UTC.
+Coordinates and pulse values are omitted. status=A is a simulator GNSS status, not a hardware fix.
+18:22:22.249 > FORREF_SENS_BOOT namespace=forref_sens_001 schema=1 gnss=FOREGROUND_ONLY service=HR_ONLY workout=BIP6_NOT_LISTED d1=UNCERTIFIED
+18:22:22.385 > FORREF_SENS_BOOT namespace=forref_sens_001 schema=1 gnss=FOREGROUND_ONLY service=HR_ONLY workout=BIP6_NOT_LISTED d1=UNCERTIFIED
+18:22:22.387 > FORREF_SENS_DEVICE page=home width=390 height=450 shape=RECT screenShape=0 deviceSource=10158337 deviceName=Bip 6
+18:22:22.398 > FORREF_SENS_HIT name=sens-start x=12 y=141 w=366 h=37
+18:22:22.401 > FORREF_SENS_HIT name=sens-stop x=12 y=184 w=366 h=37
+18:22:22.404 > FORREF_SENS_HIT name=sens-status x=12 y=227 w=366 h=37
+18:22:22.407 > FORREF_SENS_HIT name=sens-track x=12 y=270 w=366 h=37
+18:22:22.409 > FORREF_SENS_HIT name=sens-heat x=12 y=313 w=366 h=37
+18:22:22.412 > FORREF_SENS_HIT name=sens-delete x=12 y=356 w=366 h=37
+18:22:22.415 > FORREF_SENS_HIT name=sens-service x=12 y=399 w=366 h=37
+18:22:50.654 > FORREF_SENS kind=LIFECYCLE name=START seq=1 status= flags= gap= d1=UNCERTIFIED
+18:22:50.662 > FORREF_SENS_DEVICE page=home width=390 height=450 shape=RECT screenShape=0 deviceSource=10158337 deviceName=Bip 6
+18:22:50.679 > FORREF_SENS_HIT name=sens-s
+18:22:50.683 > FORREF_SENS_HIT name=sens-stop x=12 y=184 w=366 h=37
+18:22:50.686 > FORREF_SENS_HIT name=sens-status x=12 y=227 w=366 h=37
+18:22:50.690 > FORREF_SENS_HIT name=sens-track x=12 y=270 w=366 h=37
+18:22:50.695 > FORREF_SENS_HIT name=sens-heat x=12 y=313 w=366 h=37
+18:22:50.699 > FORREF_SENS_HIT name=sens-delete x=12 y=356 w=366 h=
+18:22:50.704 > FORREF_SENS_HIT name=sens-service x=12 y=399 w=366 h=37
+18:22:52.123 > FORREF_SENS kind=GNSS name= seq=2 status=A flags= gap= d1=UNCERTIFIED
+18:22:54.492 > FORREF_SENS kind=GNSS name= seq=3 status=A flags= gap= d1=UNCERTIFIED
+18:22:56.470 > FORREF_SENS kind=GNSS name= seq=4 status=A flags= gap= d1=UNCERTIFIED
+18:22:58.649 > FORREF_SENS kind=GNSS name= seq=5 status=A flags= gap= d1=UNCERTIFIED
+18:23:00.933 > FORREF_SENS kind=GNSS name= seq=6 status=A flags= gap= d1=UNCERTIFIED
+18:23:02.999 > FORREF_SENS kind=GNSS name= seq=7 status=A flags= gap= d1=UNCERTIFIED
+18:23:05.299 > FORREF_SENS kind=GNSS name= seq=8 status=A flags= gap= d1=UNCERTIFIED
+18:23:07.036 > FORREF_SENS kind=GNSS name= seq=9 status=A flags= gap= d1=UNCERTIFIED
+18:23:09.290 > FORREF_SENS kind=GNSS name= seq=10 status=A flags= gap= d1=UNCERTIFIED
+18:23:11.526 > FORREF_SENS kind=GNSS name= seq=11 status=A flags= gap= d1=UNCERTIFIED
+18:23:12.530 > FORREF_SENS kind=LIFECYCLE name=APP_EXIT seq=12 status= flags= gap= d1=UNCERTIFIED
+18:23:12.627 > FORREF_SENS_DEVICE page=status width=390 height=450 shape=RECT screenShape=0 deviceSource=10158337 deviceName=Bip 6
+18:23:13.298 > FORREF_SENS_HIT name=sens-back x=12 y=392 w=366 h=43
+18:23:30.796 > FORREF_SENS_BOOT namespace=forref_sens_001 schema=1 gnss=FOREGROUND_ONLY service=HR_ONLY workout=BIP6_NOT_LISTED d1=UNCERTIFIED
+18:23:30.799 > FORREF_SENS_DEVICE page=home width=390 height=450 shape=RECT screenShape=0 deviceSource=10158337 deviceName=Bip 6
+18:23:30.809 > FORREF_SENS_HIT name=sens-start x=12 y=141 w=366 h=37
+18:23:30.812 > FORREF_SENS_HIT name=sens-stop x=12 y=184 w=366 h=37
+18:23:30.814 > FORREF_SENS_HIT name=sens-status x=12 y=227 w=366 h=37
+18:23:30.820 > FORREF_SENS_HIT name=sens-track x=12 y=270 w=366 h=37
+18:23:30.823 > FORREF_SENS_HIT name=sens-heat x=12 y=313 w=366 h=37
+18:23:30.826 > FORREF_SENS_HIT name=sens-delete x=12 y=356 w=366 h=37
+18:23:30.828 > FORREF_SENS_HIT name=sens-service x=12 y=399 w=366 h=37
+18:23:38.429 > FORREF_SENS kind=LIFECYCLE name=APP_EXIT seq=13 status= flags= gap= d1=UNCERTIFIED
+18:23:38.559 > FORREF_SENS_DEVICE page=heat width=390 height=450 shape=RECT screenShape=0 deviceSource=10158337 deviceName=Bip 6
+18:23:39.589 > FORREF_SENS_HIT name=sens-back x=12 y=356 w=366 h=80
+18:25:17.390 > FORREF_SENS_BOOT namespace=forref_sens_001 schema=1 gnss=FOREGROUND_ONLY service=H
+18:25:17.402 > FORREF_SENS_DEVICE page=home width=390 height=450 shape=RECT screenShape=0 deviceSource=10158337 deviceName=Bip 6
+18:25:17.417 > FORREF_SENS_HIT name=sens-start x=12 y=141 w=366 h=37
+18:25:17.420 > FORREF_SENS_HIT name=sens-stop x=12 y=184 w=366 h=37
+18:25:17.422 > FORREF_SENS_HIT name=sens-status x=12 y=227 w=366 h=37
+18:25:17.425 > FORREF_SENS_HIT name=sens-track x=12 y=270 w=366 h=37
+I/quickjs-libc SBEngine: FORREF_SENS_HIT name=sens-heat x=12 y=313 w=366 h=37
+18:25:17.431 > FORREF_SENS_HIT name=sens-delete x=12 y=356 w=366 h=37
+18:25:17.434 > FORREF_SENS_HIT name=sens-service x=12 y=399 w=366 h=37
+18:25:19.923 > FORREF_SENS kind=LIFECYCLE name=APP_EXIT seq=14 status= flags= gap= d1=UNCERTIFIED
+18:25:20.032 > FORREF_SENS_DEVICE page=status width=390 height=450 shape=RECT screenShape=0 deviceSource=10158337 deviceName=Bip 6

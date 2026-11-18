@@ -1,0 +1,51 @@
+{
+  "configVersion": "v3",
+  "app": {
+    "appId": 30101,
+    "appName": "SENS V2",
+    "appType": "app",
+    "version": {
+      "code": 2,
+      "name": "2.0.0"
+    },
+    "icon": "icon.png",
+    "vender": "zepp",
+    "description": "SENS V2 diagnostic build. Not a match record."
+  },
+  "permissions": [
+    "data:os.device.info",
+    "device:os.local_storage",
+    "device:os.geolocation",
+    "data:user.hd.heart_rate",
+    "data:user.hd.distance"
+  ],
+  "runtime": {
+    "apiVersion": {
+      "compatible": "4.0",
+      "target": "4.0",
+      "minVersion": "3.0"
+    }
+  },
+  "debug": false,
+  "targets": {
+    "gt": {
+      "module": {
+        "page": {
+          "pages": [
+            "page/gt/home/index.page",
+            "page/gt/diagnostics/index.page"
+          ]
+        }
+      },
+      "platforms": [
+        { "st": "s" }
+      ],
+      "designWidth": 390
+    }
+  },
+  "i18n": {
+    "en-US": { "appName": "SENS V2" },
+    "ro-RO": { "appName": "SENS V2" }
+  },
+  "defaultLanguage": "en-US"
+}
