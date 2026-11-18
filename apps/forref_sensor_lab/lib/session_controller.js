@@ -1,6 +1,6 @@
 // In-memory session. Sensor callbacks enqueue a bounded batch. They do not read storage.
 
-import { measureSegment, MIN_SPEED_DT_MS, SPIKE_SPEED_MPS } from "./analytics.js";
+import { advanceDistance } from "./analytics.js";
 import { attachGpsMeta, initialGps, reduceGps } from "./gps_state.js";
 import { initialHr, reduceHr } from "./hr_state.js";
 
@@ -72,33 +72,13 @@ export function createSession() {
   }
 
   function noteSegment(next) {
-    if (!anchor) {
-      anchor = next;
-      return;
-    }
-    const decision = measureSegment(anchor, next);
-    if (decision.reason === "NON_POSITIVE_TIME" || decision.reason === "TELEPORT") {
+    const step = advanceDistance(anchor, recentSpeeds, next);
+    if (step.reason === "NON_POSITIVE_TIME" || step.reason === "TELEPORT") {
       counters.rejected += 1;
-      return;
     }
-    if (decision.reason === "STATIONARY") {
-      return;
-    }
-    const meters = decision.meters;
-    const speed = decision.speed;
-    const dt = decision.dt;
-    const previous = recentSpeeds.length ? recentSpeeds[recentSpeeds.length - 1] : null;
-    const isolated = recentSpeeds.length === 0 && speed > SPIKE_SPEED_MPS;
-    const spike = isolated || (previous != null && speed > SPIKE_SPEED_MPS && speed > previous * 2);
-    recentSpeeds.push(speed);
-    if (recentSpeeds.length > 3) {
-      recentSpeeds.shift();
-    }
-    anchor = next;
-    if (spike || dt < MIN_SPEED_DT_MS) {
-      return;
-    }
-    distanceMeters += meters;
+    anchor = step.anchor;
+    recentSpeeds = step.recentSpeeds;
+    distanceMeters += step.added;
   }
 
   function onGps(event) {

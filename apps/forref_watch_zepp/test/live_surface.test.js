@@ -56,6 +56,18 @@ test("every new match-control label exists in English and Romanian", () => {
     "homeScore",
     "awayScore",
     "timeUnverified",
+    "hrOff",
+    "hrLive",
+    "hrLast",
+    "hrSearch",
+    "hrNone",
+    "gpsOff",
+    "gpsReady",
+    "gpsBack",
+    "gpsSearch",
+    "gpsWeak",
+    "gpsLost",
+    "gpsNone",
   ];
   for (const key of keys) {
     const hits = text.split(key + ":").length - 1;

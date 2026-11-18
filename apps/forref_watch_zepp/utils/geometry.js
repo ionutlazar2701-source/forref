@@ -153,6 +153,17 @@ export function layoutLive(info, mode) {
   };
 }
 
+// One compact line under the clock. It must stay above the next team control.
+export function liveTelemetrySlot(lay, mode, timeH) {
+  const h = 16;
+  const y = lay.timeY + timeH;
+  const limit = mode === "C" ? lay.away.y : lay.home.y;
+  if (y + h > limit) {
+    return null;
+  }
+  return { y: y, h: h, limit: limit };
+}
+
 export function layoutEvent(info) {
   const gap = 8;
   const top = info.round ? 78 : SQUARE_STATUS_BAR + 28;

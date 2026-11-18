@@ -120,6 +120,18 @@ const EN = {
     boundCandidate: "BOUND LOCAL CANDIDATE",
   candidateNone: "NO LOCAL CANDIDATE",
   reviewCapture: "BACK TO REVIEW",
+  hrOff: "HR OFF",
+  hrLive: "HR LIVE",
+  hrLast: "HR LAST",
+  hrSearch: "HR ...",
+  hrNone: "HR —",
+  gpsOff: "GPS OFF",
+  gpsReady: "GPS OK",
+  gpsBack: "GPS BACK",
+  gpsSearch: "GPS ...",
+  gpsWeak: "GPS WEAK",
+  gpsLost: "GPS LOST",
+  gpsNone: "GPS —",
 };
 
 const RO = {
@@ -241,6 +253,18 @@ const RO = {
     boundCandidate: "CANDIDAT LOCAL LEGAT",
   candidateNone: "FĂRĂ CANDIDAT LOCAL",
   reviewCapture: "ÎNAPOI LA VERIFICARE",
+  hrOff: "PULS OPRIT",
+  hrLive: "PULS LIVE",
+  hrLast: "PULS ULTIM",
+  hrSearch: "PULS ...",
+  hrNone: "PULS —",
+  gpsOff: "GPS OPRIT",
+  gpsReady: "GPS OK",
+  gpsBack: "GPS REVINE",
+  gpsSearch: "GPS ...",
+  gpsWeak: "GPS SLAB",
+  gpsLost: "GPS PIERDUT",
+  gpsNone: "GPS —",
 };
 
 export function language() {

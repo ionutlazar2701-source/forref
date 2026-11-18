@@ -1,8 +1,9 @@
 import { push, back } from "@zos/router";
 import { createTimer, stopTimer } from "@zos/timer";
 import { logDevice, bindBack, clear, clearDigits, paintBase, textAt, button } from "../../../utils/chrome";
-import { layoutLive } from "../../../utils/geometry";
-import { t } from "../../../utils/text";
+import { layoutLive, liveTelemetrySlot } from "../../../utils/geometry";
+import { localeChoice, t } from "../../../utils/text";
+import { formatDistanceKm, gpsStatusKey, hrStatusKey, pulseTelemetry } from "../../../utils/telemetry";
 import { state } from "../../../utils/state";
 import { displayText } from "../../../utils/match_clock";
 import { bootLive, prepareFrame, performIntent, persistLive } from "../../../utils/live_session";
@@ -112,16 +113,30 @@ function shellKey(view, current) {
   ].join("|");
 }
 
+function telemetryLabel() {
+  const reading = pulseTelemetry();
+  return formatDistanceKm(reading.distanceMeters, localeChoice().lang) + "  " + t(hrStatusKey(reading.hrState)) + "  " + t(gpsStatusKey(reading.gpsState));
+}
+
 function paintDigits(view, lay, current) {
   clearDigits();
   const timeH = current === "C" ? 36 : 48;
   textAt(12, lay.phaseY, metrics.width - 24, 28, statusLabel(view), 20, 0x3fc3be, true);
   textAt(12, lay.timeY, metrics.width - 24, timeH, digitLabel(view), view.added ? 28 : current === "C" ? 32 : 40, 0xffffff, true);
+  let nextY = lay.timeY + timeH;
+  try {
+    const slot = liveTelemetrySlot(lay, current, timeH);
+    if (slot) {
+      textAt(12, slot.y, metrics.width - 24, slot.h, telemetryLabel(), 14, 0x9ec7c4, true);
+      nextY = slot.y + slot.h;
+    }
+  } catch (err) {
+    console.log("FORREF_TEL paint=KEPT");
+  }
   const detail = detailLabel(view);
-  const detailY = lay.timeY + timeH;
   const detailLimit = current === "C" ? lay.away.y : lay.home.y;
-  if (detail && detailY + 18 <= detailLimit) {
-    textAt(12, detailY, metrics.width - 24, 18, detail, 14, 0xc4a35a, true);
+  if (detail && nextY + 18 <= detailLimit) {
+    textAt(12, nextY, metrics.width - 24, 18, detail, 14, 0xc4a35a, true);
   }
 }
 
