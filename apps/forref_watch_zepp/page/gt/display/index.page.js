@@ -2,6 +2,7 @@ import { back } from "@zos/router";
 import { logDevice, bindBack, stack } from "../../../utils/chrome";
 import { t } from "../../../utils/text";
 import { state } from "../../../utils/state";
+import { TEXT_SECONDARY, TEXT_WARNING } from "../../../utils/theme";
 
 function choose(mode) {
   state().display = mode;
@@ -15,10 +16,10 @@ Page({
     bindBack(false);
     const current = state().display === "C" ? "C" : "A";
     stack(m, t("displayTitle"), [
-      { label: t("notProduct"), color: 0xc4a35a },
-      { label: t("memoryOnly") + " · " + current, color: 0x9bb0c7 },
-      { label: t("liveA"), action: () => choose("A"), fill: current === "A" ? 0x0e5c58 : 0x0b2d5b, name: "display-a" },
-      { label: t("liveC"), action: () => choose("C"), fill: current === "C" ? 0x0e5c58 : 0x0b2d5b, name: "display-c" },
+      { label: t("notProduct"), color: TEXT_WARNING },
+      { label: t("memoryOnly") + " · " + current, color: TEXT_SECONDARY },
+      { label: t("liveA"), action: () => choose("A"), fill: current === "A" ? "selected" : "navigation", name: "display-a" },
+      { label: t("liveC"), action: () => choose("C"), fill: current === "C" ? "selected" : "navigation", name: "display-c" },
       { label: t("back"), action: () => back(), name: "display-back" },
     ]);
   },

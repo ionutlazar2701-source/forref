@@ -2,6 +2,7 @@ import { back } from "@zos/router";
 import { logDevice, bindBack, clear, stack } from "../../../utils/chrome";
 import { t } from "../../../utils/text";
 import { state } from "../../../utils/state";
+import { TEXT_SECONDARY, TEXT_WARNING } from "../../../utils/theme";
 
 let step = 1;
 
@@ -46,7 +47,7 @@ function paint() {
   }
   if (step === 2) {
     stack(m, t("choice"), [
-      { label: state().tossWinner, color: 0x9bb0c7 },
+      { label: state().tossWinner, color: TEXT_SECONDARY },
       {
         label: t("kick"),
         action: () => {
@@ -76,7 +77,7 @@ function paint() {
   stack(m, t("review"), [
     { label: state().tossWinner + " · " + state().tossChoice },
     { label: allocation() },
-    { label: t("notRecorded"), color: 0xc4a35a },
+    { label: t("notRecorded"), color: TEXT_WARNING },
     { label: t("back"), action: () => back() },
   ]);
 }

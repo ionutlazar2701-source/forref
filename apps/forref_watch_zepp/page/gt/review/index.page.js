@@ -4,6 +4,7 @@ import { t, showTeam, showEvent, showPlayer } from "../../../utils/text";
 import { state } from "../../../utils/state";
 import { Admission, Evidence, bindRecoveredCandidate, createJournal, decideCaptureTap } from "../../../utils/capture_candidate";
 import { watchCaptureAdapter, watchDiagnosticSource } from "../../../utils/capture_device";
+import { TEXT_WARNING } from "../../../utils/theme";
 
 function journal() {
   return createJournal(watchCaptureAdapter(), {
@@ -95,7 +96,7 @@ function paintForm(m, s, loaded) {
   }
   stack(m, t("review"), [
     { label: showTeam(s.team) + " · " + showEvent(s.event) + " · " + showPlayer(s.player) },
-    { label: statusLine(s, loaded), color: 0xc4a35a },
+    { label: statusLine(s, loaded), color: TEXT_WARNING },
     {
       label: s.captureFixture ? t("simFixtureOn") : t("simFixtureOff"),
       action: () => {
@@ -131,7 +132,7 @@ function paintForm(m, s, loaded) {
 
 function paintView(m, s, loaded) {
   const rows = [];
-  rows.push({ label: loaded.entries.length === 0 && loaded.ok ? t("candidateNone") : statusLine(s, loaded), color: 0xc4a35a });
+  rows.push({ label: loaded.entries.length === 0 && loaded.ok ? t("candidateNone") : statusLine(s, loaded), color: TEXT_WARNING });
   const shown = loaded.ok ? loaded.entries.slice(0, 3) : [];
   for (let i = 0; i < shown.length; i++) {
     const entry = shown[i];

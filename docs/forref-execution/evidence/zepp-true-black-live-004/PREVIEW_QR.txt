@@ -1,0 +1,37 @@
+FORREF TRUE BLACK TEST BUILD
+App id 29566
+Package: 29566-FORREF-1.0.3-20261119221637.zab
+sha256: ce81e87e82e6643dc37fdaa99f2f3bc53b98f5b950245b003ba955aedd76a6e9
+Version: 1.0.3 (code 3)
+Device: Amazfit Bip 6
+Device sources: 9765120, 9765121, 10158337
+Manifest screen: square 390x450, cpu ZPS
+Zeus: 1.10.0
+Boot: build=true-black-004 rev=5b68fa59d7540e1bc1e043fb32233f5a1f79e7d5
+CLI expiry printed on the UTC machine clock: 2026-11-26 22:16:40 (00:16 Europe/Bucharest on 27 Nov 2026)
+This QR is production FORREF app id 29566. It is not sensor lab app id 30101.
+Do not install this over the PR #52 1.0.2 build until the T15-B lifecycle test is finished.
+The package is not committed.
+
+[FORREF - 1.0.3]
+Supported device: Amazfit Bip 6
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+█ ▄▄▄▄▄ ██▀▀▄▄ █▄▀▀▄██▄▄██▄▀█▀█ ▄▄▄▄▄ █
+█ █   █ █▀███ █▄  █▄ █ ▄▀ ▀▄█▀█ █   █ █
+█ █▄▄▄█ █▄▄█▀▀▀ ▄▄▀▀█ █▀▄▀▀▄█ █ █▄▄▄█ █
+█▄▄▄▄▄▄▄█▄█ ▀▄█ █▄█ ▀▄█▄█▄█ ▀ █▄▄▄▄▄▄▄█
+█  ▀██▄▄ █ █▄▀  ▀█▀▀██▀▀▀▄▄▄▀▀██▀ ▄█▀██
+██▄█▄ █▄▄▄▄ █▀▄█▄ █▀▀██ ███▄▄ ▄  ▀▄▄▀ █
+█▄████ ▄█▀█ ▄▄▄█ ▀▄▀  ██▀ ▀█▀ █▄▄█ ▀ ▄█
+█   ▀▀▄▄▀█▀█ ▄▄█ ▀█▀█ ▄ █ ▄▄ ▄  ▀▀█ █ █
+██ ▀▄▄█▄ ▀▀▄▄▀▄ █  ▀▀▀▀▄▀█ ▄▀▀▀▄ ▄  ▄▄█
+█▄ ██▄█▄▄▀ ▀▄▀▄ ▄ █▄▄▄█▀▄ ▄▀ █▄▄█ ▀█▀▄█
+██▀█▀▀█▄▄▀▄ █▄▀▄████▄██▄▀█ ▀ ██▄▀ ▄ ███
+█ █▄ ▄▄▄▄▀█▄ ▄█▀▄ ▄▀▀██ █▀▄  ▀▄█▀▄▀█▄ █
+█  ▀█▄ ▄  ▄▀█▀█▀  █▀ ▀▀█ ▄█▀▀▄▀▄ ███ ▄█
+█ ██▄▀█▄ ▄█▄█▀▄█▄ ▄ ▀▄█ ▀██ ▄▀██▄█ ▀▄▄█
+█▄██▄▄█▄▄▀ ▀█▄▀▄▀▀▄▀ █▀▄   ▄  ▄▄▄ ▄ ▀██
+█ ▄▄▄▄▄ █  ▄▀▄▄  ▄▄█▄ ▄█ ▀█▀▀ █▄█ █▄█▄█
+█ █   █ ██▄▀▄▀▀▀▄▄▄▀▀█▀ ▀█  ▄   ▄▄ ▄ ▀█
+█ █▄▄▄█ █▀▄██▀ ▄ ▀█▄█▄█ █▄▄  ▀▀▀ █▀█▄ █
+█▄▄▄▄▄▄▄█▄▄▄▄▄▄█▄▄▄█▄▄███▄███▄█▄██▄██▄█

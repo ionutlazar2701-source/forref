@@ -2,6 +2,7 @@ import { push, back } from "@zos/router";
 import { logDevice, bindBack, clear, stack } from "../../../utils/chrome";
 import { t } from "../../../utils/text";
 import { state } from "../../../utils/state";
+import { TEXT_WARNING } from "../../../utils/theme";
 
 function localeLabel() {
   const mode = state().localeTest || "";
@@ -26,7 +27,7 @@ function paint() {
   clear();
   const mode = state().display === "C" ? "C" : "A";
   stack(m, t("settings"), [
-    { label: t("tempDefault") + " " + mode, color: 0xc4a35a },
+    { label: t("tempDefault") + " " + mode, color: TEXT_WARNING },
     { label: t("displayTitle"), action: () => push({ url: "page/gt/display/index.page" }), name: "settings-display" },
     { label: localeLabel(), action: () => cycleLocale(), name: "settings-locale" },
     { label: t("cautions"), action: () => push({ url: "page/gt/cautions/index.page" }), name: "settings-g1" },

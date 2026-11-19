@@ -2,6 +2,7 @@ import { push, back } from "@zos/router";
 import { logDevice, bindBack, stack } from "../../../utils/chrome";
 import { t, showTeam, showEvent } from "../../../utils/text";
 import { state } from "../../../utils/state";
+import { TEXT_SECONDARY } from "../../../utils/theme";
 
 function pick(name) {
   state().player = name;
@@ -13,7 +14,7 @@ Page({
     const m = logDevice("player");
     bindBack(false);
     stack(m, t("player"), [
-      { label: showTeam(state().team) + " · " + showEvent(state().event), color: 0x9bb0c7 },
+      { label: showTeam(state().team) + " · " + showEvent(state().event), color: TEXT_SECONDARY },
       { label: t("p9"), action: () => pick("PLAYER 9") },
       { label: t("p4"), action: () => pick("PLAYER 4") },
       { label: t("unknown"), action: () => pick("UNKNOWN") },
