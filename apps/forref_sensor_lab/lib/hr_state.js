@@ -30,6 +30,9 @@ export function reduceHr(state, event) {
   if (event.type === "permission") {
     return { state: "PERMISSION_REQUIRED", live: false, lastKnown: false, sampleAgeMs: null, bpm: null };
   }
+  if (event.type === "error") {
+    return { state: "ERROR", live: false, lastKnown: false, sampleAgeMs: null, bpm: null };
+  }
   if (event.type === "stop") {
     return { state: "STOPPED", live: false, lastKnown: false, sampleAgeMs: null, bpm: null };
   }

@@ -125,6 +125,12 @@ const EN = {
   hrLast: "HR LAST",
   hrSearch: "HR ...",
   hrNone: "HR —",
+  hrValue: "HR {n} bpm",
+  hrPermission: "HR PERM",
+  hrUnavailable: "HR N/A",
+  hrError: "HR ERR",
+  distanceNone: "— km",
+  distancePrefix: "~",
   gpsOff: "GPS OFF",
   gpsReady: "GPS OK",
   gpsBack: "GPS BACK",
@@ -132,6 +138,7 @@ const EN = {
   gpsWeak: "GPS WEAK",
   gpsLost: "GPS LOST",
   gpsNone: "GPS —",
+  gpsPermission: "GPS PERM",
 };
 
 const RO = {
@@ -258,6 +265,12 @@ const RO = {
   hrLast: "PULS ULTIM",
   hrSearch: "PULS ...",
   hrNone: "PULS —",
+  hrValue: "PULS {n} bpm",
+  hrPermission: "PULS PERM",
+  hrUnavailable: "PULS N/A",
+  hrError: "PULS ERR",
+  distanceNone: "— km",
+  distancePrefix: "~",
   gpsOff: "GPS OPRIT",
   gpsReady: "GPS OK",
   gpsBack: "GPS REVINE",
@@ -265,6 +278,7 @@ const RO = {
   gpsWeak: "GPS SLAB",
   gpsLost: "GPS PIERDUT",
   gpsNone: "GPS —",
+  gpsPermission: "GPS PERM",
 };
 
 export function language() {

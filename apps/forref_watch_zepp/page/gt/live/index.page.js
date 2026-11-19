@@ -3,7 +3,7 @@ import { createTimer, stopTimer } from "@zos/timer";
 import { logDevice, bindBack, clear, clearDigits, paintBase, textAt, button } from "../../../utils/chrome";
 import { layoutLive, liveTelemetrySlot } from "../../../utils/geometry";
 import { localeChoice, t } from "../../../utils/text";
-import { formatDistanceKm, gpsStatusKey, hrStatusKey, pulseTelemetry } from "../../../utils/telemetry";
+import { formatTelemetryLine, gpsStatusKey, hrStatusKey, pulseTelemetry } from "../../../utils/telemetry";
 import { state } from "../../../utils/state";
 import { displayText } from "../../../utils/match_clock";
 import { bootLive, prepareFrame, performIntent, persistLive } from "../../../utils/live_session";
@@ -115,7 +115,15 @@ function shellKey(view, current) {
 
 function telemetryLabel() {
   const reading = pulseTelemetry();
-  return formatDistanceKm(reading.distanceMeters, localeChoice().lang) + "  " + t(hrStatusKey(reading.hrState)) + "  " + t(gpsStatusKey(reading.gpsState));
+  const hr = reading.hrFresh ? t("hrValue") : t(hrStatusKey(reading.hrState));
+  return formatTelemetryLine(reading, {
+    lang: localeChoice().lang,
+    prefix: t("distancePrefix"),
+    none: t("distanceNone"),
+    hrValue: t("hrValue"),
+    hr: hr,
+    gps: t(gpsStatusKey(reading.gpsState)),
+  });
 }
 
 function paintDigits(view, lay, current) {
