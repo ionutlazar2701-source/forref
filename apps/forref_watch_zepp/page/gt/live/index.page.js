@@ -4,6 +4,7 @@ import { logDevice, bindBack, clear, clearDigits, paintBase, textAt, button } fr
 import { layoutLive, liveTelemetrySlot } from "../../../utils/geometry";
 import { localeChoice, t } from "../../../utils/text";
 import { formatTelemetryLine, gpsStatusKey, hrStatusKey, pulseTelemetry } from "../../../utils/telemetry";
+import { ACCENT, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_WARNING } from "../../../utils/theme";
 import { state } from "../../../utils/state";
 import { displayText } from "../../../utils/match_clock";
 import { bootLive, prepareFrame, performIntent, persistLive } from "../../../utils/live_session";
@@ -90,15 +91,15 @@ function digitLabel(view) {
 
 function fillFor(action) {
   if (action === "END_FIRST_HALF" || action === "FULL_TIME" || action === "ABANDON_GAME") {
-    return 0x6e2430;
+    return "red";
   }
   if (action === "PAUSE" || action === "SUSPEND_GAME") {
-    return 0x6e5418;
+    return "caution";
   }
   if (action === "KICK_OFF" || action === "START_SECOND_HALF" || action === "RESUME" || action === "RESUME_GAME") {
-    return 0x0d5c45;
+    return "primary";
   }
-  return 0x0b2d5b;
+  return "navigation";
 }
 
 function shellKey(view, current) {
@@ -129,13 +130,13 @@ function telemetryLabel() {
 function paintDigits(view, lay, current) {
   clearDigits();
   const timeH = current === "C" ? 36 : 48;
-  textAt(12, lay.phaseY, metrics.width - 24, 28, statusLabel(view), 20, 0x3fc3be, true);
-  textAt(12, lay.timeY, metrics.width - 24, timeH, digitLabel(view), view.added ? 28 : current === "C" ? 32 : 40, 0xffffff, true);
+  textAt(12, lay.phaseY, metrics.width - 24, 28, statusLabel(view), 20, view.unverified ? TEXT_WARNING : ACCENT, true);
+  textAt(12, lay.timeY, metrics.width - 24, timeH, digitLabel(view), view.added ? 28 : current === "C" ? 32 : 40, TEXT_PRIMARY, true);
   let nextY = lay.timeY + timeH;
   try {
     const slot = liveTelemetrySlot(lay, current, timeH);
     if (slot) {
-      textAt(12, slot.y, metrics.width - 24, slot.h, telemetryLabel(), 14, 0x9ec7c4, true);
+      textAt(12, slot.y, metrics.width - 24, slot.h, telemetryLabel(), 14, TEXT_SECONDARY, true);
       nextY = slot.y + slot.h;
     }
   } catch (err) {
@@ -144,7 +145,7 @@ function paintDigits(view, lay, current) {
   const detail = detailLabel(view);
   const detailLimit = current === "C" ? lay.away.y : lay.home.y;
   if (detail && nextY + 18 <= detailLimit) {
-    textAt(12, nextY, metrics.width - 24, 18, detail, 14, 0xc4a35a, true);
+    textAt(12, nextY, metrics.width - 24, 18, detail, 14, TEXT_WARNING, true);
   }
 }
 
@@ -160,13 +161,13 @@ function logView(view, current) {
 
 function paintShell(view, lay) {
   const primary = view.actions[0];
-  button(lay.home.x, lay.home.y, lay.home.w, lay.home.h, t("homeScore"), () => openTeam("HOME"), 0x0e4a48, "live-home", metrics);
-  button(lay.away.x, lay.away.y, lay.away.w, lay.away.h, t("awayScore"), () => openTeam("AWAY"), 0x1a3a5c, "live-away", metrics);
+  button(lay.home.x, lay.home.y, lay.home.w, lay.home.h, t("homeScore"), () => openTeam("HOME"), "neutral", "live-home", metrics);
+  button(lay.away.x, lay.away.y, lay.away.w, lay.away.h, t("awayScore"), () => openTeam("AWAY"), "neutral", "live-away", metrics);
   if (primary) {
     const label = primary === "ABANDON_GAME" && arm.armed() ? t("confirmAbandon") : t(ACTION_TEXT[primary]);
     button(lay.display.x, lay.display.y, lay.display.w, lay.display.h, label, () => onAction(primary), fillFor(primary), "live-" + primary, metrics);
   } else {
-    button(lay.display.x, lay.display.y, lay.display.w, lay.display.h, t("back"), () => leave("back", () => back()), 0x12324d, "live-back", metrics);
+    button(lay.display.x, lay.display.y, lay.display.w, lay.display.h, t("back"), () => leave("back", () => back()), "navigation", "live-back", metrics);
   }
   button(
     lay.back.x,
@@ -175,7 +176,7 @@ function paintShell(view, lay) {
     lay.back.h,
     t("matchControls"),
     () => leave("navigate", () => push({ url: "page/gt/controls/index.page" })),
-    0x0b2d5b,
+    "navigation",
     "live-controls",
     metrics
   );

@@ -1,6 +1,7 @@
 import { push } from "@zos/router";
 import { logDevice, bindBack, stack } from "../../../utils/chrome";
 import { t, language } from "../../../utils/text";
+import { TEXT_SECONDARY } from "../../../utils/theme";
 
 Page({
   onInit() {
@@ -13,8 +14,8 @@ Page({
       {
         label: m.width + "×" + m.height + " " + m.shapeName + " src " + m.deviceSource,
       },
-      { label: "keys " + m.keyNumber + " " + m.keyType, color: 0x9bb0c7 },
-      { label: t("officiate"), action: () => push({ url: "page/gt/select/index.page" }) },
+      { label: "keys " + m.keyNumber + " " + m.keyType, color: TEXT_SECONDARY },
+      { label: t("officiate"), action: () => push({ url: "page/gt/select/index.page" }), fill: "primary" },
       { label: t("train"), action: () => push({ url: "page/gt/train/index.page" }) },
       { label: t("settings"), action: () => push({ url: "page/gt/settings/index.page" }) },
     ]);

@@ -2,6 +2,7 @@ import { push, back } from "@zos/router";
 import { logDevice, bindBack, clear, stack } from "../../../utils/chrome";
 import { t } from "../../../utils/text";
 import { displayText } from "../../../utils/match_clock";
+import { TEXT_PRIMARY, TEXT_WARNING } from "../../../utils/theme";
 import { bootLive, viewNow, performIntent } from "../../../utils/live_session";
 import { createAbandonArm } from "../../../utils/abandon_arm";
 
@@ -24,12 +25,12 @@ const ACTION_TEXT = {
 
 function fillFor(action) {
   if (action === "END_FIRST_HALF" || action === "FULL_TIME" || action === "ABANDON_GAME") {
-    return 0x6e2430;
+    return "red";
   }
   if (action === "SUSPEND_GAME") {
-    return 0x6e5418;
+    return "caution";
   }
-  return 0x0b2d5b;
+  return "navigation";
 }
 
 function contextOf(view) {
@@ -68,7 +69,7 @@ function statusLine(view) {
 function paint() {
   const view = viewNow();
   arm.retain(contextOf(view));
-  const rows = [{ label: statusLine(view), color: view.unverified ? 0xc4a35a : 0xffffff }];
+  const rows = [{ label: statusLine(view), color: view.unverified ? TEXT_WARNING : TEXT_PRIMARY }];
   const controls = view.actions.slice(1);
   controls.forEach((action) => {
     const label = action === "ABANDON_GAME" && arm.armed() ? t("confirmAbandon") : t(ACTION_TEXT[action]);

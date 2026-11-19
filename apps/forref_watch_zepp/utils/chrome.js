@@ -4,6 +4,7 @@ import { onKey, KEY_BACK, KEY_EVENT_CLICK } from "@zos/interaction";
 import { back } from "@zos/router";
 import { SQUARE_STATUS_BAR, SAFE_MARGIN, inside, layoutStack } from "./geometry";
 import { localeChoice } from "./text";
+import { ACCENT, CANVAS, TEXT_PRIMARY, styleFor } from "./theme";
 
 const shellOwned = [];
 const digitOwned = [];
@@ -92,7 +93,7 @@ export function paintBase(m) {
       y: 0,
       w: m.width,
       h: m.height,
-      color: 0x071d33,
+      color: CANVAS,
     })
   );
 }
@@ -103,7 +104,7 @@ export function textAt(x, y, w, h, value, size, color, digits) {
     y: y,
     w: w,
     h: h,
-    color: color || 0xffffff,
+    color: color || TEXT_PRIMARY,
     text: value,
     text_size: size,
     align_h: hmUI.align.CENTER_H,
@@ -125,15 +126,16 @@ export function button(x, y, w, h, label, onClick, fill, name, info) {
       "FORREF_HIT name=" + name + " x=" + x + " y=" + y + " w=" + w + " h=" + h + " fit=" + fit
     );
   }
+  const tone = styleFor(fill);
   const node = hmUI.createWidget(hmUI.widget.BUTTON, {
     x: x,
     y: y,
     w: w,
     h: h,
     radius: 14,
-    normal_color: fill || 0x0b2d5b,
-    press_color: 0x3fc3be,
-    color: 0xffffff,
+    normal_color: tone.normal,
+    press_color: tone.press,
+    color: tone.text,
     text: label,
     text_size: Math.min(
       26,
@@ -166,7 +168,7 @@ export function stack(m, title, rows) {
   paintBase(m);
   const laid = layoutStack(m, rows.length);
   const guide = laid.rows[0] || { x: m.pad, w: m.contentW };
-  textAt(guide.x, laid.titleY, guide.w, laid.titleH, title, Math.round(m.width * 0.045), 0x3fc3be);
+  textAt(guide.x, laid.titleY, guide.w, laid.titleH, title, Math.round(m.width * 0.045), ACCENT);
   rows.forEach((row, index) => {
     const slot = laid.rows[index];
     if (!slot) {
@@ -175,7 +177,7 @@ export function stack(m, title, rows) {
     if (row.action) {
       button(slot.x, slot.y, slot.w, slot.h, row.label, row.action, row.fill, row.name || "stack-" + index, m);
     } else {
-      textAt(slot.x, slot.y, slot.w, slot.h, row.label, Math.round(m.width * 0.038), row.color || 0xffffff);
+      textAt(slot.x, slot.y, slot.w, slot.h, row.label, Math.round(m.width * 0.038), row.color || TEXT_PRIMARY);
     }
   });
 }
