@@ -25,6 +25,30 @@ export function measureSegment(anchor, point) {
   return { accept: true, moveAnchor: true, reason: "ACCEPT", meters: meters, speed: speed, dt: dt };
 }
 
+// One walking rule for the lab and Live Match. Steps under 4 m hold the anchor.
+export function advanceDistance(anchor, recentSpeeds, point) {
+  const speeds = recentSpeeds ? recentSpeeds.slice() : [];
+  if (!anchor) {
+    return { anchor: point, recentSpeeds: speeds, added: 0, reason: "SEED" };
+  }
+  const decision = measureSegment(anchor, point);
+  if (decision.reason === "NON_POSITIVE_TIME" || decision.reason === "TELEPORT" || decision.reason === "STATIONARY") {
+    return { anchor: anchor, recentSpeeds: speeds, added: 0, reason: decision.reason };
+  }
+  const speed = decision.speed;
+  const previous = speeds.length ? speeds[speeds.length - 1] : null;
+  const isolated = speeds.length === 0 && speed > SPIKE_SPEED_MPS;
+  const spike = isolated || (previous != null && speed > SPIKE_SPEED_MPS && speed > previous * 2);
+  speeds.push(speed);
+  if (speeds.length > 3) {
+    speeds.shift();
+  }
+  if (spike || decision.dt < MIN_SPEED_DT_MS) {
+    return { anchor: point, recentSpeeds: speeds, added: 0, reason: spike ? "SPIKE" : "SHORT_DT" };
+  }
+  return { anchor: point, recentSpeeds: speeds, added: decision.meters, reason: "ACCEPT" };
+}
+
 export function haversineMeters(a, b) {
   const toRad = (value) => (value * Math.PI) / 180;
   const dLat = toRad(b.lat - a.lat);

@@ -12,6 +12,7 @@ import {
 } from "./match_clock";
 import { deviceNow, deviceAdapter } from "./clock_device";
 import { BUILD_NAME, bootLine } from "./build_stamp";
+import { noteClockCommit } from "./telemetry";
 
 export const BUILD = BUILD_NAME;
 
@@ -46,6 +47,7 @@ export function bootLive() {
   const loaded = loadSession(deviceAdapter(), data.clockEpoch);
   data.clockLive = { epoch: data.clockEpoch, session: loaded.session };
   console.log(trace("LOAD", data.clockLive.session.phase, loaded.session, deviceNow()));
+  noteClockCommit(loaded.session, data.clockEpoch, { boot: true });
   return data.clockLive.session;
 }
 
@@ -66,6 +68,7 @@ export function prepareFrame() {
     const failed = sample(before, { utcMillis: null, epoch: epoch, discontinuity: "CLOCK_UNAVAILABLE" });
     rememberSession(failed.session);
     commitSession(deviceAdapter(), failed.session);
+    noteClockCommit(failed.session, epoch);
     console.log(trace("CLOCK_UNAVAILABLE", before.phase, failed.session, 0));
     return present(failed.session, failed.session.lastUtc);
   }
@@ -73,6 +76,7 @@ export function prepareFrame() {
   rememberSession(frame.session);
   if (!frame.admitted) {
     commitSession(deviceAdapter(), frame.session);
+    noteClockCommit(frame.session, epoch);
     console.log(trace("UNVERIFIED", before.phase, frame.session, utc));
   }
   return frame.view;
@@ -102,6 +106,7 @@ export function performIntent(intent, extra) {
     if (result.session !== before && result.session.trust === Trust.UNVERIFIED) {
       commitSession(deviceAdapter(), result.session);
       rememberSession(result.session);
+      noteClockCommit(result.session, bag().clockEpoch);
     }
     return result;
   }
@@ -111,6 +116,7 @@ export function performIntent(intent, extra) {
     return { ok: false, reason: "READBACK_FAIL", session: before, before: before };
   }
   rememberSession(result.session);
+  noteClockCommit(result.session, bag().clockEpoch);
   return result;
 }
 
