@@ -5,12 +5,12 @@
     "appName": "FORREF",
     "appType": "app",
     "version": {
-      "code": 6,
-      "name": "1.0.6"
+      "code": 7,
+      "name": "1.0.7"
     },
     "icon": "icon.png",
     "vender": "zepp",
-    "description": "FORREF CLOCK CONTINUITY DIAGNOSTIC"
+    "description": "FORREF CLOCK SLEEP EVIDENCE"
   },
   "permissions": [
     "data:os.device.info",

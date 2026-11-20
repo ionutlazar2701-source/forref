@@ -4,6 +4,7 @@
 // A tick, a relaunch, and a permission code are not match time.
 
 import { Trust, isRunning } from "./match_clock.js";
+import { startClass } from "./clock_sleep_evidence.js";
 
 export const PERMISSION = "device:os.bg_service";
 export const SERVICE_FILE = "app-service/clock_service";
@@ -51,6 +52,7 @@ export function createServiceHost(sdk, log) {
   let blocked = false;
   let absentNoted = 0;
   let restarts = 0;
+  let published = "";
 
   function line(text) {
     try {
@@ -110,18 +112,19 @@ export function createServiceHost(sdk, log) {
       line("start=unavailable");
       return;
     }
-    line("start-code=" + code);
+    line("start-code=" + code + " start-class=" + startClass(code));
     if (!sawCallback && (code === 0 || code === true)) {
       running = true;
     }
   }
 
-  function halt() {
+  function halt(why) {
     const value = enumerate();
     const present = value != null && listed(value);
     if (!running && !present) {
       return;
     }
+    line("stop-reason=" + (why || "unspecified") + " listed=" + present);
     let code;
     let sawCallback = false;
     try {
@@ -235,14 +238,26 @@ export function createServiceHost(sdk, log) {
     line("perm=unknown");
   }
 
+  function publish() {
+    const next = String(running) + ":" + String(requestPending) + ":" + String(blocked);
+    if (next === published) {
+      return;
+    }
+    published = next;
+    line("host running=" + running + " pending=" + requestPending + " blocked=" + blocked);
+  }
+
   return {
     sync: function (session) {
       const needed = !!(session && isRunning(session.phase) && session.trust !== Trust.UNVERIFIED);
       if (!needed) {
-        halt();
+        const why = !session ? "none" : session.trust === Trust.UNVERIFIED ? "unverified" : "phase";
+        halt(why + " phase=" + (session ? session.phase : "") + " trust=" + (session ? session.trust : ""));
+        publish();
         return;
       }
       ensure();
+      publish();
     },
     snapshot: function () {
       return {
