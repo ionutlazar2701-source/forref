@@ -11,6 +11,8 @@ import {
   Trust,
 } from "./match_clock";
 import { deviceNow, deviceAdapter } from "./clock_device";
+import { commitForward, preferObserved, readStoredSession } from "./clock_continuity";
+import { syncClockService } from "./clock_service_bind";
 import { BUILD_NAME, bootLine } from "./build_stamp";
 import { noteClockCommit } from "./telemetry";
 
@@ -44,11 +46,27 @@ export function bootLive() {
   if (data.clockLive && data.clockLive.epoch === data.clockEpoch && data.clockLive.session) {
     return data.clockLive.session;
   }
-  const loaded = loadSession(deviceAdapter(), data.clockEpoch);
+  const loaded = loadSession(deviceAdapter(), data.clockEpoch, deviceNow());
   data.clockLive = { epoch: data.clockEpoch, session: loaded.session };
   console.log(trace("LOAD", data.clockLive.session.phase, loaded.session, deviceNow()));
   noteClockCommit(loaded.session, data.clockEpoch, { boot: true });
+  armClockService(loaded.session);
   return data.clockLive.session;
+}
+
+function armClockService(session) {
+  try {
+    syncClockService(session);
+  } catch (err) {
+    console.log("FORREF_CLOCK_SLEEP service=unavailable");
+  }
+}
+
+function observedBase(memory, utc) {
+  if (utc == null) {
+    return memory;
+  }
+  return preferObserved(memory, readStoredSession(deviceAdapter()), utc) || memory;
 }
 
 export function viewNow() {
@@ -72,13 +90,24 @@ export function prepareFrame() {
     console.log(trace("CLOCK_UNAVAILABLE", before.phase, failed.session, 0));
     return present(failed.session, failed.session.lastUtc);
   }
-  const frame = liveFrame(before, utc, epoch);
+  const frame = liveFrame(observedBase(before, utc), utc, epoch);
   rememberSession(frame.session);
-  if (!frame.admitted) {
-    commitSession(deviceAdapter(), frame.session);
-    noteClockCommit(frame.session, epoch);
-    console.log(trace("UNVERIFIED", before.phase, frame.session, utc));
+  if (!frame.admitted || frame.reason === "TICK") {
+    const saved = commitForward(deviceAdapter(), frame.session);
+    if (saved.reason === "KEPT_NEWER" && saved.session) {
+      rememberSession(saved.session);
+    } else if (!frame.admitted && saved.ok) {
+      noteClockCommit(frame.session, epoch);
+      console.log(trace("UNVERIFIED", before.phase, frame.session, utc));
+    } else if (!saved.ok) {
+      console.log("FORREF_CLOCK_SLEEP persist=fail");
+      if (!frame.admitted) {
+        noteClockCommit(frame.session, epoch);
+        console.log(trace("UNVERIFIED", before.phase, frame.session, utc));
+      }
+    }
   }
+  armClockService(frame.session);
   return frame.view;
 }
 
@@ -100,7 +129,8 @@ export function performIntent(intent, extra) {
     console.log(trace("CLOCK_UNAVAILABLE", before.phase, failed.session, 0));
     return { ok: false, reason: "CLOCK_UNAVAILABLE", session: failed.session, before: before };
   }
-  const result = applyIntent(before, intent, observation(intent, before, extra));
+  const chosen = observedBase(before, utc);
+  const result = applyIntent(chosen, intent, observation(intent, chosen, extra));
   console.log(trace(result.ok ? result.reason : "REJECT", before.phase, result.session, utc));
   if (!result.ok) {
     if (result.session !== before && result.session.trust === Trust.UNVERIFIED) {
@@ -117,6 +147,7 @@ export function performIntent(intent, extra) {
   }
   rememberSession(result.session);
   noteClockCommit(result.session, bag().clockEpoch);
+  armClockService(result.session);
   return result;
 }
 
@@ -129,7 +160,10 @@ export function persistLive() {
   if (!session) {
     return { ok: false, reason: "NO_SESSION" };
   }
-  const saved = commitSession(deviceAdapter(), session);
+  const utc = deviceNow();
+  const chosen = observedBase(session, utc);
+  const saved = commitForward(deviceAdapter(), chosen);
+  rememberSession(saved.reason === "KEPT_NEWER" && saved.session ? saved.session : chosen);
   console.log("FORREF_CLOCK001 PERSIST|" + saved.reason + "!");
   return saved;
 }

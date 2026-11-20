@@ -161,7 +161,12 @@ export function sample(session, observation) {
     return failClosed(next, utc, observation.discontinuity);
   }
   if (next.epoch && observation.epoch && observation.epoch !== next.epoch) {
-    return failClosed(next, utc, "EPOCH");
+    const anchor = next.lastUtc == null ? next.openStartUtc : next.lastUtc;
+    const jumped = utc == null || anchor == null ? null : utc - anchor;
+    if (jumped == null || jumped < 0 || jumped > DISPLAY_CONTINUITY_MS) {
+      return failClosed(next, anchor == null ? utc : anchor, "EPOCH");
+    }
+    next.epoch = observation.epoch;
   }
   if (next.openStartUtc == null || utc == null) {
     return failClosed(next, utc, "CLOCK_UNAVAILABLE");
@@ -494,8 +499,13 @@ export function admitDisplay(session, utc, epoch) {
     return { admitted: true, session: next, reason: "HELD" };
   }
   if (next.epoch && epoch && epoch !== next.epoch) {
-    const failed = failClosed(next, next.lastUtc, "EPOCH");
-    return { admitted: false, session: failed.session, reason: "EPOCH" };
+    const prior = next.lastUtc == null ? next.openStartUtc : next.lastUtc;
+    const jumped = utc == null || prior == null ? null : utc - prior;
+    if (jumped == null || jumped < 0 || jumped > DISPLAY_CONTINUITY_MS) {
+      const failed = failClosed(next, prior == null ? next.lastUtc : prior, "EPOCH");
+      return { admitted: false, session: failed.session, reason: "EPOCH" };
+    }
+    next.epoch = epoch;
   }
   if (utc == null || next.openStartUtc == null) {
     const failed = failClosed(next, next.lastUtc, "CLOCK_UNAVAILABLE");
@@ -713,7 +723,7 @@ function blankUnverified(notice) {
   return session;
 }
 
-export function loadSession(adapter, epoch) {
+export function loadSession(adapter, epoch, nowMillis) {
   const fileRaw = readRaw(adapter, "readFile");
   const kvRaw = readRaw(adapter, "readKv");
   if (!fileRaw.ok || !kvRaw.ok) {
@@ -735,6 +745,18 @@ export function loadSession(adapter, epoch) {
     return { session: blankUnverified("CORRUPT"), reason: "CORRUPT" };
   }
   if (isRunning(decoded.phase)) {
+    const anchor = decoded.lastUtc == null ? decoded.openStartUtc : decoded.lastUtc;
+    const step = nowMillis == null || anchor == null ? null : nowMillis - anchor;
+    if (
+      decoded.trust !== Trust.UNVERIFIED &&
+      step != null &&
+      step >= 0 &&
+      step <= DISPLAY_CONTINUITY_MS
+    ) {
+      decoded.epoch = epoch || decoded.epoch;
+      decoded.notice = "CONTINUITY_RESUMED";
+      return { session: decoded, reason: "CONTINUITY_RESUMED" };
+    }
     closeAtLastGood(decoded);
     decoded.trust = Trust.UNVERIFIED;
     decoded.notice = "RECOVERY_REQUIRED";

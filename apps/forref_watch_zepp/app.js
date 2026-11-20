@@ -1,3 +1,4 @@
+import { setWakeUpRelaunch } from "@zos/display";
 import { bootLine } from "./utils/build_stamp";
 import { attachMatchTelemetry, releaseMatchTelemetry } from "./utils/telemetry_bind";
 
@@ -11,6 +12,12 @@ App({
     console.log("FORREF_APP onCreate epoch=" + this.globalData.clockEpoch);
     console.log(bootLine());
     console.log("FORREF_CAPTURE_BOOT namespace=forref_capture_bridge_001 schema=1 d1=UNCERTIFIED");
+    try {
+      setWakeUpRelaunch({ relaunch: true });
+      console.log("FORREF_CLOCK_SLEEP relaunch=on");
+    } catch (err) {
+      console.log("FORREF_CLOCK_SLEEP relaunch=unavailable");
+    }
     try {
       attachMatchTelemetry(this.globalData.clockEpoch);
     } catch (err) {
