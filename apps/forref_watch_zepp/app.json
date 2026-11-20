@@ -5,12 +5,12 @@
     "appName": "FORREF",
     "appType": "app",
     "version": {
-      "code": 9,
-      "name": "1.0.9"
+      "code": 10,
+      "name": "1.0.10"
     },
     "icon": "icon.png",
     "vender": "zepp",
-    "description": "FORREF CLOCK SLEEP EXECUTION"
+    "description": "FORREF CLOCK SLEEP TIMER"
   },
   "permissions": [
     "data:os.device.info",

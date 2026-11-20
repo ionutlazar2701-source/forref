@@ -31,14 +31,7 @@ test("the 1.0.8 reading has no durable service execution", () => {
   assert.equal(witness.callbacks, 0);
   assert.equal(witness.maxDt, 0);
   assert.equal(witness.initSeen, false);
-  const line = formatWitness(witness, now);
-  assert.equal(line.includes("L=SERVICE"), true);
-  assert.equal(line.includes("S=ok"), true);
-  assert.equal(line.includes("I=0"), true);
-  assert.equal(line.includes("n=0"), true);
-  assert.equal(line.includes("x=0"), true);
-  assert.equal(line.includes("ck=20653"), true);
-  assert.equal(line.includes("r=HELD"), true);
+  assert.equal(formatWitness(witness).length <= 48, true);
   assert.equal(DISPLAY_CONTINUITY_MS, 2500);
 });
 
@@ -48,7 +41,8 @@ test("a later HELD sample does not replace the first gap", () => {
   witness = noteAdmit(witness, "HELD");
   assert.equal(witness.fault, "UNSAMPLED_GAP");
   assert.equal(witness.admit, "UNSAMPLED_GAP");
-  assert.equal(formatWitness(witness, T0).includes("r=UNSAMPLED_GAP"), true);
+  assert.equal(witness.fault, "UNSAMPLED_GAP");
+  assert.equal(formatWitness(witness).includes("UNSAMPLED_GAP"), false);
   const healthy = noteAdmit(noteAdmit(emptyWitness(), "HELD"), "TICK");
   assert.equal(healthy.fault, "");
   assert.equal(healthy.admit, "TICK");
@@ -82,9 +76,8 @@ test("a write attempt, a successful write, and a readback are separate", () => {
   assert.equal(witness.writeOk, 2);
   assert.equal(witness.readbackOk, 1);
   assert.equal(executionLink(witness), "CHAIN");
-  const line = formatWitness(witness, T0);
-  assert.equal(line.includes("w=3/2/1"), true);
-  assert.equal(line.includes("I=1"), true);
+  assert.equal(witness.writeAttempts, 3);
+  assert.equal(witness.initSeen, true);
 });
 
 test("init without a callback is a silent timer, and a gap stays closed", () => {
@@ -97,7 +90,8 @@ test("init without a callback is a silent timer, and a gap stays closed", () => 
   assert.equal(executionLink(witness), "GAP");
   witness = noteFault(witness, "UNSAMPLED_GAP");
   witness = noteAdmit(witness, "HELD");
-  assert.equal(formatWitness(witness, T0).includes("r=UNSAMPLED_GAP"), true);
+  assert.equal(witness.fault, "UNSAMPLED_GAP");
+  assert.equal(formatWitness(witness).includes("UNSAMPLED_GAP"), false);
   assert.equal(witness.maxDt, 5000);
 });
 

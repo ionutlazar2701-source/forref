@@ -38,6 +38,14 @@ export function emptyWitness() {
     admit: "",
     recover: "",
     lastClass: "",
+    timerState: "",
+    timerId: "",
+    firstCallback: false,
+    experimentState: "",
+    experimentId: "",
+    experimentTicks: 0,
+    listed: "",
+    diagReadback: false,
   };
 }
 
@@ -60,12 +68,20 @@ function clone(witness) {
     admit: source.admit || "",
     recover: source.recover || "",
     lastClass: source.lastClass || "",
+    timerState: source.timerState || "",
+    timerId: source.timerId || "",
+    firstCallback: source.firstCallback === true,
+    experimentState: source.experimentState || "",
+    experimentId: source.experimentId || "",
+    experimentTicks: source.experimentTicks || 0,
+    listed: source.listed || "",
+    diagReadback: source.diagReadback === true,
   };
 }
 
 export function encodeWitness(witness) {
   const body = {
-    v: 2,
+    v: 3,
     s: witness.startClass || "",
     run: witness.running ? 1 : 0,
     n: witness.callbacks || 0,
@@ -82,6 +98,14 @@ export function encodeWitness(witness) {
     admit: witness.admit || "",
     rec: witness.recover || "",
     cls: witness.lastClass || "",
+    tm: witness.timerState || "",
+    tid: witness.timerId || "",
+    fc: witness.firstCallback ? 1 : 0,
+    xs: witness.experimentState || "",
+    xid: witness.experimentId || "",
+    xn: witness.experimentTicks || 0,
+    lst: witness.listed || "",
+    drb: witness.diagReadback ? 1 : 0,
   };
   const json = JSON.stringify(body);
   return json + "#" + fnv32(json);
@@ -103,7 +127,7 @@ export function decodeWitness(raw) {
   } catch (err) {
     return emptyWitness();
   }
-  if (!body || (body.v !== 1 && body.v !== 2)) {
+  if (!body || (body.v !== 1 && body.v !== 2 && body.v !== 3)) {
     return emptyWitness();
   }
   return {
@@ -123,6 +147,14 @@ export function decodeWitness(raw) {
     admit: body.admit || "",
     recover: body.rec || "",
     lastClass: body.cls || "",
+    timerState: body.tm || "",
+    timerId: body.tid || "",
+    firstCallback: body.fc === 1,
+    experimentState: body.xs || "",
+    experimentId: body.xid || "",
+    experimentTicks: body.xn || 0,
+    listed: body.lst || "",
+    diagReadback: body.drb === 1,
   };
 }
 
@@ -130,6 +162,9 @@ export function noteHost(witness, snap) {
   const next = clone(witness);
   if (snap && snap.startClass) {
     next.startClass = snap.startClass;
+  }
+  if (snap && snap.listed) {
+    next.listed = snap.listed;
   }
   next.running = !!(snap && snap.running);
   return next;
@@ -175,6 +210,7 @@ export function noteForegroundCheckpoint(witness, utc) {
 export function noteCallback(witness, dt) {
   const next = clone(witness);
   next.callbacks += 1;
+  next.firstCallback = true;
   const value = dt == null || dt === "" ? null : Number(dt);
   if (value != null && isFinite(value) && value > next.maxDt) {
     next.maxDt = value;
@@ -223,6 +259,44 @@ export function noteFault(witness, reason) {
   if (isTemporalFault(reason) && !next.fault) {
     next.fault = reason;
   }
+  return next;
+}
+
+export function noteTimer(witness, result) {
+  const next = clone(witness);
+  const state = result && result.state ? result.state : "";
+  const id = result && result.id != null && result.id !== false && result.id !== "" ? String(result.id) : "";
+  if (state && !next.timerState) {
+    next.timerState = state;
+  }
+  if (id && !next.timerId) {
+    next.timerId = id;
+  }
+  return next;
+}
+
+export function noteExperiment(witness, result) {
+  const next = clone(witness);
+  const state = result && result.state ? result.state : "";
+  const id = result && result.id != null && result.id !== false && result.id !== "" ? String(result.id) : "";
+  if (state && !next.experimentState) {
+    next.experimentState = state;
+  }
+  if (id && !next.experimentId) {
+    next.experimentId = id;
+  }
+  return next;
+}
+
+export function noteExperimentTick(witness) {
+  const next = clone(witness);
+  next.experimentTicks += 1;
+  return next;
+}
+
+export function noteDiagReadback(witness) {
+  const next = clone(witness);
+  next.diagReadback = true;
   return next;
 }
 
@@ -280,6 +354,25 @@ export function mergeServiceLedger(fileWitness, local) {
   if (typeof side.lastCheckpointUtc === "number" && (next.lastCheckpointUtc == null || side.lastCheckpointUtc > next.lastCheckpointUtc)) {
     next.lastCheckpointUtc = side.lastCheckpointUtc;
   }
+  if (side.timerState) {
+    next.timerState = side.timerState;
+  }
+  if (side.timerId) {
+    next.timerId = side.timerId;
+  }
+  if (side.firstCallback) {
+    next.firstCallback = true;
+  }
+  if (side.experimentState) {
+    next.experimentState = side.experimentState;
+  }
+  if (side.experimentId) {
+    next.experimentId = side.experimentId;
+  }
+  next.experimentTicks = Math.max(next.experimentTicks, side.experimentTicks);
+  if (side.diagReadback) {
+    next.diagReadback = true;
+  }
   return next;
 }
 
@@ -291,7 +384,12 @@ export function sameEvidence(left, right) {
     && a.initSeen === b.initSeen
     && a.fault === b.fault
     && a.lastScreen === b.lastScreen
-    && a.destroyReason === b.destroyReason;
+    && a.destroyReason === b.destroyReason
+    && a.timerState === b.timerState
+    && a.timerId === b.timerId
+    && a.firstCallback === b.firstCallback
+    && a.experimentState === b.experimentState
+    && a.experimentTicks === b.experimentTicks;
 }
 
 // First missing durable link. A start code is not one of these.
@@ -326,20 +424,73 @@ export function recoverLabel(witness) {
   return witness && witness.recover ? witness.recover : "-";
 }
 
-export function formatWitness(witness, now) {
-  const current = clone(witness);
-  let ck = "none";
-  if (current.lastCheckpointUtc != null && now != null) {
-    ck = String(now - current.lastCheckpointUtc);
+function shownId(value) {
+  const text = value || "-";
+  if (text.length <= 8) {
+    return text;
   }
-  return "L=" + executionLink(current)
-    + " r=" + recoverLabel(current)
-    + " n=" + current.callbacks
-    + " x=" + current.maxDt
-    + " s=" + (current.lastScreen || "?")
-    + " w=" + current.writeAttempts + "/" + current.writeOk + "/" + current.readbackOk
-    + " I=" + (current.initSeen ? "1" : "0")
-    + " S=" + (current.startClass || "-")
+  return text.slice(text.length - 8);
+}
+
+function shownExperiment(witness) {
+  if (witness.experimentState === "failed") {
+    return "fail";
+  }
+  if (!witness.experimentState) {
+    return "-";
+  }
+  return String(witness.experimentTicks || 0);
+}
+
+function shownListed(value) {
+  if (value === "yes") {
+    return "1";
+  }
+  if (value === "no") {
+    return "0";
+  }
+  if (value === "fail") {
+    return "x";
+  }
+  return "-";
+}
+
+// One short line. The round face clipped the longer 1.0.9 line before destroy.
+export function formatWitness(witness) {
+  const current = clone(witness);
+  const timer = current.timerState === "created" ? "ok" : current.timerState === "failed" ? "fail" : "-";
+  return "T=" + timer
+    + " id=" + shownId(current.timerId)
     + " D=" + (current.destroyReason || "-")
-    + " ck=" + ck;
+    + " F=" + (current.firstCallback ? "1" : "0")
+    + " X=" + shownExperiment(current)
+    + " A=" + shownListed(current.listed)
+    + " b=" + (current.diagReadback ? "1" : "0");
+}
+
+// What the durable timer fields can already prove. Match time stays elsewhere.
+export function timerDiagnosis(witness) {
+  const current = clone(witness);
+  if (!current.timerState) {
+    return "UNRECORDED";
+  }
+  if (current.timerState === "failed") {
+    return "NOT_CREATED";
+  }
+  if (current.destroyReason && !current.firstCallback) {
+    return "DESTROYED_BEFORE_CALLBACK";
+  }
+  if (current.firstCallback) {
+    return "CALLBACK_RECORDED";
+  }
+  if (current.experimentTicks > 0) {
+    return "LONG_PERIOD_ONLY";
+  }
+  if (current.listed === "yes") {
+    return "NOT_DELIVERED";
+  }
+  if (current.listed === "no") {
+    return "SERVICE_ABSENT";
+  }
+  return "NO_CALLBACK";
 }

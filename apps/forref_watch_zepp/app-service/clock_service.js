@@ -17,9 +17,13 @@ import {
   noteCallback,
   noteCheckpoint,
   noteClass,
+  noteDiagReadback,
+  noteExperiment,
+  noteExperimentTick,
   noteFault,
   noteLife,
   noteScreen,
+  noteTimer,
   noteWrite,
   sameEvidence,
 } from "../utils/clock_sleep_witness.js";
@@ -27,6 +31,7 @@ import { readWitness, writeWitness } from "../utils/clock_witness_device";
 
 const clock = new Time();
 let timer = null;
+let experiment = null;
 let memory = null;
 let ticks = 0;
 let lastCallbackUtc = null;
@@ -73,15 +78,18 @@ function flush(tag) {
     console.log("FORREF_CLOCK_SLEEP witness=fail tag=" + tag);
     return;
   }
-  const merged = mergeServiceLedger(file, ensureLedger());
+  const record = mergeServiceLedger(file, ensureLedger());
   let stored = false;
   try {
-    writeWitness(merged);
-    stored = sameEvidence(readWitness(), merged);
+    writeWitness(record);
+    stored = sameEvidence(readWitness(), record);
   } catch (err) {
     stored = false;
   }
-  ledger = noteWrite(merged, { ok: stored, readback: stored });
+  ledger = noteWrite(record, { ok: stored, readback: stored });
+  if (stored && (ledger.timerState || ledger.destroyReason || ledger.firstCallback || ledger.experimentState)) {
+    ledger = noteDiagReadback(ledger);
+  }
   if (!stored) {
     console.log("FORREF_CLOCK_SLEEP witness=fail tag=" + tag);
     return;
@@ -95,19 +103,26 @@ function flush(tag) {
   console.log("FORREF_CLOCK_SLEEP witness=ok tag=" + tag + " " + formatWitness(ledger, serviceNow()));
 }
 
+function stopHandle(handle) {
+  if (handle == null) {
+    return;
+  }
+  try {
+    stopTimer(handle);
+  } catch (err) {
+    console.log("FORREF_CLOCK_SLEEP timer-stop=fail");
+  }
+}
+
 function shutdown(why) {
   if (closed) {
     return;
   }
   closed = true;
-  if (timer != null) {
-    try {
-      stopTimer(timer);
-    } catch (err) {
-      console.log("FORREF_CLOCK_SLEEP timer-stop=fail");
-    }
-    timer = null;
-  }
+  stopHandle(timer);
+  timer = null;
+  stopHandle(experiment);
+  experiment = null;
   ledger = noteLife(ensureLedger(), { destroy: why });
   flush("stop");
   const phase = memory && memory.phase ? memory.phase : "";
@@ -130,6 +145,12 @@ function shutdown(why) {
   } catch (err) {
     console.log("FORREF_CLOCK_SLEEP exit=fail");
   }
+}
+
+// Separate from the match sampler. Its count is not elapsed match time.
+function experimentTick() {
+  ledger = noteExperimentTick(ensureLedger());
+  flush("experiment");
 }
 
 function tick() {
@@ -217,27 +238,38 @@ AppService({
     }
     try {
       timer = createSysTimer(true, 1000, tick);
+      const id = timer == null || timer === false ? "" : String(timer);
+      ledger = noteTimer(ensureLedger(), { state: id ? "created" : "failed", id: id });
+      flush("timer");
       console.log(
         "FORREF_CLOCK_SLEEP service=on timer=" +
-          (timer == null ? "null" : "on") +
+          (id ? "on" : "null") +
           " id=" +
-          (timer == null ? "" : timer) +
+          id +
           " screen=" +
           screenNow()
       );
     } catch (err) {
+      ledger = noteTimer(ensureLedger(), { state: "failed", id: "" });
+      flush("timer");
       console.log("FORREF_CLOCK_SLEEP service=on timer=unavailable screen=" + screenNow());
+    }
+    try {
+      experiment = createSysTimer(true, 5000, experimentTick);
+      const id = experiment == null || experiment === false ? "" : String(experiment);
+      ledger = noteExperiment(ensureLedger(), { state: id ? "created" : "failed", id: id });
+      flush("experiment-create");
+    } catch (err) {
+      ledger = noteExperiment(ensureLedger(), { state: "failed", id: "" });
+      flush("experiment-create");
+      console.log("FORREF_CLOCK_SLEEP experiment=unavailable");
     }
   },
   onDestroy() {
-    if (timer != null) {
-      try {
-        stopTimer(timer);
-      } catch (err) {
-        console.log("FORREF_CLOCK_SLEEP timer-stop=fail");
-      }
-      timer = null;
-    }
+    stopHandle(timer);
+    timer = null;
+    stopHandle(experiment);
+    experiment = null;
     if (!closed) {
       closed = true;
       ledger = noteLife(ensureLedger(), { destroy: "destroy" });
