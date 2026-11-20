@@ -5,12 +5,12 @@
     "appName": "FORREF",
     "appType": "app",
     "version": {
-      "code": 6,
-      "name": "1.0.6"
+      "code": 106,
+      "name": "1.0.6-nfv5"
     },
     "icon": "icon.png",
     "vender": "zepp",
-    "description": "FORREF CLOCK CONTINUITY DIAGNOSTIC"
+    "description": "FORREF NATIVE FAMILIARITY V5 CAROUSEL"
   },
   "permissions": [
     "data:os.device.info",

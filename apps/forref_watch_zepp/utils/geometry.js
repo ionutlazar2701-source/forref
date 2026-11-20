@@ -49,7 +49,7 @@ export function place(info, y, h, wantedW) {
   return { x: x, y: y, w: Math.max(w, 40), h: h, ok: false };
 }
 
-function tryStack(info, count, h) {
+function tryStack(info, count, h, limitY) {
   const gap = 6;
   const titleH = 34;
   const top = info.round ? 28 : SQUARE_STATUS_BAR + 4;
@@ -57,7 +57,7 @@ function tryStack(info, count, h) {
   for (let i = 0; i < count; i++) {
     const y = top + titleH + i * (h + gap);
     const rect = place(info, y, h, info.width - (info.round ? 8 : 16));
-    if (!rect.ok) {
+    if (!rect.ok || (limitY != null && rect.y + rect.h > limitY)) {
       return null;
     }
     rows.push(rect);
@@ -65,14 +65,14 @@ function tryStack(info, count, h) {
   return { titleY: top, titleH: titleH, rows: rows };
 }
 
-export function layoutStack(info, count) {
+export function layoutStack(info, count, limitY) {
   for (let h = 56; h >= 32; h -= 2) {
-    const laid = tryStack(info, count, h);
+    const laid = tryStack(info, count, h, limitY);
     if (laid) {
       return laid;
     }
   }
-  return tryStack(info, count, 32) || { titleY: 0, titleH: 28, rows: [] };
+  return tryStack(info, count, 32, limitY) || { titleY: 0, titleH: 28, rows: [] };
 }
 
 export function layoutClock(info, actionCount) {

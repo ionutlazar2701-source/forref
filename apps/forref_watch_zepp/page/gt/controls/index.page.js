@@ -5,6 +5,7 @@ import { displayText } from "../../../utils/match_clock";
 import { TEXT_PRIMARY, TEXT_WARNING } from "../../../utils/theme";
 import { bootLive, viewNow, performIntent } from "../../../utils/live_session";
 import { createAbandonArm } from "../../../utils/abandon_arm";
+import { applyAuthorizedIntent } from "../../../utils/control_apply";
 
 let banner = "";
 let metrics = null;
@@ -97,21 +98,14 @@ function paint() {
 
 function run(intent) {
   const view = viewNow();
-  const ctx = contextOf(view);
-  if (intent !== "ABANDON_GAME") {
-    arm.disarm("other-intent");
-  }
-  const confirmed = intent === "ABANDON_GAME" && arm.confirmed(ctx);
-  const result = performIntent(intent, { confirmed: confirmed });
-  if (result.reason === "CONFIRM_REQUIRED") {
-    arm.arm(ctx);
+  const outcome = applyAuthorizedIntent(intent, arm, contextOf(view), performIntent);
+  if (outcome.state === "confirm") {
     banner = t("confirmAbandon");
     paint();
     return;
   }
-  arm.disarm("resolved");
-  banner = result.ok ? "" : t("notApplied");
-  if (result.ok) {
+  banner = outcome.state === "applied" ? "" : t("notApplied");
+  if (outcome.state === "applied") {
     back();
     return;
   }
