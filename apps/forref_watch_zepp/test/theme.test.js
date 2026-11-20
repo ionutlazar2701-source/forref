@@ -136,8 +136,8 @@ test("filled turquoise and blue keep black labels in both states", () => {
 test("the manifest still has the 23 current routes and each one paints through the shared shell", () => {
   assert.deepEqual(appJson.targets.gt.module.page.pages, ROUTES);
   assert.equal(appJson.app.appId, 29566);
-  assert.equal(appJson.app.version.name, "1.0.3");
-  assert.equal(appJson.app.version.code, 3);
+  assert.equal(appJson.app.version.name, "1.0.4");
+  assert.equal(appJson.app.version.code, 4);
   for (const route of ROUTES) {
     const source = readFileSync(new URL("../" + route + ".js", import.meta.url), "utf8");
     assert.equal(source.includes("stack(") || source.includes("paintBase("), true, route);

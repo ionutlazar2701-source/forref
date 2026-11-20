@@ -5,18 +5,19 @@
     "appName": "FORREF",
     "appType": "app",
     "version": {
-      "code": 3,
-      "name": "1.0.3"
+      "code": 4,
+      "name": "1.0.4"
     },
     "icon": "icon.png",
     "vender": "zepp",
-    "description": "FORREF TRUE BLACK TEST BUILD"
+    "description": "FORREF CLOCK SLEEP TEST BUILD"
   },
   "permissions": [
     "data:os.device.info",
     "device:os.local_storage",
     "device:os.geolocation",
-    "data:user.hd.heart_rate"
+    "data:user.hd.heart_rate",
+    "device:os.bg_service"
   ],
   "runtime": {
     "apiVersion": {
@@ -55,6 +56,9 @@
             "page/gt/train-live/index.page",
             "page/gt/train-done/index.page"
           ]
+        },
+        "app-service": {
+          "services": ["app-service/clock_service"]
         }
       },
       "platforms": [
