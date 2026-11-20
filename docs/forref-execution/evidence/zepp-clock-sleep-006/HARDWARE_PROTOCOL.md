@@ -4,7 +4,7 @@ Device: Amazfit Bip 6. Install FORREF 1.0.9 only. Leave 1.0.6 foreground behavio
 
 Do not require an App Service file write to succeed while the screen is on. A failed write while the screen is lit is an attempt, not a clock result. Do not ask for `pair=match` on a screen-on tick.
 
-1. Open the app and confirm the boot line contains `build=clock-sleep-006`.
+1. Open the app and confirm the boot line contains `build=clock-sleep-006 rev=3d7c4bc2f7a94f84a6e8b87f1796d45a3717a2a0`.
 2. Kick off. Leave the match clock on screen until the digits are moving.
 3. Cover or timeout the screen for exactly 5 seconds. Do not open another page.
 4. Wake the watch and read the Live line immediately. Copy the whole line.
@@ -27,3 +27,5 @@ The line is:
 Stop on freeze, reboot, or dead input.
 
 The preview log did not report a connected simulator.
+
+QR expiry: 28 Nov 2026, 01:15:52 Europe/Bucharest (27 Nov 2026, 23:15:52 UTC).
