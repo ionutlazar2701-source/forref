@@ -5,12 +5,12 @@
     "appName": "FORREF",
     "appType": "app",
     "version": {
-      "code": 4,
-      "name": "1.0.4"
+      "code": 5,
+      "name": "1.0.5"
     },
     "icon": "icon.png",
     "vender": "zepp",
-    "description": "FORREF CLOCK SLEEP TEST BUILD"
+    "description": "FORREF CLOCK SLEEP DIAGNOSTIC"
   },
   "permissions": [
     "data:os.device.info",

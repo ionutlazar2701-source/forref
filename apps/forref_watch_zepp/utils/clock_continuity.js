@@ -4,6 +4,7 @@
 
 import {
   DISPLAY_CONTINUITY_MS,
+  Phase,
   Trust,
   commitSession,
   decodeSession,
@@ -49,12 +50,27 @@ export function readStoredSession(adapter) {
   return decodeSession(String(fileRaw));
 }
 
+function isHold(session) {
+  return !!(
+    session &&
+    !isRunning(session.phase) &&
+    session.trust !== Trust.UNVERIFIED &&
+    session.phase !== Phase.READY
+  );
+}
+
 export function preferObserved(memory, stored, utc) {
   if (!stored) {
     return memory;
   }
   if (!memory) {
     return stored;
+  }
+  if (isHold(stored) && isRunning(memory.phase)) {
+    return stored;
+  }
+  if (isHold(memory) && isRunning(stored.phase)) {
+    return memory;
   }
   const storedFresh = chainFresh(stored, utc);
   const memoryFresh = chainFresh(memory, utc);
@@ -93,6 +109,9 @@ export function projectFrame(memory, stored, utc, epoch) {
 
 export function commitForward(adapter, session) {
   const stored = readStoredSession(adapter);
+  if (stored && session && isHold(stored) && isRunning(session.phase)) {
+    return { ok: true, reason: "KEPT_HOLD", session: stored };
+  }
   if (stored && session && stored.trust !== Trust.UNVERIFIED && isRunning(stored.phase)) {
     const newer = (stored.lastUtc || 0) > (session.lastUtc || 0);
     const sameSegment = stored.openStartUtc === session.openStartUtc;

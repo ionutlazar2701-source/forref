@@ -7,18 +7,18 @@ import { commitForward, preferObserved, readStoredSession, serviceShouldStop } f
 
 export function runServiceTick(adapter, utc, permission, memory) {
   if (permission !== "granted") {
-    return { ok: false, reason: "PERMISSION_DENIED", session: memory || null, stop: false, wrote: false };
+    return { ok: false, reason: "PERMISSION_DENIED", session: memory || null, stop: false, wrote: false, readback: "" };
   }
   if (utc == null) {
-    return { ok: false, reason: "CLOCK_UNAVAILABLE", session: memory || null, stop: false, wrote: false };
+    return { ok: false, reason: "CLOCK_UNAVAILABLE", session: memory || null, stop: false, wrote: false, readback: "" };
   }
   const stored = readStoredSession(adapter);
   const base = preferObserved(memory, stored, utc) || stored || memory;
   if (!base) {
-    return { ok: false, reason: "NO_SESSION", session: null, stop: false, wrote: false };
+    return { ok: false, reason: "NO_SESSION", session: null, stop: false, wrote: false, readback: "" };
   }
   if (serviceShouldStop(base)) {
-    return { ok: true, reason: "STOP", session: base, stop: true, wrote: false };
+    return { ok: true, reason: "STOP", session: base, stop: true, wrote: false, readback: "" };
   }
   const frame = liveFrame(base, utc, base.epoch);
   if (frame.reason !== "TICK" && frame.admitted !== false) {
@@ -28,16 +28,18 @@ export function runServiceTick(adapter, utc, permission, memory) {
       session: frame.session,
       stop: serviceShouldStop(frame.session),
       wrote: false,
+      readback: "",
     };
   }
   const saved = commitForward(adapter, frame.session);
-  if (saved.reason === "KEPT_NEWER" && saved.session) {
+  if ((saved.reason === "KEPT_NEWER" || saved.reason === "KEPT_HOLD") && saved.session) {
     return {
       ok: true,
-      reason: "KEPT_NEWER",
+      reason: saved.reason,
       session: saved.session,
       stop: serviceShouldStop(saved.session),
       wrote: false,
+      readback: saved.reason,
     };
   }
   return {
@@ -46,5 +48,6 @@ export function runServiceTick(adapter, utc, permission, memory) {
     session: frame.session,
     stop: serviceShouldStop(frame.session),
     wrote: saved.ok === true,
+    readback: saved.reason,
   };
 }

@@ -5,8 +5,10 @@
 import { Time } from "@zos/sensor";
 import { createSysTimer, stopTimer } from "@zos/timer";
 import { exit } from "@zos/app-service";
+import { getSettings } from "@zos/display";
 import { deviceAdapter } from "../utils/clock_device";
 import { runServiceTick } from "../utils/clock_service_core";
+import { screenLabel } from "../utils/clock_service_policy.js";
 
 const clock = new Time();
 let timer = null;
@@ -41,24 +43,33 @@ function shutdown() {
   }
 }
 
+function screenNow() {
+  try {
+    return screenLabel(getSettings());
+  } catch (err) {
+    return "unavailable";
+  }
+}
+
 function tick() {
   const result = runServiceTick(deviceAdapter(), nowUtc(), "granted", memory);
   memory = result.session;
   ticks += 1;
-  const notable = result.stop || (result.reason !== "TICK" && result.reason !== "HELD");
-  if (ticks === 1 || ticks % 30 === 0 || notable) {
-    const last = memory && memory.lastUtc ? memory.lastUtc : 0;
-    console.log(
-      "FORREF_CLOCK_SLEEP tick=" +
-        ticks +
-        " reason=" +
-        result.reason +
-        " wrote=" +
-        result.wrote +
-        " last=" +
-        last
-    );
-  }
+  const last = memory && memory.lastUtc ? memory.lastUtc : 0;
+  console.log(
+    "FORREF_CLOCK_SLEEP tick=" +
+      ticks +
+      " reason=" +
+      result.reason +
+      " wrote=" +
+      result.wrote +
+      " readback=" +
+      (result.readback || "") +
+      " last=" +
+      last +
+      " screen=" +
+      screenNow()
+  );
   if (result.stop) {
     shutdown();
   }
@@ -78,6 +89,7 @@ AppService({
     }
     try {
       timer = createSysTimer(true, 1000, tick);
+      console.log("FORREF_CLOCK_SLEEP timer=" + (timer == null ? "null" : "on") + " screen=" + screenNow());
     } catch (err) {
       console.log("FORREF_CLOCK_SLEEP timer=unavailable");
     }

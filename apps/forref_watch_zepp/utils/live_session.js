@@ -49,6 +49,14 @@ export function bootLive() {
   const loaded = loadSession(deviceAdapter(), data.clockEpoch, deviceNow());
   data.clockLive = { epoch: data.clockEpoch, session: loaded.session };
   console.log(trace("LOAD", data.clockLive.session.phase, loaded.session, deviceNow()));
+  console.log(
+    "FORREF_CLOCK_SLEEP recover=" +
+      loaded.reason +
+      " phase=" +
+      loaded.session.phase +
+      " trust=" +
+      loaded.session.trust
+  );
   noteClockCommit(loaded.session, data.clockEpoch, { boot: true });
   armClockService(loaded.session);
   return data.clockLive.session;
@@ -148,6 +156,16 @@ export function performIntent(intent, extra) {
   rememberSession(result.session);
   noteClockCommit(result.session, bag().clockEpoch);
   armClockService(result.session);
+  console.log(
+    "FORREF_CLOCK_SLEEP intent=" +
+      intent +
+      " ok=true reason=" +
+      result.reason +
+      " phase=" +
+      result.session.phase +
+      " trust=" +
+      result.session.trust
+  );
   return result;
 }
 
