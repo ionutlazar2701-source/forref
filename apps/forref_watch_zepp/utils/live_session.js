@@ -12,7 +12,15 @@ import {
 } from "./match_clock";
 import { deviceNow, deviceAdapter, deviceScreen } from "./clock_device";
 import { commitForward, preferObserved, readStoredSession } from "./clock_continuity";
-import { syncClockService } from "./clock_service_bind";
+import { clockHostSnapshot, syncClockService } from "./clock_service_bind";
+import { readWitness, writeWitness } from "./clock_witness_device";
+import {
+  formatWitness,
+  noteAdmit,
+  noteForegroundCheckpoint,
+  noteHost,
+  noteRecover,
+} from "./clock_sleep_witness";
 import { BUILD_NAME, bootLine } from "./build_stamp";
 import { noteClockCommit } from "./telemetry";
 
@@ -70,8 +78,21 @@ export function bootLive() {
       deviceScreen()
   );
   noteClockCommit(loaded.session, data.clockEpoch, { boot: true });
+  recordWitness(function (witness) {
+    return noteRecover(witness, loaded.reason);
+  }, now);
   armClockService(loaded.session);
   return data.clockLive.session;
+}
+
+function recordWitness(change, utc) {
+  try {
+    const witness = change(readWitness());
+    writeWitness(witness);
+    console.log("FORREF_CLOCK_SLEEP witness=" + formatWitness(witness, utc));
+  } catch (err) {
+    console.log("FORREF_CLOCK_SLEEP witness=fail");
+  }
 }
 
 function armClockService(session) {
@@ -151,6 +172,13 @@ function admitObserved(before, utc, epoch, source) {
       screen
   );
   armClockService(frame.session);
+  recordWitness(function (witness) {
+    let next = noteAdmit(noteHost(witness, clockHostSnapshot()), frame.reason);
+    if (frame.reason === "TICK" && saved.ok) {
+      next = noteForegroundCheckpoint(next, shown);
+    }
+    return next;
+  }, utc);
   return frame;
 }
 

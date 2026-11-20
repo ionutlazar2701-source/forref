@@ -53,6 +53,7 @@ export function createServiceHost(sdk, log) {
   let absentNoted = 0;
   let restarts = 0;
   let published = "";
+  let startSeen = "";
 
   function line(text) {
     try {
@@ -109,9 +110,11 @@ export function createServiceHost(sdk, log) {
         },
       });
     } catch (err) {
+      startSeen = "unavailable";
       line("start=unavailable");
       return;
     }
+    startSeen = startClass(code);
     line("start-code=" + code + " start-class=" + startClass(code));
     if (!sawCallback && (code === 0 || code === true)) {
       running = true;
@@ -199,6 +202,9 @@ export function createServiceHost(sdk, log) {
       }
     } else if (listed(value)) {
       running = true;
+      if (!startSeen) {
+        startSeen = "listed";
+      }
       absentNoted = 0;
       return;
     } else if (running) {
@@ -264,6 +270,7 @@ export function createServiceHost(sdk, log) {
         running: running,
         requestPending: requestPending,
         blocked: blocked,
+        startClass: startSeen,
       };
     },
   };

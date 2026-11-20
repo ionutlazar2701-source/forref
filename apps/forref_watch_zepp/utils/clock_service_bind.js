@@ -16,3 +16,7 @@ const host = createServiceHost({
 export function syncClockService(session) {
   host.sync(session);
 }
+
+export function clockHostSnapshot() {
+  return host.snapshot();
+}
