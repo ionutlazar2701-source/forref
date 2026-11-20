@@ -1,6 +1,6 @@
 // Identity logged at boot so a simulator trace can be matched to a commit.
 // BUILD_REV is the functional commit. The evidence commit may follow it.
-export const BUILD_NAME = "clock-sleep-002";
+export const BUILD_NAME = "clock-continuity-003";
 export const BUILD_REV = "0b083a940b45943b6c0be5ee358005c572ac6ac5";
 
 export function bootLine() {

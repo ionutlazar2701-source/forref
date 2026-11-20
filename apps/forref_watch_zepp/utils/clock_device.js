@@ -1,14 +1,35 @@
 import { Time } from "@zos/sensor";
 import { LocalStorage } from "@zos/storage";
 import { readFileSync, writeFileSync } from "@zos/fs";
+import { CLOCK_FILE, CLOCK_KEY, CLOCK_MIRROR } from "./clock_store_paths.js";
 
 // 001c is a new prototype generation so a fresh READY can be tested.
 // The previous 001b full-time copy, and the probe files, are left in place.
-const FILE = "forref_clock001c_state.json";
-const KEY = "forref_clock001c_state";
-
 const time = new Time();
-const kv = new LocalStorage();
+let kv = null;
+
+function localStore() {
+  if (!kv) {
+    kv = new LocalStorage();
+  }
+  return kv;
+}
+
+function writeText(path, raw) {
+  writeFileSync({ path: path, data: raw, options: { encoding: "utf8" } });
+  return true;
+}
+
+function readText(path) {
+  try {
+    return asText(readFileSync({ path: path, options: { encoding: "utf8" } }));
+  } catch (err) {
+    if (isAbsence(err)) {
+      return "";
+    }
+    throw err;
+  }
+}
 let loggedSource = false;
 
 function isAbsence(err) {
@@ -51,26 +72,24 @@ export function deviceNow() {
 export function deviceAdapter() {
   return {
     writeFile(raw) {
-      writeFileSync({ path: FILE, data: raw, options: { encoding: "utf8" } });
-      return true;
+      return writeText(CLOCK_FILE, raw);
     },
     readFile() {
-      try {
-        return asText(readFileSync({ path: FILE, options: { encoding: "utf8" } }));
-      } catch (err) {
-        if (isAbsence(err)) {
-          return "";
-        }
-        throw err;
-      }
+      return readText(CLOCK_FILE);
+    },
+    writeMirror(raw) {
+      return writeText(CLOCK_MIRROR, raw);
+    },
+    readMirror() {
+      return readText(CLOCK_MIRROR);
     },
     writeKv(raw) {
-      kv.setItem(KEY, raw);
+      localStore().setItem(CLOCK_KEY, raw);
       return true;
     },
     readKv() {
       try {
-        const value = kv.getItem(KEY);
+        const value = localStore().getItem(CLOCK_KEY);
         return value == null ? "" : String(value);
       } catch (err) {
         return "";

@@ -723,24 +723,42 @@ function blankUnverified(notice) {
   return session;
 }
 
-export function loadSession(adapter, epoch, nowMillis) {
+export function readCheckpointRaw(adapter) {
   const fileRaw = readRaw(adapter, "readFile");
   const kvRaw = readRaw(adapter, "readKv");
   if (!fileRaw.ok || !kvRaw.ok) {
+    return { ok: false, reason: "STORE_UNAVAILABLE", raw: "" };
+  }
+  if (fileRaw.value === "" && kvRaw.value === "") {
+    return { ok: true, reason: "EMPTY", raw: "" };
+  }
+  if (fileRaw.value !== "" && fileRaw.value === kvRaw.value) {
+    return { ok: true, reason: "FILE_KV", raw: fileRaw.value };
+  }
+  if (typeof adapter.readMirror === "function") {
+    const mirrorRaw = readRaw(adapter, "readMirror");
+    if (mirrorRaw.ok && fileRaw.value !== "" && mirrorRaw.value === fileRaw.value) {
+      return { ok: true, reason: "FILE_MIRROR", raw: fileRaw.value };
+    }
+  }
+  return { ok: false, reason: "CONFLICT", raw: "" };
+}
+
+export function loadSession(adapter, epoch, nowMillis) {
+  const found = readCheckpointRaw(adapter);
+  if (!found.ok && found.reason === "STORE_UNAVAILABLE") {
     return { session: blankUnverified("STORE_UNAVAILABLE"), reason: "STORE_UNAVAILABLE" };
   }
-  const fileMissing = fileRaw.value === "";
-  const kvMissing = kvRaw.value === "";
-  if (fileMissing && kvMissing) {
+  if (!found.ok) {
+    return { session: blankUnverified("CONFLICT"), reason: "CONFLICT" };
+  }
+  if (found.raw === "") {
     const fresh = freshSession();
     fresh.notice = "NO_PRIOR_PROOF";
     fresh.epoch = epoch || null;
     return { session: fresh, reason: "NO_PRIOR_PROOF" };
   }
-  if (fileMissing || kvMissing || fileRaw.value !== kvRaw.value) {
-    return { session: blankUnverified("CONFLICT"), reason: "CONFLICT" };
-  }
-  const decoded = decodeSession(fileRaw.value);
+  const decoded = decodeSession(found.raw);
   if (!decoded) {
     return { session: blankUnverified("CORRUPT"), reason: "CORRUPT" };
   }
@@ -799,7 +817,43 @@ export function commitSession(adapter, session) {
   if (!wroteFile || !wroteKv || !fileRead.ok || !kvRead.ok || fileRead.value !== raw || kvRead.value !== raw) {
     return { ok: false, reason: "READBACK", session: null };
   }
+  if (typeof adapter.writeMirror === "function") {
+    try {
+      adapter.writeMirror(raw);
+    } catch (err) {
+      // The file and LocalStorage pair already read back. The mirror is the screen-off copy.
+    }
+  }
   return { ok: true, reason: "READBACK_ONLY_NOT_D1", session: session };
+}
+
+export function commitDurable(adapter, session) {
+  const raw = encodeSession(session);
+  let wroteFile = false;
+  let wroteMirror = false;
+  try {
+    wroteFile = adapter.writeFile(raw) === true;
+  } catch (err) {
+    wroteFile = false;
+  }
+  try {
+    wroteMirror = typeof adapter.writeMirror === "function" && adapter.writeMirror(raw) === true;
+  } catch (err) {
+    wroteMirror = false;
+  }
+  try {
+    if (typeof adapter.writeKv === "function") {
+      adapter.writeKv(raw);
+    }
+  } catch (err) {
+    // LocalStorage is not required for the screen-off file pair.
+  }
+  const fileRead = readRaw(adapter, "readFile");
+  const mirrorRead = readRaw(adapter, "readMirror");
+  if (!wroteFile || !wroteMirror || !fileRead.ok || !mirrorRead.ok || fileRead.value !== raw || mirrorRead.value !== raw) {
+    return { ok: false, reason: "READBACK", session: null };
+  }
+  return { ok: true, reason: "FILE_MIRROR", session: session };
 }
 
 export function advance(session, toUtc, epoch) {

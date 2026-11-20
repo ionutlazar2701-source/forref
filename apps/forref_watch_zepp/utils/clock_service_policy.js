@@ -49,7 +49,8 @@ export function createServiceHost(sdk, log) {
   let running = false;
   let requestPending = false;
   let blocked = false;
-  let absentNoted = false;
+  let absentNoted = 0;
+  let restarts = 0;
 
   function line(text) {
     try {
@@ -189,17 +190,29 @@ export function createServiceHost(sdk, log) {
       return;
     }
     const value = enumerate();
-    if (value != null && listed(value)) {
-      running = true;
-      absentNoted = false;
-      return;
-    }
-    if (running) {
-      if (value != null && !absentNoted) {
-        absentNoted = true;
-        line("services=absent");
+    if (value == null) {
+      if (running) {
+        return;
       }
+    } else if (listed(value)) {
+      running = true;
+      absentNoted = 0;
       return;
+    } else if (running) {
+      absentNoted += 1;
+      line("services=absent count=" + absentNoted);
+      if (absentNoted < 2) {
+        return;
+      }
+      running = false;
+      absentNoted = 0;
+      restarts += 1;
+      if (restarts > 3) {
+        blocked = true;
+        line("services=gave-up");
+        return;
+      }
+      line("services=restart");
     }
     let queried;
     try {

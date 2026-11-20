@@ -514,6 +514,7 @@ test("the watch surface stays on the review route and off the clock files", () =
   const text = readFileSync(new URL("../utils/text.js", import.meta.url), "utf8");
   const app = JSON.parse(readFileSync(new URL("../app.json", import.meta.url), "utf8"));
   const clock = readFileSync(new URL("../utils/clock_device.js", import.meta.url), "utf8");
+  const paths = readFileSync(new URL("../utils/clock_store_paths.js", import.meta.url), "utf8");
   const session = readFileSync(new URL("../utils/live_session.js", import.meta.url), "utf8");
   const device = readFileSync(new URL("../utils/capture_device.js", import.meta.url), "utf8");
   assert.equal(app.targets.gt.module.page.pages.length, 23);
@@ -523,7 +524,8 @@ test("the watch surface stays on the review route and off the clock files", () =
   assert.equal(review.includes("matchTime"), false);
   assert.equal(review.includes("clock_device"), false);
   assert.equal(review.includes("live_session"), false);
-  assert.equal(clock.includes("forref_clock001c_state"), true);
+  assert.equal(paths.includes("forref_clock001c_state"), true);
+  assert.equal(clock.includes("CLOCK_FILE"), true);
   assert.equal(clock.includes("capture_candidate"), false);
   assert.equal(session.includes("capture_candidate"), false);
   assert.equal(device.includes("openSync"), true);

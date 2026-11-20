@@ -240,7 +240,7 @@ function ensureTimer() {
   timerId = createTimer(1000, 1000, () => {
     paintAll();
   });
-  console.log("FORREF_LIVE002 TIMER|createTimer!");
+  console.log("FORREF_LIVE002 TIMER|paint!");
 }
 
 function stopClockTimer() {

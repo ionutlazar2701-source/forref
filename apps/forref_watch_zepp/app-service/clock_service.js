@@ -6,7 +6,7 @@ import { Time } from "@zos/sensor";
 import { createSysTimer, stopTimer } from "@zos/timer";
 import { exit } from "@zos/app-service";
 import { getSettings } from "@zos/display";
-import { deviceAdapter } from "../utils/clock_device";
+import { serviceAdapter, serviceNow } from "../utils/clock_service_store";
 import { runServiceTick } from "../utils/clock_service_core";
 import { screenLabel } from "../utils/clock_service_policy.js";
 
@@ -14,18 +14,6 @@ const clock = new Time();
 let timer = null;
 let memory = null;
 let ticks = 0;
-
-function nowUtc() {
-  try {
-    const value = clock.getTime();
-    if (typeof value !== "number" || !isFinite(value)) {
-      return null;
-    }
-    return value < 1e11 ? Math.round(value * 1000) : Math.round(value);
-  } catch (err) {
-    return null;
-  }
-}
 
 function shutdown() {
   if (timer != null) {
@@ -52,7 +40,7 @@ function screenNow() {
 }
 
 function tick() {
-  const result = runServiceTick(deviceAdapter(), nowUtc(), "granted", memory);
+  const result = runServiceTick(serviceAdapter(), serviceNow(), "granted", memory);
   memory = result.session;
   ticks += 1;
   const last = memory && memory.lastUtc ? memory.lastUtc : 0;

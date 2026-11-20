@@ -10,6 +10,9 @@ function pick(name) {
 }
 
 Page({
+  onInit() {
+    console.log("FORREF_LIFE player onInit event=" + state().event);
+  },
   build() {
     const m = logDevice("player");
     bindBack(false);
@@ -20,5 +23,8 @@ Page({
       { label: t("unknown"), action: () => pick("UNKNOWN") },
       { label: t("back"), action: () => back() },
     ]);
+  },
+  onDestroy() {
+    console.log("FORREF_LIFE player onDestroy");
   },
 });

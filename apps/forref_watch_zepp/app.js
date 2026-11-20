@@ -1,5 +1,6 @@
 import { setWakeUpRelaunch } from "@zos/display";
 import { bootLine } from "./utils/build_stamp";
+import { startForegroundClock, stopForegroundClock } from "./utils/clock_foreground_bind";
 import { attachMatchTelemetry, releaseMatchTelemetry } from "./utils/telemetry_bind";
 
 App({
@@ -19,12 +20,22 @@ App({
       console.log("FORREF_CLOCK_SLEEP relaunch=unavailable");
     }
     try {
+      startForegroundClock();
+    } catch (err) {
+      console.log("FORREF_CLOCK_FG timer=unavailable");
+    }
+    try {
       attachMatchTelemetry(this.globalData.clockEpoch);
     } catch (err) {
       console.log("FORREF_TEL attach=FAILED");
     }
   },
   onDestroy() {
+    try {
+      stopForegroundClock();
+    } catch (err) {
+      console.log("FORREF_CLOCK_FG timer-stop=fail");
+    }
     try {
       releaseMatchTelemetry();
     } catch (err) {
