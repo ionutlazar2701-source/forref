@@ -1,6 +1,6 @@
 # Test matrix — clock sleep 006
 
-Watch `npm test`: geometry pass, 136 node tests pass. `./tool/verify_cloud.sh` counts are filled when that command finishes.
+Watch `npm test`: geometry pass, 136 node tests pass. `./tool/verify_cloud.sh`: match core 377, persistence 92, phone 126, exit 0.
 
 `DISPLAY_CONTINUITY_MS` stays 2500.
 
