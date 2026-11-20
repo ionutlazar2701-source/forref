@@ -8,6 +8,9 @@ import { ACCENT, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_WARNING } from "../../../uti
 import { state } from "../../../utils/state";
 import { displayText } from "../../../utils/match_clock";
 import { bootLive, prepareFrame, performIntent, persistLive } from "../../../utils/live_session";
+import { deviceNow } from "../../../utils/clock_device";
+import { readWitness } from "../../../utils/clock_witness_device";
+import { formatWitness } from "../../../utils/clock_sleep_witness";
 import { createAbandonArm } from "../../../utils/abandon_arm";
 
 let timerId = null;
@@ -76,10 +79,14 @@ function detailLabel(view) {
   if (banner) {
     return banner;
   }
-  if (view.unverified) {
-    return t("lastKnown") + " " + view.lastKnown;
+  try {
+    return formatWitness(readWitness(), deviceNow());
+  } catch (err) {
+    if (view.unverified) {
+      return t("lastKnown") + " " + view.lastKnown;
+    }
+    return "";
   }
-  return "";
 }
 
 function digitLabel(view) {
@@ -144,8 +151,8 @@ function paintDigits(view, lay, current) {
   }
   const detail = detailLabel(view);
   const detailLimit = current === "C" ? lay.away.y : lay.home.y;
-  if (detail && nextY + 18 <= detailLimit) {
-    textAt(12, nextY, metrics.width - 24, 18, detail, 14, TEXT_WARNING, true);
+  if (detail && nextY + 14 <= detailLimit) {
+    textAt(12, nextY, metrics.width - 24, 14, detail, 12, TEXT_WARNING, true);
   }
 }
 

@@ -11,6 +11,8 @@ import { serviceAdapter, serviceNow } from "../utils/clock_service_store";
 import { runServiceTick } from "../utils/clock_service_core";
 import { screenLabel } from "../utils/clock_service_policy.js";
 import { pairProbe, tickClass } from "../utils/clock_sleep_evidence.js";
+import { formatWitness, noteServiceTick } from "../utils/clock_sleep_witness.js";
+import { readWitness, writeWitness } from "../utils/clock_witness_device";
 
 const clock = new Time();
 let timer = null;
@@ -62,6 +64,28 @@ function screenNow() {
   }
 }
 
+function recordOffWitness(screen, dt, label, committed, utc) {
+  if (screen !== "off") {
+    console.log("FORREF_CLOCK_SLEEP witness=held screen=" + screen);
+    return;
+  }
+  try {
+    const noted = noteServiceTick(readWitness(), {
+      screen: "off",
+      dt: dt,
+      class: label,
+      committed: committed,
+      utc: utc,
+    });
+    if (noted.write) {
+      writeWitness(noted.witness);
+      console.log("FORREF_CLOCK_SLEEP witness=" + formatWitness(noted.witness, utc));
+    }
+  } catch (err) {
+    console.log("FORREF_CLOCK_SLEEP witness=fail");
+  }
+}
+
 function tick() {
   const utc = serviceNow();
   const dt = lastCallbackUtc == null || utc == null ? "" : utc - lastCallbackUtc;
@@ -82,6 +106,8 @@ function tick() {
   );
   const label = tickClass(result, probe, dt === "" ? null : dt);
   const last = memory && memory.lastUtc ? memory.lastUtc : 0;
+  const screen = screenNow();
+  recordOffWitness(screen, dt, label, probe.match && label === "CHAIN", utc);
   console.log(
     "FORREF_CLOCK_SLEEP tick=" +
       ticks +
@@ -108,7 +134,7 @@ function tick() {
       " last=" +
       last +
       " screen=" +
-      screenNow()
+      screen
   );
   if (result.stop) {
     shutdown("stop");
