@@ -256,8 +256,14 @@ function paint() {
 }
 
 Page({
+  onInit() {
+    console.log("FORREF_LIFE review onInit event=" + state().event);
+  },
   build() {
     bindBack(false);
     paint();
+  },
+  onDestroy() {
+    console.log("FORREF_LIFE review onDestroy");
   },
 });

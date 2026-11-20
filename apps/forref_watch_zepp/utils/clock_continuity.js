@@ -6,10 +6,12 @@ import {
   DISPLAY_CONTINUITY_MS,
   Phase,
   Trust,
+  commitDurable,
   commitSession,
   decodeSession,
   isRunning,
   liveFrame,
+  readCheckpointRaw,
 } from "./match_clock.js";
 
 export function observationStep(session, utc) {
@@ -32,22 +34,11 @@ export function chainFresh(session, utc) {
 }
 
 export function readStoredSession(adapter) {
-  let fileRaw = "";
-  let kvRaw = "";
-  try {
-    fileRaw = adapter.readFile();
-  } catch (err) {
+  const found = readCheckpointRaw(adapter);
+  if (!found.ok || found.raw === "") {
     return null;
   }
-  try {
-    kvRaw = adapter.readKv();
-  } catch (err) {
-    return null;
-  }
-  if (!fileRaw || !kvRaw || fileRaw !== kvRaw) {
-    return null;
-  }
-  return decodeSession(String(fileRaw));
+  return decodeSession(found.raw);
 }
 
 function isHold(session) {
@@ -119,7 +110,11 @@ export function commitForward(adapter, session) {
       return { ok: true, reason: "KEPT_NEWER", session: stored };
     }
   }
-  return commitSession(adapter, session);
+  const saved = commitSession(adapter, session);
+  if (saved.ok || typeof adapter.writeMirror !== "function") {
+    return saved;
+  }
+  return commitDurable(adapter, session);
 }
 
 export function serviceShouldStop(session) {
