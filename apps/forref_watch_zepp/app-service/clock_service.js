@@ -1,6 +1,6 @@
 // Background UTC observations while the screen is off.
 // createSysTimer is a scheduler. Time.getTime() is UTC, not a monotonic clock.
-// A callback delta is evidence. It does not grant elapsed match time.
+// A callback is counted before the screen is read. The count is not match time.
 // reload stays false so a reboot does not resume the sampler across the gap.
 
 import { Time } from "@zos/sensor";
@@ -9,9 +9,20 @@ import { exit } from "@zos/app-service";
 import { getSettings } from "@zos/display";
 import { serviceAdapter, serviceNow } from "../utils/clock_service_store";
 import { runServiceTick } from "../utils/clock_service_core";
-import { screenLabel } from "../utils/clock_service_policy.js";
 import { pairProbe, tickClass } from "../utils/clock_sleep_evidence.js";
-import { formatWitness, noteServiceTick } from "../utils/clock_sleep_witness.js";
+import {
+  emptyWitness,
+  formatWitness,
+  mergeServiceLedger,
+  noteCallback,
+  noteCheckpoint,
+  noteClass,
+  noteFault,
+  noteLife,
+  noteScreen,
+  noteWrite,
+  sameEvidence,
+} from "../utils/clock_sleep_witness.js";
 import { readWitness, writeWitness } from "../utils/clock_witness_device";
 
 const clock = new Time();
@@ -20,6 +31,69 @@ let memory = null;
 let ticks = 0;
 let lastCallbackUtc = null;
 let closed = false;
+let ledger = null;
+
+function ensureLedger() {
+  if (ledger) {
+    return ledger;
+  }
+  try {
+    ledger = readWitness();
+  } catch (err) {
+    ledger = emptyWitness();
+  }
+  return ledger;
+}
+
+function screenNow() {
+  try {
+    const settings = getSettings();
+    const status = settings && settings.screen ? settings.screen.status : null;
+    if (status === 1) {
+      return "on";
+    }
+    if (status === 2) {
+      return "off";
+    }
+    if (status == null) {
+      return "unk";
+    }
+    return "unk:" + status;
+  } catch (err) {
+    return "fail";
+  }
+}
+
+function flush(tag) {
+  let file;
+  try {
+    file = readWitness();
+  } catch (err) {
+    ledger = noteWrite(ensureLedger(), { ok: false, readback: false });
+    console.log("FORREF_CLOCK_SLEEP witness=fail tag=" + tag);
+    return;
+  }
+  const merged = mergeServiceLedger(file, ensureLedger());
+  let stored = false;
+  try {
+    writeWitness(merged);
+    stored = sameEvidence(readWitness(), merged);
+  } catch (err) {
+    stored = false;
+  }
+  ledger = noteWrite(merged, { ok: stored, readback: stored });
+  if (!stored) {
+    console.log("FORREF_CLOCK_SLEEP witness=fail tag=" + tag);
+    return;
+  }
+  try {
+    writeWitness(ledger);
+  } catch (err) {
+    console.log("FORREF_CLOCK_SLEEP witness=fail tag=" + tag);
+    return;
+  }
+  console.log("FORREF_CLOCK_SLEEP witness=ok tag=" + tag + " " + formatWitness(ledger, serviceNow()));
+}
 
 function shutdown(why) {
   if (closed) {
@@ -34,6 +108,8 @@ function shutdown(why) {
     }
     timer = null;
   }
+  ledger = noteLife(ensureLedger(), { destroy: why });
+  flush("stop");
   const phase = memory && memory.phase ? memory.phase : "";
   const trust = memory && memory.trust ? memory.trust : "";
   const notice = memory && memory.notice ? memory.notice : "";
@@ -56,46 +132,26 @@ function shutdown(why) {
   }
 }
 
-function screenNow() {
-  try {
-    return screenLabel(getSettings());
-  } catch (err) {
-    return "unavailable";
-  }
-}
-
-function recordOffWitness(screen, dt, label, committed, utc) {
-  if (screen !== "off") {
-    console.log("FORREF_CLOCK_SLEEP witness=held screen=" + screen);
-    return;
-  }
-  try {
-    const noted = noteServiceTick(readWitness(), {
-      screen: "off",
-      dt: dt,
-      class: label,
-      committed: committed,
-      utc: utc,
-    });
-    if (noted.write) {
-      writeWitness(noted.witness);
-      console.log("FORREF_CLOCK_SLEEP witness=" + formatWitness(noted.witness, utc));
-    }
-  } catch (err) {
-    console.log("FORREF_CLOCK_SLEEP witness=fail");
-  }
-}
-
 function tick() {
   const utc = serviceNow();
-  const dt = lastCallbackUtc == null || utc == null ? "" : utc - lastCallbackUtc;
+  const dt = lastCallbackUtc == null || utc == null ? null : utc - lastCallbackUtc;
+  lastCallbackUtc = utc;
+  ticks += 1;
+  ledger = noteCallback(ensureLedger(), dt);
+  const screen = screenNow();
+  ledger = noteScreen(ledger, screen);
   const anchor = memory && memory.lastUtc != null ? memory.lastUtc : null;
   const step = utc == null || anchor == null ? "" : utc - anchor;
-  lastCallbackUtc = utc;
   const adapter = serviceAdapter();
-  const result = runServiceTick(adapter, utc, "granted", memory);
+  let result;
+  try {
+    result = runServiceTick(adapter, utc, "granted", memory);
+  } catch (err) {
+    console.log("FORREF_CLOCK_SLEEP tick=fail");
+    flush("tick-fail");
+    return;
+  }
   memory = result.session;
-  ticks += 1;
   const probe = pairProbe(
     function () {
       return adapter.readFile();
@@ -104,15 +160,19 @@ function tick() {
       return adapter.readMirror();
     }
   );
-  const label = tickClass(result, probe, dt === "" ? null : dt);
+  const label = tickClass(result, probe, dt == null ? null : dt);
+  ledger = noteClass(ledger, label);
+  if (probe.match && label === "CHAIN" && utc != null) {
+    ledger = noteCheckpoint(ledger, utc);
+  }
+  ledger = noteFault(ledger, result.reason);
+  flush("tick");
   const last = memory && memory.lastUtc ? memory.lastUtc : 0;
-  const screen = screenNow();
-  recordOffWitness(screen, dt, label, probe.match && label === "CHAIN", utc);
   console.log(
     "FORREF_CLOCK_SLEEP tick=" +
       ticks +
       " dt=" +
-      dt +
+      (dt == null ? "" : dt) +
       " step=" +
       step +
       " utc=" +
@@ -143,6 +203,8 @@ function tick() {
 
 AppService({
   onInit() {
+    ledger = noteLife(ensureLedger(), { init: true });
+    flush("init");
     console.log("FORREF_CLOCK_SLEEP service=init screen=" + screenNow() + " monotonic=none src=utc reload=false");
     try {
       if (clock.onPhoneTimeSetting) {
@@ -178,6 +240,8 @@ AppService({
     }
     if (!closed) {
       closed = true;
+      ledger = noteLife(ensureLedger(), { destroy: "destroy" });
+      flush("destroy");
       console.log("FORREF_CLOCK_SLEEP service=off reason=destroy screen=" + screenNow());
     }
   },

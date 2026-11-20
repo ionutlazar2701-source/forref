@@ -16,8 +16,11 @@ import {
   emptyWitness,
   encodeWitness,
   formatWitness,
+  noteFault,
+  noteLife,
   noteRecover,
   noteServiceTick,
+  noteWrite,
 } from "../utils/clock_sleep_witness.js";
 
 const EPOCH = "epoch-a";
@@ -107,21 +110,25 @@ test("off-screen ticks through five seconds commit and resume inside the window"
     witness = decodeWitness(encodeWitness(noted.witness));
     session = result.session;
   }
+  assert.equal(witness.callbacks, 5);
   assert.equal(witness.offTicks, 5);
   assert.equal(witness.maxDt, 1000);
   assert.equal(witness.lastCheckpointUtc, T0 + 5000);
   assert.equal(displayText({ unverified: false, digits: "00:05", added: false }), "00:05");
   const restored = loadSession(store, EPOCH, utc + 1000);
   assert.equal(restored.reason, "CONTINUITY_RESUMED");
+  witness = noteLife(witness, { init: true });
+  witness = noteWrite(witness, { ok: true, readback: true });
   witness = noteRecover(witness, restored.reason);
   const line = formatWitness(witness, utc + 1000);
-  assert.equal(line.includes("off=5"), true);
-  assert.equal(line.includes("max=1000"), true);
+  assert.equal(line.includes("L=CHAIN"), true);
+  assert.equal(line.includes("n=5"), true);
+  assert.equal(line.includes("x=1000"), true);
   assert.equal(line.includes("ck=1000"), true);
   assert.equal(line.includes("r=CONTINUITY_RESUMED"), true);
 });
 
-test("a screen-on service tick does not write and does not count as an off tick", () => {
+test("a screen-on callback is counted and is not an off tick", () => {
   const noted = noteServiceTick(emptyWitness(), {
     screen: "on",
     dt: 1000,
@@ -129,9 +136,11 @@ test("a screen-on service tick does not write and does not count as an off tick"
     committed: true,
     utc: T0 + 1000,
   });
-  assert.equal(noted.write, false);
+  assert.equal(noted.witness.callbacks, 1);
+  assert.equal(noted.witness.maxDt, 1000);
   assert.equal(noted.witness.offTicks, 0);
-  assert.equal(noted.witness.lastCheckpointUtc, null);
+  assert.equal(noted.witness.lastScreen, "on");
+  assert.equal(noted.witness.lastCheckpointUtc, T0 + 1000);
 });
 
 test("a four second off callback is recorded and does not move the checkpoint", () => {
@@ -146,15 +155,20 @@ test("a four second off callback is recorded and does not move the checkpoint", 
   });
   assert.equal(frame.reason, "UNSAMPLED_GAP");
   assert.equal(frame.session.firstHalfClosedMs, 0);
-  assert.equal(noted.write, true);
+  assert.equal(noted.witness.callbacks, 1);
   assert.equal(noted.witness.offTicks, 1);
   assert.equal(noted.witness.maxDt, 4000);
   assert.equal(noted.witness.lastCheckpointUtc, null);
-  const line = formatWitness(noteRecover(noted.witness, "RECOVERY_REQUIRED"), T0 + 4000);
-  assert.equal(line.includes("off=1"), true);
-  assert.equal(line.includes("max=4000"), true);
+  const recorded = noteWrite(noteLife(noteFault(noted.witness, frame.reason), { init: true }), {
+    ok: true,
+    readback: true,
+  });
+  const line = formatWitness(recorded, T0 + 4000);
+  assert.equal(line.includes("L=GAP"), true);
+  assert.equal(line.includes("n=1"), true);
+  assert.equal(line.includes("x=4000"), true);
   assert.equal(line.includes("ck=none"), true);
-  assert.equal(line.includes("r=RECOVERY_REQUIRED"), true);
+  assert.equal(line.includes("r=UNSAMPLED_GAP"), true);
 });
 
 test("a corrupt witness does not become a checkpoint", () => {
@@ -162,17 +176,13 @@ test("a corrupt witness does not become a checkpoint", () => {
   assert.equal(decodeWitness('{"v":1}#00000000').lastCheckpointUtc, null);
 });
 
-test("the service holds file writes while the screen is on, and the protocol does not require one", () => {
+test("the foreground sampler stays in place and the callback is counted before the screen read", () => {
   const service = readFileSync(new URL("../app-service/clock_service.js", import.meta.url), "utf8");
-  assert.equal(service.includes('screen !== "off"'), true);
-  assert.equal(service.includes("witness=held"), true);
-  const protocol = readFileSync(
-    new URL("../../../docs/forref-execution/evidence/zepp-clock-sleep-005/HARDWARE_PROTOCOL.md", import.meta.url),
-    "utf8"
-  );
-  assert.equal(protocol.includes("1, 2, 3, 4, and 5"), true);
-  assert.equal(/screen=on[^\n]*pair=match/.test(protocol), false);
-  assert.equal(protocol.includes("Do not ask the App Service to write a file while the screen is on."), true);
+  const countAt = service.indexOf("ledger = noteCallback(ensureLedger(), dt);");
+  const screenAt = service.indexOf("const screen = screenNow();");
+  assert.equal(countAt > 0 && screenAt > countAt, true);
+  assert.equal(service.includes("createSysTimer"), true);
+  assert.equal(service.includes("runServiceTick"), true);
   const foreground = readFileSync(new URL("../utils/clock_foreground_bind.js", import.meta.url), "utf8");
   assert.equal(foreground.includes("sampleFromScheduler"), true);
   assert.equal(foreground.includes("createTimer"), true);
