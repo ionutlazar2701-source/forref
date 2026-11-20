@@ -152,6 +152,18 @@ export function fullButton(m, label, y, h, onClick, fill) {
   return button(m.pad, y, m.contentW, h, label, onClick, fill);
 }
 
+export function marker(x, y, w, h, color) {
+  const node = hmUI.createWidget(hmUI.widget.FILL_RECT, {
+    x: x,
+    y: y,
+    w: w,
+    h: h,
+    color: color,
+  });
+  shellOwned.push(node);
+  return node;
+}
+
 export function bindBack(isRoot) {
   onKey({
     callback: (key, event) => {
