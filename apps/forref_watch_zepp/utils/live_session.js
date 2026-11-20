@@ -10,7 +10,7 @@ import {
   liveFrame,
   Trust,
 } from "./match_clock";
-import { deviceNow, deviceAdapter } from "./clock_device";
+import { deviceNow, deviceAdapter, deviceScreen } from "./clock_device";
 import { commitForward, preferObserved, readStoredSession } from "./clock_continuity";
 import { syncClockService } from "./clock_service_bind";
 import { BUILD_NAME, bootLine } from "./build_stamp";
@@ -19,6 +19,7 @@ import { noteClockCommit } from "./telemetry";
 export const BUILD = BUILD_NAME;
 
 let bootLogged = false;
+let lastScreen = "";
 
 function bag() {
   const data = state();
@@ -46,16 +47,27 @@ export function bootLive() {
   if (data.clockLive && data.clockLive.epoch === data.clockEpoch && data.clockLive.session) {
     return data.clockLive.session;
   }
-  const loaded = loadSession(deviceAdapter(), data.clockEpoch, deviceNow());
+  const now = deviceNow();
+  const loaded = loadSession(deviceAdapter(), data.clockEpoch, now);
   data.clockLive = { epoch: data.clockEpoch, session: loaded.session };
-  console.log(trace("LOAD", data.clockLive.session.phase, loaded.session, deviceNow()));
+  const last = loaded.session.lastUtc == null ? "" : loaded.session.lastUtc;
+  const step = now == null || loaded.session.lastUtc == null ? "" : now - loaded.session.lastUtc;
+  console.log(trace("LOAD", data.clockLive.session.phase, loaded.session, now));
   console.log(
     "FORREF_CLOCK_SLEEP recover=" +
       loaded.reason +
       " phase=" +
       loaded.session.phase +
       " trust=" +
-      loaded.session.trust
+      loaded.session.trust +
+      " last=" +
+      last +
+      " step=" +
+      step +
+      " notice=" +
+      (loaded.session.notice || "") +
+      " screen=" +
+      deviceScreen()
   );
   noteClockCommit(loaded.session, data.clockEpoch, { boot: true });
   armClockService(loaded.session);
@@ -102,6 +114,26 @@ function admitObserved(before, utc, epoch, source) {
     }
   }
   const shown = frame.session && frame.session.lastUtc ? frame.session.lastUtc : 0;
+  const anchor = before && before.lastUtc != null ? before.lastUtc : null;
+  const step = anchor == null ? "" : utc - anchor;
+  const screen = deviceScreen();
+  if (screen !== lastScreen) {
+    console.log(
+      "FORREF_CLOCK_SLEEP edge=" +
+        screen +
+        " from=" +
+        (lastScreen || "none") +
+        " utc=" +
+        utc +
+        " last=" +
+        (anchor == null ? "" : anchor) +
+        " trust=" +
+        before.trust +
+        " reason=" +
+        frame.reason
+    );
+    lastScreen = screen;
+  }
   console.log(
     "FORREF_CLOCK_FG src=" +
       source +
@@ -112,7 +144,11 @@ function admitObserved(before, utc, epoch, source) {
       " last=" +
       shown +
       " trust=" +
-      frame.session.trust
+      frame.session.trust +
+      " step=" +
+      step +
+      " screen=" +
+      screen
   );
   armClockService(frame.session);
   return frame;

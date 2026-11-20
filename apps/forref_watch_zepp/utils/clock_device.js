@@ -1,7 +1,9 @@
 import { Time } from "@zos/sensor";
 import { LocalStorage } from "@zos/storage";
 import { readFileSync, writeFileSync } from "@zos/fs";
+import { getSettings } from "@zos/display";
 import { CLOCK_FILE, CLOCK_KEY, CLOCK_MIRROR } from "./clock_store_paths.js";
+import { screenLabel } from "./clock_service_policy.js";
 
 // 001c is a new prototype generation so a fresh READY can be tested.
 // The previous 001b full-time copy, and the probe files, are left in place.
@@ -48,6 +50,14 @@ function asText(value) {
     return value.data;
   }
   return "";
+}
+
+export function deviceScreen() {
+  try {
+    return screenLabel(getSettings());
+  } catch (err) {
+    return "unavailable";
+  }
 }
 
 export function deviceNow() {
