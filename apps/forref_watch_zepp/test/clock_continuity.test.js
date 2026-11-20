@@ -321,14 +321,17 @@ test("the sampler does not start a match and a ready session stays stopped", () 
 test("the device wiring does not treat relaunch, a phone-time callback, or reboot reload as a clock", () => {
   const service = readFileSync(new URL("../app-service/clock_service.js", import.meta.url), "utf8");
   const bind = readFileSync(new URL("../utils/clock_service_bind.js", import.meta.url), "utf8");
+  const policy = readFileSync(new URL("../utils/clock_service_policy.js", import.meta.url), "utf8");
   const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
   const manifest = JSON.parse(readFileSync(new URL("../app.json", import.meta.url), "utf8"));
   assert.equal(service.includes("monotonic=none"), true);
   assert.equal(service.includes("reload=false"), true);
   assert.equal(service.includes("onPhoneTimeSetting"), true);
   assert.equal(service.includes("failClosed"), false);
-  assert.equal(bind.includes("reload: false"), true);
-  assert.equal(bind.includes("reload: true"), false);
+  assert.equal(policy.includes("reload: false"), true);
+  assert.equal(policy.includes("reload: true"), false);
+  assert.equal(policy.includes("sdk.stop()"), false);
+  assert.equal(service.includes("screen="), true);
   assert.equal(app.includes("setWakeUpRelaunch"), true);
   assert.equal(manifest.permissions.includes("device:os.bg_service"), true);
   assert.equal(manifest.permissions.includes("data:user.hd.workout"), false);
