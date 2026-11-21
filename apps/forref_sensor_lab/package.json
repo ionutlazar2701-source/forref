@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test test/journal.test.js test/analytics.test.js test/gps_state.test.js test/hr_state.test.js test/session_controller.test.js test/chunk_store.test.js test/native_sport.test.js test/host.test.js test/layout.test.js test/privacy.test.js"
+    "test": "node --test test/journal.test.js test/analytics.test.js test/gps_state.test.js test/hr_state.test.js test/session_controller.test.js test/chunk_store.test.js test/native_sport.test.js test/native_elapsed.test.js ../forref_duration_probe/test/probe.test.js test/host.test.js test/layout.test.js test/privacy.test.js"
   },
   "license": "ISC"
 }
