@@ -7,9 +7,9 @@ This package is production FORREF, app id `29566`, version `1.0.11` (code 11). I
 ## Install
 
 1. Scan `CLOCK004_INTEGRATION_QR.png` with the Zepp app on the phone paired to the Bip 6. Developer mode must be on.
-2. Package `29566-FORREF-1.0.11-20261121122705.zab`, 302406 bytes, sha256 `20b57ad35713b1412b28a2698e52bf42e4e841a26a3952ed19803199e7e22259`.
-3. Preview URL `zpkd1://api-mifit-de2.zepp.com/custom/tools/app-dial/download/eNCOvIlNNstnzWCzsmdDzvLAhMwrIMws`.
-4. The preview QR expires 28 Nov 2026, 14:27:08 Europe/Bucharest (12:27:08 UTC).
+2. Package `29566-FORREF-1.0.11-20261121123241.zab`, 302410 bytes, sha256 `7f9d61f9e50cc976afc5437b3023935b751ff749dce4fda9243be2923881ffd0`.
+3. Preview URL `zpkd1://api-mifit-de2.zepp.com/custom/tools/app-dial/download/KSPFsmJAHFoJdgIYxmSHqBsnCiJcJQzG`.
+4. The preview QR expires 28 Nov 2026, 14:32:44 Europe/Bucharest (12:32:44 UTC).
 5. Zeus compiled device sources `9765120`, `9765121`, `10158337` (QJSC, 25 files). That is a package build, not a match.
 6. Open FORREF, reach Live, and kick off. Record firmware, device source, battery at start and end, and whether phone time sync is on.
 7. The screen does not need to stay lit. Bluetooth is not required for the subtraction.
@@ -49,5 +49,5 @@ A row within 1 s of the reference is a functionality observation of this package
 - Fail-closed is durable only after the new slot reads back. A failed readback leaves the previous slot. Restart can show the previous healthy anchor.
 - Corrupt or conflicting v2 slots do not fall back to a good v1 match. Kick-off stays refused until the slots are cleared.
 - This clock is not Match Memory. Display UTC is not an authoritative event timestamp.
-- The QR expires. After 28 Nov 2026, 14:27:08 Europe/Bucharest, preview again.
+- The QR expires. After 28 Nov 2026, 14:32:44 Europe/Bucharest, preview again.
 - No physical result in this file. Do not describe the integrated build as hardware-validated.
