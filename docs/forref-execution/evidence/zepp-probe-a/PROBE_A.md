@@ -23,7 +23,11 @@ The body is not the Flutter match, not a Match Record, and not the match clock. 
 
 ## Hardware result
 
-**LOCAL GATE REQUIRED.** This cloud run has no Amazfit Bip 6 and no Zepp Developer Mode session. Node tests of the exchange are not a device pass.
+**PASS — physical Bip 6 screen.** On 21 November 2026 at 18:02 Europe/Bucharest the Founder installed this probe over the 1.0.11 package and opened Probe A. The page showed PROBE A, STORED, and STATIC SIDE SERVICE.
+
+STORED replaces WAITING only after the side service returns the static body, the watch readback matches, and the `CONFIGURATION_STORED` receipt is `recorded`. NOT STORED would have been shown otherwise.
+
+The Zeus console lines were not copied. The screen result is the hardware observation. It covers the static side-service body only. It does not show that the Flutter match was transferred. Probe B remains blocked.
 
 ## Install on the Bip 6
 
