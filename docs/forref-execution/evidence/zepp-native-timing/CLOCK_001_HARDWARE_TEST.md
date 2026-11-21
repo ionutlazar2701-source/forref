@@ -1,39 +1,69 @@
-# CLOCK-001 — Hardware protocol
+# CLOCK-001 — Physical validation
 
-Status: **LOCAL GATE REQUIRED**. No row below has been run.
-Device: Amazfit Bip 6, with an independent stopwatch that is not the watch.
-Error budget: absolute difference at most 1,000 ms at the moment of comparison.
-This protocol does not authorize a match-clock change. A pass would only be evidence for a later decision.
+Hardware verdict: **NOT TESTED**.
+Documentation verdict: **NO-GO** for treating a public API as a sleep-proof elapsed clock. See `CLOCK_001_FINDINGS.md`.
+This file is the procedure. Every result cell stays empty until a person copies it from a watch. Do not estimate a cell.
 
-## Before any trial
+## Install
 
-1. Record the FORREF package under test, or record that the trial uses the system Running app alone.
-2. Do not treat a simulator, a callback count, or `Time.getTime()` as the native duration.
-3. Leave the result blank when a step is skipped. Do not estimate it.
-4. Copy the on-screen duration string exactly, including colons.
+1. Use the Zepp app on the phone paired to the physical Amazfit Bip 6. Developer mode is on.
+2. Scan the QR in `PREVIEW_QR.txt`. It is DUR-001 1.0.0, app id `30102`, and it expires 28 Nov 2026, 11:58:59 Europe/Bucharest (09:58:59 UTC).
+3. Confirm the watch shows DUR-001. Production FORREF is app id `29566`. The sensor lab is app id `30101`. This package does not replace either one.
+4. Package that matches the QR: `30102-DUR-001-1.0.0-20261121095858.zab`, sha256 `b975d73592e5233dff531afcccb91a5d13353feadfdecd9c4bc0457212d713e5`, 11332 bytes. The file is gitignored.
 
-The public API does not give a standalone FORREF app a duration to read on this device. If the trial is the system Running app alone, label the source `SYSTEM_RUNNING_SCREEN`. If a later public API is being probed, label the source with the API name and the permission prompt result. A missing permission is a failed read, not a duration of zero.
+An independent stopwatch, not the watch, is the comparison clock. Start it only when the procedure says so.
 
-## Rows
+## What the screen means
 
-| Id | Setup | Sleep or interruption | Record | Result |
+| Line | Meaning |
+| --- | --- |
+| Permission | First number from `queryPermission` or from the request callback. `0` not authorized, `1` unknown, `2` authorized. `PERMISSION_SHAPE` means the call did not return that array. |
+| Request | Immediate `requestPermission` result, then the callback value. Immediate `0` is a prompt in progress, `1` means nothing to request, `2` means already authorized. |
+| Call | `1` if `getSportData` returned `true`. `0` if it returned anything else. `-` if it has not been called. |
+| Code | Callback `code`. `0` is the documented success code. Any other number is the API result. `-` means no callback yet. |
+| Duration | Clock text taken from a successful payload, or `-`. |
+| State | `TIME_UNKNOWN`, then a reason. `CALLBACK_PENDING` means the call was accepted and the callback has not arrived. `NO_CALLBACK_10S` means it was still absent after 10 seconds. That is not an OS error code. A shown referee time such as `65:34` is still `TIME_UNKNOWN`. |
+
+If the watch is connected to a log, also copy the `DUR001` line. `raw=` is the callback string, truncated to 80 characters. `source=` on boot is the device source.
+
+## Concurrent Running session
+
+Do this before the sleep rows. Leave the result blank if the watch will not keep Running open behind DUR-001. That blank is the concurrency observation. Do not fill it with a guess.
+
+1. Start the system Running workout and let the native duration advance.
+2. Open DUR-001 without stopping Running.
+3. Copy the Permission line.
+4. Tap REQUEST PERMISSION. Copy the Request line and the new Permission line.
+5. Tap READ DURATION. Wait until State changes, or until it shows `NO_CALLBACK_10S`.
+6. Copy all six lines and, if present, the `DUR001` log line.
+
+| Step | Copied screen | Result |
+| --- | --- | --- |
+| Running active, first paint | | NOT TESTED |
+| After REQUEST PERMISSION | | NOT TESTED |
+| After READ DURATION | | NOT TESTED |
+
+## Sleep, wake, reopen, Bluetooth, pause
+
+Repeat READ DURATION at the comparison moment. Copy the six lines and the independent stopwatch.
+
+| Id | What to do | Copied screen | Stopwatch | Result |
 | --- | --- | --- | --- | --- |
-| H30 | Start the source and the independent stopwatch together. Confirm both are running. | Screen off for 30 seconds. | Source string, stopwatch, absolute error, screen state. | HARDWARE_PENDING |
-| H120 | Same start. | Screen off for 2 minutes. | Same fields. | HARDWARE_PENDING |
-| H600 | Same start. | Screen off for 10 minutes. | Same fields. This is the success interval. | HARDWARE_PENDING |
-| H-WAKE | During H600, wake and sleep the screen three times without stopping the source. | Repeated wake. | Duration immediately after each wake, and whether it jumped or froze. | HARDWARE_PENDING |
-| H-REOPEN | Leave the source running. Leave the app and open it again on the same session. | App reopen. | Duration before leaving and after reopening. | HARDWARE_PENDING |
-| H-BT | Disable phone Bluetooth for at least 30 seconds, then enable it. | Bluetooth disconnection. | Duration before, during, and after. | HARDWARE_PENDING |
-| H-PAUSE | Pause the source, wait 30 seconds, resume. | Pause and resume. | Whether the paused interval was excluded, and the error after resume. | HARDWARE_PENDING |
+| H30 | Screen off for 30 seconds, then read. | | | NOT TESTED |
+| H120 | Screen off for 2 minutes, then read. | | | NOT TESTED |
+| H600 | Screen off for 10 minutes, then read. | | | NOT TESTED |
+| H-WAKE | During H600, wake and sleep three times. Read after each wake. | | | NOT TESTED |
+| H-REOPEN | Leave Running and DUR-001, open DUR-001 again, read. | | | NOT TESTED |
+| H-BT | Phone Bluetooth off for at least 30 seconds, then on. Read before, during, and after. | | | NOT TESTED |
+| H-PAUSE | Pause Running, wait 30 seconds, resume, read after the pause and after the resume. | | | NOT TESTED |
 
-## Acceptance
+## When a report can pass the gate
 
-A report can be reviewed by `reviewHardware` in `apps/forref_sensor_lab/lib/native_elapsed.js` only when it includes:
+`reviewHardware` in `apps/forref_sensor_lab/lib/native_elapsed.js` accepts a report only when the transcribed reads include:
 
-- `measured: true`, `device: "Amazfit Bip 6"`, `source: "PHYSICAL_BIP6"`
-- `javascriptTicksUsed: false`
-- repeated wakes, reopen, Bluetooth drop, and pause/resume all completed
-- one absolute error for 30, 120, and 600 seconds of screen sleep
-- the worst of those errors at most 1,000 ms
+- `probe: "DUR-001"`, `version: "1.0.0"`, and `deviceSource` `9765120`, `9765121`, or `10158337`
+- for every read: `api: "getSportData"`, `type: "duration"`, `permission: 2`, `accepted: true`, `code: 0`, and the callback `raw` string
+- sleep reads at 30, 120, and 600 seconds, each with `stopwatchSeconds` from the independent stopwatch
+- at least three `wake` reads, one `reopen`, one `bluetooth`, one `pause`, and one `resume`
 
-No report in this repository meets that shape. Do not fill one in from a cloud run.
+The error is computed from the duration string inside `raw` and the stopwatch. A field named `measured`, `proven`, `absErrorMs`, `pauseResume`, or `javascriptTicksUsed` rejects the report. No report in this repository meets the shape.

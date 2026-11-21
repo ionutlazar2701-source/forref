@@ -1,0 +1,10 @@
+{
+  "name": "forref-duration-probe",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/probe.test.js ../forref_sensor_lab/test/native_elapsed.test.js"
+  },
+  "license": "ISC"
+}
