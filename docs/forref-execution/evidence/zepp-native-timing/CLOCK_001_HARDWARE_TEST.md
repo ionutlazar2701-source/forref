@@ -1,5 +1,7 @@
 # CLOCK-001 — Physical validation
 
+The founder observed on a physical Amazfit Bip 6 that an active Running workout blocks other apps. Concurrent Running plus DUR-001 is not the primary experiment. Stopwatch research is `CLOCK_002_FINDINGS.md`.
+
 Hardware verdict: **NOT TESTED**.
 Documentation verdict: **NO-GO** for treating a public API as a sleep-proof elapsed clock. See `CLOCK_001_FINDINGS.md`.
 This file is the procedure. Every result cell stays empty until a person copies it from a watch. Do not estimate a cell.

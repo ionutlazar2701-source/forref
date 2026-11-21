@@ -1,0 +1,46 @@
+{
+  "configVersion": "v3",
+  "app": {
+    "appId": 30103,
+    "appName": "SW-001",
+    "appType": "app",
+    "version": {
+      "code": 1,
+      "name": "1.0.0"
+    },
+    "icon": "icon.png",
+    "vender": "zepp",
+    "description": "CLOCK-002 stopwatch probe. Not a match record."
+  },
+  "permissions": [
+    "data:os.device.info"
+  ],
+  "runtime": {
+    "apiVersion": {
+      "compatible": "4.0",
+      "target": "4.0",
+      "minVersion": "3.0"
+    }
+  },
+  "debug": false,
+  "targets": {
+    "gt": {
+      "module": {
+        "page": {
+          "pages": [
+            "page/gt/home/index.page"
+          ]
+        }
+      },
+      "platforms": [
+        { "st": "s" }
+      ],
+      "designWidth": 390
+    }
+  },
+  "i18n": {
+    "en-US": { "appName": "SW-001" },
+    "ro-RO": { "appName": "SW-001" }
+  },
+  "defaultLanguage": "en-US"
+}
