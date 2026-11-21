@@ -2,7 +2,14 @@ import { Time } from "@zos/sensor";
 import { LocalStorage } from "@zos/storage";
 import { readFileSync, writeFileSync } from "@zos/fs";
 import { getSettings } from "@zos/display";
-import { CLOCK_FILE, CLOCK_KEY, CLOCK_MIRROR } from "./clock_store_paths.js";
+import {
+  CLOCK_ENGINE,
+  CLOCK_FILE,
+  CLOCK_KEY,
+  CLOCK_MIRROR,
+  CLOCK_SEGMENT_A,
+  CLOCK_SEGMENT_B,
+} from "./clock_store_paths.js";
 import { screenLabel } from "./clock_service_policy.js";
 
 // 001c is a new prototype generation so a fresh READY can be tested.
@@ -76,6 +83,40 @@ export function deviceNow() {
     return Math.round(raw);
   } catch (err) {
     return null;
+  }
+}
+
+export function segmentAdapter() {
+  return {
+    readA() {
+      return readText(CLOCK_SEGMENT_A);
+    },
+    writeA(raw) {
+      return writeText(CLOCK_SEGMENT_A, raw);
+    },
+    readB() {
+      return readText(CLOCK_SEGMENT_B);
+    },
+    writeB(raw) {
+      return writeText(CLOCK_SEGMENT_B, raw);
+    },
+    readEngine() {
+      return readText(CLOCK_ENGINE);
+    },
+    writeEngine(raw) {
+      return writeText(CLOCK_ENGINE, raw);
+    },
+  };
+}
+
+export function watchPhoneTime(onChange) {
+  try {
+    time.onPhoneTimeSetting(function () {
+      onChange();
+    });
+    return true;
+  } catch (err) {
+    return false;
   }
 }
 
