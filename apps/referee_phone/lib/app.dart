@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:forref_match_core/forref_match_core.dart';
 import 'package:referee_phone/app_scope.dart';
@@ -8,6 +11,7 @@ import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_st
 import 'package:referee_phone/l10n/app_localizations.dart';
 import 'package:referee_phone/match_application/match_application_boundary.dart';
 import 'package:referee_phone/mobile_commands/mobile_command_runtime.dart';
+import 'package:referee_phone/officiate/local_configuration_bridge.dart';
 import 'package:referee_phone/design/forref_theme.dart';
 import 'package:referee_phone/routing/app_router.dart';
 
@@ -30,6 +34,7 @@ class RefereeApp extends StatefulWidget {
     this.matchCaptureContext,
     this.temporalEvidence,
     this.mobileCommands,
+    this.localBridge,
   });
 
   final LocalMatchDatabase database;
@@ -47,6 +52,9 @@ class RefereeApp extends StatefulWidget {
   /// Overrides the phone-only command runtime. Tests may inject a fixture.
   final MobileCommandRuntime? mobileCommands;
 
+  /// Overrides the debug loopback. Release builds do not create one.
+  final LocalConfigurationBridge? localBridge;
+
   @override
   State<RefereeApp> createState() => _RefereeAppState();
 }
@@ -54,11 +62,21 @@ class RefereeApp extends StatefulWidget {
 class _RefereeAppState extends State<RefereeApp> {
   final ValueNotifier<Locale?> locale = ValueNotifier<Locale?>(null);
   late final MobileCommandRuntime _mobileCommands;
+  LocalConfigurationBridge? _localBridge;
+  var _ownsLocalBridge = false;
 
   @override
   void initState() {
     super.initState();
     _mobileCommands = widget.mobileCommands ?? _phoneOnlyRuntime();
+    if (widget.localBridge != null) {
+      _localBridge = widget.localBridge;
+    } else if (kDebugMode) {
+      _ownsLocalBridge = true;
+      _localBridge = LocalConfigurationBridge(
+        readPersistedMatch: widget.database.getMatch,
+      );
+    }
   }
 
   MobileCommandRuntime _phoneOnlyRuntime() {
@@ -91,6 +109,11 @@ class _RefereeAppState extends State<RefereeApp> {
 
   @override
   void dispose() {
+    final bridge = _localBridge;
+    if (bridge != null) {
+      unawaited(bridge.stop());
+      if (_ownsLocalBridge) bridge.dispose();
+    }
     locale.dispose();
     super.dispose();
   }
@@ -105,6 +128,7 @@ class _RefereeAppState extends State<RefereeApp> {
       matchCaptureContext: widget.matchCaptureContext,
       temporalEvidence: widget.temporalEvidence,
       mobileCommands: _mobileCommands,
+      localBridge: _localBridge,
       child: ValueListenableBuilder<Locale?>(
         valueListenable: locale,
         builder: (context, resolved, _) {

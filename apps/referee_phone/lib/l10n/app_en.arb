@@ -220,5 +220,25 @@
   "fixtureGroupNeedsAttention": "Needs attention",
   "fixtureGroupNotStarted": "Not started",
   "fixtureGroupCompleted": "Completed",
-  "checkingMatchState": "Checking match state"
+  "checkingMatchState": "Checking match state",
+  "localBridgeTitle": "Local configuration bridge",
+  "localBridgeBody": "Debug only. Serves the selected saved match on this phone at {address}. No cloud.",
+  "@localBridgeBody": {
+    "placeholders": {
+      "address": {"type": "String"}
+    }
+  },
+  "localBridgeStart": "Start local bridge",
+  "localBridgeStop": "Stop local bridge",
+  "localBridgeListening": "Listening on {address}",
+  "@localBridgeListening": {
+    "placeholders": {
+      "address": {"type": "String"}
+    }
+  },
+  "localBridgeStopped": "Local bridge is off",
+  "localBridgeMissing": "That match is not saved on this phone",
+  "localBridgeFailed": "The local bridge did not start",
+  "localBridgeSelect": "Select a saved match",
+  "localBridgeNone": "No saved match to serve"
 }

@@ -578,4 +578,38 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get checkingMatchState => 'Checking match state';
+
+  @override
+  String get localBridgeTitle => 'Local configuration bridge';
+
+  @override
+  String localBridgeBody(String address) {
+    return 'Debug only. Serves the selected saved match on this phone at $address. No cloud.';
+  }
+
+  @override
+  String get localBridgeStart => 'Start local bridge';
+
+  @override
+  String get localBridgeStop => 'Stop local bridge';
+
+  @override
+  String localBridgeListening(String address) {
+    return 'Listening on $address';
+  }
+
+  @override
+  String get localBridgeStopped => 'Local bridge is off';
+
+  @override
+  String get localBridgeMissing => 'That match is not saved on this phone';
+
+  @override
+  String get localBridgeFailed => 'The local bridge did not start';
+
+  @override
+  String get localBridgeSelect => 'Select a saved match';
+
+  @override
+  String get localBridgeNone => 'No saved match to serve';
 }

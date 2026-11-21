@@ -1189,6 +1189,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Checking match state'**
   String get checkingMatchState;
+
+  /// No description provided for @localBridgeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Local configuration bridge'**
+  String get localBridgeTitle;
+
+  /// No description provided for @localBridgeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Debug only. Serves the selected saved match on this phone at {address}. No cloud.'**
+  String localBridgeBody(String address);
+
+  /// No description provided for @localBridgeStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start local bridge'**
+  String get localBridgeStart;
+
+  /// No description provided for @localBridgeStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop local bridge'**
+  String get localBridgeStop;
+
+  /// No description provided for @localBridgeListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening on {address}'**
+  String localBridgeListening(String address);
+
+  /// No description provided for @localBridgeStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Local bridge is off'**
+  String get localBridgeStopped;
+
+  /// No description provided for @localBridgeMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'That match is not saved on this phone'**
+  String get localBridgeMissing;
+
+  /// No description provided for @localBridgeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The local bridge did not start'**
+  String get localBridgeFailed;
+
+  /// No description provided for @localBridgeSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a saved match'**
+  String get localBridgeSelect;
+
+  /// No description provided for @localBridgeNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved match to serve'**
+  String get localBridgeNone;
 }
 
 class _AppLocalizationsDelegate

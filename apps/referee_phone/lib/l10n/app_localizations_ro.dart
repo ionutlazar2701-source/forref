@@ -583,4 +583,38 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get checkingMatchState => 'Se verifică starea meciului';
+
+  @override
+  String get localBridgeTitle => 'Punte locală de configurare';
+
+  @override
+  String localBridgeBody(String address) {
+    return 'Doar pentru depanare. Servește meciul salvat selectat pe acest telefon la $address. Fără cloud.';
+  }
+
+  @override
+  String get localBridgeStart => 'Pornește puntea locală';
+
+  @override
+  String get localBridgeStop => 'Oprește puntea locală';
+
+  @override
+  String localBridgeListening(String address) {
+    return 'Ascultă pe $address';
+  }
+
+  @override
+  String get localBridgeStopped => 'Puntea locală este oprită';
+
+  @override
+  String get localBridgeMissing => 'Meciul nu este salvat pe acest telefon';
+
+  @override
+  String get localBridgeFailed => 'Puntea locală nu a pornit';
+
+  @override
+  String get localBridgeSelect => 'Selectează un meci salvat';
+
+  @override
+  String get localBridgeNone => 'Nu există un meci salvat de servit';
 }
