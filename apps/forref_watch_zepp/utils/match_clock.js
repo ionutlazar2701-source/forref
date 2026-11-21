@@ -4,9 +4,12 @@
 
 export const REGULATION_HALF_MS = 45 * 60 * 1000;
 export const MAX_SAME_SESSION_GAP_MS = 120 * 1000;
-// A running display may advance only across a sampled step this small.
-// Anything longer is a gap and must not be shown as precise elapsed time.
+// Sampler engine only. A healthy utc_segment anchor is not invalidated by sleep.
+// Anything longer than this, on the sampler path, is a gap and must not be shown
+// as precise elapsed time.
 export const DISPLAY_CONTINUITY_MS = 2500;
+// Diagnostic bound for one open UTC segment. Not a football rule.
+export const SEGMENT_MAX_MS = 6 * 60 * 60 * 1000;
 export const JOURNAL_LIMIT = 30;
 
 export const Phase = {
@@ -62,6 +65,10 @@ export function isRunning(phase) {
   return phase === Phase.FIRST_HALF_RUNNING || phase === Phase.SECOND_HALF_RUNNING;
 }
 
+export function isUtcSegment(session) {
+  return !!(session && session.engine === "utc_segment");
+}
+
 function isSecond(phase) {
   return (
     phase === Phase.SECOND_HALF_RUNNING ||
@@ -79,7 +86,7 @@ function secondDisplay(session) {
 }
 
 export function cloneSession(session) {
-  return {
+  const copy = {
     phase: session.phase,
     trust: session.trust,
     periodSlot: session.periodSlot === 2 ? 2 : 1,
@@ -93,6 +100,16 @@ export function cloneSession(session) {
     notice: session.notice,
     seq: session.seq,
   };
+  if (session.engine) {
+    copy.engine = session.engine;
+  }
+  if (session.integrity) {
+    copy.integrity = session.integrity;
+  }
+  if (typeof session.halfLimitMs === "number" && session.halfLimitMs > 0) {
+    copy.halfLimitMs = session.halfLimitMs;
+  }
+  return copy;
 }
 
 function pad(value) {
@@ -124,7 +141,8 @@ function foldOpen(session, utc) {
   }
   const delta = utc - session.openStartUtc;
   const step = session.lastUtc == null ? delta : utc - session.lastUtc;
-  if (delta < 0 || step < 0 || step > MAX_SAME_SESSION_GAP_MS) {
+  const limit = isUtcSegment(session) ? SEGMENT_MAX_MS : MAX_SAME_SESSION_GAP_MS;
+  if (delta < 0 || step < 0 || step > limit) {
     return false;
   }
   addToOpenPeriod(session, delta);
@@ -148,7 +166,58 @@ function failClosed(session, utc, reason) {
   session.trust = Trust.UNVERIFIED;
   session.notice = reason;
   session.lastUtc = utc;
+  if (isUtcSegment(session)) {
+    session.integrity = "TIME_UNKNOWN";
+    session.openStartUtc = null;
+    session.seq = session.seq + 1;
+  }
   return { session: session, event: "UNVERIFIED" };
+}
+
+export function gateSegment(session, utc, epoch) {
+  if (!isUtcSegment(session)) {
+    return { ok: true, session: session, reason: "SAMPLER" };
+  }
+  if (!isRunning(session.phase) || session.trust === Trust.UNVERIFIED) {
+    return { ok: true, session: session, reason: "HELD" };
+  }
+  if (session.openStartUtc == null || utc == null) {
+    const failed = failClosed(cloneSession(session), session.lastUtc, "CLOCK_UNAVAILABLE");
+    return { ok: false, session: failed.session, reason: "CLOCK_UNAVAILABLE" };
+  }
+  if (utc < session.openStartUtc || (session.lastUtc != null && utc < session.lastUtc)) {
+    const failed = failClosed(cloneSession(session), session.lastUtc, "BACKWARD");
+    return { ok: false, session: failed.session, reason: "BACKWARD" };
+  }
+  if (utc - session.openStartUtc > SEGMENT_MAX_MS) {
+    const failed = failClosed(cloneSession(session), session.lastUtc, "SEGMENT_OUTSIDE_WINDOW");
+    return { ok: false, session: failed.session, reason: "SEGMENT_OUTSIDE_WINDOW" };
+  }
+  const next = cloneSession(session);
+  if (next.epoch && epoch && epoch !== next.epoch) {
+    const anchor = next.lastUtc == null ? next.openStartUtc : next.lastUtc;
+    const stepped = utc - anchor;
+    if (stepped > DISPLAY_CONTINUITY_MS) {
+      const failed = failClosed(cloneSession(session), session.lastUtc, "EPOCH");
+      return { ok: false, session: failed.session, reason: "EPOCH" };
+    }
+    next.epoch = epoch;
+  }
+  next.integrity = "UTC_ASSUMED";
+  next.notice = "UTC_ASSUMED";
+  return { ok: true, session: next, reason: "UTC_ASSUMED" };
+}
+
+export function noteDiscontinuity(session, utc, reason) {
+  const named = reason || "PHONE_TIME_SETTING";
+  if (!session) {
+    return { ok: false, session: session, reason: "NO_SESSION" };
+  }
+  if (!isRunning(session.phase) || session.trust === Trust.UNVERIFIED) {
+    return { ok: true, session: session, reason: "HELD" };
+  }
+  const failed = failClosed(cloneSession(session), session.lastUtc == null ? utc : session.lastUtc, named);
+  return { ok: true, session: failed.session, reason: named };
 }
 
 export function sample(session, observation) {
@@ -289,7 +358,13 @@ export function applyIntent(session, intent, observation) {
   }
 
   let current = session;
-  if (isRunning(session.phase) && session.trust !== Trust.UNVERIFIED) {
+  if (isRunning(session.phase) && session.trust !== Trust.UNVERIFIED && isUtcSegment(session)) {
+    const gate = gateSegment(session, observation.utcMillis, observation.epoch);
+    if (!gate.ok) {
+      return { ok: false, duplicate: false, reason: gate.reason, session: gate.session };
+    }
+    current = gate.session;
+  } else if (isRunning(session.phase) && session.trust !== Trust.UNVERIFIED) {
     const anchor = session.lastUtc == null ? session.openStartUtc : session.lastUtc;
     const step = anchor == null || observation.utcMillis == null ? null : observation.utcMillis - anchor;
     if (step == null || step < 0 || step > DISPLAY_CONTINUITY_MS) {
@@ -495,6 +570,10 @@ export function actionsFor(session) {
 
 export function admitDisplay(session, utc, epoch) {
   const next = cloneSession(session);
+  if (isUtcSegment(next)) {
+    const gate = gateSegment(next, utc, epoch);
+    return { admitted: gate.ok, session: gate.session, reason: gate.reason };
+  }
   if (!isRunning(next.phase) || next.trust === Trust.UNVERIFIED) {
     return { admitted: true, session: next, reason: "HELD" };
   }
@@ -533,7 +612,8 @@ export function admitDisplay(session, utc, epoch) {
 
 export function liveFrame(session, utc, epoch) {
   const admitted = admitDisplay(session, utc, epoch);
-  const view = present(admitted.session, admitted.session.lastUtc);
+  const at = isUtcSegment(admitted.session) ? utc : admitted.session.lastUtc;
+  const view = present(admitted.session, at);
   return {
     admitted: admitted.admitted,
     reason: admitted.reason,
@@ -544,9 +624,39 @@ export function liveFrame(session, utc, epoch) {
 
 function displayUtc(session, utc) {
   if (isRunning(session.phase) && session.trust !== Trust.UNVERIFIED) {
+    if (
+      isUtcSegment(session) &&
+      utc != null &&
+      session.openStartUtc != null &&
+      utc >= session.openStartUtc
+    ) {
+      return utc;
+    }
     return session.lastUtc;
   }
   return utc;
+}
+
+function regulation(session) {
+  const limit =
+    session && typeof session.halfLimitMs === "number" && session.halfLimitMs > 0
+      ? session.halfLimitMs
+      : REGULATION_HALF_MS;
+  const minutes = Math.round(limit / 60000);
+  return { limit: limit, mark: minutes, fullMark: minutes * 2 };
+}
+
+function integrityOf(session, unverified) {
+  if (unverified || session.trust === Trust.UNVERIFIED) {
+    return "TIME_UNKNOWN";
+  }
+  if (isUtcSegment(session)) {
+    return "UTC_ASSUMED";
+  }
+  if (session.trust === Trust.OBSERVED) {
+    return "PROVEN_TIME";
+  }
+  return "HELD";
 }
 
 export function present(session, utc) {
@@ -559,18 +669,21 @@ export function present(session, utc) {
     if (session.phase === Phase.READY) {
       digits = formatElapsed(0);
     } else if (session.phase === Phase.HALF_TIME) {
-      const shown = splitRegulation(session.firstHalfClosedMs, REGULATION_HALF_MS, 45);
+      const rule = regulation(session);
+      const shown = splitRegulation(session.firstHalfClosedMs, rule.limit, rule.mark);
       digits = shown.digits;
       added = shown.added;
       mark = shown.mark;
     } else if (secondDisplay(session)) {
-      const presentation = REGULATION_HALF_MS + livePeriodMs(session, shownAt);
-      const shown = splitRegulation(presentation, REGULATION_HALF_MS * 2, 90);
+      const rule = regulation(session);
+      const presentation = rule.limit + livePeriodMs(session, shownAt);
+      const shown = splitRegulation(presentation, rule.limit * 2, rule.fullMark);
       digits = shown.digits;
       added = shown.added;
       mark = shown.mark;
     } else {
-      const shown = splitRegulation(livePeriodMs(session, shownAt), REGULATION_HALF_MS, 45);
+      const rule = regulation(session);
+      const shown = splitRegulation(livePeriodMs(session, shownAt), rule.limit, rule.mark);
       digits = shown.digits;
       added = shown.added;
       mark = shown.mark;
@@ -586,6 +699,7 @@ export function present(session, utc) {
     mark: mark,
     lastKnown: closedFace(session),
     running: isRunning(session.phase) && !unverified,
+    integrity: integrityOf(session, unverified),
     actions: actionsFor(session),
     firstHalfMs: session.firstHalfClosedMs,
     secondHalfMs: session.secondHalfClosedMs,
@@ -610,10 +724,11 @@ function closedFace(session) {
   if (session.phase === Phase.READY) {
     return formatElapsed(0);
   }
+  const rule = regulation(session);
   if (secondDisplay(session)) {
-    return faceText(splitRegulation(REGULATION_HALF_MS + session.secondHalfClosedMs, REGULATION_HALF_MS * 2, 90));
+    return faceText(splitRegulation(rule.limit + session.secondHalfClosedMs, rule.limit * 2, rule.fullMark));
   }
-  return faceText(splitRegulation(session.firstHalfClosedMs, REGULATION_HALF_MS, 45));
+  return faceText(splitRegulation(session.firstHalfClosedMs, rule.limit, rule.mark));
 }
 
 export function displayText(view) {

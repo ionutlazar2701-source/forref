@@ -5,12 +5,12 @@
     "appName": "FORREF",
     "appType": "app",
     "version": {
-      "code": 10,
-      "name": "1.0.10"
+      "code": 11,
+      "name": "1.0.11"
     },
     "icon": "icon.png",
     "vender": "zepp",
-    "description": "FORREF CLOCK SLEEP TIMER"
+    "description": "FORREF CLOCK-004 UTC SEGMENT"
   },
   "permissions": [
     "data:os.device.info",

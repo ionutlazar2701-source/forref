@@ -360,7 +360,7 @@ test("live paint reads telemetry after the clock and does not release it on navi
   assert.equal(destroy.includes("persistLive"), true);
   assert.equal(appJs.includes("releaseMatchTelemetry"), true);
   const perform = session.slice(session.indexOf("export function performIntent"), session.indexOf("export function sampleTick"));
-  const savedAt = perform.indexOf("const saved = commitSession");
+  const savedAt = perform.indexOf("const saved = persistClock");
   assert.ok(perform.indexOf("noteClockCommit", savedAt) > savedAt);
   assert.equal(perform.slice(perform.indexOf("READBACK_FAIL"), savedAt).includes("noteClockCommit"), false);
   assert.equal(appJson.permissions.includes("data:user.hd.workout"), false);

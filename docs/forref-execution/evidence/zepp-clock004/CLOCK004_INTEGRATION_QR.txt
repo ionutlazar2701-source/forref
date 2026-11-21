@@ -1,0 +1,5 @@
+zpkd1://api-mifit-de2.zepp.com/custom/tools/app-dial/download/KSPFsmJAHFoJdgIYxmSHqBsnCiJcJQzG
+expires 2026-11-28 14:32:44 Europe/Bucharest (2026-11-28 12:32:44 UTC)
+package 29566-FORREF-1.0.11-20261121123241.zab
+bytes 302410
+sha256 7f9d61f9e50cc976afc5437b3023935b751ff749dce4fda9243be2923881ffd0

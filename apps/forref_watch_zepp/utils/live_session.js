@@ -5,12 +5,14 @@ import {
   sample,
   present,
   trace,
-  loadSession,
   commitSession,
   liveFrame,
   Trust,
+  isUtcSegment,
+  noteDiscontinuity,
 } from "./match_clock";
-import { deviceNow, deviceAdapter, deviceScreen } from "./clock_device";
+import { commitSegment, loadLiveClock } from "./clock_segment";
+import { deviceNow, deviceAdapter, deviceScreen, segmentAdapter, watchPhoneTime } from "./clock_device";
 import { commitForward, preferObserved, readStoredSession } from "./clock_continuity";
 import { clockHostSnapshot, syncClockService } from "./clock_service_bind";
 import { readWitness, writeWitness } from "./clock_witness_device";
@@ -28,6 +30,7 @@ export const BUILD = BUILD_NAME;
 
 let bootLogged = false;
 let lastScreen = "";
+let phoneArmed = false;
 
 function bag() {
   const data = state();
@@ -56,8 +59,12 @@ export function bootLive() {
     return data.clockLive.session;
   }
   const now = deviceNow();
-  const loaded = loadSession(deviceAdapter(), data.clockEpoch, now);
+  const loaded = loadLiveClock(segmentAdapter(), deviceAdapter(), data.clockEpoch, now);
+  if (loaded.reason.indexOf("MIGRATED_") === 0) {
+    commitSegment(segmentAdapter(), loaded.session);
+  }
   data.clockLive = { epoch: data.clockEpoch, session: loaded.session };
+  armPhone();
   const last = loaded.session.lastUtc == null ? "" : loaded.session.lastUtc;
   const step = now == null || loaded.session.lastUtc == null ? "" : now - loaded.session.lastUtc;
   console.log(trace("LOAD", data.clockLive.session.phase, loaded.session, now));
@@ -96,6 +103,9 @@ function recordWitness(change, utc) {
 }
 
 function armClockService(session) {
+  if (session && session.engine === "utc_segment") {
+    return;
+  }
   try {
     syncClockService(session);
   } catch (err) {
@@ -103,8 +113,35 @@ function armClockService(session) {
   }
 }
 
+function armPhone() {
+  if (phoneArmed) {
+    return;
+  }
+  phoneArmed = true;
+  watchPhoneTime(function () {
+    const before = currentSession();
+    if (!before || before.engine !== "utc_segment") {
+      return;
+    }
+    const result = noteDiscontinuity(before, deviceNow(), "PHONE_TIME_SETTING");
+    if (!result.session || result.reason === "HELD") {
+      return;
+    }
+    rememberSession(result.session);
+    const saved = commitSegment(segmentAdapter(), result.session);
+    console.log("FORREF_CLOCK004 phone-time reason=" + result.reason + " persist=" + saved.reason);
+  });
+}
+
+function persistClock(session) {
+  if (isUtcSegment(session)) {
+    return commitSegment(segmentAdapter(), session);
+  }
+  return commitSession(deviceAdapter(), session);
+}
+
 function observedBase(memory, utc) {
-  if (utc == null) {
+  if (utc == null || isUtcSegment(memory)) {
     return memory;
   }
   return preferObserved(memory, readStoredSession(deviceAdapter()), utc) || memory;
@@ -112,6 +149,14 @@ function observedBase(memory, utc) {
 
 export function viewNow() {
   const session = currentSession();
+  if (session && isUtcSegment(session)) {
+    const frame = liveFrame(session, deviceNow(), bag().clockEpoch);
+    if (!frame.admitted && frame.session && frame.session.trust === Trust.UNVERIFIED) {
+      rememberSession(frame.session);
+      commitSegment(segmentAdapter(), frame.session);
+    }
+    return frame.view;
+  }
   return present(session, session && session.lastUtc);
 }
 
@@ -120,7 +165,7 @@ function admitObserved(before, utc, epoch, source) {
   rememberSession(frame.session);
   let saved = { ok: true, reason: "HELD" };
   if (!frame.admitted || frame.reason === "TICK") {
-    saved = commitForward(deviceAdapter(), frame.session);
+    saved = isUtcSegment(frame.session) ? commitSegment(segmentAdapter(), frame.session) : commitForward(deviceAdapter(), frame.session);
     if ((saved.reason === "KEPT_NEWER" || saved.reason === "KEPT_HOLD") && saved.session) {
       rememberSession(saved.session);
     } else if (!frame.admitted && saved.ok) {
@@ -193,7 +238,7 @@ export function prepareFrame() {
   if (utc == null) {
     const failed = sample(before, { utcMillis: null, epoch: epoch, discontinuity: "CLOCK_UNAVAILABLE" });
     rememberSession(failed.session);
-    commitSession(deviceAdapter(), failed.session);
+    persistClock(failed.session);
     noteClockCommit(failed.session, epoch);
     console.log(trace("CLOCK_UNAVAILABLE", before.phase, failed.session, 0));
     return present(failed.session, failed.session.lastUtc);
@@ -213,7 +258,7 @@ export function sampleFromScheduler(source) {
   if (utc == null) {
     const failed = sample(before, { utcMillis: null, epoch: epoch, discontinuity: "CLOCK_UNAVAILABLE" });
     rememberSession(failed.session);
-    commitSession(deviceAdapter(), failed.session);
+    persistClock(failed.session);
     noteClockCommit(failed.session, epoch);
     console.log("FORREF_CLOCK_FG src=" + source + " reason=CLOCK_UNAVAILABLE");
     return present(failed.session, failed.session.lastUtc);
@@ -244,13 +289,13 @@ export function performIntent(intent, extra) {
   console.log(trace(result.ok ? result.reason : "REJECT", before.phase, result.session, utc));
   if (!result.ok) {
     if (result.session !== before && result.session.trust === Trust.UNVERIFIED) {
-      commitSession(deviceAdapter(), result.session);
+      persistClock(result.session);
       rememberSession(result.session);
       noteClockCommit(result.session, bag().clockEpoch);
     }
     return result;
   }
-  const saved = commitSession(deviceAdapter(), result.session);
+  const saved = persistClock(result.session);
   if (!saved.ok) {
     console.log(trace("READBACK_FAIL", before.phase, before, utc));
     return { ok: false, reason: "READBACK_FAIL", session: before, before: before };
@@ -282,6 +327,11 @@ export function persistLive() {
   }
   const utc = deviceNow();
   const chosen = observedBase(session, utc);
+  if (isUtcSegment(chosen)) {
+    const saved = commitSegment(segmentAdapter(), chosen);
+    console.log("FORREF_CLOCK001 PERSIST|" + saved.reason + "!");
+    return saved;
+  }
   const saved = commitForward(deviceAdapter(), chosen);
   rememberSession(saved.reason === "KEPT_NEWER" && saved.session ? saved.session : chosen);
   console.log("FORREF_CLOCK001 PERSIST|" + saved.reason + "!");
