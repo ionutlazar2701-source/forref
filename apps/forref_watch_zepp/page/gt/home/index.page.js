@@ -19,6 +19,7 @@ Page({
       { label: t("train"), action: () => push({ url: "page/gt/train/index.page" }) },
       { label: t("settings"), action: () => push({ url: "page/gt/settings/index.page" }) },
       { label: t("probeA"), action: () => push({ url: "page/gt/probe/index.page" }) },
+      { label: t("localBridge"), action: () => push({ url: "page/gt/local/index.page" }) },
     ]);
   },
 });

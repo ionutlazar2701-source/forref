@@ -144,6 +144,13 @@ const EN = {
   probeStored: "STORED",
   probeNotStored: "NOT STORED",
   probeStatic: "STATIC SIDE SERVICE",
+  localBridge: "PHONE CONFIG",
+  localWaiting: "WAITING",
+  localStored: "STORED",
+  localNotStored: "NOT STORED",
+  localOffline: "OFFLINE",
+  localSaved: "SAVED COPY",
+  localUnset: "NAME NOT SET",
 };
 
 const RO = {
@@ -289,6 +296,13 @@ const RO = {
   probeStored: "STOCAT",
   probeNotStored: "NESTOCAT",
   probeStatic: "SERVICIU LATERAL STATIC",
+  localBridge: "CONFIG TELEFON",
+  localWaiting: "AȘTEPTARE",
+  localStored: "STOCAT",
+  localNotStored: "NESTOCAT",
+  localOffline: "OFFLINE",
+  localSaved: "COPIE SALVATĂ",
+  localUnset: "FĂRĂ NUME",
 };
 
 export function language() {

@@ -106,7 +106,7 @@ test("the first live paint admits the clock before it creates widgets", () => {
 
 test("the boot line carries a revision and the route inventory includes controls", () => {
   const pages = appJson.targets.gt.module.page.pages;
-  assert.equal(pages.length, 24);
+  assert.equal(pages.length, 25);
   assert.equal(pages.includes("page/gt/controls/index.page"), true);
   assert.equal(stamp.includes("BUILD_REV"), true);
   assert.equal(stamp.includes("rev="), true);
