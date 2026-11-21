@@ -139,6 +139,11 @@ const EN = {
   gpsLost: "GPS LOST",
   gpsNone: "GPS —",
   gpsPermission: "GPS PERM",
+  probeA: "PROBE A",
+  probeWaiting: "WAITING",
+  probeStored: "STORED",
+  probeNotStored: "NOT STORED",
+  probeStatic: "STATIC SIDE SERVICE",
 };
 
 const RO = {
@@ -279,6 +284,11 @@ const RO = {
   gpsLost: "GPS PIERDUT",
   gpsNone: "GPS —",
   gpsPermission: "GPS PERM",
+  probeA: "PROBA A",
+  probeWaiting: "AȘTEPTARE",
+  probeStored: "STOCAT",
+  probeNotStored: "NESTOCAT",
+  probeStatic: "SERVICIU LATERAL STATIC",
 };
 
 export function language() {

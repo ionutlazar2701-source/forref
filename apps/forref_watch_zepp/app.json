@@ -5,12 +5,12 @@
     "appName": "FORREF",
     "appType": "app",
     "version": {
-      "code": 11,
-      "name": "1.0.11"
+      "code": 12,
+      "name": "1.0.12"
     },
     "icon": "icon.png",
     "vender": "zepp",
-    "description": "FORREF CLOCK-004 UTC SEGMENT"
+    "description": "FORREF CLOCK-004 UTC SEGMENT + PROBE A"
   },
   "permissions": [
     "data:os.device.info",
@@ -54,8 +54,12 @@
             "page/gt/train/index.page",
             "page/gt/train-warm/index.page",
             "page/gt/train-live/index.page",
-            "page/gt/train-done/index.page"
+            "page/gt/train-done/index.page",
+            "page/gt/probe/index.page"
           ]
+        },
+        "app-side": {
+          "path": "app-side/index"
         },
         "app-service": {
           "services": ["app-service/clock_service"]
