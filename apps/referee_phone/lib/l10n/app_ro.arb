@@ -196,5 +196,25 @@
   "fixtureGroupNeedsAttention": "Necesită atenție",
   "fixtureGroupNotStarted": "Neînceput",
   "fixtureGroupCompleted": "Încheiate",
-  "checkingMatchState": "Se verifică starea meciului"
+  "checkingMatchState": "Se verifică starea meciului",
+  "localBridgeTitle": "Punte locală de configurare",
+  "localBridgeBody": "Doar pentru depanare. Servește meciul salvat selectat pe acest telefon la {address}. Fără cloud.",
+  "@localBridgeBody": {
+    "placeholders": {
+      "address": {"type": "String"}
+    }
+  },
+  "localBridgeStart": "Pornește puntea locală",
+  "localBridgeStop": "Oprește puntea locală",
+  "localBridgeListening": "Ascultă pe {address}",
+  "@localBridgeListening": {
+    "placeholders": {
+      "address": {"type": "String"}
+    }
+  },
+  "localBridgeStopped": "Puntea locală este oprită",
+  "localBridgeMissing": "Meciul nu este salvat pe acest telefon",
+  "localBridgeFailed": "Puntea locală nu a pornit",
+  "localBridgeSelect": "Selectează un meci salvat",
+  "localBridgeNone": "Nu există un meci salvat de servit"
 }
