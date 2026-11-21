@@ -1,9 +1,10 @@
 import { setWakeUpRelaunch } from "@zos/display";
+import { BaseApp } from "@zeppos/zml/base-app";
 import { bootLine } from "./utils/build_stamp";
 import { startForegroundClock, stopForegroundClock } from "./utils/clock_foreground_bind";
 import { attachMatchTelemetry, releaseMatchTelemetry } from "./utils/telemetry_bind";
 
-App({
+App(BaseApp({
   globalData: {
     demo: true,
   },
@@ -43,4 +44,4 @@ App({
     }
     console.log("FORREF_APP onDestroy");
   },
-});
+}));

@@ -104,9 +104,9 @@ test("the first live paint admits the clock before it creates widgets", () => {
   assert.equal(session.indexOf("liveFrame") < session.indexOf("return frame.view"), true);
 });
 
-test("the boot line carries a revision and the route inventory is 23 including controls", () => {
+test("the boot line carries a revision and the route inventory includes controls", () => {
   const pages = appJson.targets.gt.module.page.pages;
-  assert.equal(pages.length, 23);
+  assert.equal(pages.length, 24);
   assert.equal(pages.includes("page/gt/controls/index.page"), true);
   assert.equal(stamp.includes("BUILD_REV"), true);
   assert.equal(stamp.includes("rev="), true);
