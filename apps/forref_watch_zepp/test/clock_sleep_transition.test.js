@@ -120,12 +120,10 @@ test("off-screen ticks through five seconds commit and resume inside the window"
   witness = noteLife(witness, { init: true });
   witness = noteWrite(witness, { ok: true, readback: true });
   witness = noteRecover(witness, restored.reason);
-  const line = formatWitness(witness, utc + 1000);
-  assert.equal(line.includes("L=CHAIN"), true);
-  assert.equal(line.includes("n=5"), true);
-  assert.equal(line.includes("x=1000"), true);
-  assert.equal(line.includes("ck=1000"), true);
-  assert.equal(line.includes("r=CONTINUITY_RESUMED"), true);
+  assert.equal(witness.firstCallback, true);
+  assert.equal(witness.callbacks, 5);
+  assert.equal(witness.maxDt, 1000);
+  assert.equal(witness.fault, "");
 });
 
 test("a screen-on callback is counted and is not an off tick", () => {
@@ -163,12 +161,11 @@ test("a four second off callback is recorded and does not move the checkpoint", 
     ok: true,
     readback: true,
   });
-  const line = formatWitness(recorded, T0 + 4000);
-  assert.equal(line.includes("L=GAP"), true);
-  assert.equal(line.includes("n=1"), true);
-  assert.equal(line.includes("x=4000"), true);
-  assert.equal(line.includes("ck=none"), true);
-  assert.equal(line.includes("r=UNSAMPLED_GAP"), true);
+  assert.equal(recorded.firstCallback, true);
+  assert.equal(recorded.fault, "UNSAMPLED_GAP");
+  assert.equal(recorded.lastCheckpointUtc, null);
+  assert.equal(recorded.maxDt, 4000);
+  assert.equal(formatWitness(recorded).includes("UNSAMPLED_GAP"), false);
 });
 
 test("a corrupt witness does not become a checkpoint", () => {
@@ -181,7 +178,12 @@ test("the foreground sampler stays in place and the callback is counted before t
   const countAt = service.indexOf("ledger = noteCallback(ensureLedger(), dt);");
   const screenAt = service.indexOf("const screen = screenNow();");
   assert.equal(countAt > 0 && screenAt > countAt, true);
-  assert.equal(service.includes("createSysTimer"), true);
+  const created = service.indexOf("createSysTimer(true, 1000, tick)");
+  const timerFlush = service.indexOf('flush("timer")');
+  assert.equal(created > 0 && timerFlush > created, true);
+  assert.equal(service.includes("createSysTimer(true, 5000, experimentTick)"), true);
+  const experimentBody = service.slice(service.indexOf("function experimentTick"), service.indexOf("function tick"));
+  assert.equal(experimentBody.includes("runServiceTick"), false);
   assert.equal(service.includes("runServiceTick"), true);
   const foreground = readFileSync(new URL("../utils/clock_foreground_bind.js", import.meta.url), "utf8");
   assert.equal(foreground.includes("sampleFromScheduler"), true);

@@ -54,6 +54,7 @@ export function createServiceHost(sdk, log) {
   let restarts = 0;
   let published = "";
   let startSeen = "";
+  let listedState = "";
 
   function line(text) {
     try {
@@ -65,21 +66,25 @@ export function createServiceHost(sdk, log) {
 
   function enumerate() {
     if (!sdk || typeof sdk.getAllAppServices !== "function") {
+      listedState = "fail";
       line("services=unavailable");
       return null;
     }
     try {
       const value = sdk.getAllAppServices();
       if (!Array.isArray(value)) {
+        listedState = "fail";
         line("services=invalid");
         return null;
       }
+      listedState = listed(value) ? "yes" : "no";
       const names = value.map(function (item) {
         return item && item.file ? item.file : String(item);
       });
       line("services=" + (names.length ? names.join(",") : "none"));
       return value;
     } catch (err) {
+      listedState = "fail";
       line("services=unavailable");
       return null;
     }
@@ -271,6 +276,7 @@ export function createServiceHost(sdk, log) {
         requestPending: requestPending,
         blocked: blocked,
         startClass: startSeen,
+        listed: listedState,
       };
     },
   };
