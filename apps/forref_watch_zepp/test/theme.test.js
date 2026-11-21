@@ -37,6 +37,7 @@ const ROUTES = [
   "page/gt/train-live/index.page",
   "page/gt/train-done/index.page",
   "page/gt/probe/index.page",
+  "page/gt/local/index.page",
 ];
 
 const PROTECTED = [
@@ -138,8 +139,8 @@ test("filled turquoise and blue keep black labels in both states", () => {
 test("the manifest routes each paint through the shared shell", () => {
   assert.deepEqual(appJson.targets.gt.module.page.pages, ROUTES);
   assert.equal(appJson.app.appId, 29566);
-  assert.equal(appJson.app.version.name, "1.0.12");
-  assert.equal(appJson.app.version.code, 12);
+  assert.equal(appJson.app.version.name, "1.0.13");
+  assert.equal(appJson.app.version.code, 13);
   for (const route of ROUTES) {
     const source = readFileSync(new URL("../" + route + ".js", import.meta.url), "utf8");
     assert.equal(source.includes("stack(") || source.includes("paintBase("), true, route);
