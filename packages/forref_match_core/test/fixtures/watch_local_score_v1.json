@@ -1,0 +1,11 @@
+{
+  "homeTeamId": "team-alpha-001",
+  "awayTeamId": "team-beta-001",
+  "note": "Duplicate intent a is one goal. This preview is not KnownScore.",
+  "entries": [
+    {"captureIntentId": "intent-a", "scoringTeamId": "team-alpha-001"},
+    {"captureIntentId": "intent-a", "scoringTeamId": "team-alpha-001"},
+    {"captureIntentId": "intent-b", "scoringTeamId": "team-beta-001"}
+  ],
+  "localTest": {"kind": "local-test", "home": 1, "away": 1, "knownScore": false}
+}

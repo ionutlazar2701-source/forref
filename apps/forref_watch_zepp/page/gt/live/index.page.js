@@ -1,4 +1,5 @@
 import { push, back } from "@zos/router";
+import { readFileSync, writeFileSync } from "@zos/fs";
 import { logDevice, bindBack, clear, clearDigits, paintBase, textAt, setWidgetText, button } from "../../../utils/chrome";
 import { layoutLive, liveTelemetrySlot } from "../../../utils/geometry";
 import { localeChoice, t } from "../../../utils/text";
@@ -12,6 +13,8 @@ import { deviceNow } from "../../../utils/clock_device";
 import { readWitness } from "../../../utils/clock_witness_device";
 import { formatWitness } from "../../../utils/clock_sleep_witness";
 import { createAbandonArm } from "../../../utils/abandon_arm";
+import { GOAL_JOURNAL_FILE, createFileGoalStore, createGoalJournal } from "../../../utils/goal_journal";
+import { localTestScore, readGoalContext } from "../../../utils/local_test_score";
 
 let unbindPaint = null;
 let metrics = null;
@@ -110,7 +113,8 @@ function fillFor(action) {
   return "navigation";
 }
 
-function shellKey(view, current) {
+function shellKey(view, current, preview) {
+  const score = preview || { kind: "hidden", home: "", away: "" };
   return [
     current,
     view.phase,
@@ -119,7 +123,46 @@ function shellKey(view, current) {
     banner,
     view.unverified ? "u" : "p",
     view.added ? "a" : "n",
+    score.kind,
+    score.home,
+    score.away,
   ].join("|");
+}
+
+function goalPreview() {
+  try {
+    const fs = { readFileSync: readFileSync, writeFileSync: writeFileSync };
+    const context = readGoalContext(fs);
+    if (!context) {
+      return { kind: "hidden", knownScore: false, home: null, away: null };
+    }
+    const loaded = createGoalJournal(
+      createFileGoalStore(fs, GOAL_JOURNAL_FILE),
+      Object.assign({ localInstallationId: context.writerDeviceId }, context),
+    ).load();
+    const score = localTestScore(loaded.entries, context, loaded.status);
+    console.log(
+      "FORREF_SCORE outcome=" + score.kind + " home=" + score.home + " away=" + score.away + " knownScore=0"
+    );
+    return score;
+  } catch (err) {
+    console.log("FORREF_SCORE outcome=unavailable reason=read");
+    return { kind: "unavailable", knownScore: false, home: null, away: null };
+  }
+}
+
+function teamButtonLabel(side, preview) {
+  if (!preview || preview.kind === "hidden") {
+    return side === "home" ? t("homeScore") : t("awayScore");
+  }
+  if (preview.kind === "conflict") {
+    return t("scoreConflict");
+  }
+  const name = side === "home" ? t("home") : t("away");
+  if (preview.kind !== "local-test") {
+    return name + " —";
+  }
+  return name + " " + (side === "home" ? preview.home : preview.away);
 }
 
 function telemetryLabel() {
@@ -135,7 +178,7 @@ function telemetryLabel() {
   });
 }
 
-function paintDigits(view, lay, current) {
+function paintDigits(view, lay, current, preview) {
   const started = Date.now();
   const timeH = current === "C" ? 36 : 48;
   const status = statusLabel(view);
@@ -165,10 +208,13 @@ function paintDigits(view, lay, current) {
   } catch (err) {
     console.log("FORREF_TEL paint=KEPT");
   }
-  const detail = detailLabel(view);
+  const local = preview && preview.kind === "local-test";
+  const detail = local ? t("localTest") : detailLabel(view);
   const detailLimit = current === "C" ? lay.away.y : lay.home.y;
   if (detail && nextY + 14 <= detailLimit) {
     textAt(12, nextY, metrics.width - 24, 14, detail, 12, TEXT_WARNING, true);
+  } else if (local) {
+    console.log("FORREF_SCORE outcome=visual-pending reason=no-slot");
   }
   digitCache = { key: key, status: statusNode, time: timeNode, telemetry: telemetryNode };
   return Date.now() - started;
@@ -184,10 +230,10 @@ function logView(view, current) {
   console.log("FORREF_LIVE002 VIEW|" + line + "!");
 }
 
-function paintShell(view, lay) {
+function paintShell(view, lay, preview) {
   const primary = view.actions[0];
-  button(lay.home.x, lay.home.y, lay.home.w, lay.home.h, t("homeScore"), () => openTeam("HOME"), "neutral", "live-home", metrics);
-  button(lay.away.x, lay.away.y, lay.away.w, lay.away.h, t("awayScore"), () => openTeam("AWAY"), "neutral", "live-away", metrics);
+  button(lay.home.x, lay.home.y, lay.home.w, lay.home.h, teamButtonLabel("home", preview), () => openTeam("HOME"), "neutral", "live-home", metrics);
+  button(lay.away.x, lay.away.y, lay.away.w, lay.away.h, teamButtonLabel("away", preview), () => openTeam("AWAY"), "neutral", "live-away", metrics);
   if (primary) {
     const label = primary === "ABANDON_GAME" && arm.armed() ? t("confirmAbandon") : t(ACTION_TEXT[primary]);
     button(lay.display.x, lay.display.y, lay.display.w, lay.display.h, label, () => onAction(primary), fillFor(primary), "live-" + primary, metrics);
@@ -221,17 +267,18 @@ function paintAll(prepared) {
   arm.retain(contextOf(view));
   const current = mode();
   const lay = layoutLive(metrics, current);
-  const key = shellKey(view, current);
+  const preview = goalPreview();
+  const key = shellKey(view, current, preview);
   let paintMs = 0;
   if (!shell || shell.key !== key) {
     clear();
     digitCache = null;
     paintBase(metrics);
-    paintMs = paintDigits(view, lay, current);
-    paintShell(view, lay);
+    paintMs = paintDigits(view, lay, current, preview);
+    paintShell(view, lay, preview);
     shell = { key: key };
   } else {
-    paintMs = paintDigits(view, lay, current);
+    paintMs = paintDigits(view, lay, current, preview);
   }
   logView(view, current);
   return { digits: digitLabel(view) || "", paintMs: paintMs };

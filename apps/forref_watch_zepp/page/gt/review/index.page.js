@@ -1,7 +1,10 @@
 import { back } from "@zos/router";
+import { readFileSync, writeFileSync } from "@zos/fs";
 import { logDevice, bindBack, clear, stack } from "../../../utils/chrome";
 import { t, showTeam, showEvent, showPlayer } from "../../../utils/text";
 import { state } from "../../../utils/state";
+import { GOAL_JOURNAL_FILE, createFileGoalStore, createGoalJournal } from "../../../utils/goal_journal";
+import { readGoalContext } from "../../../utils/local_test_score";
 import { Admission, Evidence, bindRecoveredCandidate, createJournal, decideCaptureTap } from "../../../utils/capture_candidate";
 import { watchCaptureAdapter, watchDiagnosticSource } from "../../../utils/capture_device";
 import { TEXT_WARNING } from "../../../utils/theme";
@@ -242,10 +245,67 @@ function capture(s, fresh) {
   paint();
 }
 
+function paintGoal(m, s) {
+  if (!s.goalIntentId) {
+    s.goalIntentId = "goal-" + Date.now().toString(36) + "-" + Math.floor(Math.random() * 1000000).toString(36);
+    s.goalRecordId = "rec-" + s.goalIntentId;
+  }
+  stack(m, t("confirmGoal"), [
+    { label: showTeam(s.team) + " · " + t("goal") },
+    { label: s.goalNote || t("localTest"), color: TEXT_WARNING },
+    {
+      label: t("confirmGoal"),
+      action: () => confirmGoal(s),
+      name: "review-goal-confirm",
+    },
+    { label: t("back"), action: () => back(), name: "review-back" },
+  ]);
+}
+
+function confirmGoal(s) {
+  const fs = { readFileSync: readFileSync, writeFileSync: writeFileSync };
+  const context = readGoalContext(fs);
+  const teamId = !context ? "" : s.team === "HOME" ? context.homeTeamId : s.team === "AWAY" ? context.awayTeamId : "";
+  if (!context || !teamId) {
+    s.goalNote = t("recoveryRequired");
+    console.log("FORREF_EVENT outcome=REFUSED reason=provision");
+    paint();
+    return;
+  }
+  const result = createGoalJournal(
+    createFileGoalStore(fs, GOAL_JOURNAL_FILE),
+    Object.assign({ localInstallationId: context.writerDeviceId }, context),
+  ).append({
+    captureIntentId: s.goalIntentId,
+    recordId: s.goalRecordId,
+    scoringTeamId: teamId,
+  });
+  console.log("FORREF_SCORE outcome=" + result.outcome + " reason=" + (result.reason || ""));
+  if (result.uncertain) {
+    s.goalNote = t("recoveryRequired");
+    paint();
+    return;
+  }
+  if (!result.ok) {
+    s.goalNote = t("captureFailed");
+    paint();
+    return;
+  }
+  s.goalIntentId = "";
+  s.goalRecordId = "";
+  s.goalNote = "";
+  back();
+}
+
 function paint() {
   const m = logDevice("review");
   clear();
   const s = state();
+  if (s.event === "GOAL") {
+    console.log("FORREF_CONTEXT team=" + s.team + " event=GOAL player=");
+    paintGoal(m, s);
+    return;
+  }
   const loaded = journal().read();
   console.log("FORREF_CONTEXT team=" + s.team + " event=" + s.event + " player=" + s.player);
   if (s.captureView) {
