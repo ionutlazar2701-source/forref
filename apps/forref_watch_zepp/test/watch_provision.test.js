@@ -5,8 +5,10 @@ import { sha256Hex } from "../utils/sha256_hex.js";
 import {
   createMemoryProvisionStore,
   createWatchProvisionAdmission,
+  decidePhoneAuthorityLock,
   decidePhoneWatchProvision,
   parseWatchProvisionV1,
+  stageMarker,
 } from "../utils/watch_provision.js";
 
 const fixture = JSON.parse(
@@ -36,13 +38,14 @@ test("missing, duplicated, and display-token ids are rejected", () => {
   assert.equal(parseWatchProvisionV1(canonical.replace('"generation":1', '"generation":2')).reason, "generation");
 });
 
-test("a valid message becomes local match-ready only after readback", () => {
+test("a valid message stops at verified configuration", () => {
   const store = createMemoryProvisionStore();
   const result = createWatchProvisionAdmission(store).receive(canonical, fixture.localInstallationId, false);
-  assert.deepEqual(result.trace, ["CONFIG_RECEIVED", "ROOT_VERIFIED", "MATCH_READY"]);
+  assert.equal(result.state, "WATCH_CONFIG_VERIFIED");
   assert.equal(result.saved, false);
   assert.equal(result.d1Certified, false);
-  assert.equal(result.display, "LOCAL READBACK — D1 UNCERTIFIED");
+  assert.equal(result.mayAppendSportingRecords, false);
+  assert.equal(result.display, "CONFIG VERIFIED — NOT ACTIVATED");
   assert.equal(store.root, canonical);
 });
 
@@ -51,7 +54,7 @@ test("an identical provision replays and a conflicting one is refused", () => {
   const admission = createWatchProvisionAdmission(store);
   admission.receive(canonical, fixture.localInstallationId, false);
   const again = admission.receive(canonical, fixture.localInstallationId, false);
-  assert.equal(again.state, "MATCH_READY");
+  assert.equal(again.state, "WATCH_CONFIG_VERIFIED");
   const conflict = admission.receive(canonical.replace("North", "East"), fixture.localInstallationId, false);
   assert.equal(conflict.state, "AUTHORITY_CONFLICT");
   assert.equal(conflict.reason, "reprovision");
@@ -92,15 +95,15 @@ test("an interrupted root write is storage-unverified", () => {
   store.failRootWrite = true;
   const result = createWatchProvisionAdmission(store).receive(canonical, fixture.localInstallationId, false);
   assert.equal(result.state, "STORAGE_UNVERIFIED");
-  assert.equal(result.matchReady, false);
+  assert.equal(result.mayAppendSportingRecords, false);
   assert.equal(store.root, null);
 });
 
 test("reopen reads the durable root after the first object is discarded", () => {
   const store = createMemoryProvisionStore();
   createWatchProvisionAdmission(store).receive(canonical, fixture.localInstallationId, false);
-  const reopened = createWatchProvisionAdmission(store).loadDurable(false);
-  assert.equal(reopened.state, "MATCH_READY");
+  const reopened = createWatchProvisionAdmission(store).loadDurable(fixture.localInstallationId, false);
+  assert.equal(reopened.state, "WATCH_CONFIG_VERIFIED");
   assert.equal(reopened.canonical, canonical);
   assert.equal(reopened.saved, false);
 });
@@ -108,8 +111,8 @@ test("reopen reads the durable root after the first object is discarded", () => 
 test("bluetooth loss after receipt keeps the stored configuration", () => {
   const store = createMemoryProvisionStore();
   createWatchProvisionAdmission(store).receive(canonical, fixture.localInstallationId, false);
-  const offline = createWatchProvisionAdmission(store).loadDurable(false);
-  assert.equal(offline.state, "MATCH_READY");
+  const offline = createWatchProvisionAdmission(store).loadDurable(fixture.localInstallationId, false);
+  assert.equal(offline.state, "WATCH_CONFIG_VERIFIED");
   assert.equal(offline.canonical, canonical);
 });
 
@@ -126,7 +129,7 @@ test("the phone refuses its own writer and existing sporting history", () => {
     phoneOriginDeviceId: fixture.phoneOriginDeviceId,
   });
   assert.equal(history.reason, "existing phone-authoritative history");
-  assert.equal(history.matchReady, false);
+  assert.equal(history.mayAppendSportingRecords, false);
   assert.equal(history.saved, false);
 });
 
@@ -136,10 +139,100 @@ test("a clean phone preparation names the watch and writes no sporting payload",
     phoneOriginDeviceId: fixture.phoneOriginDeviceId,
   });
   assert.equal(decision.reason, "phone-prepared");
-  assert.equal(decision.matchReady, false);
-  assert.equal(decision.rootToCommit.deviceId, fixture.localInstallationId);
-  assert.equal(decision.rootToCommit.generation, 1);
+  assert.equal(decision.state, "CONFIG_PREPARED");
+  assert.equal(decision.mayAppendSportingRecords, false);
+  assert.equal(decision.rootToCommit, null);
   assert.equal(decision.canonical.includes("GOAL"), false);
+});
+
+test("transport unavailable leaves the phone prepared and unlocked", () => {
+  const locked = decidePhoneAuthorityLock(canonical, {
+    committedSportingRecords: 0,
+    phoneOriginDeviceId: fixture.phoneOriginDeviceId,
+  }, null, false);
+  assert.equal(locked.state, "CONFIG_PREPARED");
+  assert.equal(locked.reason, "transport-unavailable");
+  assert.equal(locked.rootToCommit, null);
+});
+
+test("activation never arrives so the watch cannot append", () => {
+  const store = createMemoryProvisionStore();
+  const admission = createWatchProvisionAdmission(store);
+  admission.receive(canonical, fixture.localInstallationId, false);
+  const waiting = admission.activate(fixture.localInstallationId, null);
+  assert.equal(waiting.state, "WATCH_CONFIG_VERIFIED");
+  assert.equal(waiting.reason, "activation-ack");
+  assert.equal(waiting.mayAppendSportingRecords, false);
+});
+
+test("a lost activation acknowledgement retries once", () => {
+  const store = createMemoryProvisionStore();
+  const admission = createWatchProvisionAdmission(store);
+  admission.receive(canonical, fixture.localInstallationId, false);
+  const lost = admission.activate(fixture.localInstallationId, {
+    contentHash: fixture.contentHash,
+    writerDeviceId: fixture.localInstallationId,
+    generation: 1,
+    durable: false,
+  });
+  assert.equal(lost.state, "WATCH_CONFIG_VERIFIED");
+  const activated = admission.activate(fixture.localInstallationId, {
+    contentHash: fixture.contentHash,
+    writerDeviceId: fixture.localInstallationId,
+    generation: 1,
+    durable: true,
+  });
+  assert.equal(activated.state, "WATCH_ACTIVATED");
+  assert.equal(activated.mayAppendSportingRecords, true);
+  assert.equal(activated.saved, false);
+  const again = admission.activate(fixture.localInstallationId, {
+    contentHash: fixture.contentHash,
+    writerDeviceId: fixture.localInstallationId,
+    generation: 1,
+    durable: true,
+  });
+  assert.equal(again.state, "WATCH_ACTIVATED");
+  assert.equal(store.admission, stageMarker(fixture.contentHash, "WATCH_ACTIVATED"));
+});
+
+test("restart before activation stays verified and after stays activated", () => {
+  const store = createMemoryProvisionStore();
+  createWatchProvisionAdmission(store).receive(canonical, fixture.localInstallationId, false);
+  const before = createWatchProvisionAdmission(store).loadDurable(fixture.localInstallationId, false);
+  assert.equal(before.state, "WATCH_CONFIG_VERIFIED");
+  createWatchProvisionAdmission(store).activate(fixture.localInstallationId, {
+    contentHash: fixture.contentHash,
+    writerDeviceId: fixture.localInstallationId,
+    generation: 1,
+    durable: true,
+  });
+  const after = createWatchProvisionAdmission(store).loadDurable(fixture.localInstallationId, false);
+  assert.equal(after.state, "WATCH_ACTIVATED");
+  assert.equal(after.mayAppendSportingRecords, true);
+});
+
+test("a changed installation identity fails closed and keeps the root", () => {
+  const store = createMemoryProvisionStore();
+  createWatchProvisionAdmission(store).receive(canonical, fixture.localInstallationId, false);
+  const changed = createWatchProvisionAdmission(store).loadDurable("00000000-0000-4000-8000-000000000099", false);
+  assert.equal(changed.state, "AUTHORITY_CONFLICT");
+  assert.equal(changed.reason, "installation-identity");
+  assert.equal(store.root, canonical);
+});
+
+test("a conflicting activation is refused", () => {
+  const store = createMemoryProvisionStore();
+  const admission = createWatchProvisionAdmission(store);
+  admission.receive(canonical, fixture.localInstallationId, false);
+  const conflict = admission.activate(fixture.localInstallationId, {
+    contentHash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    writerDeviceId: fixture.localInstallationId,
+    generation: 1,
+    durable: true,
+  });
+  assert.equal(conflict.state, "AUTHORITY_CONFLICT");
+  assert.equal(conflict.reason, "conflicting-activation");
+  assert.equal(store.admission.includes("WATCH_CONFIG_VERIFIED"), true);
 });
 
 test("the provision module does not touch the clock, home, or demo journal", () => {

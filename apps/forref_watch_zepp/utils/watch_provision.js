@@ -1,7 +1,10 @@
 import { sha256Hex } from "./sha256_hex.js";
 
 export const WATCH_PROVISION_SCHEMA = "forref.watch-provision.v1";
-export const WATCH_PROVISION_DISPLAY = "LOCAL READBACK — D1 UNCERTIFIED";
+export const WATCH_PROVISION_DISPLAY_PREPARED = "CONFIG PREPARED — AUTHORITY NOT LOCKED";
+export const WATCH_PROVISION_DISPLAY_VERIFIED = "CONFIG VERIFIED — NOT ACTIVATED";
+export const WATCH_PROVISION_DISPLAY_LOCKED = "PHONE AUTHORITY LOCKED — D1 UNCERTIFIED";
+export const WATCH_PROVISION_DISPLAY_ACTIVATED = "WATCH ACTIVATED — D1 UNCERTIFIED";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -20,8 +23,8 @@ export function canonicalWatchProvisionV1(document) {
     '"provisionVersion":' + document.provisionVersion + "}";
 }
 
-export function admissionTextFor(contentHash) {
-  return "v=1\nhash=" + contentHash + "\nstate=MATCH_READY\n";
+export function stageMarker(contentHash, state) {
+  return "v=1\nhash=" + contentHash + "\nstate=" + state + "\n";
 }
 
 function idOk(value) {
@@ -108,6 +111,14 @@ export function parseWatchProvisionV1(raw) {
   return { document: document, reason: "" };
 }
 
+function displayFor(state) {
+  if (state === "CONFIG_PREPARED") return WATCH_PROVISION_DISPLAY_PREPARED;
+  if (state === "WATCH_CONFIG_VERIFIED") return WATCH_PROVISION_DISPLAY_VERIFIED;
+  if (state === "PHONE_AUTHORITY_LOCKED") return WATCH_PROVISION_DISPLAY_LOCKED;
+  if (state === "WATCH_ACTIVATED") return WATCH_PROVISION_DISPLAY_ACTIVATED;
+  return state;
+}
+
 function decision(state, trace, extra) {
   const body = extra || {};
   return {
@@ -119,8 +130,8 @@ function decision(state, trace, extra) {
     rootToCommit: body.rootToCommit || null,
     saved: false,
     d1Certified: false,
-    matchReady: state === "MATCH_READY",
-    display: state === "MATCH_READY" ? WATCH_PROVISION_DISPLAY : state,
+    mayAppendSportingRecords: state === "WATCH_ACTIVATED",
+    display: displayFor(state),
   };
 }
 
@@ -153,13 +164,14 @@ export function createMemoryProvisionStore() {
   };
 }
 
-function fromStore(store, sportingRecordsExist) {
+function fromStore(store, localInstallationId, sportingRecordsExist) {
   const root = store.readRoot();
   if (root.status === "unverified") {
     return decision("STORAGE_UNVERIFIED", ["STORAGE_UNVERIFIED"], { reason: "root-unverified" });
   }
   if (root.status === "absent") {
-    if (sportingRecordsExist) {
+    const admission = store.readAdmission();
+    if (admission.status === "ok" || sportingRecordsExist) {
       return decision("RECOVERY_REQUIRED", ["RECOVERY_REQUIRED"], { reason: "missing-root" });
     }
     return decision("UNPROVISIONED", ["UNPROVISIONED"]);
@@ -168,33 +180,50 @@ function fromStore(store, sportingRecordsExist) {
   if (!parsed.document) {
     return decision("RECOVERY_REQUIRED", ["RECOVERY_REQUIRED"], { reason: "corrupt-root" });
   }
+  if (parsed.document.writerDeviceId !== localInstallationId) {
+    return decision("AUTHORITY_CONFLICT", ["AUTHORITY_CONFLICT"], {
+      reason: "installation-identity",
+      canonical: parsed.document.canonical,
+      contentHash: parsed.document.contentHash,
+    });
+  }
   const admission = store.readAdmission();
   if (admission.status === "unverified") {
     return decision("STORAGE_UNVERIFIED", ["STORAGE_UNVERIFIED"], { reason: "admission-unverified" });
   }
   if (admission.status === "absent") {
-    return decision("ROOT_VERIFIED", ["ROOT_VERIFIED"], {
+    return decision("STORAGE_UNVERIFIED", ["STORAGE_UNVERIFIED"], {
+      reason: "incomplete-verification",
       canonical: parsed.document.canonical,
       contentHash: parsed.document.contentHash,
     });
   }
-  if (admission.text !== admissionTextFor(parsed.document.contentHash)) {
-    return decision("RECOVERY_REQUIRED", ["RECOVERY_REQUIRED"], { reason: "admission-mismatch" });
+  const verified = stageMarker(parsed.document.contentHash, "WATCH_CONFIG_VERIFIED");
+  const activated = stageMarker(parsed.document.contentHash, "WATCH_ACTIVATED");
+  if (admission.text === activated) {
+    return decision("WATCH_ACTIVATED", ["WATCH_ACTIVATED"], {
+      canonical: parsed.document.canonical,
+      contentHash: parsed.document.contentHash,
+    });
   }
-  return decision("MATCH_READY", ["MATCH_READY"], {
-    canonical: parsed.document.canonical,
-    contentHash: parsed.document.contentHash,
-  });
+  if (admission.text === verified) {
+    return decision("WATCH_CONFIG_VERIFIED", ["WATCH_CONFIG_VERIFIED"], {
+      canonical: parsed.document.canonical,
+      contentHash: parsed.document.contentHash,
+    });
+  }
+  return decision("RECOVERY_REQUIRED", ["RECOVERY_REQUIRED"], { reason: "admission-mismatch" });
 }
 
 export function createWatchProvisionAdmission(store) {
   return {
-    loadDurable(sportingRecordsExist) {
-      return fromStore(store, sportingRecordsExist);
+    loadDurable(localInstallationId, sportingRecordsExist) {
+      return fromStore(store, localInstallationId, sportingRecordsExist);
     },
     receive(message, localInstallationId, sportingRecordsExist) {
-      const stored = fromStore(store, sportingRecordsExist);
-      if (stored.state === "STORAGE_UNVERIFIED" || stored.state === "RECOVERY_REQUIRED") {
+      const stored = fromStore(store, localInstallationId, sportingRecordsExist);
+      const interrupted = stored.state === "STORAGE_UNVERIFIED" && stored.reason === "incomplete-verification";
+      if (!interrupted && (stored.state === "STORAGE_UNVERIFIED" || stored.state === "RECOVERY_REQUIRED" || stored.state === "AUTHORITY_CONFLICT")) {
         return stored;
       }
       const parsed = parseWatchProvisionV1(message);
@@ -206,20 +235,19 @@ export function createWatchProvisionAdmission(store) {
         return decision("AUTHORITY_CONFLICT", ["AUTHORITY_CONFLICT"], { reason: "writerDeviceId" });
       }
       if (stored.canonical && stored.canonical !== document.canonical) {
-        return decision("AUTHORITY_CONFLICT", ["AUTHORITY_CONFLICT"], {
-          reason: "reprovision",
+        return decision(interrupted ? "STORAGE_UNVERIFIED" : "AUTHORITY_CONFLICT", [interrupted ? "STORAGE_UNVERIFIED" : "AUTHORITY_CONFLICT"], {
+          reason: interrupted ? "incomplete-verification" : "reprovision",
           canonical: stored.canonical,
           contentHash: stored.contentHash,
         });
       }
-      if (stored.state === "MATCH_READY" && stored.canonical === document.canonical) {
+      if ((stored.state === "WATCH_ACTIVATED" || stored.state === "WATCH_CONFIG_VERIFIED") && stored.canonical === document.canonical) {
         return stored;
       }
-      const trace = ["CONFIG_RECEIVED"];
-      if (!stored.canonical) {
+      if (!stored.canonical && !interrupted) {
         const wrote = store.writeRoot(document.canonical);
         if (wrote.status !== "ok" || wrote.text !== document.canonical) {
-          return decision("STORAGE_UNVERIFIED", trace.concat(["STORAGE_UNVERIFIED"]), {
+          return decision("STORAGE_UNVERIFIED", ["STORAGE_UNVERIFIED"], {
             reason: "root-write",
             canonical: document.canonical,
             contentHash: document.contentHash,
@@ -227,35 +255,80 @@ export function createWatchProvisionAdmission(store) {
         }
         const readBack = store.readRoot();
         if (readBack.status !== "ok" || readBack.text !== document.canonical) {
-          return decision("STORAGE_UNVERIFIED", trace.concat(["STORAGE_UNVERIFIED"]), {
+          return decision("STORAGE_UNVERIFIED", ["STORAGE_UNVERIFIED"], {
             reason: "root-readback",
             canonical: document.canonical,
             contentHash: document.contentHash,
           });
         }
       }
-      trace.push("ROOT_VERIFIED");
-      const marker = admissionTextFor(document.contentHash);
+      const marker = stageMarker(document.contentHash, "WATCH_CONFIG_VERIFIED");
       const admissionWrite = store.writeAdmission(marker);
       if (admissionWrite.status !== "ok" || admissionWrite.text !== marker) {
-        return decision("ROOT_VERIFIED", trace, {
-          reason: "admission-write",
+        return decision("STORAGE_UNVERIFIED", ["STORAGE_UNVERIFIED"], {
+          reason: "verification-write",
           canonical: document.canonical,
           contentHash: document.contentHash,
         });
       }
       const admissionRead = store.readAdmission();
       if (admissionRead.status !== "ok" || admissionRead.text !== marker) {
-        return decision("ROOT_VERIFIED", trace, {
-          reason: "admission-readback",
+        return decision("STORAGE_UNVERIFIED", ["STORAGE_UNVERIFIED"], {
+          reason: "verification-readback",
           canonical: document.canonical,
           contentHash: document.contentHash,
         });
       }
-      trace.push("MATCH_READY");
-      return decision("MATCH_READY", trace, {
+      return decision("WATCH_CONFIG_VERIFIED", ["WATCH_CONFIG_VERIFIED"], {
         canonical: document.canonical,
         contentHash: document.contentHash,
+      });
+    },
+    activate(localInstallationId, lockReceipt) {
+      const stored = fromStore(store, localInstallationId, false);
+      if (stored.state === "WATCH_ACTIVATED" && lockReceipt && lockReceipt.durable && lockReceipt.generation === 1 && lockReceipt.contentHash === stored.contentHash && lockReceipt.writerDeviceId === localInstallationId) {
+        return stored;
+      }
+      if (stored.state !== "WATCH_CONFIG_VERIFIED") {
+        if (stored.state === "WATCH_ACTIVATED") {
+          return decision("AUTHORITY_CONFLICT", ["AUTHORITY_CONFLICT"], { reason: "conflicting-activation" });
+        }
+        return stored;
+      }
+      if (!lockReceipt || !lockReceipt.durable || lockReceipt.generation !== 1) {
+        return decision("WATCH_CONFIG_VERIFIED", ["WATCH_CONFIG_VERIFIED"], {
+          reason: "activation-ack",
+          canonical: stored.canonical,
+          contentHash: stored.contentHash,
+        });
+      }
+      if (lockReceipt.contentHash !== stored.contentHash || lockReceipt.writerDeviceId !== localInstallationId) {
+        return decision("AUTHORITY_CONFLICT", ["AUTHORITY_CONFLICT"], {
+          reason: "conflicting-activation",
+          canonical: stored.canonical,
+          contentHash: stored.contentHash,
+        });
+      }
+      const marker = stageMarker(stored.contentHash, "WATCH_ACTIVATED");
+      const wrote = store.writeAdmission(marker);
+      if (wrote.status !== "ok" || wrote.text !== marker) {
+        return decision("WATCH_CONFIG_VERIFIED", ["WATCH_CONFIG_VERIFIED"], {
+          reason: "activation-write",
+          canonical: stored.canonical,
+          contentHash: stored.contentHash,
+        });
+      }
+      const readBack = store.readAdmission();
+      if (readBack.status !== "ok" || readBack.text !== marker) {
+        return decision("WATCH_CONFIG_VERIFIED", ["WATCH_CONFIG_VERIFIED"], {
+          reason: "activation-readback",
+          canonical: stored.canonical,
+          contentHash: stored.contentHash,
+        });
+      }
+      return decision("WATCH_ACTIVATED", ["WATCH_CONFIG_VERIFIED", "WATCH_ACTIVATED"], {
+        canonical: stored.canonical,
+        contentHash: stored.contentHash,
       });
     },
   };
@@ -282,14 +355,37 @@ export function decidePhoneWatchProvision(message, facts) {
     if (facts.rootDeviceId !== document.writerDeviceId || facts.rootPrincipalId !== document.principalId) {
       return decision("AUTHORITY_CONFLICT", ["AUTHORITY_CONFLICT"], { reason: "phone-root" });
     }
-    return decision("CONFIG_RECEIVED", ["CONFIG_RECEIVED"], {
+    return decision("PHONE_AUTHORITY_LOCKED", ["PHONE_AUTHORITY_LOCKED"], {
       reason: "idempotent-phone-root",
       canonical: document.canonical,
       contentHash: document.contentHash,
     });
   }
-  return decision("CONFIG_RECEIVED", ["CONFIG_RECEIVED"], {
+  return decision("CONFIG_PREPARED", ["CONFIG_PREPARED"], {
     reason: "phone-prepared",
+    canonical: document.canonical,
+    contentHash: document.contentHash,
+  });
+}
+
+export function decidePhoneAuthorityLock(message, facts, receipt, transportAvailable) {
+  const prepared = decidePhoneWatchProvision(message, facts);
+  if (prepared.state === "AUTHORITY_CONFLICT" || prepared.state === "RECOVERY_REQUIRED" || prepared.state === "CONFIG_INVALID" || prepared.state === "PHONE_AUTHORITY_LOCKED") {
+    return prepared;
+  }
+  if (!transportAvailable || !receipt || !receipt.readBack || receipt.generation !== 1) {
+    return decision("CONFIG_PREPARED", ["CONFIG_PREPARED"], {
+      reason: "transport-unavailable",
+      canonical: prepared.canonical,
+      contentHash: prepared.contentHash,
+    });
+  }
+  const document = parseWatchProvisionV1(message).document;
+  if (!document || receipt.contentHash !== document.contentHash || receipt.writerDeviceId !== document.writerDeviceId) {
+    return decision("AUTHORITY_CONFLICT", ["AUTHORITY_CONFLICT"], { reason: "receipt-mismatch" });
+  }
+  return decision("PHONE_AUTHORITY_LOCKED", ["CONFIG_PREPARED", "PHONE_AUTHORITY_LOCKED"], {
+    reason: "lock",
     canonical: document.canonical,
     contentHash: document.contentHash,
     rootToCommit: {

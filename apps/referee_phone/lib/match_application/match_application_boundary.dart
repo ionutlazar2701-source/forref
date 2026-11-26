@@ -59,7 +59,8 @@ final class MatchApplicationBoundary
     if (matchStarted == null) {
       final started = await commitMatchStarted(context);
       if (started is! DurableCommitSuccess) {
-        final afterFailure = await _store.readCommittedForMatch(context.matchId);
+        final afterFailure =
+            await _store.readCommittedForMatch(context.matchId);
         matchStarted = _matchStartedRecord(afterFailure);
         if (matchStarted == null) {
           final reason = started is DurableCommitFailure
@@ -235,6 +236,13 @@ final class MatchApplicationBoundary
     CaptureContext context,
   ) async {
     final matchId = context.matchId;
+    final reserved = await _store.readWatchProvisionStage(matchId);
+    if (reserved != null) {
+      return const DurableCommitFailure(
+        recordId: '',
+        reason: 'watch provision reserves this match; phone is not the writer',
+      );
+    }
     final existing = await _store.readGenerationOneAuthorityRoot(matchId);
     if (existing != null) {
       if (existing.principalId != context.authorityPrincipalId ||
@@ -372,8 +380,7 @@ final class MatchApplicationBoundary
         if (lineage.activeStart != null) {
           return 'PERIOD_STARTED requires no active period';
         }
-        if (!lineage.intervalActive ||
-            lineage.latestEnded?.index != 1) {
+        if (!lineage.intervalActive || lineage.latestEnded?.index != 1) {
           return 'PERIOD_STARTED requires Period 1 ended';
         }
         final periodOne = lineage.starts.single;
@@ -621,7 +628,8 @@ final class MatchApplicationBoundary
       return Future<DurableCommitResult>.value(
         DurableCommitFailure(
           recordId: request.recordId,
-          reason: 'TEMPORARY_SUSPENSION_ENDED requires temporal anchor evidence',
+          reason:
+              'TEMPORARY_SUSPENSION_ENDED requires temporal anchor evidence',
         ),
       );
     }
@@ -697,43 +705,70 @@ final class MatchApplicationBoundary
     return _projector.project(
       _store,
       matchId,
-      ProjectionContext(evaluatedAuthorityGeneration: evaluatedAuthorityGeneration),
+      ProjectionContext(
+          evaluatedAuthorityGeneration: evaluatedAuthorityGeneration),
     );
   }
 
-  /// Names the watch as the generation-1 writer for a new match.
-  ///
-  /// Does not append a sporting record, does not return MATCH_READY, and does
-  /// not claim Saved. The watch admission machine is the only MATCH_READY path.
+  /// Stores CONFIG_PREPARED. Does not insert the generation-1 authority root.
   Future<WatchProvisionDecision> prepareWatchOperatedMatch({
     required String canonicalMessage,
     required String phoneOriginDeviceId,
   }) async {
-    final parsed = parseWatchProvisionV1(canonicalMessage);
-    final document = parsed.document;
-    if (document == null) {
-      return decidePhoneWatchProvision(
-        message: canonicalMessage,
-        facts: PhoneProvisionFacts(
-          committedSportingRecords: 0,
-          phoneOriginDeviceId: phoneOriginDeviceId,
-        ),
-      );
-    }
-    final records = await _store.readCommittedForMatch(document.matchId);
-    final root = await _store.readGenerationOneAuthorityRoot(document.matchId);
-    final decision = decidePhoneWatchProvision(
-      message: canonicalMessage,
-      facts: PhoneProvisionFacts(
-        committedSportingRecords: records.length,
-        phoneOriginDeviceId: phoneOriginDeviceId,
-        rootDeviceId: root?.deviceId,
-        rootPrincipalId: root?.principalId,
+    final decision = await _phoneProvisionDecision(
+      canonicalMessage: canonicalMessage,
+      phoneOriginDeviceId: phoneOriginDeviceId,
+    );
+    if (decision.state != WatchProvisionState.configPrepared) return decision;
+    final document = parseWatchProvisionV1(canonicalMessage).document;
+    if (document == null) return decision;
+    final saved = await _store.saveWatchProvisionPrepared(
+      WatchProvisionPhoneStage(
+        matchId: document.matchId,
+        canonical: document.canonical,
+        contentHash: document.contentHash,
+        stage: WatchProvisionState.configPrepared.wire,
+        writerDeviceId: document.writerDeviceId,
+        principalId: document.principalId,
       ),
     );
-    final rootToCommit = decision.rootToCommit;
-    if (rootToCommit == null) return decision;
-    final outcome = await _store.commitGenerationOneAuthorityRoot(rootToCommit);
+    if (saved is WatchProvisionStageRefused) {
+      return WatchProvisionDecision(
+        state: WatchProvisionState.authorityConflict,
+        trace: const [WatchProvisionState.authorityConflict],
+        reason: saved.reason,
+        canonical: decision.canonical,
+        contentHash: decision.contentHash,
+      );
+    }
+    return decision;
+  }
+
+  /// Commits the watch root only after a verified receipt and available transport.
+  Future<WatchProvisionDecision> lockWatchAuthority({
+    required String canonicalMessage,
+    required String phoneOriginDeviceId,
+    required WatchConfigVerifiedReceipt? receipt,
+    required bool transportAvailable,
+  }) async {
+    final facts = await _phoneProvisionFacts(
+      canonicalMessage: canonicalMessage,
+      phoneOriginDeviceId: phoneOriginDeviceId,
+    );
+    final decision = decidePhoneAuthorityLock(
+      message: canonicalMessage,
+      facts: facts,
+      receipt: receipt,
+      transportAvailable: transportAvailable,
+    );
+    final root = decision.rootToCommit;
+    if (root == null) return decision;
+    final outcome = await _store.lockPreparedWatchAuthority(
+      matchId: root.matchId,
+      contentHash: decision.contentHash,
+      writerDeviceId: root.deviceId,
+      principalId: root.principalId,
+    );
     if (outcome is GenerationOneRootCommitFailure) {
       return WatchProvisionDecision(
         state: WatchProvisionState.authorityConflict,
@@ -744,6 +779,40 @@ final class MatchApplicationBoundary
       );
     }
     return decision;
+  }
+
+  Future<WatchProvisionDecision> _phoneProvisionDecision({
+    required String canonicalMessage,
+    required String phoneOriginDeviceId,
+  }) async {
+    return decidePhoneWatchProvision(
+      message: canonicalMessage,
+      facts: await _phoneProvisionFacts(
+        canonicalMessage: canonicalMessage,
+        phoneOriginDeviceId: phoneOriginDeviceId,
+      ),
+    );
+  }
+
+  Future<PhoneProvisionFacts> _phoneProvisionFacts({
+    required String canonicalMessage,
+    required String phoneOriginDeviceId,
+  }) async {
+    final document = parseWatchProvisionV1(canonicalMessage).document;
+    if (document == null) {
+      return PhoneProvisionFacts(
+        committedSportingRecords: 0,
+        phoneOriginDeviceId: phoneOriginDeviceId,
+      );
+    }
+    final records = await _store.readCommittedForMatch(document.matchId);
+    final root = await _store.readGenerationOneAuthorityRoot(document.matchId);
+    return PhoneProvisionFacts(
+      committedSportingRecords: records.length,
+      phoneOriginDeviceId: phoneOriginDeviceId,
+      rootDeviceId: root?.deviceId,
+      rootPrincipalId: root?.principalId,
+    );
   }
 
   Future<void> close() => _store.close();
