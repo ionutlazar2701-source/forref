@@ -194,13 +194,10 @@ export function gateSegment(session, utc, epoch) {
     return { ok: false, session: failed.session, reason: "SEGMENT_OUTSIDE_WINDOW" };
   }
   const next = cloneSession(session);
+  // A new process id is not a civil-time correction. The persisted UTC anchor
+  // stays valid across an ordinary restart, including a gap longer than the
+  // sampler's 2500 ms window. Backward time and the diagnostic window still fail.
   if (next.epoch && epoch && epoch !== next.epoch) {
-    const anchor = next.lastUtc == null ? next.openStartUtc : next.lastUtc;
-    const stepped = utc - anchor;
-    if (stepped > DISPLAY_CONTINUITY_MS) {
-      const failed = failClosed(cloneSession(session), session.lastUtc, "EPOCH");
-      return { ok: false, session: failed.session, reason: "EPOCH" };
-    }
     next.epoch = epoch;
   }
   next.integrity = "UTC_ASSUMED";
@@ -228,6 +225,13 @@ export function sample(session, observation) {
   }
   if (observation.discontinuity) {
     return failClosed(next, utc, observation.discontinuity);
+  }
+  if (isUtcSegment(next)) {
+    const gate = gateSegment(next, utc, observation.epoch);
+    if (!gate.ok) {
+      return { session: gate.session, event: "UNVERIFIED" };
+    }
+    return { session: gate.session, event: "HELD" };
   }
   if (next.epoch && observation.epoch && observation.epoch !== next.epoch) {
     const anchor = next.lastUtc == null ? next.openStartUtc : next.lastUtc;

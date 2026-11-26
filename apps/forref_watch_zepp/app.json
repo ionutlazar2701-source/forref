@@ -5,12 +5,12 @@
     "appName": "FORREF",
     "appType": "app",
     "version": {
-      "code": 13,
-      "name": "1.0.13"
+      "code": 14,
+      "name": "1.0.14"
     },
     "icon": "icon.png",
     "vender": "zepp",
-    "description": "FORREF FIGMA-001 HOME"
+    "description": "FORREF CLOCK RECOVERY"
   },
   "permissions": [
     "data:os.device.info",

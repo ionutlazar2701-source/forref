@@ -6,7 +6,7 @@
 import { createTimer, stopTimer } from "@zos/timer";
 import { deviceNow } from "./clock_device";
 import { sampleFromScheduler } from "./live_session";
-import { createForegroundHost } from "./clock_cadence";
+import { createForegroundHost, nextTimerDelay } from "./clock_cadence";
 
 const host = createForegroundHost({
   utc: function () {
@@ -18,8 +18,11 @@ const host = createForegroundHost({
   sample: function (source) {
     return sampleFromScheduler(source);
   },
-  arm: function (run) {
-    return createTimer(1000, 1000, run);
+  delay: function () {
+    return nextTimerDelay(deviceNow(), 1000);
+  },
+  arm: function (run, delay) {
+    return createTimer(delay, 1000, run);
   },
   disarm: function (id) {
     stopTimer(id);

@@ -1,5 +1,5 @@
 import { push, back } from "@zos/router";
-import { logDevice, bindBack, clear, clearDigits, paintBase, textAt, button } from "../../../utils/chrome";
+import { logDevice, bindBack, clear, clearDigits, paintBase, textAt, setWidgetText, button } from "../../../utils/chrome";
 import { layoutLive, liveTelemetrySlot } from "../../../utils/geometry";
 import { localeChoice, t } from "../../../utils/text";
 import { formatTelemetryLine, gpsStatusKey, hrStatusKey, pulseTelemetry } from "../../../utils/telemetry";
@@ -17,6 +17,7 @@ let unbindPaint = null;
 let metrics = null;
 let banner = "";
 let shell = null;
+let digitCache = null;
 let lastLogged = "";
 const arm = createAbandonArm();
 
@@ -136,15 +137,29 @@ function telemetryLabel() {
 
 function paintDigits(view, lay, current) {
   const started = Date.now();
-  clearDigits();
   const timeH = current === "C" ? 36 : 48;
-  textAt(12, lay.phaseY, metrics.width - 24, 28, statusLabel(view), 20, view.unverified ? TEXT_WARNING : ACCENT, true);
-  textAt(12, lay.timeY, metrics.width - 24, timeH, digitLabel(view), view.added ? 28 : current === "C" ? 32 : 40, TEXT_PRIMARY, true);
+  const status = statusLabel(view);
+  const digits = digitLabel(view);
+  const key = [current, view.phase, view.unverified ? "u" : "p", view.added ? "a" : "n", banner ? "b" : "o", lay.timeY, lay.phaseY].join("|");
+  if (digitCache && digitCache.key === key) {
+    const timeOk = setWidgetText(digitCache.time, digits);
+    const statusOk = setWidgetText(digitCache.status, status);
+    if (timeOk && statusOk) {
+      if (digitCache.telemetry) {
+        setWidgetText(digitCache.telemetry, telemetryLabel());
+      }
+      return Date.now() - started;
+    }
+  }
+  clearDigits();
+  const statusNode = textAt(12, lay.phaseY, metrics.width - 24, 28, status, 20, view.unverified ? TEXT_WARNING : ACCENT, true);
+  const timeNode = textAt(12, lay.timeY, metrics.width - 24, timeH, digits, view.added ? 28 : current === "C" ? 32 : 40, TEXT_PRIMARY, true);
   let nextY = lay.timeY + timeH;
+  let telemetryNode = null;
   try {
     const slot = liveTelemetrySlot(lay, current, timeH);
     if (slot) {
-      textAt(12, slot.y, metrics.width - 24, slot.h, telemetryLabel(), 14, TEXT_SECONDARY, true);
+      telemetryNode = textAt(12, slot.y, metrics.width - 24, slot.h, telemetryLabel(), 14, TEXT_SECONDARY, true);
       nextY = slot.y + slot.h;
     }
   } catch (err) {
@@ -155,6 +170,7 @@ function paintDigits(view, lay, current) {
   if (detail && nextY + 14 <= detailLimit) {
     textAt(12, nextY, metrics.width - 24, 14, detail, 12, TEXT_WARNING, true);
   }
+  digitCache = { key: key, status: statusNode, time: timeNode, telemetry: telemetryNode };
   return Date.now() - started;
 }
 
@@ -209,6 +225,7 @@ function paintAll(prepared) {
   let paintMs = 0;
   if (!shell || shell.key !== key) {
     clear();
+    digitCache = null;
     paintBase(metrics);
     paintMs = paintDigits(view, lay, current);
     paintShell(view, lay);
@@ -270,6 +287,7 @@ Page({
     }
     persistLive();
     shell = null;
+    digitCache = null;
     clear();
     console.log("FORREF_PAGE live onDestroy");
   },

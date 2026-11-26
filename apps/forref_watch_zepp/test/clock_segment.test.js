@@ -12,6 +12,7 @@ import {
   liveFrame,
   noteDiscontinuity,
   present,
+  sample,
 } from "../utils/match_clock.js";
 import { commitSegment, loadLiveClock, openUtcSession, readSegment } from "../utils/clock_segment.js";
 
@@ -304,13 +305,63 @@ test("a legacy running anchor migrates without rewriting the v1 record", () => {
   assert.equal(rolled.session.trust, Trust.UNVERIFIED);
 });
 
-test("a small epoch correction is absorbed and a jumped epoch fails closed", () => {
+test("a new process keeps a valid UTC anchor, including a gap past 2.5 seconds", () => {
   const session = kick(T0);
   const small = show(session, T0 + 1000, "epoch-b");
   assert.equal(small.frame.admitted, true);
   assert.equal(small.frame.session.epoch, "epoch-b");
+  assert.equal(small.frame.session.openStartUtc, T0);
   assert.equal(small.text, "00:01");
   const jumped = show(session, T0 + 10 * 60000, "epoch-c");
-  assert.equal(jumped.frame.reason, "EPOCH");
-  assert.equal(jumped.frame.session.integrity, "TIME_UNKNOWN");
+  assert.equal(jumped.frame.admitted, true);
+  assert.equal(jumped.frame.reason, "UTC_ASSUMED");
+  assert.equal(jumped.frame.session.epoch, "epoch-c");
+  assert.equal(jumped.frame.session.integrity, "UTC_ASSUMED");
+  assert.equal(jumped.frame.session.openStartUtc, T0);
+  assert.equal(jumped.text, "10:00");
+  const stepped = sample(session, { utcMillis: T0 + 13 * 60000, epoch: "epoch-d" });
+  assert.equal(stepped.event, "HELD");
+  assert.equal(stepped.session.trust, Trust.OBSERVED);
+  assert.equal(stepped.session.openStartUtc, T0);
+  assert.equal(stepped.session.lastUtc, T0);
+});
+
+function faceFor(ms) {
+  const total = Math.floor(ms / 1000);
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  const left = minutes < 10 ? "0" + minutes : String(minutes);
+  const right = seconds < 10 ? "0" + seconds : String(seconds);
+  return left + ":" + right;
+}
+
+test("process B recovers process A's running match after 30 seconds, 2 minutes, and 13 minutes", () => {
+  for (const gap of [30000, 120000, 13 * 60000]) {
+    const store = slots();
+    const prior = legacy();
+    const running = kick(T0);
+    const saved = commitSegment(store, running);
+    assert.equal(saved.ok, true);
+    const rawA = store.box.A;
+    const rawB = store.box.B;
+    const loaded = loadLiveClock(store, prior, "epoch-b", T0 + gap);
+    assert.equal(loaded.session.trust, Trust.OBSERVED);
+    assert.equal(loaded.session.openStartUtc, T0);
+    assert.equal(loaded.session.integrity === "TIME_UNKNOWN", false);
+    assert.equal(store.box.A, rawA);
+    assert.equal(store.box.B, rawB);
+    const recovered = show(loaded.session, T0 + gap, "epoch-b");
+    assert.equal(recovered.frame.admitted, true);
+    assert.equal(recovered.frame.reason, "UTC_ASSUMED");
+    assert.equal(recovered.frame.session.trust, Trust.OBSERVED);
+    assert.equal(recovered.frame.session.integrity, "UTC_ASSUMED");
+    assert.equal(recovered.frame.session.openStartUtc, T0);
+    assert.equal(recovered.text, faceFor(gap));
+    assert.equal(store.box.A, rawA);
+    assert.equal(store.box.B, rawB);
+    const back = show(loaded.session, T0 - 1000, "epoch-b");
+    assert.equal(back.frame.reason, "BACKWARD");
+    assert.equal(back.frame.session.integrity, "TIME_UNKNOWN");
+    assert.equal(store.box.A, rawA);
+  }
 });
