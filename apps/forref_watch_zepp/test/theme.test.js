@@ -54,6 +54,8 @@ const PROTECTED = [
   "utils/capture_candidate.js",
   "utils/capture_device.js",
   "utils/capture_storage.js",
+  "utils/watch_provision.js",
+  "utils/sha256_hex.js",
 ];
 
 function lin(channel) {

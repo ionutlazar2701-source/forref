@@ -1,0 +1,6 @@
+{
+  "canonical": "{\"schema\":\"forref.watch-provision.v1\",\"matchId\":\"match-watch-001\",\"authority\":{\"scope\":\"MAIN_REFEREE\",\"principalId\":\"referee-001\",\"generation\":1,\"writerDeviceId\":\"6f1e2d3c-4b5a-4678-9abc-def012345678\"},\"teams\":{\"home\":{\"teamId\":\"team-alpha-001\",\"name\":\"North\"},\"away\":{\"teamId\":\"team-beta-001\",\"name\":\"South\"}},\"clock\":{\"halfDurationMs\":2700000},\"provisionVersion\":1}",
+  "contentHash": "f5be36536b31727a4be1ad177faacd679aefa9bc933ae5dd96d707a7526a5a8a",
+  "localInstallationId": "6f1e2d3c-4b5a-4678-9abc-def012345678",
+  "phoneOriginDeviceId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
+}

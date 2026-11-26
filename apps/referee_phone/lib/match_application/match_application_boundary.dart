@@ -701,6 +701,51 @@ final class MatchApplicationBoundary
     );
   }
 
+  /// Names the watch as the generation-1 writer for a new match.
+  ///
+  /// Does not append a sporting record, does not return MATCH_READY, and does
+  /// not claim Saved. The watch admission machine is the only MATCH_READY path.
+  Future<WatchProvisionDecision> prepareWatchOperatedMatch({
+    required String canonicalMessage,
+    required String phoneOriginDeviceId,
+  }) async {
+    final parsed = parseWatchProvisionV1(canonicalMessage);
+    final document = parsed.document;
+    if (document == null) {
+      return decidePhoneWatchProvision(
+        message: canonicalMessage,
+        facts: PhoneProvisionFacts(
+          committedSportingRecords: 0,
+          phoneOriginDeviceId: phoneOriginDeviceId,
+        ),
+      );
+    }
+    final records = await _store.readCommittedForMatch(document.matchId);
+    final root = await _store.readGenerationOneAuthorityRoot(document.matchId);
+    final decision = decidePhoneWatchProvision(
+      message: canonicalMessage,
+      facts: PhoneProvisionFacts(
+        committedSportingRecords: records.length,
+        phoneOriginDeviceId: phoneOriginDeviceId,
+        rootDeviceId: root?.deviceId,
+        rootPrincipalId: root?.principalId,
+      ),
+    );
+    final rootToCommit = decision.rootToCommit;
+    if (rootToCommit == null) return decision;
+    final outcome = await _store.commitGenerationOneAuthorityRoot(rootToCommit);
+    if (outcome is GenerationOneRootCommitFailure) {
+      return WatchProvisionDecision(
+        state: WatchProvisionState.authorityConflict,
+        trace: const [WatchProvisionState.authorityConflict],
+        reason: outcome.reason,
+        canonical: decision.canonical,
+        contentHash: decision.contentHash,
+      );
+    }
+    return decision;
+  }
+
   Future<void> close() => _store.close();
 }
 
