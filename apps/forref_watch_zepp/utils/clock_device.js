@@ -7,9 +7,11 @@ import {
   CLOCK_FILE,
   CLOCK_KEY,
   CLOCK_MIRROR,
+  CLOCK_PHONE_ANCHOR,
   CLOCK_SEGMENT_A,
   CLOCK_SEGMENT_B,
 } from "./clock_store_paths.js";
+import { decodeAnchor, encodeAnchor } from "./clock_phone_diag.js";
 import { screenLabel } from "./clock_service_policy.js";
 
 // 001c is a new prototype generation so a fresh READY can be tested.
@@ -107,6 +109,14 @@ export function segmentAdapter() {
       return writeText(CLOCK_ENGINE, raw);
     },
   };
+}
+
+export function readPhoneAnchor() {
+  return decodeAnchor(readText(CLOCK_PHONE_ANCHOR));
+}
+
+export function writePhoneAnchor(record) {
+  return writeText(CLOCK_PHONE_ANCHOR, encodeAnchor(record));
 }
 
 export function watchPhoneTime(onChange) {

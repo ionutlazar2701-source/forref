@@ -1,5 +1,7 @@
 import { setWakeUpRelaunch } from "@zos/display";
 import { bootLine } from "./utils/build_stamp";
+import { deviceNow } from "./utils/clock_device";
+import { formatLife } from "./utils/clock_phone_diag";
 import { startForegroundClock, stopForegroundClock } from "./utils/clock_foreground_bind";
 import { attachMatchTelemetry, releaseMatchTelemetry } from "./utils/telemetry_bind";
 
@@ -11,6 +13,7 @@ App({
     this.globalData = this.globalData || {};
     this.globalData.clockEpoch = "e" + Date.now();
     console.log("FORREF_APP onCreate epoch=" + this.globalData.clockEpoch);
+    console.log(formatLife("onCreate", { epoch: this.globalData.clockEpoch, utc: deviceNow() }));
     console.log(bootLine());
     console.log("FORREF_CAPTURE_BOOT namespace=forref_capture_bridge_001 schema=1 d1=UNCERTIFIED");
     try {
@@ -41,6 +44,7 @@ App({
     } catch (err) {
       console.log("FORREF_TEL release=FAILED");
     }
+    console.log(formatLife("onDestroy", { epoch: this.globalData && this.globalData.clockEpoch, utc: deviceNow() }));
     console.log("FORREF_APP onDestroy");
   },
 });
