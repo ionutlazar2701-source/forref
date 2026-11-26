@@ -56,6 +56,7 @@ const PROTECTED = [
   "utils/capture_storage.js",
   "utils/watch_provision.js",
   "utils/sha256_hex.js",
+  "utils/goal_journal.js",
 ];
 
 function lin(channel) {

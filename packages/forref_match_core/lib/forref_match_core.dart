@@ -19,6 +19,7 @@ export 'match_record.dart';
 export 'payload.dart';
 export 'ports.dart';
 export 'provision/sha256_hex.dart';
+export 'provision/watch_goal_v1.dart';
 export 'provision/watch_provision_v1.dart';
 export 'projection/deterministic_match_projector.dart';
 export 'projection/caution_awareness.dart';

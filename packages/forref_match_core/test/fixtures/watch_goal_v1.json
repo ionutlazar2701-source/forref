@@ -1,0 +1,4 @@
+{
+  "canonical": "{\"schema\":\"forref.watch-goal.v1\",\"matchId\":\"match-watch-001\",\"recordKind\":\"humanDetermination\",\"semanticType\":\"GOAL\",\"authority\":{\"scope\":\"MAIN_REFEREE\",\"principalId\":\"referee-001\",\"generation\":1,\"writerDeviceId\":\"6f1e2d3c-4b5a-4678-9abc-def012345678\"},\"origin\":{\"deviceId\":\"6f1e2d3c-4b5a-4678-9abc-def012345678\",\"sequence\":1,\"recordId\":\"goal-home-1\"},\"captureIntentId\":\"intent-home-1\",\"scoringTeamId\":\"team-alpha-001\"}",
+  "contentHash": "efa0778456dd8fd5b35821b819e88a37c347cc5e01f0bdd348b72f27fe4ec8aa"
+}
