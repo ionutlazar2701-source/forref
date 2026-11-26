@@ -8,3 +8,5 @@ export const CLOCK_WITNESS = "forref_clock001c_witness.json";
 export const CLOCK_SEGMENT_A = "forref_clock004_a.json";
 export const CLOCK_SEGMENT_B = "forref_clock004_b.json";
 export const CLOCK_ENGINE = "forref_clock004_engine.txt";
+// Independent CLOCK-006 note. It is not a segment slot and it is not restored.
+export const CLOCK_PHONE_ANCHOR = "forref_clock006_anchor.json";

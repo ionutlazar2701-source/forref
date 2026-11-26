@@ -7,6 +7,7 @@ import { ACCENT, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_WARNING } from "../../../uti
 import { state } from "../../../utils/state";
 import { displayText } from "../../../utils/match_clock";
 import { bootLive, prepareFrame, performIntent, persistLive } from "../../../utils/live_session";
+import { formatLife } from "../../../utils/clock_phone_diag";
 import { bindLivePaint, restartForegroundClock } from "../../../utils/clock_foreground_bind";
 import { deviceNow } from "../../../utils/clock_device";
 import { readWitness } from "../../../utils/clock_witness_device";
@@ -77,6 +78,9 @@ function statusLabel(view) {
 }
 
 function detailLabel(view) {
+  if (state().phoneWarning) {
+    return t("phoneObserveWarn");
+  }
   if (banner) {
     return banner;
   }
@@ -140,7 +144,7 @@ function paintDigits(view, lay, current) {
   const timeH = current === "C" ? 36 : 48;
   const status = statusLabel(view);
   const digits = digitLabel(view);
-  const key = [current, view.phase, view.unverified ? "u" : "p", view.added ? "a" : "n", banner ? "b" : "o", lay.timeY, lay.phaseY].join("|");
+  const key = [current, view.phase, view.unverified ? "u" : "p", view.added ? "a" : "n", banner ? "b" : "o", state().phoneWarning ? "phone" : "quiet", lay.timeY, lay.phaseY].join("|");
   if (digitCache && digitCache.key === key) {
     const timeOk = setWidgetText(digitCache.time, digits);
     const statusOk = setWidgetText(digitCache.status, status);
@@ -266,6 +270,7 @@ Page({
     console.log("FORREF_PAGE live onInit");
   },
   build() {
+    console.log(formatLife("live-build", { epoch: state().clockEpoch, utc: deviceNow() }));
     metrics = logDevice("live");
     bindBack(false);
     bootLive();
@@ -280,6 +285,7 @@ Page({
     restartForegroundClock();
   },
   onDestroy() {
+    console.log(formatLife("live-destroy", { epoch: state().clockEpoch, utc: deviceNow() }));
     leave("exit");
     if (unbindPaint) {
       unbindPaint();
