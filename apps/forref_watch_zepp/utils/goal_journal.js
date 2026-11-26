@@ -41,7 +41,14 @@ function utf8ByteLength(text) {
 }
 
 function report(outcome, reason) {
-  console.log("FORREF_EVENT outcome=" + outcome + " reason=" + (reason || ""));
+  const detail = reason || "";
+  console.log("FORREF_EVENT outcome=" + outcome + " reason=" + detail);
+  if (outcome === "UNCERTAIN" || outcome === "RECOVERY_REQUIRED") {
+    console.log("FORREF_RECOVERY outcome=" + outcome + " reason=" + detail);
+  }
+  if (outcome === "LOCAL_RECORD_VERIFIED") {
+    console.log("FORREF_D1 outcome=UNCERTIFIED reason=watch-storage-not-certified");
+  }
 }
 
 function idOk(value) {

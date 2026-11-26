@@ -62,6 +62,7 @@ export function handleProvisionMessage(message, admission, installationId, conte
       }
     }
     console.log("FORREF_PROVISION outcome=WATCH_ACTIVATED_V1 reason=");
+    console.log("FORREF_D1 outcome=UNCERTIFIED reason=capture-storage-uncertified");
     return {
       type: WATCH_ACTIVATED_V1,
       matchId: document.matchId,
