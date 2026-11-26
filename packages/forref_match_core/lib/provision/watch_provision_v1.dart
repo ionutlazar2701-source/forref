@@ -91,9 +91,21 @@ final class WatchProvisionDecision {
   /// A hash readback is not a power-loss certificate.
   bool get d1Certified => false;
 
-  /// Sporting appends wait until activation is stored and can be reloaded.
-  bool get mayAppendSportingRecords =>
-      state == WatchProvisionState.watchActivated;
+  /// The activation marker was stored and can be reloaded for this installation.
+  bool get authorityActivated => state == WatchProvisionState.watchActivated;
+
+  /// The watch writer has not satisfied the D1 storage contract.
+  bool get captureStorageCertified => false;
+
+  /// Authority activation is not capture permission. D1 keeps this false.
+  bool get authoritativeCaptureAdmitted =>
+      authorityActivated &&
+      captureStorageCertified &&
+      canonical.isNotEmpty &&
+      contentHash.isNotEmpty;
+
+  /// Alias of [authoritativeCaptureAdmitted]. Activation alone does not admit capture.
+  bool get mayAppendSportingRecords => authoritativeCaptureAdmitted;
 
   String get display {
     return switch (state) {

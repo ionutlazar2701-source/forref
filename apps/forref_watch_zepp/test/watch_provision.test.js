@@ -183,7 +183,10 @@ test("a lost activation acknowledgement retries once", () => {
     durable: true,
   });
   assert.equal(activated.state, "WATCH_ACTIVATED");
-  assert.equal(activated.mayAppendSportingRecords, true);
+  assert.equal(activated.authorityActivated, true);
+  assert.equal(activated.captureStorageCertified, false);
+  assert.equal(activated.authoritativeCaptureAdmitted, false);
+  assert.equal(activated.mayAppendSportingRecords, false);
   assert.equal(activated.saved, false);
   const again = admission.activate(fixture.localInstallationId, {
     contentHash: fixture.contentHash,
@@ -208,7 +211,8 @@ test("restart before activation stays verified and after stays activated", () =>
   });
   const after = createWatchProvisionAdmission(store).loadDurable(fixture.localInstallationId, false);
   assert.equal(after.state, "WATCH_ACTIVATED");
-  assert.equal(after.mayAppendSportingRecords, true);
+  assert.equal(after.authorityActivated, true);
+  assert.equal(after.authoritativeCaptureAdmitted, false);
 });
 
 test("a changed installation identity fails closed and keeps the root", () => {

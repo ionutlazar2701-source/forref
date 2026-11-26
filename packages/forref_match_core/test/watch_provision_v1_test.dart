@@ -292,7 +292,10 @@ void main() {
       lockReceipt: durable,
     );
     expect(activated.state, WatchProvisionState.watchActivated);
-    expect(activated.mayAppendSportingRecords, isTrue);
+    expect(activated.authorityActivated, isTrue);
+    expect(activated.captureStorageCertified, isFalse);
+    expect(activated.authoritativeCaptureAdmitted, isFalse);
+    expect(activated.mayAppendSportingRecords, isFalse);
     expect(activated.saved, isFalse);
     expect(activated.d1Certified, isFalse);
     final again = admission.activate(
@@ -333,7 +336,8 @@ void main() {
       sportingRecordsExist: false,
     );
     expect(after.state, WatchProvisionState.watchActivated);
-    expect(after.mayAppendSportingRecords, isTrue);
+    expect(after.authorityActivated, isTrue);
+    expect(after.authoritativeCaptureAdmitted, isFalse);
   });
 
   test('a changed installation identity fails closed and keeps the root', () {

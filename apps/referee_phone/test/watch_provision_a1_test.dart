@@ -177,4 +177,34 @@ void main() {
     );
     expect(root?.deviceId, identity.originDeviceId);
   });
+
+  test('cancellation before the lock removes the reservation only', () async {
+    await composition.boundary.prepareWatchOperatedMatch(
+      canonicalMessage: canonical,
+      phoneOriginDeviceId: identity.originDeviceId,
+    );
+    final wrong = await composition.boundary.cancelPreparedWatchMatch(
+      matchId: 'match-watch-001',
+      contentHash: 'not-the-hash',
+    );
+    expect(wrong.reason, 'hash');
+    final cancelled = await composition.boundary.cancelPreparedWatchMatch(
+      matchId: 'match-watch-001',
+      contentHash: fixture['contentHash']! as String,
+    );
+    expect(cancelled.state, WatchProvisionState.unprovisioned);
+    expect(cancelled.reason, 'cancelled');
+    expect(
+      await composition.boundary.durableStore.readWatchProvisionStage(
+        'match-watch-001',
+      ),
+      isNull,
+    );
+    expect(
+      await composition.boundary.durableStore.readGenerationOneAuthorityRoot(
+        'match-watch-001',
+      ),
+      isNull,
+    );
+  });
 }

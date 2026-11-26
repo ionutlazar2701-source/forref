@@ -91,6 +91,13 @@ final class WatchProvisionStageRefused extends WatchProvisionStageWrite {
   final String reason;
 }
 
+/// CONFIG_PREPARED was removed. No authority root was created or restored.
+final class WatchProvisionStageCancelled extends WatchProvisionStageWrite {
+  const WatchProvisionStageCancelled(this.stage);
+
+  final WatchProvisionPhoneStage stage;
+}
+
 /// File-backed append-only Match Memory.
 ///
 /// **D1 boundary used by this adapter**
@@ -437,6 +444,21 @@ final class SqliteDurableMatchStore
     WatchProvisionPhoneStage stage,
   ) {
     return _serialized(() async => _saveWatchProvisionPrepared(stage));
+  }
+
+  /// Removes CONFIG_PREPARED when no root and no sporting history exist.
+  ///
+  /// A locked stage is left in place. This does not create a phone root.
+  Future<WatchProvisionStageWrite> cancelPreparedWatchProvision({
+    required String matchId,
+    required String contentHash,
+  }) {
+    return _serialized(
+      () async => _cancelPreparedWatchProvision(
+        matchId: matchId,
+        contentHash: contentHash,
+      ),
+    );
   }
 
   /// Inserts the watch root and marks PHONE_AUTHORITY_LOCKED in one transaction.
@@ -818,6 +840,12 @@ final class SqliteDurableMatchStore
         _db.execute('ROLLBACK');
         return const WatchProvisionStageRefused('root-conflict');
       }
+      if (_matchHasCommittedRecordsLocked(stage.matchId)) {
+        _db.execute('ROLLBACK');
+        return const WatchProvisionStageRefused(
+          'existing phone-authoritative history',
+        );
+      }
       _db.execute(
         '''
         INSERT INTO watch_provision_stages (
@@ -939,6 +967,14 @@ final class SqliteDurableMatchStore
               'generation-1 root cannot be established after match records exist',
         );
       }
+      final reserved = _readWatchProvisionStageLocked(root.matchId);
+      if (reserved != null) {
+        _db.execute('ROLLBACK');
+        return const GenerationOneRootCommitFailure(
+          reason:
+              'watch provision reserves this match; phone is not the writer',
+        );
+      }
 
       _db.execute(
         '''
@@ -982,6 +1018,54 @@ final class SqliteDurableMatchStore
       principalId: row.columnAt(0) as String,
       deviceId: row.columnAt(1) as String,
     );
+  }
+
+  WatchProvisionStageWrite _cancelPreparedWatchProvision({
+    required String matchId,
+    required String contentHash,
+  }) {
+    _db.execute('BEGIN IMMEDIATE');
+    try {
+      final stage = _readWatchProvisionStageLocked(matchId);
+      if (stage == null) {
+        _db.execute('ROLLBACK');
+        return const WatchProvisionStageRefused('not-prepared');
+      }
+      if (stage.stage != 'CONFIG_PREPARED') {
+        _db.execute('ROLLBACK');
+        return const WatchProvisionStageRefused('authority-locked');
+      }
+      if (stage.contentHash != contentHash) {
+        _db.execute('ROLLBACK');
+        return const WatchProvisionStageRefused('hash');
+      }
+      if (_readGenerationOneAuthorityRootLocked(matchId) != null) {
+        _db.execute('ROLLBACK');
+        return const WatchProvisionStageRefused('root-present');
+      }
+      if (_matchHasCommittedRecordsLocked(matchId)) {
+        _db.execute('ROLLBACK');
+        return const WatchProvisionStageRefused(
+          'existing phone-authoritative history',
+        );
+      }
+      _db.execute(
+        '''
+        DELETE FROM watch_provision_stages
+        WHERE match_id = ? AND content_hash = ? AND stage = 'CONFIG_PREPARED'
+        ''',
+        [matchId, contentHash],
+      );
+      if (_readWatchProvisionStageLocked(matchId) != null) {
+        _db.execute('ROLLBACK');
+        return const WatchProvisionStageRefused('cancel-incomplete');
+      }
+      _commitTransaction();
+      return WatchProvisionStageCancelled(stage);
+    } catch (error) {
+      _rollbackIfNeeded();
+      return WatchProvisionStageRefused('cancel aborted: $error');
+    }
   }
 
   DurableCommitResult? _rejectReservedWatchProvision({
