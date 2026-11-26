@@ -58,6 +58,8 @@ const PROTECTED = [
   "utils/sha256_hex.js",
   "utils/goal_journal.js",
   "utils/local_test_score.js",
+  "utils/installation_id.js",
+  "utils/provision_transport.js",
 ];
 
 function lin(channel) {

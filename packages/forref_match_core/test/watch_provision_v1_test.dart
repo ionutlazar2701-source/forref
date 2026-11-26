@@ -424,4 +424,43 @@ void main() {
     expect(locked.saved, isFalse);
     expect(locked.d1Certified, isFalse);
   });
+
+  test('a verified message without readback does not lock authority', () {
+    final facts = PhoneProvisionFacts(
+      committedSportingRecords: 0,
+      phoneOriginDeviceId: fixture['phoneOriginDeviceId']! as String,
+    );
+    expect(
+      verifiedReceiptFromMessage(const {
+        'type': watchProvisionVerifiedV1,
+        'contentHash': 'abc',
+        'writerDeviceId': '6f1e2d3c-4b5a-4678-9abc-def012345678',
+        'generation': 1,
+        'readBack': false,
+      }),
+      isNull,
+    );
+    final receipt = verifiedReceiptFromMessage({
+      'type': watchProvisionVerifiedV1,
+      'contentHash': fixture['contentHash']! as String,
+      'writerDeviceId': fixture['localInstallationId']! as String,
+      'generation': 1,
+      'readBack': true,
+    });
+    final locked = decidePhoneAuthorityLock(
+      message: canonical,
+      facts: facts,
+      receipt: receipt,
+      transportAvailable: true,
+    );
+    expect(locked.rootToCommit, isNotNull);
+    expect(
+      activationDurable(const {
+        'type': watchActivatedV1,
+        'generation': 1,
+        'durable': false,
+      }),
+      isFalse,
+    );
+  });
 }
