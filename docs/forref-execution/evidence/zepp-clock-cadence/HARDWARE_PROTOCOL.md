@@ -2,7 +2,7 @@
 
 State: **NOT TESTED**. Fill every row on a physical Amazfit Bip 6. Cloud tests do not paint the watch face.
 
-App id `29566`, version `1.0.12` (code 12). This cloud run did not produce an installable package: Zeus CLI 1.10.0 opened a Zepp login page and this environment has no saved session. Build the preview from this commit on a logged-in machine with `zeus preview -t "Amazfit Bip 6"`, then install that package. The previous `1.0.11` package is the build that still has two 1-second timers.
+App id `29566`, version `1.0.12` (code 12). Install the preview in `CADENCE_PREVIEW_QR.txt`. Zeus preview target Amazfit Bip 6, device sources 9765120, 9765121, 10158337. Package `29566-FORREF-1.0.12-20261126191835.zab`, 304907 bytes, sha256 `2c0c7d7c2f6e8e8004779d6d2f01e990cf8dcab18e8ccae6e4806dab20ffe50e`. Built from commit `71f7263d19040619c3e9ab0badf4384c66aae6a1`. The boot line names `6fb764864e13dc21b8ce3f6484c4644aeff2962d`. The QR expires 3 December 2026, 21:18:38 Europe/Bucharest (19:18:38 UTC). The previous `1.0.11` package is the build that still has two 1-second timers. The rows below stay **NOT TESTED** until a physical Bip 6 runs them.
 
 ## What to record
 
