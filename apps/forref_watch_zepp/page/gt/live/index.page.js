@@ -1,5 +1,4 @@
 import { push, back } from "@zos/router";
-import { createTimer, stopTimer } from "@zos/timer";
 import { logDevice, bindBack, clear, clearDigits, paintBase, textAt, button } from "../../../utils/chrome";
 import { layoutLive, liveTelemetrySlot } from "../../../utils/geometry";
 import { localeChoice, t } from "../../../utils/text";
@@ -8,12 +7,13 @@ import { ACCENT, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_WARNING } from "../../../uti
 import { state } from "../../../utils/state";
 import { displayText } from "../../../utils/match_clock";
 import { bootLive, prepareFrame, performIntent, persistLive } from "../../../utils/live_session";
+import { bindLivePaint, restartForegroundClock } from "../../../utils/clock_foreground_bind";
 import { deviceNow } from "../../../utils/clock_device";
 import { readWitness } from "../../../utils/clock_witness_device";
 import { formatWitness } from "../../../utils/clock_sleep_witness";
 import { createAbandonArm } from "../../../utils/abandon_arm";
 
-let timerId = null;
+let unbindPaint = null;
 let metrics = null;
 let banner = "";
 let shell = null;
@@ -135,6 +135,7 @@ function telemetryLabel() {
 }
 
 function paintDigits(view, lay, current) {
+  const started = Date.now();
   clearDigits();
   const timeH = current === "C" ? 36 : 48;
   textAt(12, lay.phaseY, metrics.width - 24, 28, statusLabel(view), 20, view.unverified ? TEXT_WARNING : ACCENT, true);
@@ -154,6 +155,7 @@ function paintDigits(view, lay, current) {
   if (detail && nextY + 14 <= detailLimit) {
     textAt(12, nextY, metrics.width - 24, 14, detail, 12, TEXT_WARNING, true);
   }
+  return Date.now() - started;
 }
 
 function logView(view, current) {
@@ -195,25 +197,27 @@ function openTeam(team) {
   leave("navigate", () => push({ url: "page/gt/event/index.page", params: JSON.stringify({ team: team }) }));
 }
 
-function paintAll() {
-  const view = prepareFrame();
+function paintAll(prepared) {
+  const view = prepared || prepareFrame();
   if (!view) {
-    return;
+    return null;
   }
   arm.retain(contextOf(view));
   const current = mode();
   const lay = layoutLive(metrics, current);
   const key = shellKey(view, current);
+  let paintMs = 0;
   if (!shell || shell.key !== key) {
     clear();
     paintBase(metrics);
-    paintDigits(view, lay, current);
+    paintMs = paintDigits(view, lay, current);
     paintShell(view, lay);
     shell = { key: key };
   } else {
-    paintDigits(view, lay, current);
+    paintMs = paintDigits(view, lay, current);
   }
   logView(view, current);
+  return { digits: digitLabel(view) || "", paintMs: paintMs };
 }
 
 function onAction(intent) {
@@ -240,25 +244,6 @@ function onAction(intent) {
   paintAll();
 }
 
-function ensureTimer() {
-  if (timerId != null) {
-    return;
-  }
-  timerId = createTimer(1000, 1000, () => {
-    paintAll();
-  });
-  console.log("FORREF_LIVE002 TIMER|paint!");
-}
-
-function stopClockTimer() {
-  if (timerId == null) {
-    return;
-  }
-  stopTimer(timerId);
-  timerId = null;
-  console.log("FORREF_LIVE002 TIMER|stop!");
-}
-
 Page({
   onInit() {
     console.log("FORREF_PAGE live onInit");
@@ -268,13 +253,21 @@ Page({
     bindBack(false);
     bootLive();
     shell = null;
+    if (unbindPaint) {
+      unbindPaint();
+    }
+    unbindPaint = bindLivePaint(function (view) {
+      return paintAll(view);
+    });
     paintAll();
-    stopClockTimer();
-    ensureTimer();
+    restartForegroundClock();
   },
   onDestroy() {
     leave("exit");
-    stopClockTimer();
+    if (unbindPaint) {
+      unbindPaint();
+      unbindPaint = null;
+    }
     persistLive();
     shell = null;
     clear();
