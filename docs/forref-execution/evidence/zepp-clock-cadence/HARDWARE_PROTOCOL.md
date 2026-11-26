@@ -2,7 +2,7 @@
 
 State: **NOT TESTED**. Fill every row on a physical Amazfit Bip 6. Cloud tests do not paint the watch face.
 
-App id `29566`, version `1.0.12` (code 12). Install the preview named in `CADENCE_PREVIEW_QR.txt` after this file is updated with that package. The previous `1.0.11` package is the build that still has two 1-second timers.
+App id `29566`, version `1.0.12` (code 12). This cloud run did not produce an installable package: Zeus CLI 1.10.0 opened a Zepp login page and this environment has no saved session. Build the preview from this commit on a logged-in machine with `zeus preview -t "Amazfit Bip 6"`, then install that package. The previous `1.0.11` package is the build that still has two 1-second timers.
 
 ## What to record
 

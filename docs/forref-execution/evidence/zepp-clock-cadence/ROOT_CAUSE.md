@@ -28,7 +28,7 @@ The gap is 2005 ms and the drawn second jumps by 2. The next lines return to abo
 
 ## How the patch tells the two failures apart
 
-Each foreground tick logs:
+Each foreground tick logs one line. `utc` is `Time.getTime()` at the start of the callback. `dt` is the gap since the previous callback. `prepareMs` is the admission time with the slot write removed. `commitMs` is that slot write (`0` when a healthy segment is not rewritten). `paintMs` is `paintDigits()`.
 
 ```
 FORREF_CLOCK_CADENCE utc=… dt=… prev=… now=… step=… prepareMs=… commitMs=… paintMs=… timers=1

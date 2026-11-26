@@ -4,10 +4,14 @@
 // can resume on the opposite phase and then update the digits every 2 s.
 
 import { createTimer, stopTimer } from "@zos/timer";
+import { deviceNow } from "./clock_device";
 import { sampleFromScheduler } from "./live_session";
-import { createForegroundHost } from "./clock_cadence.js";
+import { createForegroundHost } from "./clock_cadence";
 
 const host = createForegroundHost({
+  utc: function () {
+    return deviceNow();
+  },
   now: function () {
     return Date.now();
   },

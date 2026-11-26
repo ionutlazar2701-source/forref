@@ -120,6 +120,7 @@ export function createForegroundHost(io) {
   let previous = null;
 
   function tick() {
+    const utc = io.utc ? io.utc() : io.now();
     const started = io.now();
     let sampled = null;
     try {
@@ -128,7 +129,9 @@ export function createForegroundHost(io) {
       io.log("FORREF_CLOCK_FG src=fg reason=UNAVAILABLE");
       return;
     }
-    const prepared = io.now();
+    const sampleMs = io.now() - started;
+    const commitMs = sampled && sampled.commitMs != null ? sampled.commitMs : null;
+    const paintStarted = io.now();
     let digits = sampled && sampled.digits ? sampled.digits : "";
     let paintMs = 0;
     if (listener) {
@@ -136,13 +139,13 @@ export function createForegroundHost(io) {
       if (painted && painted.digits != null) {
         digits = painted.digits;
       }
-      paintMs = painted && painted.paintMs != null ? painted.paintMs : io.now() - prepared;
+      paintMs = painted && painted.paintMs != null ? painted.paintMs : io.now() - paintStarted;
     }
     const current = {
-      utc: io.now(),
+      utc: utc,
       digits: digits,
-      prepareMs: prepared - started,
-      commitMs: sampled && sampled.commitMs != null ? sampled.commitMs : null,
+      prepareMs: commitMs == null ? sampleMs : sampleMs - commitMs,
+      commitMs: commitMs,
       paintMs: paintMs,
     };
     const row = noteCadence(previous, current);
