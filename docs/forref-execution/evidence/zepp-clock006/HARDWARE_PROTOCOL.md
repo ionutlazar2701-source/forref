@@ -1,6 +1,6 @@
 # CLOCK-006 Bip 6 protocol
 
-State: **NOT TESTED**. Install the 1.0.15 observe preview named in `CLOCK006_PREVIEW_QR.txt` after that file exists. Boot line `clock-006-observe`. The face warning "DIAGNOSTIC: phone-time callback. UTC assumed." means the callback was seen and the anchor was left in place. It does not mean the time is proven.
+State: **NOT TESTED**. Install `29566-FORREF-1.0.15-20261126220335.zab` (sha256 `b32f5ab7b06caa7bf85a50b4c34952896c6a078183386fcc5a390f8c258131a8`). The QR expires 4 Dec 2026, 00:03:38 Europe/Bucharest. Boot line `clock-006-observe`. The face warning "DIAGNOSTIC: phone-time callback. UTC assumed." means the callback was seen and the anchor was left in place. It does not mean the time is proven.
 
 Compare every row with an independent stopwatch. Copy the `FORREF_CLOCK006` lines. Do one action per row.
 

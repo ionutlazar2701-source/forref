@@ -1,0 +1,8 @@
+FORREF 1.0.15 CLOCK-006 observe
+package: 29566-FORREF-1.0.15-20261126220335.zab
+bytes: 312444
+sha256: b32f5ab7b06caa7bf85a50b4c34952896c6a078183386fcc5a390f8c258131a8
+url: zpkd1://api-mifit-de2.zepp.com/custom/tools/app-dial/download/yZtxqNeaivtHUrREzXfqJClxLbcXlIpa
+expires: 4 Dec 2026, 00:03:38 Europe/Bucharest (3 Dec 2026, 22:03:38 UTC)
+boot: clock-006-observe f78912447b452dcc117bd8cbdbbac7dbd4f5f76b
+hardware: NOT TESTED
