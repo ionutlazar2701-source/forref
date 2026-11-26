@@ -1,34 +1,42 @@
 // App-lifetime sampler. It is not owned by Live, Event, Player, or Review.
 // createTimer stops with the screen and with the app. It is not the screen-off clock.
+// Live paints from this one timer. A second createTimer(1000, 1000) on the page
+// can resume on the opposite phase and then update the digits every 2 s.
 
 import { createTimer, stopTimer } from "@zos/timer";
 import { sampleFromScheduler } from "./live_session";
+import { createForegroundHost } from "./clock_cadence.js";
 
-let timerId = null;
+const host = createForegroundHost({
+  now: function () {
+    return Date.now();
+  },
+  sample: function (source) {
+    return sampleFromScheduler(source);
+  },
+  arm: function (run) {
+    return createTimer(1000, 1000, run);
+  },
+  disarm: function (id) {
+    stopTimer(id);
+  },
+  log: function (line) {
+    console.log(line);
+  },
+});
 
 export function startForegroundClock() {
-  if (timerId != null) {
-    return;
-  }
-  timerId = createTimer(1000, 1000, function () {
-    try {
-      sampleFromScheduler("fg");
-    } catch (err) {
-      console.log("FORREF_CLOCK_FG src=fg reason=UNAVAILABLE");
-    }
-  });
-  console.log("FORREF_CLOCK_FG timer=on");
+  return host.start();
 }
 
 export function stopForegroundClock() {
-  if (timerId == null) {
-    return;
-  }
-  try {
-    stopTimer(timerId);
-  } catch (err) {
-    console.log("FORREF_CLOCK_FG timer-stop=fail");
-  }
-  timerId = null;
-  console.log("FORREF_CLOCK_FG timer=off");
+  host.stop();
+}
+
+export function restartForegroundClock() {
+  return host.restart();
+}
+
+export function bindLivePaint(fn) {
+  return host.bind(fn);
 }

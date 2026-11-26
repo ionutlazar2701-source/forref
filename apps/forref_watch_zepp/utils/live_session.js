@@ -164,8 +164,11 @@ function admitObserved(before, utc, epoch, source) {
   const frame = liveFrame(observedBase(before, utc), utc, epoch);
   rememberSession(frame.session);
   let saved = { ok: true, reason: "HELD" };
+  let commitMs = 0;
   if (!frame.admitted || frame.reason === "TICK") {
+    const commitStarted = Date.now();
     saved = isUtcSegment(frame.session) ? commitSegment(segmentAdapter(), frame.session) : commitForward(deviceAdapter(), frame.session);
+    commitMs = Date.now() - commitStarted;
     if ((saved.reason === "KEPT_NEWER" || saved.reason === "KEPT_HOLD") && saved.session) {
       rememberSession(saved.session);
     } else if (!frame.admitted && saved.ok) {
@@ -214,8 +217,11 @@ function admitObserved(before, utc, epoch, source) {
       " step=" +
       step +
       " screen=" +
-      screen
+      screen +
+      " commitMs=" +
+      commitMs
   );
+  frame.view.commitMs = commitMs;
   armClockService(frame.session);
   recordWitness(function (witness) {
     let next = noteAdmit(noteHost(witness, clockHostSnapshot()), frame.reason);
