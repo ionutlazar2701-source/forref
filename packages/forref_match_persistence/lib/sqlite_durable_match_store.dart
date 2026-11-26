@@ -56,6 +56,41 @@ final class GenerationOneRootCommitFailure
   final String reason;
 }
 
+/// Phone-side watch provision stage. Not a sporting record and not Saved.
+final class WatchProvisionPhoneStage {
+  const WatchProvisionPhoneStage({
+    required this.matchId,
+    required this.canonical,
+    required this.contentHash,
+    required this.stage,
+    required this.writerDeviceId,
+    required this.principalId,
+  });
+
+  final String matchId;
+  final String canonical;
+  final String contentHash;
+  final String stage;
+  final String writerDeviceId;
+  final String principalId;
+}
+
+sealed class WatchProvisionStageWrite {
+  const WatchProvisionStageWrite();
+}
+
+final class WatchProvisionStageSaved extends WatchProvisionStageWrite {
+  const WatchProvisionStageSaved(this.stage);
+
+  final WatchProvisionPhoneStage stage;
+}
+
+final class WatchProvisionStageRefused extends WatchProvisionStageWrite {
+  const WatchProvisionStageRefused(this.reason);
+
+  final String reason;
+}
+
 /// File-backed append-only Match Memory.
 ///
 /// **D1 boundary used by this adapter**
@@ -193,6 +228,16 @@ final class SqliteDurableMatchStore
         principal_id TEXT NOT NULL,
         device_id TEXT NOT NULL,
         generation INTEGER NOT NULL CHECK (generation = 1)
+      )
+    ''');
+    _db.execute('''
+      CREATE TABLE IF NOT EXISTS watch_provision_stages (
+        match_id TEXT PRIMARY KEY,
+        canonical TEXT NOT NULL,
+        content_hash TEXT NOT NULL,
+        stage TEXT NOT NULL,
+        writer_device_id TEXT NOT NULL,
+        principal_id TEXT NOT NULL
       )
     ''');
   }
@@ -382,6 +427,35 @@ final class SqliteDurableMatchStore
     return _serialized(() async => _readGenerationOneAuthorityRoot(matchId));
   }
 
+  /// Prepared watch provision. This row is not an authority root.
+  Future<WatchProvisionPhoneStage?> readWatchProvisionStage(String matchId) {
+    return _serialized(() async => _readWatchProvisionStageLocked(matchId));
+  }
+
+  /// Stores CONFIG_PREPARED. Does not insert a generation-1 root.
+  Future<WatchProvisionStageWrite> saveWatchProvisionPrepared(
+    WatchProvisionPhoneStage stage,
+  ) {
+    return _serialized(() async => _saveWatchProvisionPrepared(stage));
+  }
+
+  /// Inserts the watch root and marks PHONE_AUTHORITY_LOCKED in one transaction.
+  Future<GenerationOneRootCommitResult> lockPreparedWatchAuthority({
+    required String matchId,
+    required String contentHash,
+    required String writerDeviceId,
+    required String principalId,
+  }) {
+    return _serialized(
+      () async => _lockPreparedWatchAuthority(
+        matchId: matchId,
+        contentHash: contentHash,
+        writerDeviceId: writerDeviceId,
+        principalId: principalId,
+      ),
+    );
+  }
+
   /// Committed records for [matchId], including quarantined row ids when present.
   Future<CommittedMatchMemorySnapshot> readCommittedForMatchWithQuarantine(
     String matchId,
@@ -413,6 +487,11 @@ final class SqliteDurableMatchStore
   }) {
     _db.execute('BEGIN IMMEDIATE');
     try {
+      final reserved = _rejectReservedWatchProvision(
+        matchId: request.matchId,
+        failureRecordId: request.recordId,
+      );
+      if (reserved != null) return reserved;
       final admissionEarly = _captureIntentAdmissionBeforeInsert(
         matchId: request.matchId,
         originDeviceId: request.originDeviceId,
@@ -471,6 +550,11 @@ final class SqliteDurableMatchStore
 
     _db.execute('BEGIN IMMEDIATE');
     try {
+      final reserved = _rejectReservedWatchProvision(
+        matchId: record.matchId,
+        failureRecordId: record.recordId,
+      );
+      if (reserved != null) return reserved;
       return _insertCommittedRecord(record);
     } catch (error) {
       _rollbackIfNeeded();
@@ -687,6 +771,140 @@ final class SqliteDurableMatchStore
     );
   }
 
+  WatchProvisionPhoneStage? _readWatchProvisionStageLocked(String matchId) {
+    final rows = _db.select(
+      '''
+      SELECT canonical, content_hash, stage, writer_device_id, principal_id
+      FROM watch_provision_stages
+      WHERE match_id = ?
+      ''',
+      [matchId],
+    );
+    if (rows.isEmpty) return null;
+    final row = rows.first;
+    return WatchProvisionPhoneStage(
+      matchId: matchId,
+      canonical: row.columnAt(0) as String,
+      contentHash: row.columnAt(1) as String,
+      stage: row.columnAt(2) as String,
+      writerDeviceId: row.columnAt(3) as String,
+      principalId: row.columnAt(4) as String,
+    );
+  }
+
+  WatchProvisionStageWrite _saveWatchProvisionPrepared(
+    WatchProvisionPhoneStage stage,
+  ) {
+    if (stage.stage != 'CONFIG_PREPARED') {
+      return const WatchProvisionStageRefused('stage');
+    }
+    _db.execute('BEGIN IMMEDIATE');
+    try {
+      final existing = _readWatchProvisionStageLocked(stage.matchId);
+      if (existing != null) {
+        if (existing.contentHash == stage.contentHash &&
+            existing.writerDeviceId == stage.writerDeviceId &&
+            existing.principalId == stage.principalId) {
+          _commitTransaction();
+          return WatchProvisionStageSaved(existing);
+        }
+        _db.execute('ROLLBACK');
+        return const WatchProvisionStageRefused('prepared-conflict');
+      }
+      final root = _readGenerationOneAuthorityRootLocked(stage.matchId);
+      if (root != null &&
+          (root.deviceId != stage.writerDeviceId ||
+              root.principalId != stage.principalId)) {
+        _db.execute('ROLLBACK');
+        return const WatchProvisionStageRefused('root-conflict');
+      }
+      _db.execute(
+        '''
+        INSERT INTO watch_provision_stages (
+          match_id, canonical, content_hash, stage, writer_device_id, principal_id
+        ) VALUES (?, ?, ?, ?, ?, ?)
+        ''',
+        [
+          stage.matchId,
+          stage.canonical,
+          stage.contentHash,
+          'CONFIG_PREPARED',
+          stage.writerDeviceId,
+          stage.principalId,
+        ],
+      );
+      _commitTransaction();
+      return WatchProvisionStageSaved(stage);
+    } catch (error) {
+      _rollbackIfNeeded();
+      return WatchProvisionStageRefused('prepare aborted: $error');
+    }
+  }
+
+  GenerationOneRootCommitResult _lockPreparedWatchAuthority({
+    required String matchId,
+    required String contentHash,
+    required String writerDeviceId,
+    required String principalId,
+  }) {
+    _db.execute('BEGIN IMMEDIATE');
+    try {
+      final stage = _readWatchProvisionStageLocked(matchId);
+      if (stage == null ||
+          stage.contentHash != contentHash ||
+          stage.writerDeviceId != writerDeviceId ||
+          stage.principalId != principalId) {
+        _db.execute('ROLLBACK');
+        return const GenerationOneRootCommitFailure(
+          reason: 'prepared watch provision does not match the lock',
+        );
+      }
+      final root = _readGenerationOneAuthorityRootLocked(matchId);
+      if (root != null &&
+          (root.deviceId != writerDeviceId ||
+              root.principalId != principalId)) {
+        _db.execute('ROLLBACK');
+        return const GenerationOneRootCommitFailure(
+          reason:
+              'generation-1 root conflict: match already has a different root',
+        );
+      }
+      if (_matchHasCommittedRecordsLocked(matchId)) {
+        _db.execute('ROLLBACK');
+        return const GenerationOneRootCommitFailure(
+          reason: 'existing phone-authoritative history',
+        );
+      }
+      if (root == null) {
+        _db.execute(
+          '''
+          INSERT INTO generation_one_authority_roots (
+            match_id, principal_id, device_id, generation
+          ) VALUES (?, ?, ?, 1)
+          ''',
+          [matchId, principalId, writerDeviceId],
+        );
+      }
+      _db.execute(
+        '''
+        UPDATE watch_provision_stages
+        SET stage = ?
+        WHERE match_id = ?
+        ''',
+        ['PHONE_AUTHORITY_LOCKED', matchId],
+      );
+      _commitTransaction();
+      return const GenerationOneRootCommitSuccess(
+        diagnostics: 'phone authority locked for the watch writer',
+      );
+    } catch (error) {
+      _rollbackIfNeeded();
+      return GenerationOneRootCommitFailure(
+        reason: 'phone authority lock aborted: $error',
+      );
+    }
+  }
+
   GenerationOneRootCommitResult _commitGenerationOneAuthorityRoot(
     GenerationOneAuthorityRoot root,
   ) {
@@ -763,6 +981,19 @@ final class SqliteDurableMatchStore
       matchId: matchId,
       principalId: row.columnAt(0) as String,
       deviceId: row.columnAt(1) as String,
+    );
+  }
+
+  DurableCommitResult? _rejectReservedWatchProvision({
+    required String matchId,
+    required String failureRecordId,
+  }) {
+    final stage = _readWatchProvisionStageLocked(matchId);
+    if (stage == null) return null;
+    _db.execute('ROLLBACK');
+    return DurableCommitFailure(
+      recordId: failureRecordId,
+      reason: 'watch provision reserves this match; phone is not the writer',
     );
   }
 
@@ -876,9 +1107,8 @@ final class SqliteDurableMatchStore
         semanticTypeWire: V1SemanticTypeCode.yellowCard.wireValue,
         authorityPrincipalId: principalId,
         authorityGeneration: generation,
-        participantId: subject is ParticipantDisciplinarySubject
-            ? subject.rawId
-            : null,
+        participantId:
+            subject is ParticipantDisciplinarySubject ? subject.rawId : null,
         accountingScope: payload.accountingScope.wireValue,
         subjectKind: subject.kind.wireValue,
         subjectId: subject.rawId,
@@ -891,9 +1121,8 @@ final class SqliteDurableMatchStore
         semanticTypeWire: V1SemanticTypeCode.sendOff.wireValue,
         authorityPrincipalId: principalId,
         authorityGeneration: generation,
-        participantId: subject is ParticipantDisciplinarySubject
-            ? subject.rawId
-            : null,
+        participantId:
+            subject is ParticipantDisciplinarySubject ? subject.rawId : null,
         accountingScope: payload.disciplinaryScope.wireValue,
         subjectKind: subject.kind.wireValue,
         subjectId: subject.rawId,
@@ -989,7 +1218,8 @@ final class SqliteDurableMatchStore
     );
   }
 
-  List<MatchParticipantTeamBinding> _readParticipantTeamBindings(String matchId) {
+  List<MatchParticipantTeamBinding> _readParticipantTeamBindings(
+      String matchId) {
     final rows = _db.select(
       '''
       SELECT participant_id, team_id FROM participant_team_bindings
