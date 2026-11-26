@@ -6,6 +6,7 @@ import {
   createForegroundHost,
   displayedSeconds,
   formatCadence,
+  nextTimerDelay,
   noteCadence,
   oppositePhaseGaps,
 } from "../utils/clock_cadence.js";
@@ -145,7 +146,12 @@ test("Live no longer owns a second 1 second timer", () => {
   assert.equal(live.includes("createTimer"), false);
   assert.equal(live.includes("bindLivePaint"), true);
   assert.equal(live.includes("restartForegroundClock"), true);
-  assert.equal(foreground.includes("createTimer(1000, 1000, run)"), true);
+  assert.equal(foreground.includes("createTimer(delay, 1000, run)"), true);
+  assert.equal(foreground.includes("nextTimerDelay"), true);
+  assert.equal(nextTimerDelay(1000, 1000), 1000);
+  assert.equal(nextTimerDelay(1500, 1000), 500);
+  assert.equal(nextTimerDelay(1960, 1000), 1040);
+  assert.equal(nextTimerDelay(null, 1000), 1000);
   assert.equal(foreground.includes("sampleFromScheduler"), true);
 });
 

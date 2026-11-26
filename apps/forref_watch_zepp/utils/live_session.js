@@ -223,13 +223,17 @@ function admitObserved(before, utc, epoch, source) {
   );
   frame.view.commitMs = commitMs;
   armClockService(frame.session);
-  recordWitness(function (witness) {
-    let next = noteAdmit(noteHost(witness, clockHostSnapshot()), frame.reason);
-    if (frame.reason === "TICK" && saved.ok) {
-      next = noteForegroundCheckpoint(next, shown);
-    }
-    return next;
-  }, utc);
+  // A healthy projection does not rewrite the witness file. That write is
+  // synchronous flash IO on the 1-second callback and was stretching the tick.
+  if (frame.reason !== "UTC_ASSUMED" && frame.reason !== "HELD") {
+    recordWitness(function (witness) {
+      let next = noteAdmit(noteHost(witness, clockHostSnapshot()), frame.reason);
+      if (frame.reason === "TICK" && saved.ok) {
+        next = noteForegroundCheckpoint(next, shown);
+      }
+      return next;
+    }, utc);
+  }
   return frame;
 }
 

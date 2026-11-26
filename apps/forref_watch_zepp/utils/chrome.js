@@ -98,6 +98,14 @@ export function paintBase(m) {
   );
 }
 
+export function setWidgetText(node, value) {
+  if (!node || typeof node.setProperty !== "function" || !hmUI.prop || hmUI.prop.TEXT == null) {
+    return false;
+  }
+  node.setProperty(hmUI.prop.TEXT, value);
+  return true;
+}
+
 export function textAt(x, y, w, h, value, size, color, digits) {
   const node = hmUI.createWidget(hmUI.widget.TEXT, {
     x: x,

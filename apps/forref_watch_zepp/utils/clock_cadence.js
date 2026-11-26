@@ -114,6 +114,20 @@ export function oppositePhaseGaps(period, ticks) {
   return gaps;
 }
 
+// First wake lands on the next UTC second. The repeat stays one second.
+// A delay under 80 ms waits one more second so two paints do not share a second.
+export function nextTimerDelay(utc, period) {
+  const span = period || 1000;
+  if (utc == null || !isFinite(utc)) {
+    return span;
+  }
+  const remain = span - (utc % span);
+  if (remain < 80) {
+    return remain + span;
+  }
+  return remain;
+}
+
 export function createForegroundHost(io) {
   let timerId = null;
   let listener = null;
@@ -157,7 +171,8 @@ export function createForegroundHost(io) {
     if (timerId != null) {
       return timerId;
     }
-    timerId = io.arm(tick);
+    const delay = io.delay ? io.delay() : 1000;
+    timerId = io.arm(tick, delay);
     io.log("FORREF_CLOCK_FG timer=on");
     return timerId;
   }
