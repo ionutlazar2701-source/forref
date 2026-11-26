@@ -1,7 +1,14 @@
 import { push } from "@zos/router";
-import { logDevice, bindBack, stack } from "../../../utils/chrome";
+import { logDevice, bindBack, clear, paintBase, textAt, zoneButton, rule } from "../../../utils/chrome";
+import { layoutHome } from "../../../utils/geometry";
 import { t, language } from "../../../utils/text";
-import { TEXT_SECONDARY } from "../../../utils/theme";
+import { ACCENT, TEXT_PRIMARY, TEXT_SECONDARY } from "../../../utils/theme";
+
+function paintZone(m, lay, zone, lines, title, body, onClick, name) {
+  zoneButton(zone.x, zone.y, zone.w, zone.h, onClick, name, m);
+  textAt(lines.title.x, lines.title.y, lines.title.w, lines.title.h, title, lay.titleSize, TEXT_PRIMARY);
+  textAt(lines.subtitle.x, lines.subtitle.y, lines.subtitle.w, lines.subtitle.h, body, lay.subtitleSize, TEXT_SECONDARY);
+}
 
 Page({
   onInit() {
@@ -10,14 +17,15 @@ Page({
   build() {
     const m = logDevice("home");
     bindBack(true);
-    stack(m, t("app"), [
-      {
-        label: m.width + "×" + m.height + " " + m.shapeName + " src " + m.deviceSource,
-      },
-      { label: "keys " + m.keyNumber + " " + m.keyType, color: TEXT_SECONDARY },
-      { label: t("officiate"), action: () => push({ url: "page/gt/select/index.page" }), fill: "primary" },
-      { label: t("train"), action: () => push({ url: "page/gt/train/index.page" }) },
-      { label: t("settings"), action: () => push({ url: "page/gt/settings/index.page" }) },
-    ]);
+    clear();
+    paintBase(m);
+    const lay = layoutHome(m);
+    paintZone(m, lay, lay.upper, lay.upperText, t("officiate"), t("officiateBody"), function () {
+      push({ url: "page/gt/select/index.page" });
+    }, "home-officiate");
+    paintZone(m, lay, lay.lower, lay.lowerText, t("train"), t("trainHint"), function () {
+      push({ url: "page/gt/train/index.page" });
+    }, "home-train");
+    rule(lay.divider.x, lay.divider.y, lay.divider.w, lay.divider.h, ACCENT);
   },
 });

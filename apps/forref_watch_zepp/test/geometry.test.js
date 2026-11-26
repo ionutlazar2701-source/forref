@@ -6,6 +6,7 @@ import {
   layoutLive,
   layoutEvent,
   layoutClock,
+  layoutHome,
   controlsOk,
 } from "../utils/geometry.js";
 
@@ -79,6 +80,25 @@ for (let actions = 1; actions <= 2; actions++) {
   assert(clockRect.status.y >= SQUARE_STATUS_BAR, "rect clock below status bar");
   assert(clockRound.time.h >= 64, "round clock time stays glanceable");
 }
+
+const homeRound = layoutHome(round);
+const homeRect = layoutHome(rect);
+assert(homeRound.upper.w === homeRound.lower.w && homeRound.upper.w === 456, "round zones share the 456 frame width");
+assert(homeRound.upper.h === 227 && homeRound.lower.h === 228, "round halves are the 227.5 frame, split on a pixel");
+assert(homeRound.divider.y === 239 && homeRound.divider.h === 1 && homeRound.divider.w === 456, "round divider");
+assert(homeRound.titleSize === 32 && homeRound.subtitleSize === 20, "round type matches the frame");
+assert(homeRound.upperText.title.y === 88 && homeRound.upperText.subtitle.y === 136, "round upper type block");
+assert(homeRound.lowerText.title.y === 316 && homeRound.lowerText.subtitle.y === 364, "round lower type block");
+assert(homeRound.upperText.title.h === 40 && homeRound.upperText.subtitle.h === 28, "round line boxes");
+assert(Math.abs(homeRect.upper.h - homeRect.lower.h) <= 1, "rect halves stay equal");
+assert(homeRect.upper.y === SQUARE_STATUS_BAR, "rect home starts under the status bar");
+assert(homeRect.lower.y + homeRect.lower.h === rect.height - SAFE_MARGIN, "rect home keeps the bottom inset");
+assert(homeRect.upper.x === SAFE_MARGIN && homeRect.upper.w === 366, "rect side inset");
+assert(homeRect.divider.h === 1 && homeRect.divider.y === 250, "rect divider");
+assert(homeRect.titleSize === 26 && homeRect.subtitleSize === 16, "rect type keeps the 480 proportion");
+assert(inside(rect, homeRect.upper.x, homeRect.upper.y, homeRect.upper.w, homeRect.upper.h), "rect upper zone");
+assert(inside(rect, homeRect.lower.x, homeRect.lower.y, homeRect.lower.w, homeRect.lower.h), "rect lower zone");
+assert(!inside(round, homeRound.upper.x, homeRound.upper.y, homeRound.upper.w, homeRound.upper.h), "round full-bleed zone is clipped by the glass");
 
 console.log("FORREF_GEOMETRY_TEST pass margin=" + SAFE_MARGIN + " statusBar=" + SQUARE_STATUS_BAR);
 console.log("LIVE_C_ROUND " + JSON.stringify(layoutLive(round, "C")));

@@ -152,6 +152,42 @@ export function fullButton(m, label, y, h, onClick, fill) {
   return button(m.pad, y, m.contentW, h, label, onClick, fill);
 }
 
+// Full-bleed home zone. No radius, no label, canvas color in both states.
+// The title and subtitle are separate text widgets so their sizes can differ.
+export function zoneButton(x, y, w, h, onClick, name, info) {
+  const fit = info ? (inside(info, x, y, w, h) ? 1 : 0) : -1;
+  if (name) {
+    console.log("FORREF_HIT name=" + name + " x=" + x + " y=" + y + " w=" + w + " h=" + h + " fit=" + fit);
+  }
+  const node = hmUI.createWidget(hmUI.widget.BUTTON, {
+    x: x,
+    y: y,
+    w: w,
+    h: h,
+    radius: 0,
+    normal_color: CANVAS,
+    press_color: CANVAS,
+    color: TEXT_PRIMARY,
+    text: "",
+    text_size: 16,
+    click_func: onClick,
+  });
+  shellOwned.push(node);
+  return node;
+}
+
+export function rule(x, y, w, h, color) {
+  const node = hmUI.createWidget(hmUI.widget.FILL_RECT, {
+    x: x,
+    y: y,
+    w: w,
+    h: h,
+    color: color,
+  });
+  shellOwned.push(node);
+  return node;
+}
+
 export function bindBack(isRoot) {
   onKey({
     callback: (key, event) => {

@@ -207,6 +207,48 @@ export function layoutEvent(info) {
   };
 }
 
+// Home mode selection from the 480 round frame.
+// Two equal touch halves, a 1 px accent rule, and the title/subtitle block
+// centered in each half. Rectangular screens keep the status bar clear.
+export function layoutHome(info) {
+  const inset = SAFE_MARGIN;
+  const top = info.round ? inset : SQUARE_STATUS_BAR;
+  const bottom = info.height - inset;
+  const x = inset;
+  const w = info.width - inset * 2;
+  const dividerH = 1;
+  const span = bottom - top;
+  const dividerY = top + Math.floor((span - dividerH) / 2);
+  const upper = { x: x, y: top, w: w, h: dividerY - top };
+  const lower = { x: x, y: dividerY + dividerH, w: w, h: bottom - (dividerY + dividerH) };
+  const scale = info.width / 480;
+  const titleLine = Math.round(40 * scale);
+  const subtitleLine = Math.round(28 * scale);
+  const gap = Math.round(8 * scale);
+  const textPad = Math.round(16 * scale);
+  const titleSize = Math.round(32 * scale);
+  const subtitleSize = Math.round(20 * scale);
+  const block = titleLine + gap + subtitleLine;
+  function lines(zone) {
+    const blockY = zone.y + Math.round((zone.h - block) / 2);
+    const textX = zone.x + textPad;
+    const textW = zone.w - textPad * 2;
+    return {
+      title: { x: textX, y: blockY, w: textW, h: titleLine },
+      subtitle: { x: textX, y: blockY + titleLine + gap, w: textW, h: subtitleLine },
+    };
+  }
+  return {
+    upper: upper,
+    lower: lower,
+    divider: { x: x, y: dividerY, w: w, h: dividerH },
+    upperText: lines(upper),
+    lowerText: lines(lower),
+    titleSize: titleSize,
+    subtitleSize: subtitleSize,
+  };
+}
+
 export function controlsOk(bag) {
   const names = Object.keys(bag);
   for (let i = 0; i < names.length; i++) {
