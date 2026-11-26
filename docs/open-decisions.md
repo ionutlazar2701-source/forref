@@ -18,7 +18,7 @@ Agents must **not** invent answers here. If a task needs one of these, stop and 
 
 ## Still open
 
-- **Visual design** (and design system). Do not draw screens until asked. Do not adapt to watch until asked.
+- **Visual design** (and design system). Do not draw screens until asked. Do not adapt to watch until asked. When a watch screen is asked for from Figma, the file-prep checklist is [figma-watch-requirements.md](figma-watch-requirements.md).
 - **Pause extra confirm** — only if real matches prove accidental pauses.
 - **Firebase project / Google account / environment names** (ops, not schema).
 - **Storefront price points** except the frozen RO euro table in [pricing.md](pricing.md); billing provider accounts; paid-launch date; promo / team SKUs.
