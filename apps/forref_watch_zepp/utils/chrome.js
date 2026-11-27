@@ -5,6 +5,7 @@ import { back } from "@zos/router";
 import { SQUARE_STATUS_BAR, SAFE_MARGIN, inside, layoutStack } from "./geometry";
 import { localeChoice } from "./text";
 import { ACCENT, CANVAS, TEXT_PRIMARY, styleFor } from "./theme";
+import { installationLineSize } from "./installation_label";
 
 const shellOwned = [];
 const digitOwned = [];
@@ -221,7 +222,8 @@ export function stack(m, title, rows) {
     if (row.action) {
       button(slot.x, slot.y, slot.w, slot.h, row.label, row.action, row.fill, row.name || "stack-" + index, m);
     } else {
-      textAt(slot.x, slot.y, slot.w, slot.h, row.label, Math.round(m.width * 0.038), row.color || TEXT_PRIMARY);
+      const size = row.fitText ? installationLineSize(slot.w, slot.h, row.label) : Math.round(m.width * 0.038);
+      textAt(slot.x, slot.y, slot.w, slot.h, row.label, size, row.color || TEXT_PRIMARY);
     }
   });
 }

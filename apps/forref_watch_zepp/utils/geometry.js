@@ -207,9 +207,8 @@ export function layoutEvent(info) {
   };
 }
 
-// Home mode selection from the 480 round frame.
-// Two equal touch halves, a 1 px accent rule, and the title/subtitle block
-// centered in each half. Rectangular screens keep the status bar clear.
+// Home mode selection. Three touch bands: officiate, training, settings.
+// A 1 px accent rule separates each band. Rectangular screens keep the status bar clear.
 export function layoutHome(info) {
   const inset = SAFE_MARGIN;
   const top = info.round ? inset : SQUARE_STATUS_BAR;
@@ -218,9 +217,15 @@ export function layoutHome(info) {
   const w = info.width - inset * 2;
   const dividerH = 1;
   const span = bottom - top;
-  const dividerY = top + Math.floor((span - dividerH) / 2);
-  const upper = { x: x, y: top, w: w, h: dividerY - top };
-  const lower = { x: x, y: dividerY + dividerH, w: w, h: bottom - (dividerY + dividerH) };
+  const content = span - dividerH * 2;
+  const base = Math.floor(content / 3);
+  const extra = content - base * 3;
+  const heights = [base, base, base + extra];
+  const upper = { x: x, y: top, w: w, h: heights[0] };
+  const dividerY = upper.y + upper.h;
+  const middle = { x: x, y: dividerY + dividerH, w: w, h: heights[1] };
+  const dividerLowerY = middle.y + middle.h;
+  const lower = { x: x, y: dividerLowerY + dividerH, w: w, h: heights[2] };
   const scale = info.width / 480;
   const titleLine = Math.round(40 * scale);
   const subtitleLine = Math.round(28 * scale);
@@ -240,9 +245,12 @@ export function layoutHome(info) {
   }
   return {
     upper: upper,
+    middle: middle,
     lower: lower,
     divider: { x: x, y: dividerY, w: w, h: dividerH },
+    dividerLower: { x: x, y: dividerLowerY, w: w, h: dividerH },
     upperText: lines(upper),
+    middleText: lines(middle),
     lowerText: lines(lower),
     titleSize: titleSize,
     subtitleSize: subtitleSize,

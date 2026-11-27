@@ -8,6 +8,7 @@ import { readStoredText } from "../../../utils/goal_journal";
 import { createFileProvisionStore } from "../../../utils/provision_transport";
 import { createWatchProvisionAdmission } from "../../../utils/watch_provision";
 import { PROVISION_CORRELATION_FILE, PROVISION_PAGE_TIMEOUT_MS, runHandshake } from "../../../utils/provision_bridge";
+import { provisionIdentityRows } from "../../../utils/installation_label";
 import { t } from "../../../utils/text";
 import { TEXT_WARNING } from "../../../utils/theme";
 
@@ -63,23 +64,26 @@ Page(
       const m = logDevice("provision");
       clear();
       const view = this._view;
-      const rows = [];
-      if (!view) {
-        rows.push({ label: t("installationMissing"), color: TEXT_WARNING });
-      } else {
-        rows.push({ label: view.installationId || t("installationMissing") });
-        rows.push({ label: stageLabel(view.stage), color: TEXT_WARNING });
-        rows.push({ label: view.matchId || t("provisionMatch") });
-        rows.push({ label: (view.homeName || "—") + " — " + (view.awayName || "—") });
-        rows.push({ label: t("provisionTransport") + " " + (view.transport || view.reason || "") });
+      if (view && view.installationId) {
+        console.log("FORREF_PROVISION installation=" + view.installationId);
       }
-      rows.push({ label: t("d1Uncertified"), color: TEXT_WARNING });
-      rows.push({
-        label: t("provision"),
-        action: () => this.start(),
-        name: "provision-start",
+      const spec = provisionIdentityRows(view, {
+        missing: t("installationMissing"),
+        stage: view ? stageLabel(view.stage) : t("stageNone"),
+        match: (view && view.matchId) || t("provisionMatch"),
+        teams: ((view && view.homeName) || "—") + " — " + ((view && view.awayName) || "—"),
+        transport: t("provisionTransport") + " " + ((view && (view.transport || view.reason)) || ""),
+        d1: t("d1Uncertified"),
+        provision: t("provision"),
+        back: t("back"),
       });
-      rows.push({ label: t("back"), action: () => back(), name: "provision-back" });
+      const rows = spec.map((row) => {
+        const painted = { label: row.label, name: row.name, fitText: row.fitText };
+        if (row.warning) painted.color = TEXT_WARNING;
+        if (row.action === "start") painted.action = () => this.start();
+        if (row.action === "back") painted.action = () => back();
+        return painted;
+      });
       stack(m, t("provision"), rows);
     },
     start() {
