@@ -12,7 +12,7 @@ import {
   resolveInstallationCard,
   splitInstallationId,
 } from "../../../utils/installation_label";
-import { messagingReady, prepareInstallation } from "../../../utils/provision_identity";
+import { prepareInstallation, readDeviceMessaging } from "../../../utils/provision_identity";
 import { t } from "../../../utils/text";
 import { ACCENT, TEXT_PRIMARY, TEXT_WARNING } from "../../../utils/theme";
 
@@ -41,9 +41,7 @@ function readMessaging() {
   try {
     const lookup = globalThis.getApp;
     const app = typeof lookup === "function" ? lookup() : null;
-    const data = app && app._options && app._options.globalData;
-    if (!messagingReady(data)) return null;
-    return data.messaging;
+    return readDeviceMessaging(app);
   } catch (err) {
     console.log("FORREF_PROVISION tx=recover reason=messaging detail=" + detail(err));
     return null;

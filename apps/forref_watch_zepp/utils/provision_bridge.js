@@ -549,3 +549,49 @@ async function runHandshakeBody(deps, installation) {
     durable: true,
   };
 }
+
+// Side service request. The device page calls messaging.request. This posts
+// that message to the phone debug bridge and returns the reply body.
+export function dispatchSideRequest(req, fetchImpl, url) {
+  const endpoint = url || PROVISION_BRIDGE_URL;
+  const method = req && req.method ? req.method : "";
+  if (!isProvisionMethod(method)) {
+    console.log("FORREF_PROVISION tx=response method=" + method + " disposition=refused reason=method");
+    return Promise.resolve({ disposition: "refused", reason: "method", durable: false });
+  }
+  const body = sideFetchBody(method, (req && req.params) || {});
+  if (!body) {
+    console.log("FORREF_PROVISION tx=response method=" + method + " disposition=refused reason=message");
+    return Promise.resolve({ disposition: "refused", reason: "message", durable: false });
+  }
+  console.log(
+    "FORREF_PROVISION tx=request method=" + method +
+      " installation=" + body.installationId +
+      " request=" + body.requestId +
+      " match=" + (body.matchId || "") +
+      " hash=" + (body.contentHash || ""),
+  );
+  return fetchWithDeadline(() => fetchImpl({
+    url: endpoint,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }), PROVISION_DEADLINE_MS).then((response) => readTransportPayload(response)).then((normalized) => {
+    const disposition = normalized && normalized.ok
+      ? normalized.disposition
+      : normalized && normalized.disposition === "refused" ? "refused" : "unavailable";
+    const reason = normalized && normalized.reason ? normalized.reason : "";
+    console.log(
+      "FORREF_PROVISION tx=response method=" + method +
+        " http=" + (normalized && normalized.httpStatus != null ? normalized.httpStatus : "") +
+        " disposition=" + disposition +
+        " reason=" + reason,
+    );
+    if (normalized && normalized.ok) return normalized.body;
+    return { disposition: disposition, reason: reason || "unavailable", durable: false };
+  }).catch((err) => {
+    const reason = err && err.reason === "deadline" ? "deadline" : "unavailable";
+    console.log("FORREF_PROVISION tx=recover method=" + method + " reason=" + reason + " request=" + body.requestId);
+    return { disposition: "unavailable", reason: reason, durable: false };
+  });
+}

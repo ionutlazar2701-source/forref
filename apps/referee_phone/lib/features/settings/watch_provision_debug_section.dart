@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:forref_match_core/forref_match_core.dart';
 import 'package:match_core/match_core.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:referee_phone/app_scope.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
 import 'package:referee_phone/officiate/watch_provision_debug_bridge.dart';
@@ -39,11 +38,12 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
     final scope = AppScope.of(context);
     final boundary = scope.matchApplication;
     final identity = scope.captureIdentity;
+    final storage = scope.storageRoot;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ListTile(title: Text(l10n.watchProvisionTitle)),
-        if (boundary == null || identity == null)
+        if (boundary == null || identity == null || storage == null)
           ListTile(title: Text(l10n.watchProvisionUnavailable))
         else ...[
           Padding(
@@ -114,14 +114,14 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
     for (final item in _matches) {
       if (item.matchId == _matchId) match = item;
     }
-    final support = await getApplicationSupportDirectory();
-    if (!mounted) return;
+    final root = scope.storageRoot;
+    if (root == null || !mounted) return;
     final bridge = _bridge ??
         WatchProvisionDebugBridge(
           boundary: boundary,
           phoneOriginDeviceId: identity.originDeviceId,
           correlationFile: File(
-            '${support.path}/forref_watch_provision_correlation_v1.json',
+            '${root.path}/forref_watch_provision_correlation_v1.json',
           ),
         );
     _bridge = bridge;

@@ -13,6 +13,16 @@ export function messagingReady(globalData) {
   return true;
 }
 
+// Zepp pages read getApp()._options.globalData. BaseApp also assigns the same
+// object as this.globalData during onCreate. Accept either location.
+export function readDeviceMessaging(app) {
+  if (!app) return null;
+  const options = app._options && app._options.globalData;
+  if (messagingReady(options)) return options.messaging;
+  if (messagingReady(app.globalData)) return app.globalData.messaging;
+  return null;
+}
+
 export function prepareInstallation(store) {
   let existing;
   try {

@@ -166,8 +166,11 @@ test("the side module does not carry a fixture or the clock service", () => {
   assert.equal(side.includes("clock_service"), false);
   assert.equal(side.includes("team-alpha"), false);
   assert.equal(side.includes("MatchConfigurationPayload"), false);
-  assert.equal(side.includes("disposition: \"unavailable\""), true);
-  assert.equal(side.includes("fetchWithDeadline"), true);
+  assert.equal(side.includes("dispatchSideRequest"), true);
+  assert.equal(side.includes("this.fetch"), true);
+  const bridgeSource = readFileSync(new URL("../utils/provision_bridge.js", import.meta.url), "utf8");
+  assert.equal(bridgeSource.includes("disposition: \"unavailable\""), true);
+  assert.equal(bridgeSource.includes("fetchWithDeadline"), true);
   assert.equal(side.includes("timeout: 4000"), false);
   assert.equal(clock.includes("provision_bridge"), false);
   assert.equal(live.includes("runHandshake"), false);

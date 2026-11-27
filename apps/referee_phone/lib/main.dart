@@ -28,6 +28,7 @@ Future<void> main() async {
       captureIdentity: identity,
       matchCaptureContext: matchCaptureContext,
       temporalEvidence: temporalEvidence,
+      storageRoot: storageRoot,
     ),
   );
 }

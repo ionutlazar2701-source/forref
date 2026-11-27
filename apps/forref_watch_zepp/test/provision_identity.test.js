@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { messagingReady, prepareInstallation } from "../utils/provision_identity.js";
+import { messagingReady, prepareInstallation, readDeviceMessaging } from "../utils/provision_identity.js";
 import { resolveInstallationCard } from "../utils/installation_label.js";
 
 const installationId = "6f1e2d3c-4b5a-4678-9abc-def012345678";
@@ -28,12 +28,29 @@ function store(initial) {
   };
 }
 
-test("BasePage init throws when the app has no messaging object", () => {
+test("a plain globalData has no messaging until the device app attaches it", () => {
   const globalData = { demo: true };
   assert.equal(messagingReady(globalData), false);
   assert.throws(() => globalData.messaging.onCall(), TypeError);
-  assert.equal(app.includes("BaseApp"), false);
+  assert.equal(readDeviceMessaging({ _options: { globalData } }), null);
+  const messaging = {
+    onCall() {
+      return this;
+    },
+    request() {
+      return Promise.resolve(null);
+    },
+  };
+  globalData.messaging = messaging;
+  assert.equal(messagingReady(globalData), true);
+  assert.equal(readDeviceMessaging({ globalData }), messaging);
+  assert.equal(readDeviceMessaging({ _options: { globalData: { demo: true } }, globalData }), messaging);
+  assert.equal(app.includes("BaseApp"), true);
+  assert.equal(app.includes("openDeviceApp"), true);
+  assert.equal(app.includes("startForegroundClock"), true);
+  assert.equal(app.includes("setWakeUpRelaunch"), true);
   assert.equal(page.includes("BasePage"), false);
+  assert.equal(page.includes("readDeviceMessaging"), true);
   assert.equal(page.includes("prepareInstallation"), true);
   assert.equal(page.indexOf("prepareInstallation") < page.indexOf("runHandshake({"), true);
 });
