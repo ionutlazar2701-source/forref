@@ -242,6 +242,43 @@ void main() {
     expect(locked.rootToCommit, isNull);
   });
 
+  test('an existing root does not make an invalid receipt durable', () {
+    final facts = PhoneProvisionFacts(
+      committedSportingRecords: 0,
+      phoneOriginDeviceId: fixture['phoneOriginDeviceId']! as String,
+      rootDeviceId: fixture['localInstallationId']! as String,
+      rootPrincipalId: 'referee-001',
+    );
+    final invalid = decidePhoneAuthorityLock(
+      message: canonical,
+      facts: facts,
+      receipt: WatchConfigVerifiedReceipt(
+        contentHash: fixture['contentHash']! as String,
+        writerDeviceId: fixture['localInstallationId']! as String,
+        generation: 1,
+        readBack: false,
+      ),
+      transportAvailable: true,
+    );
+    expect(invalid.state, WatchProvisionState.configPrepared);
+    expect(invalid.reason, 'receipt-invalid');
+    expect(invalid.rootToCommit, isNull);
+    final repeated = decidePhoneAuthorityLock(
+      message: canonical,
+      facts: facts,
+      receipt: WatchConfigVerifiedReceipt(
+        contentHash: fixture['contentHash']! as String,
+        writerDeviceId: fixture['localInstallationId']! as String,
+        generation: 1,
+        readBack: true,
+      ),
+      transportAvailable: true,
+    );
+    expect(repeated.state, WatchProvisionState.phoneAuthorityLocked);
+    expect(repeated.reason, 'idempotent-lock');
+    expect(repeated.rootToCommit, isNull);
+  });
+
   test('activation never arrives so the watch cannot append', () {
     final store = MemoryWatchProvisionStore();
     final installation = fixture['localInstallationId']! as String;

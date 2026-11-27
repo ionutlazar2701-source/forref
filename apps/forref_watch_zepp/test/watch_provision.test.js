@@ -155,6 +155,33 @@ test("transport unavailable leaves the phone prepared and unlocked", () => {
   assert.equal(locked.rootToCommit, null);
 });
 
+test("an existing root does not make an invalid receipt durable", () => {
+  const facts = {
+    committedSportingRecords: 0,
+    phoneOriginDeviceId: fixture.phoneOriginDeviceId,
+    rootDeviceId: fixture.localInstallationId,
+    rootPrincipalId: "referee-001",
+  };
+  const invalid = decidePhoneAuthorityLock(canonical, facts, {
+    contentHash: fixture.contentHash,
+    writerDeviceId: fixture.localInstallationId,
+    generation: 1,
+    readBack: false,
+  }, true);
+  assert.equal(invalid.state, "CONFIG_PREPARED");
+  assert.equal(invalid.reason, "receipt-invalid");
+  assert.equal(invalid.rootToCommit, null);
+  const repeated = decidePhoneAuthorityLock(canonical, facts, {
+    contentHash: fixture.contentHash,
+    writerDeviceId: fixture.localInstallationId,
+    generation: 1,
+    readBack: true,
+  }, true);
+  assert.equal(repeated.state, "PHONE_AUTHORITY_LOCKED");
+  assert.equal(repeated.reason, "idempotent-lock");
+  assert.equal(repeated.rootToCommit, null);
+});
+
 test("activation never arrives so the watch cannot append", () => {
   const store = createMemoryProvisionStore();
   const admission = createWatchProvisionAdmission(store);

@@ -373,12 +373,21 @@ export function decidePhoneWatchProvision(message, facts) {
 
 export function decidePhoneAuthorityLock(message, facts, receipt, transportAvailable) {
   const prepared = decidePhoneWatchProvision(message, facts);
-  if (prepared.state === "AUTHORITY_CONFLICT" || prepared.state === "RECOVERY_REQUIRED" || prepared.state === "CONFIG_INVALID" || prepared.state === "PHONE_AUTHORITY_LOCKED") {
+  if (prepared.state === "AUTHORITY_CONFLICT" || prepared.state === "RECOVERY_REQUIRED" || prepared.state === "CONFIG_INVALID") {
     return prepared;
   }
-  if (!transportAvailable || !receipt || !receipt.readBack || receipt.generation !== 1) {
+  const rootAlreadyMatches = prepared.state === "PHONE_AUTHORITY_LOCKED";
+  if (!transportAvailable || !receipt) {
     return decision("CONFIG_PREPARED", ["CONFIG_PREPARED"], {
       reason: "transport-unavailable",
+      canonical: prepared.canonical,
+      contentHash: prepared.contentHash,
+    });
+  }
+  const usable = receipt.readBack === true && receipt.generation === 1 && typeof receipt.contentHash === "string" && receipt.contentHash !== "" && typeof receipt.writerDeviceId === "string" && receipt.writerDeviceId !== "";
+  if (!usable) {
+    return decision("CONFIG_PREPARED", ["CONFIG_PREPARED"], {
+      reason: "receipt-invalid",
       canonical: prepared.canonical,
       contentHash: prepared.contentHash,
     });
@@ -386,6 +395,13 @@ export function decidePhoneAuthorityLock(message, facts, receipt, transportAvail
   const document = parseWatchProvisionV1(message).document;
   if (!document || receipt.contentHash !== document.contentHash || receipt.writerDeviceId !== document.writerDeviceId) {
     return decision("AUTHORITY_CONFLICT", ["AUTHORITY_CONFLICT"], { reason: "receipt-mismatch" });
+  }
+  if (rootAlreadyMatches) {
+    return decision("PHONE_AUTHORITY_LOCKED", ["PHONE_AUTHORITY_LOCKED"], {
+      reason: "idempotent-lock",
+      canonical: document.canonical,
+      contentHash: document.contentHash,
+    });
   }
   return decision("PHONE_AUTHORITY_LOCKED", ["CONFIG_PREPARED", "PHONE_AUTHORITY_LOCKED"], {
     reason: "lock",

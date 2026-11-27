@@ -7,7 +7,7 @@ import { PROVISION_ADMISSION_FILE, PROVISION_ROOT_FILE } from "../../../utils/go
 import { readStoredText } from "../../../utils/goal_journal";
 import { createFileProvisionStore } from "../../../utils/provision_transport";
 import { createWatchProvisionAdmission } from "../../../utils/watch_provision";
-import { PROVISION_CORRELATION_FILE, runHandshake } from "../../../utils/provision_bridge";
+import { PROVISION_CORRELATION_FILE, PROVISION_PAGE_TIMEOUT_MS, runHandshake } from "../../../utils/provision_bridge";
 import { t } from "../../../utils/text";
 import { TEXT_WARNING } from "../../../utils/theme";
 
@@ -90,7 +90,7 @@ Page(
         loadInstallation: () => loadInstallationId(fileStore(INSTALLATION_FILE)),
         requestStore: fileStore(PROVISION_CORRELATION_FILE),
         admission: admission,
-        request: (message) => this.request(message),
+        request: (message) => this.request(message, { timeout: PROVISION_PAGE_TIMEOUT_MS }),
       }).then((view) => {
         this._view = view;
         console.log("FORREF_PROVISION outcome=" + (view.ok ? "WATCH_ACTIVATED_V1" : "REFUSED") + " reason=" + (view.reason || ""));
