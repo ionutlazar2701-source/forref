@@ -2,7 +2,11 @@
 
 State: **SOFTWARE PASS / HARDWARE GATE PENDING**. Not a Level 2 pass. The QR was not scanned here.
 
-Navigation build: functional commit `3a2f577e90b5bfe06e31851d5a6d8bccdfd2f25c`. Boot stamp `b7c498d`. Boot name `com-001-ui`. App `29566`, version `1.0.18` (code 18). Home keeps OFFICIATE and TRAINING and adds SETTINGS. SETTINGS → PROVISION paints the installation UUID as two 18-character lines before any phone request. `npm test`: 249 pass, 0 fail.
+Identity hotfix: functional commit `7d8a8fc623307ef7f0d26f141ca9ffa34ec14fe3`. Boot name `com-001-ui-hotfix`. App `29566`, version `1.0.19` (code 19). `npm test`: 254 pass, 0 fail.
+
+ZML 0.0.38 `BasePage` runs `globalData.messaging.onCall()` inside `onInit`, before the page `build`. The device app globalData is `{ demo: true }` and has no messaging object, so that call throws and the provision screen stays blank. The page is now a plain `Page`. It paints the stored UUID, or `INSTALLATION UNAVAILABLE`, before any handshake. A valid installation file is not rewritten. `1.0.18` reached the route and left this screen blank.
+
+Navigation build: functional commit `3a2f577e90b5bfe06e31851d5a6d8bccdfd2f25c`. Boot stamp `b7c498d`. Boot name `com-001-ui`. App `29566`, version `1.0.18` (code 18). Home keeps OFFICIATE and TRAINING and adds SETTINGS.
 
 Transport functional commit `9b662fbf1c4ee4f75ce01d05b215c1ac589cae34`. Boot stamp commit `f03e1d9d738d1abd9e6c9c989844d0c741df8d41`. Boot name `com-001`.
 
@@ -54,33 +58,33 @@ Logs are `FORREF_PROVISION` lines with `tx=request`, `tx=response`, `tx=transiti
 
 ## Diagnostic package
 
-Install `1.0.18`. Home → SETTINGS → PROVISION shows the installation UUID without a phone connection.
+Install `1.0.19`. Home → SETTINGS → PROVISION shows the installation UUID without a phone connection. The first console line on that page is `FORREF_PROVISION page=build`, then `device width=` `height=` `layout=` and `installation=` with the 36-character id. A storage failure logs `tx=recover` and draws `INSTALLATION UNAVAILABLE`.
 
-Zeus CLI 1.10.3, target Amazfit Bip 6, device sources `9765120`, `9765121`, `10158337`. App id `29566`, version `1.0.18` (code 18), boot `build=com-001-ui rev=3a2f577e90b5bfe06e31851d5a6d8bccdfd2f25c`. The preview package is `dist/29566-FORREF-1.0.18-20261127100800.zab` (361857 bytes, sha256 `38bae40d41a92d9c6aa426810adbc2406b263e69ae28ab604e13d9cf84108583`). It is not committed. The QR expires `2026-12-04 10:08:03` on the machine clock (UTC), which is 12:08 Europe/Bucharest. The QR was not scanned here.
+Zeus CLI 1.10.3, target Amazfit Bip 6, device sources `9765120`, `9765121`, `10158337`. App id `29566`, version `1.0.19` (code 19), boot `build=com-001-ui-hotfix rev=7d8a8fc623307ef7f0d26f141ca9ffa34ec14fe3`. The preview package is `dist/29566-FORREF-1.0.19-20261127101748.zab` (358066 bytes, sha256 `84a4589771e69967cdc75a376d197434521c3a0e7cdbb1e7f008dc952ae02482`). It is not committed. The QR expires `2026-12-04 10:17:51` on the machine clock (UTC), which is 12:17 Europe/Bucharest. The QR was not scanned here.
 
-The earlier `1.0.17` package (`dist/29566-FORREF-1.0.17-20261127093720.zab`, sha256 `b70389d8def307bd27e3d66c077896c45906a24c0c143bd7b745c404119c4b1a`) is the transport build. Its settings page was not reachable from Home.
+`1.0.18` (`dist/29566-FORREF-1.0.18-20261127100800.zab`, sha256 `38bae40d41a92d9c6aa426810adbc2406b263e69ae28ab604e13d9cf84108583`) is the build that opened a blank provision page. The `1.0.17` package is the earlier transport build.
 
 ```
-[FORREF - 1.0.18]
+[FORREF - 1.0.19]
 Supported device: Amazfit Bip 6
 ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-█ ▄▄▄▄▄ █▄▀▀▄▄█▄▄▀▀  █▄▄██ ██▀█ ▄▄▄▄▄ █
-█ █   █ ███▄█ ▄█▄ ▀▄▄█ █▀  ▄█ █ █   █ █
-█ █▄▄▄█ ██▄▀▄▀▀██ ▄█▄▀██▀▀▀██▄█ █▄▄▄█ █
-█▄▄▄▄▄▄▄█ █ ▀▄▀ ▀▄█ █ █▄█▄▀▄▀ █▄▄▄▄▄▄▄█
-█▄▄▀ ▄█▄▀█▄▄▄▀▄  ▄▀▀▄▄▀ ▀▄█▄▀ █▄▀▀██▀▄█
-█ ▀██  ▄ ▀ ▀ ▀▄▀ █▀█▀▀█▄ ███▄▄▀   ▄ ▄ █
-██▄█  ▄▄▀▀▀█▄▄ █▄▀█▀▄███▀ █▀▀ █▄ ▀ ▀ ▄█
-██▄▀▀█ ▄▀ █▀ ▄▄  ▀▄▀ █▄▀█ █▄ █   ▀█▀█ █
-█▄█ ▄  ▄▄▀ ▄▀▀▄█▀█▀▀▄ ▀ ▄█ █▀█▄▄ █ ▄▀▄█
-█▄ █▄█▀▄ ▀▀█▄▀▀▀▄▀▄▄▄ █▀▄  █ █▄▄▀▄▀█▀▄█
-█ ▄ ▄█ ▄█ ▄▄█▄▀▄▄██▀▄▄██▀█▀▀ ▄█▄  ▄▀███
-█▀▀█▄▄ ▄█▄ ██▄█▄▄  ▀▀▀█▄ ▀▄▀ █▀█▀█▀▀▀ █
-█▀█ █▀▄▄▄▀  █▀▄▀▀ ▄█▄█▀█ ▄▀█▀▄▀▄▄▀██ ▄█
-█ ▄▀  ▀▄▀ ▄██▀██  █  ▄█▀▀█▄ ▄ ████  ▄▄█
-█▄█▄███▄█▀ ▄ ▄▀█ █▄█ ▄▀ █  █  ▄▄▄ ▄▄▄██
-█ ▄▄▄▄▄ ███▄▀▄▀ ▄▀█  ▄▄█ ▀▀█▀ █▄█ █▄█▄█
-█ █   █ █ ▀ ▄▀ ▀ ▄▄▀ █▀▀▀█▀ ▄   ▄▄ █ ▀█
-█ █▄▄▄█ █▀ ▄ ▀ █ ▄ ▄███▄ ▄▄▀ █▄▀ ▄▀▀▀ █
-█▄▄▄▄▄▄▄█▄▄▄▄▄▄██▄▄█▄▄███▄███▄█▄██▄██▄█
+█ ▄▄▄▄▄ █▄▀▀▄▄▀▀██▀▀ ▀▄▄██ ██▀█ ▄▄▄▄▄ █
+█ █   █ ███▄█  █▀▀█▄ ▀ █▀  ▄█ █ █   █ █
+█ █▄▄▄█ ██▄▀▄▀ ██▄▄▀████▀▀▀██▄█ █▄▄▄█ █
+█▄▄▄▄▄▄▄█ █ ▀▄▀ ▀▄█▄█▄█▄█▄▀▄▀ █▄▄▄▄▄▄▄█
+█▄▄█ ▄█▄██ ▄▄▀█▄█▄█▀ █▀ ▀▄█▄▀ █▄▀▀██▀▄█
+█  ▀▀ ▀▄▄ █▄ ▀▄▀ ▄ ▀▀▀█▄ ███▄▄▀   ▄ ▄ █
+█ ▄▄ ▀▄▄██ █▄▄▀█ ▀ ▀▄▄██▀ █▀▀ █▄ ▀ ▀ ▄█
+█▀▄▀█▄█▄ ▀▄▄ ▄▄▀ ▀▄▀ █▄▀█ █▄ █   ▀█▀█ █
+████▀██▄▄█▀█▀▀ █ ██▀▀▀▀ ▄█ █▀█▄▄ █ ▄▀▄█
+█▀▀ ▄██▄▀ ██▄▀▀▀ ▄▄█ ██▀▄  █ █▄▄▀▄▀█▀▄█
+█▄ ▄▄  ▄█▀▀▀█▄█▄ ▄▀▀ ███▀█▀▀ ▄█▄  ▄▀███
+█▄▀▀▀█ ▄▄  ▀█▄█▄ ▀ █▀▄█▄ ▀▄▀ █▀█▀█▀▀▀ █
+█   ▀▀ ▄▀▄▄ █▀█▀█ █▀█▄▀█ ▄▀█▀▄▀▄▄▀██ ▄█
+█ ▄  ▄█▄   ██▀█▄ ▀▄▄ ▄█▀▀█▄ ▄ ████  ▄▄█
+█▄█▄▄█▄▄▄ ██ ▄ ▀▄▄▄▀ ▄▀ █  █  ▄▄▄ ▄▄▄██
+█ ▄▄▄▄▄ ███ ▀▄▀  ▀▄▀ ▄▄█ ▀▀█▀ █▄█ █▄█▄█
+█ █   █ █ ▀█▄▀ ▀ ▄ █ █▀▀▀█▀ ▄   ▄▄ █ ▀█
+█ █▄▄▄█ █▀██ ▀ █▄▄▀ ███▄ ▄▄▀ █▄▀ ▄▀▀▀ █
+█▄▄▄▄▄▄▄█▄█▄▄▄▄██▄██▄▄███▄███▄█▄██▄██▄█
 ```

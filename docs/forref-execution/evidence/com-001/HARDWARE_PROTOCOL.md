@@ -2,7 +2,7 @@
 
 State: **NOT TESTED**. Fill every row on a physical Amazfit Bip 6 with the phone debug bridge. Unit tests do not certify the handshake. Do not mark Level 2 from this file until every row has a copied log.
 
-App id `29566`, version `1.0.18` (code 18), boot `build=com-001-ui rev=3a2f577e90b5bfe06e31851d5a6d8bccdfd2f25c`. Install `dist/29566-FORREF-1.0.18-20261127100800.zab`. The QR is in `TEST_RESULTS.md`. It expires 12:08 Europe/Bucharest on 4 December 2026. Open Home → SETTINGS → PROVISION and copy both UUID lines before connecting the phone. The two lines together are the 36-character installation id.
+App id `29566`, version `1.0.19` (code 19), boot `build=com-001-ui-hotfix rev=7d8a8fc623307ef7f0d26f141ca9ffa34ec14fe3`. Install `dist/29566-FORREF-1.0.19-20261127101748.zab`. The QR is in `TEST_RESULTS.md`. It expires 12:17 Europe/Bucharest on 4 December 2026. Open Home → SETTINGS → PROVISION with Bluetooth off and without FORREF Mobile. Copy both UUID lines. Leave and reopen the page, then restart FORREF, and confirm the same 36 characters. `page=build` must appear in the log. A blank page fails the trial.
 
 This is the Android-local debug route only: Flutter debug bridge on `127.0.0.1:47221`, path `/watch-provision/v1`, then the Zepp Side Service, then the watch page. It is not a production transport. An active match must not need this link. Goal capture stays on the watch. This protocol does not enable Goal-to-phone replication.
 
