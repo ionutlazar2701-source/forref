@@ -2,7 +2,27 @@
 
 State: **NOT TESTED**. Fill every row on a physical Amazfit Bip 6 with the phone debug bridge. Unit tests do not certify the handshake. Do not mark Level 2 from this file until every row has a copied log.
 
-App id `29566`, version `1.0.19` (code 19), boot `build=com-001-ui-hotfix rev=7d8a8fc623307ef7f0d26f141ca9ffa34ec14fe3`. Install `dist/29566-FORREF-1.0.19-20261127101748.zab`. The QR is in `TEST_RESULTS.md`. It expires 12:17 Europe/Bucharest on 4 December 2026. Open Home → SETTINGS → PROVISION with Bluetooth off and without FORREF Mobile. Copy both UUID lines. Leave and reopen the page, then restart FORREF, and confirm the same 36 characters. `page=build` must appear in the log. A blank page fails the trial.
+App id `29566`, version `1.0.20` (code 20), boot `build=com-001-debug-ready rev=870dab0e2f72532c7ee16f79464c473d443ce4d9`. Install `dist/29566-FORREF-1.0.20-20261127215753.zab`. The QR is in `TEST_RESULTS.md`. It expires 23:57 Europe/Bucharest on 4 December 2026. Open Home → SETTINGS → PROVISION. Copy both UUID lines. Leave and reopen the page, then restart FORREF, and confirm the same 36 characters. `page=build` must appear in the log. A blank page fails the trial. `FORREF_PROVISION messaging=ready` must appear in the app boot log before the provision request. `messaging=absent` means the request cannot leave the watch.
+
+## Phone debug install
+
+The Watch provision controls are compiled only when `kDebugMode` is true. A release or profile install hides them. The release manifest does not grant `INTERNET`. This cloud image has no Android SDK, so the debug app is built on the Windows machine that already lists the phone.
+
+On that machine, from the repository:
+
+```
+git fetch origin cursor/com-001-transport-4ae8
+git checkout cursor/com-001-transport-4ae8
+git pull origin cursor/com-001-transport-4ae8
+cd apps\referee_phone
+flutter run -d RZCY11BDMTX
+```
+
+`flutter run` with no `--release` and no `--profile` is the debug build. The phone must show the DEBUG banner. Launcher name: `referee_phone`. Application id: `com.refapp.referee_phone`.
+
+This replaces an existing debug install signed by the same Windows debug keystore and keeps the application support directory, including saved matches and `forref_watch_provision_correlation_v1.json`. Do not uninstall first. If Android reports `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, the installed package was signed by a different key. Stop there. Uninstalling deletes the local match data.
+
+On the matches screen, open Settings. The page shows Watch provision, the field Watch installation UUID, No saved match selected, and Prepare and listen. Enter the 36-character watch UUID, choose one saved match whose home and away names are filled in, then tap Prepare and listen. The status line begins with `listening` and the content hash. The bridge is `127.0.0.1:47221/watch-provision/v1` on that phone. The Zepp app must be on the same phone. Leave the `flutter run` terminal open.
 
 This is the Android-local debug route only: Flutter debug bridge on `127.0.0.1:47221`, path `/watch-provision/v1`, then the Zepp Side Service, then the watch page. It is not a production transport. An active match must not need this link. Goal capture stays on the watch. This protocol does not enable Goal-to-phone replication.
 

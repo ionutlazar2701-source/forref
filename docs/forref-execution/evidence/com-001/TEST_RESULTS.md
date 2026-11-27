@@ -1,8 +1,16 @@
 # COM-001 software results
 
-State: **SOFTWARE PASS / HARDWARE GATE PENDING**. Not a Level 2 pass. The QR was not scanned here.
+State: **SOFTWARE PASS / HARDWARE GATE PENDING**. Not a Level 2 pass. The phone was not installed from this environment, and the QR was not scanned here.
 
-Identity hotfix: functional commit `7d8a8fc623307ef7f0d26f141ca9ffa34ec14fe3`. Boot name `com-001-ui-hotfix`. App `29566`, version `1.0.19` (code 19). `npm test`: 254 pass, 0 fail.
+Debug readiness: functional commit `870dab0e2f72532c7ee16f79464c473d443ce4d9`. Boot stamp `85ff4c0`. Boot name `com-001-debug-ready`. App `29566`, version `1.0.20` (code 20). `npm test`: 258 pass, 0 fail. `flutter test test/watch_provision_debug_settings_test.dart test/watch_provision_debug_bridge_test.dart`: 10 pass, 0 fail.
+
+Settings keeps `WatchProvisionDebugSection` behind `kDebugMode`, and the bridge refuses unless `kDebugMode` is true. The release manifest has no `INTERNET` permission. A debug widget test opens Settings and finds Watch provision, Watch installation UUID, No saved match selected, and Prepare and listen, then selects a saved match. The listening status line is `listening` plus the content hash, written after `bridge.start`. The bridge test posts the pending body to that server and receives `disposition=prepared`.
+
+The device app opens through ZML `BaseApp`, which assigns `globalData.messaging` before the clock boot. If that init throws, the clock still boots and the log is `FORREF_PROVISION messaging=absent`. The provision page reads messaging from `_options.globalData` or `globalData` and still paints the UUID before the handshake. A node test sends the page request through `dispatchSideRequest` to a loopback HTTP server and finishes `transport=recorded` with the fixture content hash. That server stands in for the phone. It is not a Bip 6 result.
+
+This environment has no Android SDK (`flutter doctor` reports the toolchain missing). The installable debug session is `flutter run -d RZCY11BDMTX` from `apps/referee_phone` on the Windows machine that already sees SM A166B. That command keeps the existing debug signature and the application support files. Steps are in `HARDWARE_PROTOCOL.md`.
+
+Identity hotfix: functional commit `7d8a8fc623307ef7f0d26f141ca9ffa34ec14fe3`. Boot name `com-001-ui-hotfix`. App `29566`, version `1.0.19` (code 19). `npm test` at that commit: 254 pass, 0 fail.
 
 ZML 0.0.38 `BasePage` runs `globalData.messaging.onCall()` inside `onInit`, before the page `build`. The device app globalData is `{ demo: true }` and has no messaging object, so that call throws and the provision screen stays blank. The page is now a plain `Page`. It paints the stored UUID, or `INSTALLATION UNAVAILABLE`, before any handshake. A valid installation file is not rewritten. `1.0.18` reached the route and left this screen blank.
 
@@ -48,43 +56,43 @@ Logs are `FORREF_PROVISION` lines with `tx=request`, `tx=response`, `tx=transiti
 
 ## Suite
 
-`npm test` in `apps/forref_watch_zepp`: 247 pass, 0 fail.
+`npm test` in `apps/forref_watch_zepp`: 258 pass, 0 fail.
 
-`dart test test/watch_provision_v1_test.dart` in `packages/forref_match_core`: 23 pass.
-
-`flutter test test/watch_provision_debug_bridge_test.dart test/watch_provision_a1_test.dart` in `apps/referee_phone`: 13 pass.
+`flutter test test/watch_provision_debug_settings_test.dart test/watch_provision_debug_bridge_test.dart` in `apps/referee_phone`: 10 pass, 0 fail.
 
 `./tool/verify_cloud.sh`: PASSED.
 
 ## Diagnostic package
 
-Install `1.0.19`. Home → SETTINGS → PROVISION shows the installation UUID without a phone connection. The first console line on that page is `FORREF_PROVISION page=build`, then `device width=` `height=` `layout=` and `installation=` with the 36-character id. A storage failure logs `tx=recover` and draws `INSTALLATION UNAVAILABLE`.
+Install `1.0.20`. Home → SETTINGS → PROVISION shows the installation UUID without a phone connection. The app boot log must include `FORREF_PROVISION messaging=ready` before a provision request. The first console line on that page is `FORREF_PROVISION page=build`, then `device width=` `height=` `layout=` and `installation=` with the 36-character id. A storage failure logs `tx=recover` and draws `INSTALLATION UNAVAILABLE`.
 
-Zeus CLI 1.10.3, target Amazfit Bip 6, device sources `9765120`, `9765121`, `10158337`. App id `29566`, version `1.0.19` (code 19), boot `build=com-001-ui-hotfix rev=7d8a8fc623307ef7f0d26f141ca9ffa34ec14fe3`. The preview package is `dist/29566-FORREF-1.0.19-20261127101748.zab` (358066 bytes, sha256 `84a4589771e69967cdc75a376d197434521c3a0e7cdbb1e7f008dc952ae02482`). It is not committed. The QR expires `2026-12-04 10:17:51` on the machine clock (UTC), which is 12:17 Europe/Bucharest. The QR was not scanned here.
+Zeus CLI 1.10.3, target Amazfit Bip 6, device sources `9765120`, `9765121`, `10158337`. App id `29566`, version `1.0.20` (code 20), boot `build=com-001-debug-ready rev=870dab0e2f72532c7ee16f79464c473d443ce4d9`. The preview package is `dist/29566-FORREF-1.0.20-20261127215753.zab` (368988 bytes, sha256 `5b0d9a44f47dc500883931b6644ada18fbdc1e9d4dff4631e26bdb3f868554bf`). It is not committed. The QR expires `2026-12-04 21:57:55` on the machine clock (UTC), which is 23:57 Europe/Bucharest. The QR was not scanned here.
+
+`1.0.19` (`dist/29566-FORREF-1.0.19-20261127101748.zab`, sha256 `84a4589771e69967cdc75a376d197434521c3a0e7cdbb1e7f008dc952ae02482`) paints the UUID and does not initialize `globalData.messaging`.
 
 `1.0.18` (`dist/29566-FORREF-1.0.18-20261127100800.zab`, sha256 `38bae40d41a92d9c6aa426810adbc2406b263e69ae28ab604e13d9cf84108583`) is the build that opened a blank provision page. The `1.0.17` package is the earlier transport build.
 
 ```
-[FORREF - 1.0.19]
+[FORREF - 1.0.20]
 Supported device: Amazfit Bip 6
 ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-█ ▄▄▄▄▄ █▄▀▀▄▄▀▀██▀▀ ▀▄▄██ ██▀█ ▄▄▄▄▄ █
-█ █   █ ███▄█  █▀▀█▄ ▀ █▀  ▄█ █ █   █ █
-█ █▄▄▄█ ██▄▀▄▀ ██▄▄▀████▀▀▀██▄█ █▄▄▄█ █
-█▄▄▄▄▄▄▄█ █ ▀▄▀ ▀▄█▄█▄█▄█▄▀▄▀ █▄▄▄▄▄▄▄█
-█▄▄█ ▄█▄██ ▄▄▀█▄█▄█▀ █▀ ▀▄█▄▀ █▄▀▀██▀▄█
-█  ▀▀ ▀▄▄ █▄ ▀▄▀ ▄ ▀▀▀█▄ ███▄▄▀   ▄ ▄ █
-█ ▄▄ ▀▄▄██ █▄▄▀█ ▀ ▀▄▄██▀ █▀▀ █▄ ▀ ▀ ▄█
-█▀▄▀█▄█▄ ▀▄▄ ▄▄▀ ▀▄▀ █▄▀█ █▄ █   ▀█▀█ █
-████▀██▄▄█▀█▀▀ █ ██▀▀▀▀ ▄█ █▀█▄▄ █ ▄▀▄█
-█▀▀ ▄██▄▀ ██▄▀▀▀ ▄▄█ ██▀▄  █ █▄▄▀▄▀█▀▄█
-█▄ ▄▄  ▄█▀▀▀█▄█▄ ▄▀▀ ███▀█▀▀ ▄█▄  ▄▀███
-█▄▀▀▀█ ▄▄  ▀█▄█▄ ▀ █▀▄█▄ ▀▄▀ █▀█▀█▀▀▀ █
-█   ▀▀ ▄▀▄▄ █▀█▀█ █▀█▄▀█ ▄▀█▀▄▀▄▄▀██ ▄█
-█ ▄  ▄█▄   ██▀█▄ ▀▄▄ ▄█▀▀█▄ ▄ ████  ▄▄█
-█▄█▄▄█▄▄▄ ██ ▄ ▀▄▄▄▀ ▄▀ █  █  ▄▄▄ ▄▄▄██
-█ ▄▄▄▄▄ ███ ▀▄▀  ▀▄▀ ▄▄█ ▀▀█▀ █▄█ █▄█▄█
-█ █   █ █ ▀█▄▀ ▀ ▄ █ █▀▀▀█▀ ▄   ▄▄ █ ▀█
-█ █▄▄▄█ █▀██ ▀ █▄▄▀ ███▄ ▄▄▀ █▄▀ ▄▀▀▀ █
-█▄▄▄▄▄▄▄█▄█▄▄▄▄██▄██▄▄███▄███▄█▄██▄██▄█
+█ ▄▄▄▄▄ █ ▀▀▄  ▀█▀ ▄▄█▄▄█▀▄▀█▀█ ▄▄▄▄▄ █
+█ █   █ ███ ▄▄  ▄▄▄▀▄  ▀ ▄ ▀█▄█ █   █ █
+█ █▄▄▄█ █ ▄▄ █ ▄▄▀▄██▀█ ██ ██▀█ █▄▄▄█ █
+█▄▄▄▄▄▄▄█ █ ▀ █▄█▄█ ▀▄█▄█ █ ▀ █▄▄▄▄▄▄▄█
+█ ▄ ▀▀▄▄▀   ██ ▀▀▀ █▀ ▀▄  █▀▀▄▄  ▄█▀  █
+█▀▀ ▄█ ▄▀█▀▀▄█▄  ██▄▄▀█▀▄▀▄█▄▀█▄▀ ▄█ ▄█
+█▄ ▀▄ █▄ ▄  ▄ ██▀  █  ██▀▄▀█▀ █ ▄█ ▀  █
+█ █▀   ▄ ▀██▀ ██ ▀▄▀ ▄▄█▄▄█▀ ▀▀▄ ▄██▄▄█
+█▀ ▄ ▄▀▄▄█▀▀███▀█ ▄▀▀ ▀█ ▀▀█▀   ▀█ ▀█ █
+█ ██▀▀▄▄▄▄▀▄▄██  ▄▄█  █▀▄▄▄▀ █▄ █ ▀█▀ █
+█▄▀▀▄█ ▄▀  ▀▄ ▀▀█▀▀█▄ █▀ ▀▀▄  ▄  █▄█▄▀█
+█▄ ▀ █▄▄▀██▀▀ ▄  ▄█▀ ▀█▀▄██▀  █▀ █▀▄█▄█
+██▀▀ ▀█▄█▀▄▄██▀█▀▀▄█ ▀▀█  █▀▀▄▀  ███  █
+█▄▄▄▄▀█▄█ ██▄██▀▄▄██ ▀██ ▀▄█▄▄▄▀█  ▄█ █
+█▄▄██▄█▄▄ ██▄  ██ ▀█▀▄▀█▀▄▀█  ▄▄▄ ▄▀ ▀█
+█ ▄▄▄▄▄ █▀█ ▀ ▄▄▄██▄▄ ▄█ ██▀▀ █▄█ █▄█ █
+█ █   █ ██ ▀██ ▄█▀▄█  ▀█ ▀▀█▄▄ ▄▄  ▀▀██
+█ █▄▄▄█ █ ▄▄▄█▀█▄██ ▄██▀▄ █▀   █▀▄▀▄█▄█
+█▄▄▄▄▄▄▄█▄▄▄▄▄▄██▄██▄▄███▄███▄█▄██▄██▄█
 ```
