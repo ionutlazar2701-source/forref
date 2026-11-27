@@ -5,12 +5,12 @@
     "appName": "FORREF",
     "appType": "app",
     "version": {
-      "code": 19,
-      "name": "1.0.19"
+      "code": 20,
+      "name": "1.0.20"
     },
     "icon": "icon.png",
     "vender": "zepp",
-    "description": "FORREF COM 001 UI HOTFIX"
+    "description": "FORREF COM 001 DEBUG READY"
   },
   "permissions": [
     "data:os.device.info",
