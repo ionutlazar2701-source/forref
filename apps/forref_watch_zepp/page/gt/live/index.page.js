@@ -135,6 +135,11 @@ function restoreScore() {
       console.log("FORREF_SCORE outcome=hidden reason=" + (opened.admitted.reason || ""));
       return;
     }
+    if (!opened.ok || !opened.journal) {
+      publishLocalScore({ kind: "unavailable", knownScore: false, home: null, away: null });
+      console.log("FORREF_RECOVERY outcome=RECOVERY_REQUIRED reason=" + (opened.reason || "journal"));
+      return;
+    }
     const loaded = opened.journal.load();
     const score = localTestScore(loaded.entries, opened.admitted, loaded.status);
     publishLocalScore(score);

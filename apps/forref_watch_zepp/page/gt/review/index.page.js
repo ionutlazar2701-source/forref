@@ -265,10 +265,10 @@ function prepareGoal(s) {
   s.goalMatchId = opened.admitted.matchId || "";
   s.goalHomeTeamId = opened.admitted.homeTeamId || "";
   s.goalAwayTeamId = opened.admitted.awayTeamId || "";
-  if (!opened.admitted.localCandidate) {
+  if (!opened.admitted.localCandidate || !opened.ok || !opened.journal || !opened.pendingStore) {
     s.goalDecision = "RECOVERY_REQUIRED";
     s.goalNote = t("recoveryRequired");
-    console.log("FORREF_RECOVERY outcome=RECOVERY_REQUIRED reason=" + (opened.admitted.reason || "provision"));
+    console.log("FORREF_RECOVERY outcome=RECOVERY_REQUIRED reason=" + (opened.reason || opened.admitted.reason || "provision"));
     return;
   }
   const selected = s.team === "HOME" ? opened.admitted.homeTeamId : s.team === "AWAY" ? opened.admitted.awayTeamId : "";
@@ -314,10 +314,10 @@ function paintGoal(m, s) {
 
 function confirmGoal(s) {
   const opened = openLocalGoal(goalFs(), s.goalMatchId || "");
-  if (!opened.admitted.localCandidate) {
+  if (!opened.admitted.localCandidate || !opened.ok || !opened.journal || !opened.pendingStore) {
     s.goalNote = t("recoveryRequired");
     s.goalDecision = "RECOVERY_REQUIRED";
-    console.log("FORREF_EVENT outcome=REFUSED reason=" + (opened.admitted.reason || "provision"));
+    console.log("FORREF_EVENT outcome=REFUSED reason=" + (opened.reason || opened.admitted.reason || "provision"));
     paint();
     return;
   }

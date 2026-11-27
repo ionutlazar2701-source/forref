@@ -1,17 +1,47 @@
 import { admitStoredGoal } from "./goal_admission.js";
 import {
+  acknowledgeGoalManifest,
   createFileGoalStore,
   createGoalJournal,
-  goalJournalName,
+  goalJournalNameV2,
+  manifestName,
   readStoredText,
+  recoverGoalHistory,
   selectGoalJournalPath,
 } from "./goal_journal.js";
+import { sha256Hex } from "./sha256_hex.js";
 
 export const PENDING_SCHEMA = "forref.watch-goal-pending.v1";
 
-export function pendingName(matchId) {
-  if (!goalJournalName(matchId)) return "";
+function pendingIdOk(matchId) {
+  return typeof matchId === "string" && matchId.length > 0 && matchId.length <= 128 &&
+    matchId === matchId.trim() && !/[\u0000-\u001f]/.test(matchId);
+}
+
+export function pendingNameV1(matchId) {
+  if (typeof matchId !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,80}$/.test(matchId)) return "";
   return "forref_watch_goal_pending_v1." + matchId + ".json";
+}
+
+export function pendingName(matchId) {
+  if (!pendingIdOk(matchId)) return "";
+  return "forref_watch_goal_pending_v2." + sha256Hex(matchId) + ".json";
+}
+
+export function selectPendingPath(fs, matchId) {
+  const v2 = pendingName(matchId);
+  if (!v2) return { ok: false, path: "", reason: "match" };
+  const v1 = pendingNameV1(matchId);
+  const older = v1 ? readStoredText(fs, v1) : { status: "absent" };
+  const newer = readStoredText(fs, v2);
+  if (older.status === "unreadable" || newer.status === "unreadable") {
+    return { ok: false, path: "", reason: "pending-unreadable" };
+  }
+  if (older.status === "ok" && newer.status === "ok") {
+    return { ok: false, path: "", reason: "ambiguous-pending" };
+  }
+  if (older.status === "ok") return { ok: true, path: v1, reason: "" };
+  return { ok: true, path: v2, reason: "" };
 }
 
 export function canonicalPending(pending) {
@@ -235,12 +265,75 @@ export function commitGoalCapture(options) {
   return result;
 }
 
+function guardedJournal(journalStore, manifestStore, pendingStore, context) {
+  const journal = createGoalJournal(journalStore, context);
+  function recover() {
+    return recoverGoalHistory(journalStore, manifestStore, pendingStore, context);
+  }
+  return {
+    recover: recover,
+    load() {
+      const recovered = recover();
+      if (!recovered.ok) {
+        return { status: "unreadable", entries: recovered.entries || [], reason: recovered.reason };
+      }
+      return journal.load();
+    },
+    append(command) {
+      const recovered = recover();
+      if (!recovered.ok) {
+        console.log("FORREF_RECOVERY outcome=RECOVERY_REQUIRED reason=" + recovered.reason);
+        return {
+          ok: false,
+          uncertain: true,
+          outcome: "RECOVERY_REQUIRED",
+          reason: recovered.reason,
+          captureIntentId: command && command.captureIntentId || "",
+          entries: recovered.entries || [],
+          saved: false,
+          d1Certified: false,
+          authoritativeCaptureAdmitted: false,
+        };
+      }
+      const result = journal.append(command);
+      if (!result.ok) return result;
+      const loaded = journal.load();
+      const noted = acknowledgeGoalManifest(manifestStore, context, loaded.entries);
+      if (!noted.ok) {
+        console.log("FORREF_RECOVERY outcome=UNCERTAIN reason=" + noted.reason);
+        return {
+          ok: false,
+          uncertain: true,
+          outcome: "UNCERTAIN",
+          reason: noted.reason,
+          captureIntentId: result.captureIntentId,
+          entry: result.entry,
+          entries: loaded.entries,
+          saved: false,
+          d1Certified: false,
+          authoritativeCaptureAdmitted: false,
+        };
+      }
+      return result;
+    },
+  };
+}
+
 export function openLocalGoal(fs, matchId) {
   const admitted = admitStoredGoal(fs, matchId || "");
   if (!admitted.localCandidate) {
-    return { admitted: admitted, journal: null, pendingStore: null, journalPath: "" };
+    return { ok: false, admitted: admitted, journal: null, pendingStore: null, journalPath: "", reason: admitted.reason || "provision" };
   }
   const selected = selectGoalJournalPath(fs, admitted.matchId);
+  if (!selected.ok || !selected.path) {
+    console.log("FORREF_RECOVERY outcome=RECOVERY_REQUIRED reason=" + (selected.reason || "journal"));
+    return { ok: false, admitted: admitted, journal: null, pendingStore: null, journalPath: "", reason: selected.reason || "journal" };
+  }
+  const pendingSelected = selectPendingPath(fs, admitted.matchId);
+  if (!pendingSelected.ok) {
+    console.log("FORREF_RECOVERY outcome=RECOVERY_REQUIRED reason=" + pendingSelected.reason);
+    return { ok: false, admitted: admitted, journal: null, pendingStore: null, journalPath: "", reason: pendingSelected.reason };
+  }
   const journalContext = {
     matchId: admitted.matchId,
     principalId: admitted.principalId,
@@ -251,11 +344,37 @@ export function openLocalGoal(fs, matchId) {
     authorityActivated: true,
     generation: 1,
   };
+  const manifestPath = manifestName(admitted.matchId);
+  if (!manifestPath || !goalJournalNameV2(admitted.matchId)) {
+    return { ok: false, admitted: admitted, journal: null, pendingStore: null, journalPath: "", reason: "match" };
+  }
+  const pendingStore = createFilePendingStore(fs, pendingSelected.path);
+  const journal = guardedJournal(
+    createFileGoalStore(fs, selected.path),
+    createFilePendingStore(fs, manifestPath),
+    pendingStore,
+    journalContext,
+  );
+  const recovered = journal.recover();
+  if (!recovered.ok) {
+    console.log("FORREF_RECOVERY outcome=RECOVERY_REQUIRED reason=" + recovered.reason);
+    return {
+      ok: false,
+      admitted: admitted,
+      journal: journal,
+      pendingStore: pendingStore,
+      journalPath: selected.path,
+      journalContext: journalContext,
+      reason: recovered.reason,
+    };
+  }
   return {
+    ok: true,
     admitted: admitted,
-    journal: createGoalJournal(createFileGoalStore(fs, selected.path), journalContext),
-    pendingStore: createFilePendingStore(fs, pendingName(admitted.matchId)),
+    journal: journal,
+    pendingStore: pendingStore,
     journalPath: selected.path,
     journalContext: journalContext,
+    reason: "",
   };
 }

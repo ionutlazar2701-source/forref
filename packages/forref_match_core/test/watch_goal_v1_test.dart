@@ -125,4 +125,19 @@ void main() {
     expect((known as KnownScore).goalsByTeam[home], local['home']);
     expect(known.goalsByTeam[away], local['away']);
   });
+
+  test('match id digests match the watch filename contract', () {
+    expect(
+      sha256Hex('mățch'),
+      'f088f7e75f4b2eb5ad3179eb7d82ca18f23d731092e2149b9071da7a154811bd',
+    );
+    expect(
+      sha256Hex('home team'),
+      '8ecabaa201d7ef377839350ed3e66404ca87d80a9f52529faa8cce59e56d4600',
+    );
+    expect(
+      sha256Hex('a/b'),
+      'c14cddc033f64b9dea80ea675cf280a015e672516090a5626781153dc68fea11',
+    );
+  });
 }

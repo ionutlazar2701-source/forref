@@ -70,6 +70,8 @@ test("an interrupted third append keeps the two accepted frames", () => {
       }
       files[request.path] = String(request.data);
     },
+    fds: {},
+    nextFd: 3,
     openSync(request) {
       const append = (request.flag & fs.O_APPEND) !== 0;
       const creat = (request.flag & fs.O_CREAT) !== 0;
@@ -77,18 +79,24 @@ test("an interrupted third append keeps the two accepted frames", () => {
       if (!append || !creat || !write) {
         throw new Error("append-flags");
       }
-      return { path: request.path };
+      const fd = fs.nextFd;
+      fs.nextFd += 1;
+      fs.fds[fd] = request.path;
+      return fd;
     },
     writeSync(request) {
       appends += 1;
       const text = decode(request.buffer, request.options.length);
       attempted.push(text);
-      const prior = files[request.fd.path] || "";
+      const path = fs.fds[request.fd];
+      const prior = files[path] || "";
       const chunk = appends >= 3 ? text.slice(0, 12) : text;
-      files[request.fd.path] = prior + chunk;
+      files[path] = prior + chunk;
       return chunk.length;
     },
-    closeSync() {},
+    closeSync() {
+      return 0;
+    },
   };
   const book = createGoalJournal(createFileGoalStore(fs, "match-journal"), context);
   assert.equal(book.append(goal({ captureIntentId: "intent-a", recordId: "goal-a" })).ok, true);
@@ -353,6 +361,8 @@ test("five score paints do not read the journal again", () => {
 });
 
 function fileFs(files) {
+  const fds = {};
+  let nextFd = 3;
   return {
     O_RDONLY: 0,
     O_WRONLY: 1,
@@ -364,15 +374,21 @@ function fileFs(files) {
     },
     openSync(request) {
       if ((request.flag & 0x0008) === 0 || (request.flag & 0x0200) === 0) throw new Error("append-flags");
-      return { path: request.path };
+      const fd = nextFd;
+      nextFd += 1;
+      fds[fd] = request.path;
+      return fd;
     },
     writeSync(request) {
       const bytes = new Uint8Array(request.buffer);
       let text = "";
       for (let i = 0; i < request.options.length; i += 1) text += String.fromCharCode(bytes[i]);
-      files[request.fd.path] = (files[request.fd.path] || "") + text;
+      const path = fds[request.fd];
+      files[path] = (files[path] || "") + text;
       return request.options.length;
     },
-    closeSync() {},
+    closeSync() {
+      return 0;
+    },
   };
 }
