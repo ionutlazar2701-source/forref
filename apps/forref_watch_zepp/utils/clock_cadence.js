@@ -1,6 +1,9 @@
 // Display cadence only. Elapsed time stays on the UTC anchor.
-// One foreground timer paints Live. A second 1000 ms timer can land on the
-// opposite phase after sleep or navigation and then keep painting every 2 s.
+// One foreground timer paints Live. Screen sleep does not rebuild the page,
+// so that same timer id is the one that resumes. A repeat that resumes at
+// about 2000 ms keeps stepping the digits by two seconds until the id is
+// stopped and one replacement is armed. The replacement delay is the next
+// UTC second. The sample is not moved by a second in either direction.
 
 export function displayedSeconds(text) {
   if (!text || text.indexOf("—") >= 0) {
@@ -132,6 +135,25 @@ export function createForegroundHost(io) {
   let timerId = null;
   let listener = null;
   let previous = null;
+  let lastScreen = "";
+  let wakeLeft = 0;
+
+  function noteScreen() {
+    if (!io.screen) {
+      return;
+    }
+    let screen = "";
+    try {
+      screen = io.screen() || "";
+    } catch (err) {
+      return;
+    }
+    if (!screen || screen === lastScreen) {
+      return;
+    }
+    io.log("FORREF_CLOCK_FG screen=" + screen + " from=" + (lastScreen || "none"));
+    lastScreen = screen;
+  }
 
   function tick() {
     const utc = io.utc ? io.utc() : io.now();
@@ -141,7 +163,7 @@ export function createForegroundHost(io) {
       sampled = io.sample("fg");
     } catch (err) {
       io.log("FORREF_CLOCK_FG src=fg reason=UNAVAILABLE");
-      return;
+      return null;
     }
     const sampleMs = io.now() - started;
     const commitMs = sampled && sampled.commitMs != null ? sampled.commitMs : null;
@@ -164,7 +186,27 @@ export function createForegroundHost(io) {
     };
     const row = noteCadence(previous, current);
     previous = current;
+    noteScreen();
+    // A gap opens a 20-callback window. Later 1 s callbacks keep that window
+    // so a render skip is visible. They do not open another window.
+    if (row.dt != null && row.dt >= 1500 && wakeLeft === 0) {
+      wakeLeft = 20;
+      io.log("FORREF_CLOCK_FG wake=open dt=" + row.dt + " utc=" + row.utc + " digits=" + (row.digits || ""));
+    }
+    if (wakeLeft > 0) {
+      io.log("FORREF_CLOCK_WAKE n=" + (21 - wakeLeft) + " " + formatCadence(row));
+      wakeLeft -= 1;
+      if (wakeLeft === 0) {
+        io.log("FORREF_CLOCK_FG wake=closed");
+      }
+    }
     io.log(formatCadence(row));
+    // dt is the callback interval. A 2 s repeat is replaced. A 1 s callback
+    // that skipped a digit is left alone, and the digits stay on the sample.
+    if (row.dt != null && row.dt >= 1500) {
+      recover();
+    }
+    return row;
   }
 
   function start() {
@@ -173,7 +215,7 @@ export function createForegroundHost(io) {
     }
     const delay = io.delay ? io.delay() : 1000;
     timerId = io.arm(tick, delay);
-    io.log("FORREF_CLOCK_FG timer=on");
+    io.log("FORREF_CLOCK_FG timer=on id=" + timerId + " delay=" + delay);
     return timerId;
   }
 
@@ -181,21 +223,33 @@ export function createForegroundHost(io) {
     if (timerId == null) {
       return true;
     }
+    const id = timerId;
     try {
-      io.disarm(timerId);
+      io.disarm(id);
     } catch (err) {
-      io.log("FORREF_CLOCK_FG timer-stop=fail");
+      io.log("FORREF_CLOCK_FG timer-stop=fail id=" + id);
       return false;
     }
     timerId = null;
-    io.log("FORREF_CLOCK_FG timer=off");
+    io.log("FORREF_CLOCK_FG timer=off id=" + id);
     return true;
+  }
+
+  function recover() {
+    if (!stop()) {
+      return timerId;
+    }
+    const id = start();
+    io.log("FORREF_CLOCK_FG timer=wake id=" + id + " delay=" + (io.delay ? io.delay() : 1000));
+    return id;
   }
 
   function restart() {
     if (!stop()) {
       return timerId;
     }
+    wakeLeft = 20;
+    io.log("FORREF_CLOCK_FG wake=open reason=restart");
     return start();
   }
 

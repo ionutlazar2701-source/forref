@@ -355,6 +355,7 @@ Page({
       return paintAll(view);
     });
     paintAll();
+    console.log("FORREF_CLOCK_FG page=build");
     restartForegroundClock();
   },
   onDestroy() {
