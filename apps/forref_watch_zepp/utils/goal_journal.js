@@ -2,6 +2,7 @@ import { sha256Hex } from "./sha256_hex.js";
 
 export const WATCH_GOAL_SCHEMA = "forref.watch-goal.v1";
 export const GOAL_JOURNAL_FILE = "forref_watch_goal_journal_v1.journal";
+export const GOAL_JOURNAL_LEGACY_FILE = GOAL_JOURNAL_FILE;
 export const LOCAL_RECORD_LABEL = "LOCAL RECORD VERIFIED — D1 UNCERTIFIED";
 export const MAX_GOAL_ENTRIES = 256;
 
@@ -156,6 +157,65 @@ export function parseGoalJournal(text) {
   return { status: entries.length === 0 ? "empty" : "ok", entries: entries, reason: "" };
 }
 
+function encodeUtf8(text) {
+  const bytes = [];
+  for (let i = 0; i < text.length; i += 1) {
+    let code = text.charCodeAt(i);
+    if (code >= 0xd800 && code <= 0xdbff && i + 1 < text.length) {
+      const next = text.charCodeAt(i + 1);
+      if (next >= 0xdc00 && next <= 0xdfff) {
+        code = 0x10000 + ((code - 0xd800) << 10) + (next - 0xdc00);
+        i += 1;
+      }
+    }
+    if (code < 0x80) bytes.push(code);
+    else if (code < 0x800) bytes.push(0xc0 | (code >> 6), 0x80 | (code & 0x3f));
+    else if (code < 0x10000) bytes.push(0xe0 | (code >> 12), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
+    else bytes.push(0xf0 | (code >> 18), 0x80 | ((code >> 12) & 0x3f), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
+  }
+  const buffer = new ArrayBuffer(bytes.length);
+  const view = new Uint8Array(buffer);
+  for (let i = 0; i < bytes.length; i += 1) view[i] = bytes[i];
+  return buffer;
+}
+
+export function readStoredText(fs, path) {
+  try {
+    const text = fs.readFileSync({ path: path, options: { encoding: "utf8" } });
+    if (text == null || text === "") return { status: "absent", text: "" };
+    return { status: "ok", text: String(text) };
+  } catch (err) {
+    const name = String(err && err.message ? err.message : err);
+    if (name.indexOf("ENOENT") >= 0 || name.indexOf("No such") >= 0 || name.indexOf("not found") >= 0) {
+      return { status: "absent", text: "" };
+    }
+    return { status: "unreadable", text: "" };
+  }
+}
+
+export function goalJournalName(matchId) {
+  if (typeof matchId !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,80}$/.test(matchId)) return "";
+  return "forref_watch_goal_journal_v1." + matchId + ".journal";
+}
+
+export function selectGoalJournalPath(fs, matchId) {
+  const partitioned = goalJournalName(matchId);
+  if (!partitioned) return { path: "", reason: "match" };
+  const own = readStoredText(fs, partitioned);
+  if (own.status !== "absent") return { path: partitioned, legacy: false };
+  const legacy = readStoredText(fs, GOAL_JOURNAL_LEGACY_FILE);
+  if (legacy.status === "absent") return { path: partitioned, legacy: false };
+  if (legacy.status !== "ok") return { path: GOAL_JOURNAL_LEGACY_FILE, legacy: true };
+  const parsed = parseGoalJournal(legacy.text);
+  const owners = {};
+  for (let i = 0; i < parsed.entries.length; i += 1) owners[parsed.entries[i].matchId] = true;
+  const keys = Object.keys(owners);
+  if (keys.length === 1 && keys[0] === matchId) {
+    return { path: GOAL_JOURNAL_LEGACY_FILE, legacy: true };
+  }
+  return { path: partitioned, legacy: false };
+}
+
 function frameFor(entry) {
   const body = canonicalWatchGoalV1(entry);
   const header = "F1 " + entry.originSequence + " " + utf8ByteLength(body) + " " + sha256Hex(body);
@@ -191,10 +251,13 @@ export function createMemoryGoalStore() {
       if (this.raw == null || this.raw === "") return { status: "absent" };
       return { status: "ok", text: this.raw };
     },
-    write(text) {
-      if (this.failWrite) return { status: "unreadable" };
-      this.raw = this.shortWrite ? String(text).slice(0, Math.max(0, String(text).length - 8)) : text;
+    appendFrame(frame) {
+      if (this.failWrite) return { status: "unreadable", text: this.raw || "" };
+      const base = this.raw == null || this.raw === "" ? "" : this.raw;
+      const chunk = this.shortWrite ? String(frame).slice(0, Math.max(0, String(frame).length - 8)) : String(frame);
+      this.raw = base + chunk;
       if (this.unreadable) return { status: "unreadable", text: this.raw };
+      if (this.shortWrite) return { status: "partial", text: this.raw };
       return { status: "ok", text: this.raw };
     },
   };
@@ -203,29 +266,37 @@ export function createMemoryGoalStore() {
 export function createFileGoalStore(fs, path) {
   return {
     read() {
-      try {
-        const text = fs.readFileSync({ path: path, options: { encoding: "utf8" } });
-        if (text == null || text === "") return { status: "absent" };
-        return { status: "ok", text: String(text) };
-      } catch (err) {
-        const name = String(err && err.message ? err.message : err);
-        if (name.indexOf("ENOENT") >= 0 || name.indexOf("No such") >= 0 || name.indexOf("not found") >= 0) {
-          return { status: "absent" };
-        }
-        return { status: "unreadable" };
-      }
+      return readStoredText(fs, path);
     },
-    write(text) {
+    appendFrame(frame) {
+      const flags = fs.O_WRONLY | fs.O_CREAT | fs.O_APPEND;
+      let fd = null;
+      let partial = false;
       try {
-        fs.writeFileSync({ path: path, data: text, options: { encoding: "utf8" } });
+        fd = fs.openSync({ path: path, flag: flags });
+        const buffer = encodeUtf8(String(frame));
+        const written = fs.writeSync({
+          fd: fd,
+          buffer: buffer,
+          options: { offset: 0, length: buffer.byteLength, position: null },
+        });
+        partial = written !== buffer.byteLength;
       } catch (err) {
-        return { status: "unreadable" };
+        partial = true;
+      } finally {
+        if (fd != null) {
+          try {
+            fs.closeSync({ fd: fd });
+          } catch (err) {
+            partial = true;
+          }
+        }
       }
-      const back = this.read();
-      if (back.status !== "ok" || back.text !== text) {
-        return { status: "unreadable", text: back.text || "" };
+      const back = readStoredText(fs, path);
+      if (partial || back.status !== "ok" || !String(back.text).endsWith(frame)) {
+        return { status: back.status === "unreadable" ? "unreadable" : "partial", text: back.text || "" };
       }
-      return { status: "ok", text: text };
+      return { status: "ok", text: back.text };
     },
   };
 }
@@ -242,7 +313,17 @@ export function createGoalJournal(store, context) {
     if (read.status === "absent") {
       return { status: "empty", entries: [], reason: "" };
     }
-    return parseGoalJournal(read.text);
+    const parsed = parseGoalJournal(read.text);
+    if (parsed.status === "torn" || parsed.status === "corrupt" || parsed.status === "unreadable") {
+      return parsed;
+    }
+    for (let i = 0; i < parsed.entries.length; i += 1) {
+      const entry = parsed.entries[i];
+      if (entry.matchId !== context.matchId || entry.principalId !== context.principalId || entry.writerDeviceId !== context.writerDeviceId) {
+        return { status: "corrupt", entries: parsed.entries, reason: "authority-isolation" };
+      }
+    }
+    return parsed;
   }
 
   function identityFailure() {
@@ -318,10 +399,10 @@ export function createGoalJournal(store, context) {
         writerDeviceId: context.writerDeviceId,
         originSequence: parsed.entries.length + 1,
       };
-      const prior = store.read();
-      const base = prior.status === "ok" ? prior.text : "";
-      const next = base + frameFor(entry);
-      const wrote = store.write(next);
+      if (typeof store.appendFrame !== "function") {
+        return result("RECOVERY_REQUIRED", "append", { uncertain: true, captureIntentId: entry.captureIntentId, entries: parsed.entries });
+      }
+      const wrote = store.appendFrame(frameFor(entry));
       const after = load();
       const found = after.entries.find((item) => item.captureIntentId === entry.captureIntentId && item.recordId === entry.recordId && item.scoringTeamId === entry.scoringTeamId);
       if (found && after.status === "ok") {
@@ -334,7 +415,7 @@ export function createGoalJournal(store, context) {
         });
       }
       uncertainIntent = entry.captureIntentId;
-      const reason = wrote.status !== "ok" ? "read-after-write" : (after.reason || "read-after-write");
+      const reason = after.reason || (wrote.status !== "ok" ? "read-after-write" : "read-after-write");
       return result("UNCERTAIN", reason, {
         uncertain: true,
         captureIntentId: entry.captureIntentId,

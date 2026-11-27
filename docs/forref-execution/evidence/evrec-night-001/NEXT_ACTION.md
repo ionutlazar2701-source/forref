@@ -1,6 +1,6 @@
 # Next action
 
-`LEVEL 1` is the software claim for the local goal journal and the local-test score reducer. `LEVEL 2` and `LEVEL 3` are not claimed.
+`LEVEL 1` remains the software claim. `001R` closed the append, pending-intent, isolation, admission, and clock-paint defects in tests. `LEVEL 2` and `LEVEL 3` are not claimed.
 
 1. Founder hardware pass on a paired Bip 6, using `HARDWARE_PROTOCOL.md`. Until that pass, the phase stays `HARDWARE GATE PENDING`.
 

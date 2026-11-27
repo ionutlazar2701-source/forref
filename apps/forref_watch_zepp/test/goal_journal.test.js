@@ -132,9 +132,9 @@ test("a short write is preserved and blocks another append", () => {
 
 test("a read failure after a durable-looking write stays uncertain", () => {
   const store = createMemoryGoalStore();
-  const original = store.write.bind(store);
-  store.write = function (text) {
-    const wrote = original(text);
+  const original = store.appendFrame.bind(store);
+  store.appendFrame = function (frame) {
+    const wrote = original(frame);
     this.unreadable = true;
     return wrote;
   };

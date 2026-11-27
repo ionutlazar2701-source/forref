@@ -13,6 +13,24 @@ function uuid() {
   return hex.slice(0, 8) + "-" + hex.slice(8, 12) + "-" + hex.slice(12, 16) + "-" + hex.slice(16, 20) + "-" + hex.slice(20);
 }
 
+export function readInstallationId(store) {
+  const read = store.read();
+  if (read.status === "unreadable") {
+    console.log("FORREF_PROVISION outcome=RECOVERY_REQUIRED reason=installation-unreadable");
+    return { ok: false, reason: "unreadable", id: "" };
+  }
+  if (read.status !== "ok" || !read.text) {
+    console.log("FORREF_PROVISION outcome=RECOVERY_REQUIRED reason=missing-installation");
+    return { ok: false, reason: "missing-installation", id: "" };
+  }
+  const id = String(read.text).trim();
+  if (!UUID.test(id)) {
+    console.log("FORREF_PROVISION outcome=RECOVERY_REQUIRED reason=installation-corrupt");
+    return { ok: false, reason: "corrupt", id: "" };
+  }
+  return { ok: true, reason: "", id: id };
+}
+
 export function loadInstallationId(store) {
   const read = store.read();
   if (read.status === "unreadable") {

@@ -10,8 +10,8 @@ function pick(name) {
   state().player = "";
   console.log("FORREF_CONTEXT team=" + state().team + " event=" + name + " player=");
   if (name === "GOAL") {
-    state().goalIntentId = "";
-    state().goalRecordId = "";
+    state().goalUserAction = true;
+    state().goalCapturePrepared = false;
     state().goalNote = "";
     push({ url: "page/gt/review/index.page" });
     return;
