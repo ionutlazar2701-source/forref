@@ -2,7 +2,7 @@
 
 State: **NOT TESTED**. Fill every row on a physical Amazfit Bip 6 with the phone debug bridge. Unit tests do not certify the handshake. Do not mark Level 2 from this file until every row has a copied log.
 
-App id `29566`, version `1.0.17` (code 17), boot `build=com-001 rev=9b662fbf1c4ee4f75ce01d05b215c1ac589cae34`. Install `dist/29566-FORREF-1.0.17-20261127093720.zab`. The QR is in `TEST_RESULTS.md`. It expires 11:37 Europe/Bucharest on 4 December 2026.
+App id `29566`, version `1.0.18` (code 18), boot `build=com-001-ui rev=3a2f577e90b5bfe06e31851d5a6d8bccdfd2f25c`. Install `dist/29566-FORREF-1.0.18-20261127100800.zab`. The QR is in `TEST_RESULTS.md`. It expires 12:08 Europe/Bucharest on 4 December 2026. Open Home → SETTINGS → PROVISION and copy both UUID lines before connecting the phone. The two lines together are the 36-character installation id.
 
 This is the Android-local debug route only: Flutter debug bridge on `127.0.0.1:47221`, path `/watch-provision/v1`, then the Zepp Side Service, then the watch page. It is not a production transport. An active match must not need this link. Goal capture stays on the watch. This protocol does not enable Goal-to-phone replication.
 
@@ -22,6 +22,7 @@ A line with `disposition=prepared`, `locked`, or `recorded` while `http` is not 
 
 | Test | Steps | Pass | Result |
 | --- | --- | --- | --- |
+| UUID | From Home, open SETTINGS, then PROVISION. Do this before the phone bridge is running. | Both UUID lines are visible. Joined, they are 36 characters. Back returns to Settings, and Back again returns to Home. OFFICIATE and TRAINING are still on Home. | NOT TESTED |
 | PREPARE | On the phone, prepare one watch-operated match and start the debug bridge. Open the watch provision page. | One `tx=request` for pending, one `tx=response` `disposition=prepared`, one `tx=transition` `phase=verified`. No root yet. | NOT TESTED |
 | LOCK | Leave the page on that match until the lock request returns. | `disposition=locked`, `durable` true, one phone root whose device id is the watch installation. Watch phase `activated`. Same request id as PREPARE. | NOT TESTED |
 | REPORT | Stay on the page until the activation report returns. | `disposition=recorded`. Watch phase `reported`. Same request id. Still one root. `saved` and `d1Certified` stay false. | NOT TESTED |

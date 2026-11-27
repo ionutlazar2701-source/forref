@@ -2,7 +2,9 @@
 
 State: **SOFTWARE PASS / HARDWARE GATE PENDING**. Not a Level 2 pass. The QR was not scanned here.
 
-Functional commit `9b662fbf1c4ee4f75ce01d05b215c1ac589cae34`. Boot stamp commit `f03e1d9d738d1abd9e6c9c989844d0c741df8d41`. Boot name `com-001`.
+Navigation build: functional commit `3a2f577e90b5bfe06e31851d5a6d8bccdfd2f25c`. Boot stamp `b7c498d`. Boot name `com-001-ui`. App `29566`, version `1.0.18` (code 18). Home keeps OFFICIATE and TRAINING and adds SETTINGS. SETTINGS → PROVISION paints the installation UUID as two 18-character lines before any phone request. `npm test`: 249 pass, 0 fail.
+
+Transport functional commit `9b662fbf1c4ee4f75ce01d05b215c1ac589cae34`. Boot stamp commit `f03e1d9d738d1abd9e6c9c989844d0c741df8d41`. Boot name `com-001`.
 
 Baseline: PR #84, commit `e89c2b2041679b9bfaa5132afd903a9e3b921920`. Clock cadence, Goal journal, score, and authority-writer rules are unchanged.
 
@@ -52,29 +54,33 @@ Logs are `FORREF_PROVISION` lines with `tx=request`, `tx=response`, `tx=transiti
 
 ## Diagnostic package
 
-Zeus CLI 1.10.3, target Amazfit Bip 6, device sources `9765120`, `9765121`, `10158337`. App id `29566`, version `1.0.17` (code 17). The preview package is `dist/29566-FORREF-1.0.17-20261127093720.zab` (366033 bytes, sha256 `b70389d8def307bd27e3d66c077896c45906a24c0c143bd7b745c404119c4b1a`). It is not committed. The QR expires `2026-12-04 09:37:23` on the machine clock (UTC), which is 11:37 Europe/Bucharest. The QR was not scanned here.
+Install `1.0.18`. Home → SETTINGS → PROVISION shows the installation UUID without a phone connection.
+
+Zeus CLI 1.10.3, target Amazfit Bip 6, device sources `9765120`, `9765121`, `10158337`. App id `29566`, version `1.0.18` (code 18), boot `build=com-001-ui rev=3a2f577e90b5bfe06e31851d5a6d8bccdfd2f25c`. The preview package is `dist/29566-FORREF-1.0.18-20261127100800.zab` (361857 bytes, sha256 `38bae40d41a92d9c6aa426810adbc2406b263e69ae28ab604e13d9cf84108583`). It is not committed. The QR expires `2026-12-04 10:08:03` on the machine clock (UTC), which is 12:08 Europe/Bucharest. The QR was not scanned here.
+
+The earlier `1.0.17` package (`dist/29566-FORREF-1.0.17-20261127093720.zab`, sha256 `b70389d8def307bd27e3d66c077896c45906a24c0c143bd7b745c404119c4b1a`) is the transport build. Its settings page was not reachable from Home.
 
 ```
-[FORREF - 1.0.17]
+[FORREF - 1.0.18]
 Supported device: Amazfit Bip 6
 ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-█ ▄▄▄▄▄ █ ▀▀▄  █▄██▄█▀▄▄█▀▄▀█▀█ ▄▄▄▄▄ █
-█ █   █ ███ ▄▄▄ ▀█   █ ▀ ▄ ▀█▄█ █   █ █
-█ █▄▄▄█ █ ▄▄ █▀▄█▀▀█▄██ ██ ██▀█ █▄▄▄█ █
-█▄▄▄▄▄▄▄█ █ ▀ █ ▀ █▄▀▄█▄█ █ ▀ █▄▄▄▄▄▄▄█
-█▄▄▄██▄▄█   ██▄▀█ ▄█▄ ▀▄  █▀▀▄▄  ▄█▀  █
-█ ▀▄ █▄▄▀█▀▀▄█▄  ██▄ ██▀▄▀▄█▄▀█▄▀ ▄█ ▄█
-█ ▄▄███▄█▀▀▄▄ ▀█▄▀▀█▄▀██▀▄▀█▀ █ ▄█ ▀  █
-█ ▄ ██▀▄  ▄▄▀ ▄▀▄▀▄█▄█▄█▄▄█▀ ▀▀▄ ▄██▄▄█
-█  █▀ █▄▀▀▀▄██▄█  ▀█▄▀▀█ ▀▀█▀   ▀█ ▀█ █
-█▀  ▄▄ ▄▀█ ▀▄█▄▀ ██▀▄██▀▄▄▄▀ █▄ █ ▀█▀ █
-██▄▄▄ █▄█ ▀▄▄ ██▄▀▄██ █▀ ▀▀▄  ▄  █▄█▄▀█
-█ █▀██ ▄ ▀▀ ▀ █▀ ▄█▄ ▄█▀▄██▀  █▀ █▀▄█▄█
-█▄█  ▀▀▄▄▀▄▄██▄▀▀▀▄▀█ ▀█  █▀▀▄▀  ███  █
-█▄▄▀█ ▀▄██▀ ▄█▄▀▄▀▄▀ ▀██ ▀▄█▄▄▄▀█  ▄█ █
-█▄▄█▄█▄▄█ ▄ ▄  █ ▀▀▀▀▄▀█▀▄▀█  ▄▄▄ ▄▀ ▀█
-█ ▄▄▄▄▄ █▀ █▀ ▄▄ ▀█▄▄ ▄█ ██▀▀ █▄█ █▄█ █
-█ █   █ ██▄▀██ ▄▀ █▀  ▀█ ▀▀█▄▄ ▄▄  ▀▀██
-█ █▄▄▄█ █ ▀ ▄█▀█▄▄█▀▄██▀▄ █▀   █▀▄▀▄█▄█
-█▄▄▄▄▄▄▄█▄██▄▄▄█▄███▄▄███▄███▄█▄██▄██▄█
+█ ▄▄▄▄▄ █▄▀▀▄▄█▄▄▀▀  █▄▄██ ██▀█ ▄▄▄▄▄ █
+█ █   █ ███▄█ ▄█▄ ▀▄▄█ █▀  ▄█ █ █   █ █
+█ █▄▄▄█ ██▄▀▄▀▀██ ▄█▄▀██▀▀▀██▄█ █▄▄▄█ █
+█▄▄▄▄▄▄▄█ █ ▀▄▀ ▀▄█ █ █▄█▄▀▄▀ █▄▄▄▄▄▄▄█
+█▄▄▀ ▄█▄▀█▄▄▄▀▄  ▄▀▀▄▄▀ ▀▄█▄▀ █▄▀▀██▀▄█
+█ ▀██  ▄ ▀ ▀ ▀▄▀ █▀█▀▀█▄ ███▄▄▀   ▄ ▄ █
+██▄█  ▄▄▀▀▀█▄▄ █▄▀█▀▄███▀ █▀▀ █▄ ▀ ▀ ▄█
+██▄▀▀█ ▄▀ █▀ ▄▄  ▀▄▀ █▄▀█ █▄ █   ▀█▀█ █
+█▄█ ▄  ▄▄▀ ▄▀▀▄█▀█▀▀▄ ▀ ▄█ █▀█▄▄ █ ▄▀▄█
+█▄ █▄█▀▄ ▀▀█▄▀▀▀▄▀▄▄▄ █▀▄  █ █▄▄▀▄▀█▀▄█
+█ ▄ ▄█ ▄█ ▄▄█▄▀▄▄██▀▄▄██▀█▀▀ ▄█▄  ▄▀███
+█▀▀█▄▄ ▄█▄ ██▄█▄▄  ▀▀▀█▄ ▀▄▀ █▀█▀█▀▀▀ █
+█▀█ █▀▄▄▄▀  █▀▄▀▀ ▄█▄█▀█ ▄▀█▀▄▀▄▄▀██ ▄█
+█ ▄▀  ▀▄▀ ▄██▀██  █  ▄█▀▀█▄ ▄ ████  ▄▄█
+█▄█▄███▄█▀ ▄ ▄▀█ █▄█ ▄▀ █  █  ▄▄▄ ▄▄▄██
+█ ▄▄▄▄▄ ███▄▀▄▀ ▄▀█  ▄▄█ ▀▀█▀ █▄█ █▄█▄█
+█ █   █ █ ▀ ▄▀ ▀ ▄▄▀ █▀▀▀█▀ ▄   ▄▄ █ ▀█
+█ █▄▄▄█ █▀ ▄ ▀ █ ▄ ▄███▄ ▄▄▀ █▄▀ ▄▀▀▀ █
+█▄▄▄▄▄▄▄█▄▄▄▄▄▄██▄▄█▄▄███▄███▄█▄██▄██▄█
 ```
