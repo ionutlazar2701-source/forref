@@ -1,4 +1,5 @@
 import { push, back } from "@zos/router";
+import { O_APPEND, O_CREAT, O_WRONLY, closeSync, openSync, readFileSync, writeFileSync, writeSync } from "@zos/fs";
 import { logDevice, bindBack, clear, clearDigits, paintBase, textAt, setWidgetText, button } from "../../../utils/chrome";
 import { layoutLive, liveTelemetrySlot } from "../../../utils/geometry";
 import { localeChoice, t } from "../../../utils/text";
@@ -12,6 +13,8 @@ import { deviceNow } from "../../../utils/clock_device";
 import { readWitness } from "../../../utils/clock_witness_device";
 import { formatWitness } from "../../../utils/clock_sleep_witness";
 import { createAbandonArm } from "../../../utils/abandon_arm";
+import { openLocalGoal } from "../../../utils/goal_capture";
+import { invalidatePublishedLocalScore, localTestPresentation, localTestScore, publishLocalScore, readPublishedLocalScore } from "../../../utils/local_test_score";
 
 let unbindPaint = null;
 let metrics = null;
@@ -110,7 +113,70 @@ function fillFor(action) {
   return "navigation";
 }
 
-function shellKey(view, current) {
+function goalFs() {
+  return {
+    readFileSync: readFileSync,
+    writeFileSync: writeFileSync,
+    openSync: openSync,
+    writeSync: writeSync,
+    closeSync: closeSync,
+    O_WRONLY: O_WRONLY,
+    O_CREAT: O_CREAT,
+    O_APPEND: O_APPEND,
+  };
+}
+
+function restoreScore() {
+  invalidatePublishedLocalScore();
+  try {
+    const opened = openLocalGoal(goalFs(), "");
+    if (!opened.admitted.localCandidate) {
+      publishLocalScore({ kind: "hidden", knownScore: false, home: null, away: null });
+      console.log("FORREF_SCORE outcome=hidden reason=" + (opened.admitted.reason || ""));
+      return;
+    }
+    if (!opened.ok || !opened.journal) {
+      publishLocalScore({ kind: "unavailable", knownScore: false, home: null, away: null });
+      console.log("FORREF_RECOVERY outcome=RECOVERY_REQUIRED reason=" + (opened.reason || "journal"));
+      return;
+    }
+    const loaded = opened.journal.load();
+    const score = localTestScore(loaded.entries, opened.admitted, loaded.status);
+    publishLocalScore(score);
+    console.log("FORREF_SCORE outcome=" + score.kind + " home=" + score.home + " away=" + score.away + " knownScore=0");
+  } catch (err) {
+    publishLocalScore({ kind: "unavailable", knownScore: false, home: null, away: null });
+    console.log("FORREF_SCORE outcome=unavailable reason=read");
+  }
+}
+
+function lineFits(lay, current) {
+  const timeH = current === "C" ? 36 : 48;
+  let nextY = lay.timeY + timeH;
+  try {
+    const slot = liveTelemetrySlot(lay, current, timeH);
+    if (slot) nextY = slot.y + slot.h;
+  } catch (err) {
+    nextY = lay.timeY + timeH;
+  }
+  const limit = current === "C" ? lay.away.y : lay.home.y;
+  return nextY + 14 <= limit;
+}
+
+function presentationFor(lay, current) {
+  const preview = readPublishedLocalScore() || { kind: "hidden", knownScore: false, home: null, away: null };
+  return localTestPresentation(preview, lineFits(lay, current), {
+    homeScore: t("homeScore"),
+    awayScore: t("awayScore"),
+    home: t("home"),
+    away: t("away"),
+    conflict: t("scoreConflict"),
+    localTest: t("localTest"),
+  });
+}
+
+function shellKey(view, current, presentation) {
+  const shown = presentation || { warning: "", home: "", away: "" };
   return [
     current,
     view.phase,
@@ -119,7 +185,14 @@ function shellKey(view, current) {
     banner,
     view.unverified ? "u" : "p",
     view.added ? "a" : "n",
+    shown.warning,
+    shown.home,
+    shown.away,
   ].join("|");
+}
+
+function teamButtonLabel(side, presentation) {
+  return side === "home" ? presentation.home : presentation.away;
 }
 
 function telemetryLabel() {
@@ -135,7 +208,7 @@ function telemetryLabel() {
   });
 }
 
-function paintDigits(view, lay, current) {
+function paintDigits(view, lay, current, presentation) {
   const started = Date.now();
   const timeH = current === "C" ? 36 : 48;
   const status = statusLabel(view);
@@ -165,10 +238,13 @@ function paintDigits(view, lay, current) {
   } catch (err) {
     console.log("FORREF_TEL paint=KEPT");
   }
-  const detail = detailLabel(view);
+  const warning = presentation && presentation.warning ? presentation.warning : "";
+  const detail = warning || detailLabel(view);
   const detailLimit = current === "C" ? lay.away.y : lay.home.y;
   if (detail && nextY + 14 <= detailLimit) {
     textAt(12, nextY, metrics.width - 24, 14, detail, 12, TEXT_WARNING, true);
+  } else if (warning || (presentation && presentation.withheld)) {
+    console.log("FORREF_SCORE outcome=visual-pending reason=no-slot");
   }
   digitCache = { key: key, status: statusNode, time: timeNode, telemetry: telemetryNode };
   return Date.now() - started;
@@ -184,10 +260,10 @@ function logView(view, current) {
   console.log("FORREF_LIVE002 VIEW|" + line + "!");
 }
 
-function paintShell(view, lay) {
+function paintShell(view, lay, presentation) {
   const primary = view.actions[0];
-  button(lay.home.x, lay.home.y, lay.home.w, lay.home.h, t("homeScore"), () => openTeam("HOME"), "neutral", "live-home", metrics);
-  button(lay.away.x, lay.away.y, lay.away.w, lay.away.h, t("awayScore"), () => openTeam("AWAY"), "neutral", "live-away", metrics);
+  button(lay.home.x, lay.home.y, lay.home.w, lay.home.h, teamButtonLabel("home", presentation), () => openTeam("HOME"), "neutral", "live-home", metrics);
+  button(lay.away.x, lay.away.y, lay.away.w, lay.away.h, teamButtonLabel("away", presentation), () => openTeam("AWAY"), "neutral", "live-away", metrics);
   if (primary) {
     const label = primary === "ABANDON_GAME" && arm.armed() ? t("confirmAbandon") : t(ACTION_TEXT[primary]);
     button(lay.display.x, lay.display.y, lay.display.w, lay.display.h, label, () => onAction(primary), fillFor(primary), "live-" + primary, metrics);
@@ -221,17 +297,18 @@ function paintAll(prepared) {
   arm.retain(contextOf(view));
   const current = mode();
   const lay = layoutLive(metrics, current);
-  const key = shellKey(view, current);
+  const presentation = presentationFor(lay, current);
+  const key = shellKey(view, current, presentation);
   let paintMs = 0;
   if (!shell || shell.key !== key) {
     clear();
     digitCache = null;
     paintBase(metrics);
-    paintMs = paintDigits(view, lay, current);
-    paintShell(view, lay);
+    paintMs = paintDigits(view, lay, current, presentation);
+    paintShell(view, lay, presentation);
     shell = { key: key };
   } else {
-    paintMs = paintDigits(view, lay, current);
+    paintMs = paintDigits(view, lay, current, presentation);
   }
   logView(view, current);
   return { digits: digitLabel(view) || "", paintMs: paintMs };
@@ -270,6 +347,7 @@ Page({
     bindBack(false);
     bootLive();
     shell = null;
+    restoreScore();
     if (unbindPaint) {
       unbindPaint();
     }

@@ -744,6 +744,30 @@ final class MatchApplicationBoundary
     return decision;
   }
 
+  /// Drops CONFIG_PREPARED. Does not create or restore a phone authority root.
+  Future<WatchProvisionDecision> cancelPreparedWatchMatch({
+    required String matchId,
+    required String contentHash,
+  }) async {
+    final outcome = await _store.cancelPreparedWatchProvision(
+      matchId: matchId,
+      contentHash: contentHash,
+    );
+    if (outcome is WatchProvisionStageCancelled) {
+      return const WatchProvisionDecision(
+        state: WatchProvisionState.unprovisioned,
+        trace: [WatchProvisionState.unprovisioned],
+        reason: 'cancelled',
+      );
+    }
+    final refused = outcome as WatchProvisionStageRefused;
+    return WatchProvisionDecision(
+      state: WatchProvisionState.authorityConflict,
+      trace: const [WatchProvisionState.authorityConflict],
+      reason: refused.reason,
+    );
+  }
+
   /// Commits the watch root only after a verified receipt and available transport.
   Future<WatchProvisionDecision> lockWatchAuthority({
     required String canonicalMessage,

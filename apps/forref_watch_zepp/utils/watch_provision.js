@@ -130,7 +130,10 @@ function decision(state, trace, extra) {
     rootToCommit: body.rootToCommit || null,
     saved: false,
     d1Certified: false,
-    mayAppendSportingRecords: state === "WATCH_ACTIVATED",
+    authorityActivated: state === "WATCH_ACTIVATED",
+    captureStorageCertified: false,
+    authoritativeCaptureAdmitted: false,
+    mayAppendSportingRecords: false,
     display: displayFor(state),
   };
 }

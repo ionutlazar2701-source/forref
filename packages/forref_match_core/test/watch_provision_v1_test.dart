@@ -292,7 +292,10 @@ void main() {
       lockReceipt: durable,
     );
     expect(activated.state, WatchProvisionState.watchActivated);
-    expect(activated.mayAppendSportingRecords, isTrue);
+    expect(activated.authorityActivated, isTrue);
+    expect(activated.captureStorageCertified, isFalse);
+    expect(activated.authoritativeCaptureAdmitted, isFalse);
+    expect(activated.mayAppendSportingRecords, isFalse);
     expect(activated.saved, isFalse);
     expect(activated.d1Certified, isFalse);
     final again = admission.activate(
@@ -333,7 +336,8 @@ void main() {
       sportingRecordsExist: false,
     );
     expect(after.state, WatchProvisionState.watchActivated);
-    expect(after.mayAppendSportingRecords, isTrue);
+    expect(after.authorityActivated, isTrue);
+    expect(after.authoritativeCaptureAdmitted, isFalse);
   });
 
   test('a changed installation identity fails closed and keeps the root', () {
@@ -419,5 +423,44 @@ void main() {
     expect(locked.display, watchProvisionDisplayLocked);
     expect(locked.saved, isFalse);
     expect(locked.d1Certified, isFalse);
+  });
+
+  test('a verified message without readback does not lock authority', () {
+    final facts = PhoneProvisionFacts(
+      committedSportingRecords: 0,
+      phoneOriginDeviceId: fixture['phoneOriginDeviceId']! as String,
+    );
+    expect(
+      verifiedReceiptFromMessage(const {
+        'type': watchProvisionVerifiedV1,
+        'contentHash': 'abc',
+        'writerDeviceId': '6f1e2d3c-4b5a-4678-9abc-def012345678',
+        'generation': 1,
+        'readBack': false,
+      }),
+      isNull,
+    );
+    final receipt = verifiedReceiptFromMessage({
+      'type': watchProvisionVerifiedV1,
+      'contentHash': fixture['contentHash']! as String,
+      'writerDeviceId': fixture['localInstallationId']! as String,
+      'generation': 1,
+      'readBack': true,
+    });
+    final locked = decidePhoneAuthorityLock(
+      message: canonical,
+      facts: facts,
+      receipt: receipt,
+      transportAvailable: true,
+    );
+    expect(locked.rootToCommit, isNotNull);
+    expect(
+      activationDurable(const {
+        'type': watchActivatedV1,
+        'generation': 1,
+        'durable': false,
+      }),
+      isFalse,
+    );
   });
 }

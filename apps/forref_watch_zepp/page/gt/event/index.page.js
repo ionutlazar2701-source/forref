@@ -9,6 +9,13 @@ function pick(name) {
   state().event = name;
   state().player = "";
   console.log("FORREF_CONTEXT team=" + state().team + " event=" + name + " player=");
+  if (name === "GOAL") {
+    state().goalUserAction = true;
+    state().goalCapturePrepared = false;
+    state().goalNote = "";
+    push({ url: "page/gt/review/index.page" });
+    return;
+  }
   push({ url: "page/gt/player/index.page" });
 }
 
