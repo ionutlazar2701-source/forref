@@ -764,6 +764,36 @@ abstract class AppLocalizations {
   /// **'{home} {homeScore} — {awayScore} {away}'**
   String scoreLine(String home, int homeScore, int awayScore, String away);
 
+  /// No description provided for @watchProvisionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch provision'**
+  String get watchProvisionTitle;
+
+  /// No description provided for @watchProvisionInstallation.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch installation UUID'**
+  String get watchProvisionInstallation;
+
+  /// No description provided for @watchProvisionPrepare.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepare and listen'**
+  String get watchProvisionPrepare;
+
+  /// No description provided for @watchProvisionNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved match selected'**
+  String get watchProvisionNoMatch;
+
+  /// No description provided for @watchProvisionUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Debug bridge unavailable'**
+  String get watchProvisionUnavailable;
+
   /// No description provided for @clockWithAdded.
   ///
   /// In en, this message translates to:

@@ -2,7 +2,7 @@
 
 `LEVEL 1` remains the software claim. `82-FINAL` closed legacy recovery, hashed v2 names, close verification, and the empty-history manifest in tests. See `RELIABILITY_82_FINAL.md`. `LEVEL 2` and `LEVEL 3` are not claimed. D1 stays uncertified.
 
-1. Founder hardware pass on a paired Bip 6, using `HARDWARE_PROTOCOL.md`. Until that pass, the phase stays `HARDWARE GATE PENDING`.
+1. Founder hardware pass on a paired Bip 6. The debug package and QR are in `BIP6_001.md`. Until that pass, the phase stays `HARDWARE GATE PENDING`.
 
 2. A real Zepp Side Service delivery of the four provision messages. The codec exists. No page receives those messages from the phone, so the context file is not created on a device.
 

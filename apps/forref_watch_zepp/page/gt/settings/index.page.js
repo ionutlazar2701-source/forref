@@ -30,6 +30,7 @@ function paint() {
     { label: t("tempDefault") + " " + mode, color: TEXT_WARNING },
     { label: t("displayTitle"), action: () => push({ url: "page/gt/display/index.page" }), name: "settings-display" },
     { label: localeLabel(), action: () => cycleLocale(), name: "settings-locale" },
+    { label: t("provision"), action: () => push({ url: "page/gt/provision/index.page" }), name: "settings-provision" },
     { label: t("cautions"), action: () => push({ url: "page/gt/cautions/index.page" }), name: "settings-g1" },
     { label: t("neutral"), action: () => push({ url: "page/gt/neutral/index.page" }), name: "settings-g2" },
     { label: t("back"), action: () => back(), name: "settings-back" },

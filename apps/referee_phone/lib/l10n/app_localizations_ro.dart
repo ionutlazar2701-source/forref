@@ -360,6 +360,21 @@ class AppLocalizationsRo extends AppLocalizations {
   }
 
   @override
+  String get watchProvisionTitle => 'Provizionare ceas';
+
+  @override
+  String get watchProvisionInstallation => 'UUID instalare ceas';
+
+  @override
+  String get watchProvisionPrepare => 'Pregătește și ascultă';
+
+  @override
+  String get watchProvisionNoMatch => 'Niciun meci salvat selectat';
+
+  @override
+  String get watchProvisionUnavailable => 'Puntea de depanare nu e disponibilă';
+
+  @override
   String clockWithAdded(String clock, int minutes) {
     return '$clock +$minutes';
   }
