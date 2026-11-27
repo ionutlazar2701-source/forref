@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:forref_match_core/forref_match_core.dart';
 import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
 import 'package:referee_phone/infrastructure/match_memory/match_application_composition.dart';
 import 'package:referee_phone/officiate/watch_provision_debug_bridge.dart';
