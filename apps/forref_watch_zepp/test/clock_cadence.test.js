@@ -121,11 +121,263 @@ test("one timer keeps a 1 second face across sleep and navigation restarts", () 
   assert.equal(stopped.indexOf(first) >= 0, true);
   assert.notEqual(restarted, first);
   assert.equal(armed.length, 2);
+  assert.equal(logged.some((line) => line.includes("wake=open reason=restart")), true);
   now = T0 + 9000;
   armed[1].run();
   assert.equal(faceAt(session, now), "00:09");
-  assert.equal(logged[logged.length - 1].includes("now=00:09"), true);
+  assert.equal(logged.some((line) => line.includes("now=00:09")), true);
+  assert.equal(logged.some((line) => line.includes("timer=wake")), true);
+  assert.notEqual(host.id(), restarted);
+  assert.equal(armed.length, 3);
+  assert.equal(stopped.indexOf(restarted) >= 0, true);
   assert.equal(paints, 6);
+});
+
+// A repeating timer that was already armed when the screen slept keeps a
+// doubled period. A timer created after that mark keeps the delay it was given.
+function doublingPlatform(startUtc) {
+  let utc = startUtc;
+  let seq = 1;
+  const live = new Map();
+  return {
+    utc: function () {
+      return utc;
+    },
+    now: function () {
+      return utc;
+    },
+    delay: function () {
+      return nextTimerDelay(utc, 1000);
+    },
+    arm: function (run, delay) {
+      const id = seq;
+      seq += 1;
+      live.set(id, { run: run, delay: delay, scale: 1 });
+      return id;
+    },
+    disarm: function (id) {
+      live.delete(id);
+    },
+    sleep: function (ms) {
+      utc += ms;
+      for (const timer of live.values()) {
+        timer.scale = 2;
+      }
+    },
+    fire: function () {
+      const id = live.keys().next().value;
+      const timer = live.get(id);
+      const gap = timer.delay * timer.scale;
+      utc += gap;
+      timer.run();
+      return gap;
+    },
+    liveCount: function () {
+      return live.size;
+    },
+    scale: function () {
+      const timer = live.values().next().value;
+      return timer ? timer.scale : 0;
+    },
+  };
+}
+
+function paintHost(platform, session, logged) {
+  const host = createForegroundHost({
+    utc: platform.utc,
+    now: platform.now,
+    delay: platform.delay,
+    sample: function () {
+      const view = liveFrame(session, platform.utc(), EPOCH).view;
+      view.commitMs = 0;
+      return view;
+    },
+    arm: platform.arm,
+    disarm: platform.disarm,
+    log: function (line) {
+      logged.push(line);
+    },
+  });
+  host.bind(function (view) {
+    return { digits: displayText(view), paintMs: 3 };
+  });
+  host.start();
+  return host;
+}
+
+test("a timer that survives sleep keeps a 2s callback until it is replaced", () => {
+  const session = kick();
+  const platform = doublingPlatform(T0);
+  const rows = [];
+  let previous = null;
+  platform.arm(function () {
+    const digits = faceAt(session, platform.utc());
+    const row = noteCadence(previous, {
+      utc: platform.utc(),
+      digits: digits,
+      prepareMs: 1,
+      commitMs: 0,
+      paintMs: 1,
+    });
+    previous = { utc: platform.utc(), digits: digits };
+    rows.push(row);
+  }, platform.delay());
+  platform.fire();
+  platform.fire();
+  platform.fire();
+  platform.sleep(10000);
+  const post = [];
+  for (let i = 0; i < 6; i++) {
+    platform.fire();
+    post.push(rows[rows.length - 1]);
+    assert.equal(post[post.length - 1].digits, faceAt(session, platform.utc()));
+  }
+  assert.equal(post[0].digits, "00:15");
+  assert.equal(post[0].step, 12);
+  assert.equal(post[1].dt, 2000);
+  assert.equal(post[1].step, 2);
+  assert.equal(classifyCadence(post), "CALLBACK_2S");
+  assert.equal(platform.scale(), 2);
+  assert.equal(platform.liveCount(), 1);
+});
+
+test("replacing the slept timer restores a 1s cadence without moving the anchor", () => {
+  for (const slept of [10000, 60000, 300000]) {
+    const session = kick();
+    const platform = doublingPlatform(T0);
+    const logged = [];
+    paintHost(platform, session, logged);
+    platform.fire();
+    platform.fire();
+    platform.fire();
+    const before = platform.utc();
+    platform.sleep(slept);
+    const post = [];
+    for (let i = 0; i < 8; i++) {
+      const gap = platform.fire();
+      post.push({ gap: gap, utc: platform.utc(), digits: faceAt(session, platform.utc()) });
+      assert.equal(platform.liveCount(), 1);
+    }
+    assert.equal(post[0].gap, 2000);
+    assert.equal(post[0].digits, faceAt(session, before + slept + 2000));
+    assert.notEqual(post[0].step, 1);
+    for (let i = 1; i < post.length; i++) {
+      assert.equal(post[i].gap, 1000);
+      assert.equal(post[i].digits, faceAt(session, post[i].utc));
+      assert.equal(displayedSeconds(post[i].digits) - displayedSeconds(post[i - 1].digits), 1);
+    }
+    assert.equal(platform.scale(), 1);
+    const wakes = logged.filter(function (line) {
+      return line.indexOf("FORREF_CLOCK_WAKE") === 0;
+    });
+    assert.equal(wakes.length, 8);
+    assert.equal(wakes[0].includes("dt="), true);
+    assert.equal(wakes[0].includes("step="), true);
+    assert.equal(wakes[0].includes("prepareMs="), true);
+    assert.equal(wakes[0].includes("commitMs=0"), true);
+    assert.equal(wakes[0].includes("paintMs=3"), true);
+    assert.equal(wakes[1].includes("dt=1000"), true);
+    assert.equal(wakes[1].includes("step=1"), true);
+    assert.equal(logged.some(function (line) {
+      return line.includes("timer=wake");
+    }), true);
+    assert.equal(logged.some(function (line) {
+      return line.includes("wake=closed");
+    }), false);
+  }
+});
+
+test("returning to Live after sleep leaves one timer on the 1s delay", () => {
+  const session = kick();
+  const platform = doublingPlatform(T0);
+  const logged = [];
+  const host = paintHost(platform, session, logged);
+  platform.fire();
+  platform.fire();
+  platform.sleep(10000);
+  assert.equal(platform.scale(), 2);
+  host.restart();
+  assert.equal(platform.liveCount(), 1);
+  assert.equal(platform.scale(), 1);
+  assert.equal(platform.fire(), 1000);
+  assert.equal(faceAt(session, platform.utc()), "00:13");
+  assert.equal(platform.liveCount(), 1);
+  assert.equal(platform.fire(), 1000);
+  assert.equal(faceAt(session, platform.utc()), "00:14");
+  assert.equal(logged.some(function (line) {
+    return line.includes("wake=open reason=restart");
+  }), true);
+  assert.equal(logged.some(function (line) {
+    return line.includes("page=") || line.includes("writeFile");
+  }), false);
+});
+
+test("a 1s callback that skips a displayed second does not replace the timer", () => {
+  let now = T0;
+  let armed = 0;
+  const rows = [];
+  const host = createForegroundHost({
+    utc: function () {
+      return now;
+    },
+    now: function () {
+      return now;
+    },
+    delay: function () {
+      return 1000;
+    },
+    sample: function () {
+      const shown = Math.floor((now - T0) / 1000) * 2;
+      return { digits: "00:" + String(shown).padStart(2, "0"), commitMs: 0 };
+    },
+    arm: function () {
+      armed += 1;
+      return armed;
+    },
+    disarm: function () {
+      throw new Error("must not stop");
+    },
+    log: function () {},
+  });
+  host.start();
+  for (let second = 1; second <= 5; second++) {
+    now = T0 + second * 1000;
+    rows.push(host.tick());
+  }
+  assert.equal(armed, 1);
+  assert.equal(host.id(), 1);
+  assert.equal(classifyCadence(rows), "RENDER_SKIP");
+});
+
+test("a gap does not arm a second timer when the slept timer cannot be stopped", () => {
+  let now = 0;
+  let armed = 0;
+  const host = createForegroundHost({
+    utc: function () {
+      return now;
+    },
+    now: function () {
+      return now;
+    },
+    sample: function () {
+      return { digits: "00:05", commitMs: 0 };
+    },
+    arm: function () {
+      armed += 1;
+      return armed;
+    },
+    disarm: function () {
+      throw new Error("stop failed");
+    },
+    log: function () {},
+  });
+  host.start();
+  now = 1000;
+  host.tick();
+  now = 4000;
+  host.tick();
+  assert.equal(armed, 1);
+  assert.equal(host.id(), 1);
 });
 
 test("a missed callback shows the anchor second and does not invent the skipped one", () => {

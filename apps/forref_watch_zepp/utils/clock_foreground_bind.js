@@ -1,10 +1,11 @@
 // App-lifetime sampler. It is not owned by Live, Event, Player, or Review.
 // createTimer stops with the screen and with the app. It is not the screen-off clock.
-// Live paints from this one timer. A second createTimer(1000, 1000) on the page
-// can resume on the opposite phase and then update the digits every 2 s.
+// Live paints from this one timer. After sleep the page is still built, so the
+// same id resumes. A resumed repeat of about 2000 ms is stopped on that
+// callback and one replacement is armed. There is no second Live timer.
 
 import { createTimer, stopTimer } from "@zos/timer";
-import { deviceNow } from "./clock_device";
+import { deviceNow, deviceScreen } from "./clock_device";
 import { sampleFromScheduler } from "./live_session";
 import { createForegroundHost, nextTimerDelay } from "./clock_cadence";
 
@@ -20,6 +21,9 @@ const host = createForegroundHost({
   },
   delay: function () {
     return nextTimerDelay(deviceNow(), 1000);
+  },
+  screen: function () {
+    return deviceScreen();
   },
   arm: function (run, delay) {
     return createTimer(delay, 1000, run);
