@@ -16,6 +16,35 @@ A callback every 1000 ms whose digits jump by two is `RENDER_SKIP`. That path do
 
 ## Suite
 
-`npm test` in `apps/forref_watch_zepp`: 239 pass, 0 fail.
+`npm test` in `apps/forref_watch_zepp`: 239 pass, 0 fail. `./tool/verify_cloud.sh`: PASSED.
 
 Goal, score, and Match Memory files are not in the functional diff.
+
+## Diagnostic package
+
+Zeus CLI 1.10.3, target Amazfit Bip 6, device sources `9765120`, `9765121`, `10158337`. App id `29566`, version `1.0.16` (code 16). The preview package is `dist/29566-FORREF-1.0.16-20261127091904.zab` (363345 bytes, sha256 `6a35ca45dae88a958ae704e8dcc3ab14229bcf59ac73a3e366d59a0e2a1918f1`). It is not committed. The QR expires `2026-12-04 09:19:06` on the machine clock (UTC), which is 11:19 Europe/Bucharest. The QR was not scanned here.
+
+```
+[FORREF - 1.0.16]
+Supported device: Amazfit Bip 6
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+█ ▄▄▄▄▄ █▀█ █▄▀█▀ █▄▄▄ █▄██ ▀ █ ▄▄▄▄▄ █
+█ █   █ █▀▀▀█ ▀▀▀ █▄▀▀▄ ▀ ▀ ▀██ █   █ █
+█ █▄▄▄█ █▀ █▀▀▀  ▄▄ █▄▀▀▄▀▀▄▀ █ █▄▄▄█ █
+█▄▄▄▄▄▄▄█▄▀ ▀▄█▄█▄█ ▀ ▀▄█▄█ █ █▄▄▄▄▄▄▄█
+█ ▄▄  █▄  ▄▀▄▀▄▄▀▀█▀▀ ██▀▄▄ ██▄█ █ ▀ ██
+█▄▄▄█▄█▄█  ▀█▀█▀ █▄▄█▀▀ ███▄  ▄  ▀ ▄▀ █
+█▄▄▀█▄▀▄ ▄ ▄█▄▀ ▀ ▄██ ▀▄   ▄█▀▄▄█▄▄ ▀▄█
+█▀ ▀▄▄▄▄▀▀█▀ ▄██▄▄▄ ▀▀ ▄█ ▄ ▄   ▀█▀▄█ █
+█▄█ ▀▀█▄███▀▄▀█ ▄▀ █▀ █▄▀█ ▄█▀▀▄ ▄▄ ▄▄█
+█ █▄▀▀▀▄ ▄█▄█▀█ ▄ █▄▀▄▀ █ █ ▄▄█▄▄▀█▄ ▄█
+█ ▀ ██ ▄█  ██▄▄▄▄▀▄▀▄▀▀ ▀█ █▄▀█▄▀▄ ▄███
+█   ▀▀█▄ ▄▀▀ ▄█▀ ▀█▀█ ▀ █▀▄ ▄▀▄█▀▄██▄ █
+█ █ ▀▄ ▄ █ ▄▄▀▀▄█▀█▀ ▀█▄▀▄▄ ██ ▄▀▄▀▄▀▄█
+█ ██▄█ ▄▄▀█ █▀▄ ▄▀█▄▀ ▀▄▀██▄ ███▄▀▄█▄▄█
+█▄█▄▄▄▄▄█▀▄ █▄█ ▀▀▄▀ ██▄   ▄▄ ▄▄▄   ▀██
+█ ▄▄▄▄▄ █▄▄█ ▄█▀▄▀█▄█▀ ▄▀▀▄ █ █▄█ ▀█▄▄█
+█ █   █ █ ▀▀▄▀▀█▄▀▄▀▀▀█▄▀█ ▄ ▄  ▄ ▄  ▀█
+█ █▄▄▄█ █ ███▀ ▄▄▄█▀█▄▀ █▄▄ ▄▀▀▀ ███▄ █
+█▄▄▄▄▄▄▄█▄▄▄█▄█▄▄█▄████▄▄▄▄▄██▄▄▄▄▄▄▄▄█
+```
