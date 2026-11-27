@@ -357,6 +357,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get watchProvisionTitle => 'Watch provision';
+
+  @override
+  String get watchProvisionInstallation => 'Watch installation UUID';
+
+  @override
+  String get watchProvisionPrepare => 'Prepare and listen';
+
+  @override
+  String get watchProvisionNoMatch => 'No saved match selected';
+
+  @override
+  String get watchProvisionUnavailable => 'Debug bridge unavailable';
+
+  @override
   String clockWithAdded(String clock, int minutes) {
     return '$clock +$minutes';
   }

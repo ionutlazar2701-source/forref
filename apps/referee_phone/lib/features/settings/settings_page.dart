@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:referee_phone/app_scope.dart';
+import 'package:referee_phone/features/settings/watch_provision_debug_section.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -22,6 +24,7 @@ class SettingsPage extends StatelessWidget {
             title: Text(l10n.romanian),
             onTap: () => locale.value = const Locale('ro'),
           ),
+          if (kDebugMode) const WatchProvisionDebugSection(),
         ],
       ),
     );
