@@ -43,9 +43,19 @@ test("the watch device bundle does not load ZML and registers App directly", () 
   const seen = new Set();
   const files = [];
   for (const entry of entries) walkFile(entry, seen, files);
-  const specs = files.flatMap((file) => importSpecifiers(readFileSync(file, "utf8")));
+  const link = join(root, "page/gt/link/index.page.js");
+  const specs = files
+    .filter((file) => file !== link)
+    .flatMap((file) => importSpecifiers(readFileSync(file, "utf8")));
   const offenders = specs.filter((spec) => spec.includes("@zeppos/zml") || spec.includes("device_messaging") || spec.includes("device_app"));
   assert.deepEqual(offenders, []);
+  const linkSource = readFileSync(link, "utf8");
+  assert.equal(linkSource.includes('import("@zeppos/zml/3.0/module/messaging/plugin/app")'), true);
+  assert.equal(linkSource.includes("base-app"), false);
+  const bootFiles = files.filter((file) => file.endsWith("/app.js") || file.includes("/app-service/") || file.endsWith("/home/index.page.js") || file.endsWith("/provision/index.page.js"));
+  const bootText = bootFiles.map((file) => readFileSync(file, "utf8")).join("\n");
+  assert.equal(bootText.includes("@zeppos/zml"), false);
+  assert.equal(bootText.includes("import("), false);
   const side = readFileSync(join(root, "app-side/index.js"), "utf8");
   assert.equal(side.includes("@zeppos/zml/base-side"), true);
 });

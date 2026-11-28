@@ -31,6 +31,7 @@ function paint() {
     { label: t("displayTitle"), action: () => push({ url: "page/gt/display/index.page" }), name: "settings-display" },
     { label: localeLabel(), action: () => cycleLocale(), name: "settings-locale" },
     { label: t("provision"), action: () => push({ url: "page/gt/provision/index.page" }), name: "settings-provision" },
+    { label: t("link"), action: () => push({ url: "page/gt/link/index.page" }), name: "settings-link" },
     { label: t("cautions"), action: () => push({ url: "page/gt/cautions/index.page" }), name: "settings-g1" },
     { label: t("neutral"), action: () => push({ url: "page/gt/neutral/index.page" }), name: "settings-g2" },
     { label: t("back"), action: () => back(), name: "settings-back" },

@@ -366,7 +366,8 @@ test("live paint reads telemetry after the clock and does not release it on navi
   assert.equal(appJson.permissions.includes("data:user.hd.workout"), false);
   assert.equal(appJson.permissions.includes("device:os.geolocation"), true);
   assert.equal(appJson.permissions.includes("data:user.hd.heart_rate"), true);
-  assert.equal(appJson.targets.gt.module.page.pages.length, 24);
+  assert.equal(appJson.targets.gt.module.page.pages.length, 25);
+  assert.equal(appJson.targets.gt.module.page.pages.includes("page/gt/link/index.page"), true);
   const joined = telemetrySrc + hostSrc + bindSrc + live;
   assert.equal(joined.includes("getSportData"), false);
   assert.equal(joined.includes("data:user.hd.workout"), false);

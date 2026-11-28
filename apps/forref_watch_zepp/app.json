@@ -5,12 +5,12 @@
     "appName": "FORREF",
     "appType": "app",
     "version": {
-      "code": 22,
-      "name": "1.0.22"
+      "code": 23,
+      "name": "1.0.23"
     },
     "icon": "icon.png",
     "vender": "zepp",
-    "description": "FORREF COM 001 OPEN"
+    "description": "FORREF COM 002 LINK"
   },
   "permissions": [
     "data:os.device.info",
@@ -47,6 +47,7 @@
             "page/gt/review/index.page",
             "page/gt/settings/index.page",
             "page/gt/provision/index.page",
+            "page/gt/link/index.page",
             "page/gt/cautions/index.page",
             "page/gt/neutral/index.page",
             "page/gt/halftime/index.page",

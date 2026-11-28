@@ -517,8 +517,9 @@ test("the watch surface stays on the review route and off the clock files", () =
   const paths = readFileSync(new URL("../utils/clock_store_paths.js", import.meta.url), "utf8");
   const session = readFileSync(new URL("../utils/live_session.js", import.meta.url), "utf8");
   const device = readFileSync(new URL("../utils/capture_device.js", import.meta.url), "utf8");
-  assert.equal(app.targets.gt.module.page.pages.length, 24);
+  assert.equal(app.targets.gt.module.page.pages.length, 25);
   assert.equal(app.targets.gt.module.page.pages.includes("page/gt/provision/index.page"), true);
+  assert.equal(app.targets.gt.module.page.pages.includes("page/gt/link/index.page"), true);
   assert.equal(review.includes("watchCaptureAdapter"), true);
   assert.equal(review.includes("SAVED"), false);
   assert.equal(review.includes("OFFICIAL"), false);

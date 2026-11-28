@@ -1,6 +1,6 @@
 // Identity logged at boot so a simulator trace can be matched to a commit.
 // BUILD_REV is the functional commit. The evidence commit may follow it.
-export const BUILD_NAME = "com-001-open";
+export const BUILD_NAME = "com-002-link";
 export const BUILD_REV = "b89abb97e2c31162e145f6b62041ee2d6f3aed3d";
 
 export function bootLine() {
