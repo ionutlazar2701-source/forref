@@ -8,6 +8,33 @@ Root cause: Zepp OS API_LEVEL 4.2 documents `getDeviceInfo().uuid` as a string o
 
 `packages/forref_match_persistence` `dart test test/watch_identity_test.dart` passed 9 tests. `apps/forref_watch_zepp` `npm test` passed 287 tests, 0 failed. `flutter test test/watch_provision_debug_bridge_test.dart` passed 11 tests. The bridge refused a version-2 fingerprint from another installation with `reason=installation` before any witness existed, then stored `digest_version` 2 for the current writer and returned `reason=recovery-required` for the same digest. The stage writer, canonical text, and generation-1 root were unchanged. These rows are not Bip 6 results. H1–H11 stay **LOCAL GATE REQUIRED**.
 
+Functional commit `12dfb9d197cbea419129f533ad865fbd613a71d6`. Stamp commit `a72acdf60de5253abc73012fd1ef1dc2da90d3cf`. Boot `build=identity-bytes32-032 rev=12dfb9d197cbea419129f533ad865fbd613a71d6`.
+
+Zeus CLI 1.10.3, target Amazfit Bip 6, device sources `9765120`, `9765121`, `10158337`. App id `29566`, version `1.0.32` (code 32). The preview package is `dist/29566-FORREF-1.0.32-20261128142742.zab` (409318 bytes, sha256 `b78584bdcf9175a5391f165c32fb8eee0191a7f63301dfc79a32054f7d89c922`). It is not committed. `app.bin` contains `identity-bytes32-032` and the functional rev. It does not contain `GET_WATCH_PROVISION` or `createConnect`. The provision page bundle contains `forref-candidate-v2:`, `forref.identity-witness.v1`, and `FORREF_WITNESS`. The side bundle contains `prepare-only`. The QR expires `2026-12-05 14:27:44` on the machine clock (UTC), which is 16:27 Europe/Bucharest. Decoding the ASCII QR yields `zpkd1://api-mifit-de2.zepp.com/custom/tools/app-dial/download/BmyJZoxkrzcnEbUAnMoPralWcfzHJUkB`. That decode is a package check. This package does not certify a Bip 6 witness, a Zepp POST, lock, or activation.
+
+```
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+█ ▄▄▄▄▄ █ ▀▀▄  ▄█▀███▀▄▄█▀▄▀█▀█ ▄▄▄▄▄ █
+█ █   █ ███ ▄▄ ▀█▀  ▀█ ▀ ▄ ▀█▄█ █   █ █
+█ █▄▄▄█ █ ▄▄ █  ▄█▀▄███ ██ ██▀█ █▄▄▄█ █
+█▄▄▄▄▄▄▄█ █ ▀ █▄█ █ ▀▄█▄█ █ ▀ █▄▄▄▄▄▄▄█
+█ ▄ ▀▀▄▄█▄  ██▀▀▀ █▀█▀▀▄  █▀▀▄▄  ▄█▀  █
+█ ▀▄▀█▀▄▀ ▀█▄██▄▄██▄ ▄█▀▄▀▄█▄▀█▄▀ ▄█ ▄█
+████   ▄▀▄▀█▄  █  ▀▀█ ██▀▄▀█▀ █ ▄█ ▀  █
+█▄█ ▀█▄▄  █▀▀ ▄▄ ▄█▄▄█▄█▄▄█▀ ▀▀▄ ▄██▄▄█
+█▀█ ▄▄▀▄█▄ ███ █ ▀██▀▀▀█ ▀▀█▀   ▀█ ▀█ █
+█▀▀ ▀█▄▄ █  ▄██▄▄▄█ ▄▀█▀▄▄▄▀ █▄ █ ▀█▀ █
+█▀█ █▀█▄ ▀▀█▄ ▄▀▄▀▀█▀ █▀ ▀▀▄  ▄  █▄█▄▀█
+█   ▀▀ ▄▄ █ ▀ ▄▀ ▀██ ▄█▀▄██▀  █▀ █▀▄█▄█
+█▄▄▄ ▄▀▄▄▄▀ ██▀█▀ ▄█▄ ▀█  █▀▀▄▀  ███  █
+█▄▄▀██▀▄▄▄  ▄██ ▄▀▄▀ ▀██ ▀▄█▄▄▄▀█  ▄█ █
+█▄▄▄▄█▄▄▄▀▄ ▄ ▄██ ██▀▄▀█▀▄▀█  ▄▄▄ ▄▀ ▀█
+█ ▄▄▄▄▄ █▀  ▀ █▄  █▄▄ ▄█ ██▀▀ █▄█ █▄█ █
+█ █   █ ██▀███ ▄▀ ▄▀  ▀█ ▀▀█▄▄ ▄▄  ▀▀██
+█ █▄▄▄█ █ ▄ ▄█▀█▄█▄▀▄██▀▄ █▀   █▀▄▀▄█▄█
+█▄▄▄▄▄▄▄█▄█▄▄▄▄█▄▄▄█▄▄███▄███▄█▄██▄██▄█
+```
+
 ## 1.0.31 detection build
 
 Identity detection, functional commit `b4cde9ed17a6ef0ee304265164a146474b7802e9`, boot `build=identity-detect-031 rev=b4cde9ed17a6ef0ee304265164a146474b7802e9`. `packages/forref_match_persistence` `dart test test/watch_identity_test.dart` passed 7 tests. `apps/forref_watch_zepp` `npm test` passed 286 tests, 0 failed. `flutter test test/watch_provision_debug_bridge_test.dart test/watch_provision_debug_settings_test.dart` passed 12 tests. `./tool/verify_cloud.sh` passed. The bridge test observed `reason=observed` for the current writer and `reason=recovery-required` for a second installation, with the stage canonical, writer, and hash unchanged and the generation-1 root absent. `authorizeInstallationEnrollment` returned `authorization-unavailable`. GET `/` returned `listening` and `writes=0`. These rows are not Bip 6 results. H1–H11 in `HARDWARE_PROTOCOL.md` stay **LOCAL GATE REQUIRED**.

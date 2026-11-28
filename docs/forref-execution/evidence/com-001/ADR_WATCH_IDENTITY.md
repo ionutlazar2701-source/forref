@@ -35,6 +35,8 @@ Shared vectors, checked by the Dart and JavaScript tests:
 - Version 2 opaque bytes: 31 times `0x11`, then `0x80`
 - Version 2 opaque digest: `cc618c08acccf2e1aeebcaa197faf07a188a72bf7de0088dfeb535372581f17a`
 
+An existing `watch_identity_events` table whose check allows only digest version 1 is copied into a table that allows versions 1 and 2. The copy keeps every column value. `DROP TABLE` is the schema change. Row `UPDATE` and `DELETE` stay aborted. A version-1 digest is not rewritten as version 2.
+
 SHA-256 here is a correlation handle. It is not encryption, anonymity, possession proof, or device authentication. HMAC was not used. A key stored in this database travels with every copy. A key stored only in Android Keystore would make the same watch unrecognizable after a phone reinstall, which is the case this table exists to detect.
 
 ## Events
