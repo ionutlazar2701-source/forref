@@ -5,12 +5,12 @@
     "appName": "FORREF",
     "appType": "app",
     "version": {
-      "code": 29,
-      "name": "1.0.29"
+      "code": 30,
+      "name": "1.0.30"
     },
     "icon": "icon.png",
     "vender": "zepp",
-    "description": "FORREF COM 004R IDENTITY"
+    "description": "FORREF COM 004R SHARE"
   },
   "permissions": [
     "data:os.device.info",

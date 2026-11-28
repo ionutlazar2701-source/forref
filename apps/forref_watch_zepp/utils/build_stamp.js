@@ -1,10 +1,10 @@
 // Identity logged at boot so a simulator trace can be matched to a commit.
 // BUILD_REV is the functional commit. The evidence commit may follow it.
 // Device App and Side Service both import this module, so one package has one id.
-export const BUILD_NAME = "com-004r-identity";
+export const BUILD_NAME = "com-004r-share";
 export const BUILD_REV = "c2c9555832e899d1f5412a418d9f2b822ea2958c";
-export const BUILD_VERSION = "1.0.29";
-export const BUILD_CODE = 29;
+export const BUILD_VERSION = "1.0.30";
+export const BUILD_CODE = 30;
 
 export function bootLine() {
   return "FORREF_LIVE002_BOOT build=" + BUILD_NAME + " rev=" + BUILD_REV + " version=" + BUILD_VERSION + " code=" + BUILD_CODE + "!";

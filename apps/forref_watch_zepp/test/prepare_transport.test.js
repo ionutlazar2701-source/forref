@@ -99,8 +99,10 @@ test("the diagnostic build reads stored evidence and does not run the handshake"
   assert.equal(side.indexOf("PROBE_BRIDGE_V1") < side.indexOf("blockedDuringPrepare"), true);
   assert.equal(side.indexOf("blockedDuringPrepare") < side.indexOf("dispatchSideRequest"), true);
   assert.equal(page.includes("readProvisionEvidence"), true);
-  assert.equal(page.includes("runSideDiagnostic"), true);
+  assert.equal(page.includes("runPrepare"), true);
+  assert.equal(page.includes("runSideDiagnostic"), false);
   assert.equal(page.includes("runHandshake"), false);
+  assert.equal(page.includes("durablePath"), true);
   assert.equal(page.includes("deviceBuildLine"), true);
   assert.equal(page.indexOf("readProvisionEvidence") < page.indexOf("start() {"), true);
   assert.equal(page.slice(page.indexOf("build() {"), page.indexOf("start() {")).includes("attachDeviceMessaging"), false);

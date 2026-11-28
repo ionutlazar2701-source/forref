@@ -32,8 +32,8 @@ test("Home → Settings → Provision → Back keeps officiate and training", ()
   assert.equal(provision.includes("installationUnavailable"), true);
   assert.equal(provision.includes("page=build"), true);
   const startAt = provision.indexOf("start() {");
-  const diagnosticAt = provision.indexOf("runSideDiagnostic({");
-  assert.equal(diagnosticAt > startAt, true);
+  const prepareAt = provision.indexOf("runPrepare({");
+  assert.equal(prepareAt > startAt, true);
   assert.equal(provision.includes("runHandshake"), false);
   assert.equal(provision.includes("readProvisionEvidence"), true);
 });

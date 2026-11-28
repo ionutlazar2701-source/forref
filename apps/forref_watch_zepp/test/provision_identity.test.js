@@ -56,7 +56,7 @@ test("a plain globalData has no messaging until the device app attaches it", () 
   assert.equal(page.includes("base-app"), false);
   assert.equal(page.includes("resolveInstallation"), true);
   assert.equal(page.includes("prepareInstallation"), false);
-  assert.equal(page.indexOf("resolveInstallation") < page.indexOf("runSideDiagnostic({"), true);
+  assert.equal(page.indexOf("resolveInstallation") < page.indexOf("runPrepare({"), true);
   assert.equal(page.includes("runHandshake"), false);
   assert.equal(page.includes("readProvisionEvidence"), true);
   assert.equal(page.includes("SUBMIT_WATCH_LOCK_V1"), false);

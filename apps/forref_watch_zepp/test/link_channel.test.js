@@ -45,7 +45,8 @@ test("the link page loads messaging on tap and the side answers before provision
   assert.equal(page.includes("tx=timeout"), true);
   assert.equal(page.includes("tx=drop"), true);
   assert.equal(page.includes("_closed"), true);
-  assert.equal(provision.includes("runSideDiagnostic"), true);
+  assert.equal(provision.includes("runPrepare"), true);
+  assert.equal(provision.includes("runSideDiagnostic"), false);
   assert.equal(provision.includes("runHandshake"), false);
   assert.equal(page.includes("clock_"), false);
   assert.equal(page.includes("page=build"), true);

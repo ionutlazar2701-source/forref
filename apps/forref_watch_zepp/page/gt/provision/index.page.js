@@ -8,20 +8,21 @@ import { createFileProvisionStore } from "../../../utils/provision_transport";
 import { createWatchProvisionAdmission } from "../../../utils/watch_provision";
 import { attachDeviceMessaging, nextLinkVisit, retireLinkVisit } from "../../../utils/device_messaging";
 import { deviceBuildLine } from "../../../utils/build_stamp";
-import { PROVISION_CORRELATION_FILE, PROVISION_PAGE_TIMEOUT_MS, readProvisionEvidence, runSideDiagnostic } from "../../../utils/provision_bridge";
+import { PROVISION_CORRELATION_FILE, PROVISION_PAGE_TIMEOUT_MS, readProvisionEvidence, runPrepare } from "../../../utils/provision_bridge";
 import {
   installationLineSize,
   resolveInstallationCard,
   splitInstallationId,
 } from "../../../utils/installation_label";
-import { readDurableText, resolveInstallation } from "../../../utils/installation_continuity";
+import { durablePath, readDurableText, resolveInstallation } from "../../../utils/installation_continuity";
 import { t } from "../../../utils/text";
 import { ACCENT, TEXT_PRIMARY, TEXT_WARNING } from "../../../utils/theme";
 
-function fileStore(path) {
+function fileStore(name) {
+  const path = durablePath(name);
   return {
     read() {
-      return readDurableText({ readFileSync: readFileSync }, path);
+      return readDurableText({ readFileSync: readFileSync }, name);
     },
     write(text) {
       try {
@@ -30,6 +31,26 @@ function fileStore(path) {
         return { status: "unreadable" };
       }
       return readStoredText({ readFileSync: readFileSync }, path);
+    },
+  };
+}
+
+function provisionFiles() {
+  return {
+    readFileSync(request) {
+      const name = String(request && request.path ? request.path : "").replace(/^data:\/\//, "");
+      const read = readDurableText({ readFileSync: readFileSync }, name);
+      if (!read || read.status === "absent") throw new Error("ENOENT: not found");
+      if (read.status !== "ok") throw new Error("unreadable");
+      return read.text;
+    },
+    writeFileSync(request) {
+      const name = String(request && request.path ? request.path : "").replace(/^data:\/\//, "");
+      writeFileSync({
+        path: durablePath(name),
+        data: request.data,
+        options: request.options || { encoding: "utf8" },
+      });
     },
   };
 }
@@ -101,7 +122,7 @@ Page({
           identified,
           fileStore(PROVISION_CORRELATION_FILE),
           createWatchProvisionAdmission(
-            createFileProvisionStore({ readFileSync: readFileSync, writeFileSync: writeFileSync }, PROVISION_ROOT_FILE, PROVISION_ADMISSION_FILE),
+            createFileProvisionStore(provisionFiles(), PROVISION_ROOT_FILE, PROVISION_ADMISSION_FILE),
           ),
         );
         console.log(evidence.line);
@@ -209,7 +230,12 @@ Page({
       return;
     }
     console.log("FORREF_PROVISION messaging=ready visit=" + this._visit + " installation=" + kept);
-    runSideDiagnostic({
+    runPrepare({
+      loadInstallation: () => ({ ok: true, id: kept, reason: "" }),
+      requestStore: fileStore(PROVISION_CORRELATION_FILE),
+      admission: createWatchProvisionAdmission(
+        createFileProvisionStore(provisionFiles(), PROVISION_ROOT_FILE, PROVISION_ADMISSION_FILE),
+      ),
       request: (message) => messaging.request(message, { timeout: PROVISION_PAGE_TIMEOUT_MS }),
     }).then((view) => {
       this.finishPrepare(kept, view);
