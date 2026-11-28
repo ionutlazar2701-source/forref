@@ -1,7 +1,7 @@
-import { INSTALLATION_FILE, readInstallationId } from "./installation_id.js";
+import { readInstallationId } from "./installation_id.js";
+import { readDurableInstallation } from "./installation_continuity.js";
 import { createFileProvisionStore } from "./provision_transport.js";
 import { createWatchProvisionAdmission, parseWatchProvisionV1 } from "./watch_provision.js";
-import { readStoredText } from "./goal_journal.js";
 
 export const PROVISION_ROOT_FILE = "forref_watch_provision_v1.root";
 export const PROVISION_ADMISSION_FILE = "forref_watch_provision_v1.admission";
@@ -48,21 +48,19 @@ export function admitLocalGoal(input) {
   };
 }
 
-function textStore(fs, path) {
-  return {
-    read() {
-      return readStoredText(fs, path);
-    },
-    write() {
-      throw new Error("installation-write");
-    },
-  };
-}
-
 export function admitStoredGoal(fs, matchId) {
+  const installation = readDurableInstallation(fs);
   return admitLocalGoal({
     matchId: matchId || "",
-    installationStore: textStore(fs, INSTALLATION_FILE),
+    installationStore: {
+      read() {
+        if (!installation.ok) return { status: installation.reason === "missing-installation" ? "absent" : "unreadable" };
+        return { status: "ok", text: installation.id };
+      },
+      write() {
+        throw new Error("installation-write");
+      },
+    },
     provisionStore: createFileProvisionStore(fs, PROVISION_ROOT_FILE, PROVISION_ADMISSION_FILE),
   });
 }

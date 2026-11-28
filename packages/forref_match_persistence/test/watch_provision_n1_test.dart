@@ -94,10 +94,41 @@ void main() {
     final conflict =
         await store.saveWatchProvisionPrepared(_stage(hash: 'hash-2'));
     expect(conflict, isA<WatchProvisionStageRefused>());
-    expect(
-        (conflict as WatchProvisionStageRefused).reason, 'prepared-conflict');
+    final refused = conflict as WatchProvisionStageRefused;
+    expect(refused.reason, 'prepared-conflict');
     expect((await store.readWatchProvisionStage('match-1'))?.contentHash,
         'hash-1');
+    expect(refused.changed, ['content-hash']);
+    final writer =
+        await store.saveWatchProvisionPrepared(_stage(writer: 'watch-2'));
+    expect((writer as WatchProvisionStageRefused).changed, ['writer-device']);
+    final principal =
+        await store.saveWatchProvisionPrepared(_stage(principal: 'ref-2'));
+    expect((principal as WatchProvisionStageRefused).changed, ['principal']);
+    final report = await store.inspectWatchProvision(
+      matchId: 'match-1',
+      requestedContentHash: 'hash-2',
+      requestedWriterDeviceId: 'watch-2',
+      requestedPrincipalId: 'ref-2',
+    );
+    expect(report.present, isTrue);
+    expect(report.stage, 'CONFIG_PREPARED');
+    expect(report.changed, ['content-hash', 'writer-device', 'principal']);
+    expect(report.rootPresent, isFalse);
+    expect(report.sportingRecords, isFalse);
+    expect(report.line.contains('canonical'), isFalse);
+    expect(report.contentHash, 'hash-1');
+    final cancelled = await store.cancelPreparedWatchProvision(
+      matchId: 'match-1',
+      contentHash: report.contentHash,
+    );
+    expect(cancelled, isA<WatchProvisionStageCancelled>());
+    expect(
+      await store.saveWatchProvisionPrepared(
+        _stage(hash: 'hash-2', writer: 'watch-2', principal: 'ref-2'),
+      ),
+      isA<WatchProvisionStageSaved>(),
+    );
     await store.close();
   });
 

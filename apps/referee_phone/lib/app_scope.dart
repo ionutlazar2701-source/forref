@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/widgets.dart';
 import 'package:referee_phone/infrastructure/database/local_match_database.dart';
 import 'package:referee_phone/infrastructure/competition_rules/phone_match_capture_context.dart';
@@ -14,6 +16,7 @@ class AppScope extends InheritedWidget {
     this.captureIdentity,
     this.matchCaptureContext,
     this.temporalEvidence,
+    this.storageRoot,
     required super.child,
   });
 
@@ -32,6 +35,9 @@ class AppScope extends InheritedWidget {
   /// In-process temporal evidence. Not Match Memory and not a certified clock.
   final PhoneTemporalEvidenceStore? temporalEvidence;
 
+  /// Application support directory. The debug provision file lives here.
+  final Directory? storageRoot;
+
   static AppScope of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<AppScope>();
     assert(scope != null, 'AppScope missing');
@@ -45,5 +51,6 @@ class AppScope extends InheritedWidget {
       oldWidget.matchApplication != matchApplication ||
       oldWidget.captureIdentity != captureIdentity ||
       oldWidget.matchCaptureContext != matchCaptureContext ||
-      oldWidget.temporalEvidence != temporalEvidence;
+      oldWidget.temporalEvidence != temporalEvidence ||
+      oldWidget.storageRoot?.path != storageRoot?.path;
 }

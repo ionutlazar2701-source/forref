@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:forref_match_core/forref_match_core.dart';
+import 'package:forref_match_persistence/forref_match_persistence.dart';
 import 'package:match_core/match_core.dart';
 import 'package:referee_phone/app_scope.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
+import 'package:referee_phone/officiate/watch_enroll_session.dart';
 import 'package:referee_phone/officiate/watch_provision_debug_bridge.dart';
 
 /// Debug-only control for the local watch provision bridge.
@@ -15,9 +19,11 @@ class WatchProvisionDebugSection extends StatefulWidget {
       _WatchProvisionDebugSectionState();
 }
 
-class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection> {
+class _WatchProvisionDebugSectionState
+    extends State<WatchProvisionDebugSection> {
   final TextEditingController _installation = TextEditingController();
   WatchProvisionDebugBridge? _bridge;
+  WatchProvisionDebugBridge? _enrollBridge;
   List<Match> _matches = const [];
   String? _matchId;
   String _status = '';
@@ -26,6 +32,7 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
   void dispose() {
     _installation.dispose();
     _bridge?.stop();
+    _enrollBridge?.stop();
     super.dispose();
   }
 
@@ -36,11 +43,12 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
     final scope = AppScope.of(context);
     final boundary = scope.matchApplication;
     final identity = scope.captureIdentity;
+    final storage = scope.storageRoot;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ListTile(title: Text(l10n.watchProvisionTitle)),
-        if (boundary == null || identity == null)
+        if (boundary == null || identity == null || storage == null)
           ListTile(title: Text(l10n.watchProvisionUnavailable))
         else ...[
           Padding(
@@ -59,6 +67,26 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
           ListTile(
             title: Text(l10n.watchProvisionPrepare),
             onTap: _prepare,
+          ),
+          ListTile(
+            title: Text(l10n.watchProvisionListen),
+            onTap: _listen,
+          ),
+          ListTile(
+            title: Text(l10n.watchProvisionInspect),
+            onTap: _inspect,
+          ),
+          ListTile(
+            title: Text(l10n.watchProvisionCancel),
+            onTap: _cancelPrepared,
+          ),
+          ListTile(
+            title: Text(l10n.watchProvisionEnroll),
+            onTap: _enroll,
+          ),
+          ListTile(
+            title: Text(l10n.watchProvisionReadEnroll),
+            onTap: _readEnroll,
           ),
           if (_status.isNotEmpty) ListTile(title: Text(_status)),
           if (_bridge?.lastActivation != null)
@@ -111,10 +139,16 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
     for (final item in _matches) {
       if (item.matchId == _matchId) match = item;
     }
+    final root = scope.storageRoot;
+    if (root == null || !mounted) return;
+    await _enrollBridge?.stop();
     final bridge = _bridge ??
         WatchProvisionDebugBridge(
           boundary: boundary,
           phoneOriginDeviceId: identity.originDeviceId,
+          correlationFile: File(
+            '${root.path}/forref_watch_provision_correlation_v1.json',
+          ),
         );
     _bridge = bridge;
     if (match == null) {
@@ -129,11 +163,164 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
     if (!mounted) return;
     if (prepared.state != WatchProvisionState.configPrepared &&
         prepared.state != WatchProvisionState.phoneAuthorityLocked) {
-      setState(() => _status = prepared.reason);
+      final report =
+          await _loadInspection(match, identity.authorityPrincipalId);
+      if (!mounted) return;
+      final line = report == null ? '' : report.line;
+      setState(() => _status =
+          line.isEmpty ? prepared.reason : '${prepared.reason} $line');
       return;
     }
     final listening = await bridge.start(match.matchId);
     if (!mounted) return;
     setState(() => _status = '${listening.name} ${prepared.contentHash}');
+  }
+
+  Future<void> _listen() async {
+    final scope = AppScope.of(context);
+    final boundary = scope.matchApplication;
+    final identity = scope.captureIdentity;
+    final root = scope.storageRoot;
+    final match = _selectedMatch();
+    if (boundary == null || identity == null || root == null || match == null) {
+      setState(() => _status = 'missing');
+      return;
+    }
+    await _enrollBridge?.stop();
+    final bridge = _bridge ??
+        WatchProvisionDebugBridge(
+          boundary: boundary,
+          phoneOriginDeviceId: identity.originDeviceId,
+          correlationFile: File(
+            '${root.path}/forref_watch_provision_correlation_v1.json',
+          ),
+        );
+    _bridge = bridge;
+    final listening = await bridge.start(match.matchId);
+    if (!mounted) return;
+    setState(() => _status = listening.name);
+  }
+
+  Future<void> _inspect() async {
+    final scope = AppScope.of(context);
+    final identity = scope.captureIdentity;
+    final match = _selectedMatch();
+    if (identity == null || match == null) {
+      setState(() => _status = 'missing');
+      return;
+    }
+    final report = await _loadInspection(match, identity.authorityPrincipalId);
+    if (!mounted) return;
+    final correlation = describeDebugCorrelation(_correlationText());
+    setState(() => _status =
+        report == null ? 'match $correlation' : '${report.line} $correlation');
+  }
+
+  Future<void> _cancelPrepared() async {
+    final scope = AppScope.of(context);
+    final boundary = scope.matchApplication;
+    final identity = scope.captureIdentity;
+    final match = _selectedMatch();
+    if (boundary == null || identity == null || match == null) {
+      setState(() => _status = 'missing');
+      return;
+    }
+    final report = await _loadInspection(match, identity.authorityPrincipalId);
+    if (!mounted) return;
+    if (report == null || !report.present) {
+      setState(() => _status = 'not-prepared');
+      return;
+    }
+    final outcome = await boundary.cancelPreparedWatchMatch(
+      matchId: report.matchId,
+      contentHash: report.contentHash,
+    );
+    if (!mounted) return;
+    setState(() => _status = outcome.reason);
+  }
+
+  Future<void> _enroll() async {
+    final scope = AppScope.of(context);
+    final boundary = scope.matchApplication;
+    final identity = scope.captureIdentity;
+    final root = scope.storageRoot;
+    final database = scope.database;
+    if (boundary == null || identity == null || root == null) {
+      setState(() => _status = 'missing');
+      return;
+    }
+    final enroll = _enrollBridge ??
+        WatchProvisionDebugBridge(
+          boundary: boundary,
+          phoneOriginDeviceId: identity.originDeviceId,
+          correlationFile: File('${root.path}/$enrollWatchCorrelationName'),
+        );
+    _enrollBridge = enroll;
+    final opened = await openWatchEnrollment(
+      storageRoot: root,
+      database: database,
+      boundary: boundary,
+      phoneOriginDeviceId: identity.originDeviceId,
+      principalId: identity.authorityPrincipalId,
+      installationId: _installation.text.trim(),
+      enrollBridge: enroll,
+      historicalBridge: _bridge,
+    );
+    if (!mounted) return;
+    setState(() => _status = opened.line);
+  }
+
+  Future<void> _readEnroll() async {
+    final scope = AppScope.of(context);
+    final boundary = scope.matchApplication;
+    final root = scope.storageRoot;
+    if (boundary == null || root == null) {
+      setState(() => _status = 'missing');
+      return;
+    }
+    final line = await describeWatchEnrollment(
+      storageRoot: root,
+      store: boundary.durableStore,
+      database: scope.database,
+      installationId: _installation.text.trim(),
+    );
+    if (!mounted) return;
+    setState(() => _status = line);
+  }
+
+  String? _correlationText() {
+    final root = AppScope.of(context).storageRoot;
+    if (root == null) return null;
+    final file =
+        File('${root.path}/forref_watch_provision_correlation_v1.json');
+    if (!file.existsSync()) return null;
+    return file.readAsStringSync();
+  }
+
+  Match? _selectedMatch() {
+    for (final item in _matches) {
+      if (item.matchId == _matchId) return item;
+    }
+    return null;
+  }
+
+  Future<WatchProvisionInspection?> _loadInspection(
+    Match match,
+    String principalId,
+  ) async {
+    final boundary = AppScope.of(context).matchApplication;
+    if (boundary == null) return null;
+    final document = documentForSavedMatch(
+      match: match,
+      principalId: principalId,
+      installationId: _installation.text.trim(),
+    );
+    if (document == null) return null;
+    return boundary.inspectWatchProvision(
+      matchId: match.matchId,
+      requestedContentHash: document.contentHash,
+      requestedWriterDeviceId: document.writerDeviceId,
+      requestedPrincipalId: document.principalId,
+    );
   }
 }

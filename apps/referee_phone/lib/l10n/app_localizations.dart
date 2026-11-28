@@ -782,6 +782,36 @@ abstract class AppLocalizations {
   /// **'Prepare and listen'**
   String get watchProvisionPrepare;
 
+  /// No description provided for @watchProvisionListen.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen'**
+  String get watchProvisionListen;
+
+  /// No description provided for @watchProvisionInspect.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect provision'**
+  String get watchProvisionInspect;
+
+  /// No description provided for @watchProvisionCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel prepared'**
+  String get watchProvisionCancel;
+
+  /// No description provided for @watchProvisionEnroll.
+  ///
+  /// In en, this message translates to:
+  /// **'Enroll witness'**
+  String get watchProvisionEnroll;
+
+  /// No description provided for @watchProvisionReadEnroll.
+  ///
+  /// In en, this message translates to:
+  /// **'Read enroll'**
+  String get watchProvisionReadEnroll;
+
   /// No description provided for @watchProvisionNoMatch.
   ///
   /// In en, this message translates to:

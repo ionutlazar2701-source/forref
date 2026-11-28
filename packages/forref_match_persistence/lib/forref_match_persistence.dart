@@ -3,3 +3,4 @@ library;
 
 export 'record_storage_encoding.dart';
 export 'sqlite_durable_match_store.dart';
+export 'watch_identity.dart';

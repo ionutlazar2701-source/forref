@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:forref_match_core/forref_match_core.dart';
 import 'package:forref_match_persistence/sqlite_durable_match_store.dart';
+import 'package:forref_match_persistence/watch_identity.dart';
 import 'package:match_core/match_core.dart';
 import 'package:referee_phone/match_application/match_application_boundary.dart';
 
@@ -75,22 +76,35 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     required this.boundary,
     required this.phoneOriginDeviceId,
     this.port = forrefWatchProvisionPort,
+    this.correlationFile,
     bool Function()? debugPermitted,
-  }) : _debugPermitted = debugPermitted ?? (() => true);
+  }) : _debugPermitted = debugPermitted ?? (() => true) {
+    _loadCorrelation();
+  }
 
   final MatchApplicationBoundary boundary;
   final String phoneOriginDeviceId;
   final int port;
+  final File? correlationFile;
   final bool Function() _debugPermitted;
 
   HttpServer? _server;
   String? _matchId;
   String? _requestId;
+  String? _installationId;
+  String? _contentHash;
+  String _phase = '';
+  bool _correlationBroken = false;
+  Future<void> _serial = Future<void>.value();
   Map<String, Object?>? _activation;
   WatchProvisionBridgeDisposition _disposition =
       WatchProvisionBridgeDisposition.stopped;
 
   String? get matchId => _matchId;
+
+  String? get boundRequestId => _requestId;
+
+  bool get correlationIntact => !_correlationBroken;
 
   Map<String, Object?>? get lastActivation => _activation;
 
@@ -123,6 +137,15 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
         ),
       );
     }
+    if (_requestId != null && _matchId != null && _matchId != match.matchId) {
+      return Future<WatchProvisionDecision>.value(
+        const WatchProvisionDecision(
+          state: WatchProvisionState.authorityConflict,
+          trace: [WatchProvisionState.authorityConflict],
+          reason: 'correlation-conflict',
+        ),
+      );
+    }
     _matchId = match.matchId;
     return boundary.prepareWatchOperatedMatch(
       canonicalMessage: document.canonical,
@@ -134,6 +157,9 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     if (!_permitted) return _set(WatchProvisionBridgeDisposition.refused);
     final stage = await boundary.durableStore.readWatchProvisionStage(matchId);
     if (stage == null) return _set(WatchProvisionBridgeDisposition.missing);
+    if (_requestId != null && _matchId != null && _matchId != matchId) {
+      return _set(WatchProvisionBridgeDisposition.refused);
+    }
     _matchId = matchId;
     if (_server != null) return _set(WatchProvisionBridgeDisposition.listening);
     try {
@@ -144,7 +170,8 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
       }
       _server = server;
       server.listen(_answer, onError: (Object _) {});
-      debugPrint('FORREF_PROVISION listening=$loopbackEndpoint match=$_matchId');
+      debugPrint(
+          'FORREF_PROVISION listening=$loopbackEndpoint match=$_matchId');
       return _set(WatchProvisionBridgeDisposition.listening);
     } on Object {
       return _set(WatchProvisionBridgeDisposition.failed);
@@ -171,10 +198,29 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
 
   Future<void> _answer(HttpRequest request) async {
     final response = request.response;
+    final started = DateTime.now();
     try {
       response.headers.set(HttpHeaders.cacheControlHeader, 'no-store');
       response.headers.contentType = ContentType.json;
-      if (request.method != 'POST' || request.uri.path != forrefWatchProvisionPath) {
+      if (request.method == 'GET' &&
+          (request.uri.path == '/' ||
+              request.uri.path == forrefWatchProvisionPath)) {
+        response.statusCode = HttpStatus.ok;
+        _write(response, {
+          'disposition': 'listening',
+          'reason': 'listening',
+          'writes': 0,
+          'matchId': _matchId ?? '',
+          'saved': false,
+          'd1Certified': false,
+        });
+        debugPrint(
+          'FORREF_PROVISION tx=listen method=GET match=${_matchId ?? ''} writes=0',
+        );
+        return;
+      }
+      if (request.method != 'POST' ||
+          request.uri.path != forrefWatchProvisionPath) {
         response.statusCode = HttpStatus.notFound;
         _write(response, const {
           'disposition': 'refused',
@@ -186,21 +232,41 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
       }
       final body = await _readBody(request);
       final answer = await handle(body);
-      response.statusCode = answer['disposition'] == 'prepared' ||
-              answer['disposition'] == 'locked' ||
-              answer['disposition'] == 'recorded'
+      final disposition = answer['disposition'];
+      response.statusCode = disposition == 'prepared' ||
+              disposition == 'locked' ||
+              disposition == 'recorded'
           ? HttpStatus.ok
-          : HttpStatus.conflict;
+          : disposition == 'unavailable'
+              ? HttpStatus.serviceUnavailable
+              : HttpStatus.conflict;
       _write(response, answer);
       debugPrint(
-        'FORREF_PROVISION served disposition=${answer['disposition']} reason=${answer['reason']}',
+        'FORREF_PROVISION tx=response disposition=$disposition reason=${answer['reason'] ?? ''} http=${response.statusCode} elapsed=${DateTime.now().difference(started).inMilliseconds}',
       );
+    } on Object {
+      response.statusCode = HttpStatus.internalServerError;
+      _write(response, const {
+        'disposition': 'unavailable',
+        'reason': 'bridge',
+        'durable': false,
+        'saved': false,
+        'd1Certified': false,
+      });
+      debugPrint('FORREF_PROVISION tx=recover reason=bridge http=500');
     } finally {
       await response.close();
     }
   }
 
-  Future<Map<String, Object?>> handle(Map<String, Object?>? body) async {
+  Future<Map<String, Object?>> handle(Map<String, Object?>? body) {
+    final run = _serial.then((_) => _handle(body));
+    _serial = run.then((_) {}, onError: (Object _, StackTrace __) {});
+    return run;
+  }
+
+  Future<Map<String, Object?>> _handle(Map<String, Object?>? body) async {
+    if (_correlationBroken) return _refused('correlation-corrupt');
     if (!_permitted) {
       return _refused('debug');
     }
@@ -224,26 +290,173 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     }
     final stage = await boundary.durableStore.readWatchProvisionStage(matchId);
     if (stage == null) return _refused('missing');
-    if (stage.writerDeviceId != installationId) return _refused('installation');
+    if (body['principalId'] != null &&
+        body['principalId'] != stage.principalId) {
+      return _refused('principal');
+    }
+    final requestMatch =
+        body['matchId'] is String ? body['matchId'] as String : '';
+    final comparison = compareWatchWriters(
+      stored: stage.writerDeviceId,
+      requested: installationId,
+    );
+    final canonicalWriter =
+        parseWatchProvisionV1(stage.canonical).document?.writerDeviceId ?? '';
+    final inspection = await boundary.inspectWatchProvision(
+      matchId: stage.matchId,
+      requestedContentHash: stage.contentHash,
+      requestedWriterDeviceId: installationId,
+      requestedPrincipalId: stage.principalId,
+    );
+    final inspectChanged =
+        inspection.changed.isEmpty ? 'none' : inspection.changed.join(',');
+    Future<Map<String, Object?>> traced(
+      Map<String, Object?> answer, {
+      required bool observe,
+    }) {
+      debugPrint(
+        formatWatchWriterComparison(
+          requestMatchId: requestMatch,
+          bridgeMatchId: matchId,
+          stageMatchId: stage.matchId,
+          requestInstallation: installationId,
+          storedWriter: stage.writerDeviceId,
+          canonicalWriter: canonicalWriter,
+          comparison: comparison,
+          stageName: stage.stage,
+          requestId: requestId,
+          bridgeId: identityHashCode(this).toRadixString(16),
+          namespace: correlationNamespace,
+          inspectChanged: inspectChanged,
+          observeInvoked: observe,
+          disposition: '${answer['disposition'] ?? ''}',
+          reason: '${answer['reason'] ?? ''}',
+        ),
+      );
+      return Future<Map<String, Object?>>.value(answer);
+    }
+
+    if (!comparison.equal) {
+      final answer =
+          await _classifyOther(stage, body, installationId, requestId);
+      return traced(answer, observe: false);
+    }
+    if (_installationId != null && _installationId != installationId) {
+      return traced(_refused('correlation-conflict'), observe: false);
+    }
     if (_requestId != null && _requestId != requestId) {
-      return _refused('correlation');
+      return traced(_refused('correlation'), observe: false);
+    }
+    debugPrint(
+      'FORREF_PROVISION tx=bridge operation=$operation installation=$installationId request=$requestId match=$matchId',
+    );
+    _trace('request', operation, installationId, requestId);
+    if (operation != 'pending' && _requestId == null) {
+      return traced(_refused('order'), observe: false);
     }
     if (operation == 'pending') {
-      return _pending(stage, installationId, requestId);
+      final prepared = _pending(stage, installationId, requestId);
+      var observe = false;
+      if (prepared['disposition'] == 'prepared') {
+        observe = true;
+        await _observeWitness(stage, body, installationId, requestId);
+      }
+      return traced(prepared, observe: observe);
     }
-    if (body['matchId'] != matchId || body['contentHash'] != stage.contentHash) {
-      return _refused('binding');
+    if (body['matchId'] != matchId ||
+        body['contentHash'] != stage.contentHash) {
+      return traced(_refused('binding'), observe: false);
     }
     if (body['canonical'] != null && body['canonical'] != stage.canonical) {
-      return _refused('canonical');
+      return traced(_refused('canonical'), observe: false);
     }
     if (operation == 'lock') {
-      return _lock(stage, body, installationId, requestId);
+      return traced(
+        await _lock(stage, body, installationId, requestId),
+        observe: false,
+      );
     }
     if (operation == 'activation') {
-      return _rememberActivation(stage, body, installationId, requestId);
+      return traced(
+        _rememberActivation(stage, body, installationId, requestId),
+        observe: false,
+      );
     }
-    return _refused('operation');
+    return traced(_refused('operation'), observe: false);
+  }
+
+  String get correlationNamespace {
+    final path = correlationFile?.path ?? '';
+    if (path.endsWith('forref_watch_enroll_correlation_v1.json')) {
+      return 'enroll';
+    }
+    if (path.endsWith('forref_watch_provision_correlation_v1.json')) {
+      return 'historical';
+    }
+    if (correlationFile == null) return 'memory';
+    return 'other';
+  }
+
+  Future<Map<String, Object?>> _classifyOther(
+    WatchProvisionPhoneStage stage,
+    Map<String, Object?> body,
+    String installationId,
+    String requestId,
+  ) async {
+    final claim = _witnessClaim(body['witness']);
+    if (claim.absent) return _refused('installation');
+    final result = await boundary.durableStore.classifyWatchInstallation(
+      matchId: stage.matchId,
+      principalId: stage.principalId,
+      installationId: installationId,
+      requestId: requestId,
+      candidateKind: claim.kind,
+      digest: claim.digest,
+      digestVersion: claim.digestVersion,
+      witnessMalformed: claim.malformed,
+      sourceBuilds: claim.sourceBuilds,
+    );
+    final reason = switch (result) {
+      WatchIdentityAppended(:final reason) => reason,
+      WatchIdentityRefused(:final reason) => reason,
+    };
+    final preview = claim.digest == null ? '' : digestPreview(claim.digest!);
+    debugPrint(
+      'FORREF_PROVISION tx=identity reason=$reason installation=$installationId request=$requestId match=${stage.matchId} preview=$preview v=${claim.digestVersion} grade=$watchEvidenceUnverifiedDevice',
+    );
+    return _refused(reason);
+  }
+
+  Future<void> _observeWitness(
+    WatchProvisionPhoneStage stage,
+    Map<String, Object?> body,
+    String installationId,
+    String requestId,
+  ) async {
+    final claim = _witnessClaim(body['witness']);
+    if (claim.absent) return;
+    if (claim.malformed || claim.digest == null) {
+      debugPrint(
+        'FORREF_PROVISION tx=identity reason=witness-malformed installation=$installationId request=$requestId match=${stage.matchId}',
+      );
+      return;
+    }
+    final result = await boundary.durableStore.observeWatchWitness(
+      matchId: stage.matchId,
+      principalId: stage.principalId,
+      installationId: installationId,
+      requestId: requestId,
+      digest: claim.digest!,
+      digestVersion: claim.digestVersion,
+      sourceBuilds: claim.sourceBuilds,
+    );
+    final reason = switch (result) {
+      WatchIdentityAppended(:final reason) => reason,
+      WatchIdentityRefused(:final reason) => reason,
+    };
+    debugPrint(
+      'FORREF_PROVISION tx=identity reason=$reason installation=$installationId request=$requestId match=${stage.matchId} preview=${digestPreview(claim.digest!)} v=${claim.digestVersion} grade=$watchEvidenceUnverifiedDevice',
+    );
   }
 
   Map<String, Object?> _pending(
@@ -251,7 +464,8 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     String installationId,
     String requestId,
   ) {
-    if (stage.stage != 'CONFIG_PREPARED' && stage.stage != 'PHONE_AUTHORITY_LOCKED') {
+    if (stage.stage != 'CONFIG_PREPARED' &&
+        stage.stage != 'PHONE_AUTHORITY_LOCKED') {
       return _refused('stage');
     }
     final document = parseWatchProvisionV1(stage.canonical).document;
@@ -259,6 +473,16 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
       return _refused('canonical');
     }
     _requestId = requestId;
+    _installationId = installationId;
+    _contentHash = stage.contentHash;
+    if (!_persist(_forwardPhase('pending'))) {
+      if (_phase != 'pending' && _phase != 'locked' && _phase != 'recorded') {
+        _requestId = null;
+        _installationId = null;
+        _contentHash = null;
+      }
+      return _refused('correlation-write');
+    }
     return {
       'disposition': 'prepared',
       'schema': 'forref.watch-provision.v1',
@@ -294,7 +518,14 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
       transportAvailable: true,
     );
     final durable = decision.state == WatchProvisionState.phoneAuthorityLocked;
-    if (durable) _requestId = requestId;
+    if (durable) {
+      _requestId = requestId;
+      _installationId = installationId;
+      _contentHash = stage.contentHash;
+      if (_phase != 'recorded') _persist(_forwardPhase('locked'));
+    } else {
+      _trace('recover', decision.reason, installationId, requestId);
+    }
     return {
       'disposition': durable ? 'locked' : 'refused',
       'durable': durable,
@@ -320,14 +551,21 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     if (body['readBack'] != true || body['type'] != 'WATCH_ACTIVATED_V1') {
       return _refused('receipt');
     }
-    _requestId = requestId;
-    _activation = {
+    final recorded = <String, Object?>{
       'matchId': stage.matchId,
       'contentHash': stage.contentHash,
       'installationId': installationId,
       'requestId': requestId,
       'generation': 1,
     };
+    _requestId = requestId;
+    _installationId = installationId;
+    _contentHash = stage.contentHash;
+    _activation = recorded;
+    if (!_persist('recorded')) {
+      if (_phase != 'recorded') _activation = null;
+      return _refused('correlation-write');
+    }
     notifyListeners();
     return {
       'disposition': 'recorded',
@@ -342,6 +580,104 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     };
   }
 
+  void _loadCorrelation() {
+    final file = correlationFile;
+    if (file == null || !file.existsSync()) return;
+    try {
+      final decoded = jsonDecode(file.readAsStringSync());
+      if (decoded is! Map) {
+        _correlationBroken = true;
+        return;
+      }
+      final requestId = decoded['requestId'];
+      final installationId = decoded['installationId'];
+      final matchId = decoded['matchId'];
+      final phase = decoded['phase'];
+      final contentHash = decoded['contentHash'];
+      if (decoded['v'] != 1 ||
+          decoded['generation'] != 1 ||
+          requestId is! String ||
+          !_uuid.hasMatch(requestId) ||
+          installationId is! String ||
+          !_uuid.hasMatch(installationId) ||
+          matchId is! String ||
+          matchId.isEmpty ||
+          contentHash is! String ||
+          contentHash.length != 64 ||
+          (phase != 'pending' && phase != 'locked' && phase != 'recorded')) {
+        _correlationBroken = true;
+        return;
+      }
+      _requestId = requestId;
+      _installationId = installationId;
+      _matchId = matchId;
+      _contentHash = contentHash;
+      _phase = phase;
+      if (phase == 'recorded') {
+        _activation = {
+          'matchId': matchId,
+          'contentHash': contentHash,
+          'installationId': installationId,
+          'requestId': requestId,
+          'generation': 1,
+        };
+      }
+    } on Object {
+      _correlationBroken = true;
+    }
+  }
+
+  String _forwardPhase(String next) {
+    const rank = <String, int>{'': 0, 'pending': 1, 'locked': 2, 'recorded': 3};
+    if ((rank[_phase] ?? 0) > (rank[next] ?? 0)) return _phase;
+    return next;
+  }
+
+  bool _persist(String phase) {
+    final previous = _phase;
+    _phase = phase;
+    final file = correlationFile;
+    if (file == null) {
+      _trace('transition', phase, _installationId ?? '', _requestId ?? '');
+      return true;
+    }
+    final payload = <String, Object?>{
+      'v': 1,
+      'matchId': _matchId,
+      'installationId': _installationId,
+      'requestId': _requestId,
+      'generation': 1,
+      'contentHash': _contentHash,
+      'phase': phase,
+    };
+    try {
+      file.parent.createSync(recursive: true);
+      file.writeAsStringSync(jsonEncode(payload), flush: true);
+      final back = jsonDecode(file.readAsStringSync());
+      if (back is! Map ||
+          back['requestId'] != _requestId ||
+          back['phase'] != phase ||
+          back['matchId'] != _matchId ||
+          back['contentHash'] != _contentHash ||
+          back['installationId'] != _installationId ||
+          back['generation'] != 1) {
+        _phase = previous;
+        return false;
+      }
+      _trace('transition', phase, _installationId ?? '', _requestId ?? '');
+      return true;
+    } on Object {
+      _phase = previous;
+      return false;
+    }
+  }
+
+  void _trace(String tx, String name, String installationId, String requestId) {
+    debugPrint(
+      'FORREF_PROVISION tx=$tx name=$name installation=$installationId request=$requestId match=$_matchId hash=${_contentHash ?? ''}',
+    );
+  }
+
   Map<String, Object?> _refused(String reason) {
     return {
       'disposition': 'refused',
@@ -351,6 +687,224 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
       'd1Certified': false,
     };
   }
+}
+
+/// Exact writer comparison used by the debug bridge. It does not write.
+final class WatchWriterComparison {
+  const WatchWriterComparison({
+    required this.equal,
+    required this.mismatchAt,
+    required this.branch,
+  });
+
+  final bool equal;
+
+  /// First index where the code units differ, or the shorter length.
+  final int? mismatchAt;
+
+  /// `current-writer` or `other-installation`.
+  final String branch;
+}
+
+WatchWriterComparison compareWatchWriters({
+  required String stored,
+  required String requested,
+}) {
+  if (stored == requested) {
+    return const WatchWriterComparison(
+      equal: true,
+      mismatchAt: null,
+      branch: 'current-writer',
+    );
+  }
+  final limit =
+      stored.length < requested.length ? stored.length : requested.length;
+  var index = 0;
+  while (index < limit &&
+      stored.codeUnitAt(index) == requested.codeUnitAt(index)) {
+    index++;
+  }
+  return WatchWriterComparison(
+    equal: false,
+    mismatchAt: index,
+    branch: 'other-installation',
+  );
+}
+
+String _writerUnit(String value, int? index) {
+  if (index == null) return '';
+  if (index < 0 || index >= value.length) return 'end';
+  return value.codeUnitAt(index).toRadixString(16);
+}
+
+/// One read-only line. It names both UUIDs and does not include a canonical
+/// document or a digest.
+String formatWatchWriterComparison({
+  required String requestMatchId,
+  required String bridgeMatchId,
+  required String stageMatchId,
+  required String requestInstallation,
+  required String storedWriter,
+  required String canonicalWriter,
+  required WatchWriterComparison comparison,
+  required String stageName,
+  required String requestId,
+  required String bridgeId,
+  required String namespace,
+  required String inspectChanged,
+  required bool observeInvoked,
+  required String disposition,
+  required String reason,
+}) {
+  final mismatch = comparison.mismatchAt?.toString() ?? 'none';
+  return 'FORREF_PROVISION tx=writer-compare '
+      'request-match=$requestMatchId '
+      'bridge-match=$bridgeMatchId '
+      'stage-match=$stageMatchId '
+      'request-installation=$requestInstallation '
+      'stored-writer=$storedWriter '
+      'canonical-writer=$canonicalWriter '
+      'column-canonical=${canonicalWriter == storedWriter ? 1 : 0} '
+      'equal=${comparison.equal ? 1 : 0} '
+      'mismatch-at=$mismatch '
+      'request-len=${requestInstallation.length} '
+      'stored-len=${storedWriter.length} '
+      'mismatch-request-unit=${_writerUnit(requestInstallation, comparison.mismatchAt)} '
+      'mismatch-stored-unit=${_writerUnit(storedWriter, comparison.mismatchAt)} '
+      'stage=$stageName '
+      'request=$requestId '
+      'bridge=$bridgeId '
+      'namespace=$namespace '
+      'inspect-changed=$inspectChanged '
+      'branch=${comparison.branch} '
+      'observe=${observeInvoked ? 1 : 0} '
+      'disposition=$disposition '
+      'reason=$reason';
+}
+
+/// Read-only description of the phone correlation file. It never includes a
+/// canonical document.
+String describeDebugCorrelation(String? text) {
+  if (text == null || text.trim().isEmpty) return 'correlation=absent';
+  try {
+    final decoded = jsonDecode(text);
+    if (decoded is! Map) return 'correlation=corrupt';
+    final requestId = decoded['requestId'];
+    final phase = decoded['phase'];
+    final matchId = decoded['matchId'];
+    final contentHash = decoded['contentHash'];
+    final generation = decoded['generation'];
+    if (requestId is! String ||
+        phase is! String ||
+        matchId is! String ||
+        contentHash is! String ||
+        generation != 1) {
+      return 'correlation=corrupt';
+    }
+    return 'correlation request=$requestId phase=$phase generation=1 match=$matchId hash=$contentHash';
+  } on Object {
+    return 'correlation=corrupt';
+  }
+}
+
+final class _WitnessClaim {
+  const _WitnessClaim({
+    required this.absent,
+    required this.malformed,
+    required this.kind,
+    required this.digest,
+    required this.digestVersion,
+    required this.sourceBuilds,
+  });
+
+  final bool absent;
+  final bool malformed;
+  final String kind;
+  final Uint8List? digest;
+  final int digestVersion;
+  final String sourceBuilds;
+}
+
+_WitnessClaim _witnessClaim(Object? witness) {
+  if (witness == null) {
+    return const _WitnessClaim(
+      absent: true,
+      malformed: false,
+      kind: 'absent',
+      digest: null,
+      digestVersion: 0,
+      sourceBuilds: '',
+    );
+  }
+  if (witness is! Map) {
+    return const _WitnessClaim(
+      absent: false,
+      malformed: true,
+      kind: 'absent',
+      digest: null,
+      digestVersion: 0,
+      sourceBuilds: '',
+    );
+  }
+  final version = witness['digestVersion'];
+  if (witness.containsKey('uuid') ||
+      witness.containsKey('platformUuid') ||
+      witness['schema'] != watchWitnessSchema ||
+      (version != watchCandidateDigestVersion &&
+          version != watchCandidateDigestVersionV2) ||
+      witness['evidenceGrade'] != watchEvidenceUnverifiedDevice) {
+    return const _WitnessClaim(
+      absent: false,
+      malformed: true,
+      kind: 'absent',
+      digest: null,
+      digestVersion: 0,
+      sourceBuilds: '',
+    );
+  }
+  final builds = witness['sourceBuilds'];
+  final sourceBuilds = builds is String ? builds : '';
+  final kind = witness['candidateKind'];
+  if (kind == 'absent' || kind == 'model_only') {
+    return _WitnessClaim(
+      absent: false,
+      malformed: false,
+      kind: kind as String,
+      digest: null,
+      digestVersion: version as int,
+      sourceBuilds: sourceBuilds,
+    );
+  }
+  if (kind != 'platform_uuid') {
+    return _WitnessClaim(
+      absent: false,
+      malformed: true,
+      kind: 'absent',
+      digest: null,
+      digestVersion: 0,
+      sourceBuilds: sourceBuilds,
+    );
+  }
+  final hex = witness['candidateDigest'];
+  final digest = hex is String ? decodeDigestHex(hex) : null;
+  if (digest == null) {
+    return _WitnessClaim(
+      absent: false,
+      malformed: true,
+      kind: 'platform_uuid',
+      digest: null,
+      digestVersion: 0,
+      sourceBuilds: sourceBuilds,
+    );
+  }
+  return _WitnessClaim(
+    absent: false,
+    malformed: false,
+    kind: 'platform_uuid',
+    digest: digest,
+    digestVersion: version as int,
+    sourceBuilds: sourceBuilds,
+  );
 }
 
 Future<Map<String, Object?>?> _readBody(HttpRequest request) async {

@@ -23,9 +23,13 @@ Page({
     paintZone(m, lay, lay.upper, lay.upperText, t("officiate"), t("officiateBody"), function () {
       push({ url: "page/gt/select/index.page" });
     }, "home-officiate");
-    paintZone(m, lay, lay.lower, lay.lowerText, t("train"), t("trainHint"), function () {
+    paintZone(m, lay, lay.middle, lay.middleText, t("train"), t("trainHint"), function () {
       push({ url: "page/gt/train/index.page" });
     }, "home-train");
+    paintZone(m, lay, lay.lower, lay.lowerText, t("settings"), t("settingsBody"), function () {
+      push({ url: "page/gt/settings/index.page" });
+    }, "home-settings");
     rule(lay.divider.x, lay.divider.y, lay.divider.w, lay.divider.h, ACCENT);
+    rule(lay.dividerLower.x, lay.dividerLower.y, lay.dividerLower.w, lay.dividerLower.h, ACCENT);
   },
 });

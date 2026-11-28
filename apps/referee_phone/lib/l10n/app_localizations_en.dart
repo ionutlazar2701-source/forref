@@ -366,6 +366,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get watchProvisionPrepare => 'Prepare and listen';
 
   @override
+  String get watchProvisionListen => 'Listen';
+
+  @override
+  String get watchProvisionInspect => 'Inspect provision';
+
+  @override
+  String get watchProvisionCancel => 'Cancel prepared';
+
+  @override
+  String get watchProvisionEnroll => 'Enroll witness';
+
+  @override
+  String get watchProvisionReadEnroll => 'Read enroll';
+
+  @override
   String get watchProvisionNoMatch => 'No saved match selected';
 
   @override

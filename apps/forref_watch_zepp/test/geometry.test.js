@@ -83,21 +83,22 @@ for (let actions = 1; actions <= 2; actions++) {
 
 const homeRound = layoutHome(round);
 const homeRect = layoutHome(rect);
-assert(homeRound.upper.w === homeRound.lower.w && homeRound.upper.w === 456, "round zones share the 456 frame width");
-assert(homeRound.upper.h === 227 && homeRound.lower.h === 228, "round halves are the 227.5 frame, split on a pixel");
-assert(homeRound.divider.y === 239 && homeRound.divider.h === 1 && homeRound.divider.w === 456, "round divider");
+assert(homeRound.upper.w === homeRound.middle.w && homeRound.middle.w === homeRound.lower.w && homeRound.upper.w === 456, "round zones share the 456 frame width");
+assert(homeRound.upper.h === 151 && homeRound.middle.h === 151 && homeRound.lower.h === 152, "round bands share the frame");
+assert(homeRound.divider.y === 163 && homeRound.dividerLower.y === 315 && homeRound.divider.h === 1, "round dividers");
 assert(homeRound.titleSize === 32 && homeRound.subtitleSize === 20, "round type matches the frame");
-assert(homeRound.upperText.title.y === 88 && homeRound.upperText.subtitle.y === 136, "round upper type block");
-assert(homeRound.lowerText.title.y === 316 && homeRound.lowerText.subtitle.y === 364, "round lower type block");
 assert(homeRound.upperText.title.h === 40 && homeRound.upperText.subtitle.h === 28, "round line boxes");
-assert(Math.abs(homeRect.upper.h - homeRect.lower.h) <= 1, "rect halves stay equal");
+assert(homeRect.upper.h === 124 && homeRect.middle.h === 124 && homeRect.lower.h === 124, "rect bands stay equal");
 assert(homeRect.upper.y === SQUARE_STATUS_BAR, "rect home starts under the status bar");
 assert(homeRect.lower.y + homeRect.lower.h === rect.height - SAFE_MARGIN, "rect home keeps the bottom inset");
 assert(homeRect.upper.x === SAFE_MARGIN && homeRect.upper.w === 366, "rect side inset");
-assert(homeRect.divider.h === 1 && homeRect.divider.y === 250, "rect divider");
+assert(homeRect.divider.y === 188 && homeRect.dividerLower.y === 313 && homeRect.divider.h === 1, "rect dividers");
 assert(homeRect.titleSize === 26 && homeRect.subtitleSize === 16, "rect type keeps the 480 proportion");
 assert(inside(rect, homeRect.upper.x, homeRect.upper.y, homeRect.upper.w, homeRect.upper.h), "rect upper zone");
+assert(inside(rect, homeRect.middle.x, homeRect.middle.y, homeRect.middle.w, homeRect.middle.h), "rect middle zone");
 assert(inside(rect, homeRect.lower.x, homeRect.lower.y, homeRect.lower.w, homeRect.lower.h), "rect lower zone");
+assert(homeRect.middle.y === homeRect.divider.y + 1, "training starts under the first rule");
+assert(homeRect.lower.y === homeRect.dividerLower.y + 1, "settings starts under the second rule");
 assert(!inside(round, homeRound.upper.x, homeRound.upper.y, homeRound.upper.w, homeRound.upper.h), "round full-bleed zone is clipped by the glass");
 
 console.log("FORREF_GEOMETRY_TEST pass margin=" + SAFE_MARGIN + " statusBar=" + SQUARE_STATUS_BAR);

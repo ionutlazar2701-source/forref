@@ -755,6 +755,9 @@ WatchProvisionDecision decidePhoneWatchProvision({
 }
 
 /// Locks the phone root only after a watch readback receipt and a live transport.
+///
+/// An existing root is not a receipt. A new lock is durable only when this
+/// receipt is usable and names that root. An unusable receipt stays refused.
 WatchProvisionDecision decidePhoneAuthorityLock({
   required String message,
   required PhoneProvisionFacts facts,
@@ -764,15 +767,25 @@ WatchProvisionDecision decidePhoneAuthorityLock({
   final prepared = decidePhoneWatchProvision(message: message, facts: facts);
   if (prepared.state == WatchProvisionState.authorityConflict ||
       prepared.state == WatchProvisionState.recoveryRequired ||
-      prepared.state == WatchProvisionState.configInvalid ||
-      prepared.state == WatchProvisionState.phoneAuthorityLocked) {
+      prepared.state == WatchProvisionState.configInvalid) {
     return prepared;
   }
-  if (!transportAvailable || receipt == null || !receipt.usable) {
+  final rootAlreadyMatches =
+      prepared.state == WatchProvisionState.phoneAuthorityLocked;
+  if (!transportAvailable || receipt == null) {
     return WatchProvisionDecision(
       state: WatchProvisionState.configPrepared,
       trace: const [WatchProvisionState.configPrepared],
       reason: 'transport-unavailable',
+      canonical: prepared.canonical,
+      contentHash: prepared.contentHash,
+    );
+  }
+  if (!receipt.usable) {
+    return WatchProvisionDecision(
+      state: WatchProvisionState.configPrepared,
+      trace: const [WatchProvisionState.configPrepared],
+      reason: 'receipt-invalid',
       canonical: prepared.canonical,
       contentHash: prepared.contentHash,
     );
@@ -787,8 +800,7 @@ WatchProvisionDecision decidePhoneAuthorityLock({
       reason: 'receipt-mismatch',
     );
   }
-  if (facts.rootDeviceId == document.writerDeviceId &&
-      facts.rootPrincipalId == document.principalId) {
+  if (rootAlreadyMatches) {
     return WatchProvisionDecision(
       state: WatchProvisionState.phoneAuthorityLocked,
       trace: const [WatchProvisionState.phoneAuthorityLocked],

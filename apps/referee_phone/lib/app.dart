@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:referee_phone/app_scope.dart';
 import 'package:referee_phone/infrastructure/database/local_match_database.dart';
@@ -16,6 +18,7 @@ class RefereeApp extends StatefulWidget {
     this.captureIdentity,
     this.matchCaptureContext,
     this.temporalEvidence,
+    this.storageRoot,
   });
 
   final LocalMatchDatabase database;
@@ -28,6 +31,8 @@ class RefereeApp extends StatefulWidget {
   final PhoneMatchCaptureContext? matchCaptureContext;
 
   final PhoneTemporalEvidenceStore? temporalEvidence;
+
+  final Directory? storageRoot;
 
   @override
   State<RefereeApp> createState() => _RefereeAppState();
@@ -51,6 +56,7 @@ class _RefereeAppState extends State<RefereeApp> {
       captureIdentity: widget.captureIdentity,
       matchCaptureContext: widget.matchCaptureContext,
       temporalEvidence: widget.temporalEvidence,
+      storageRoot: widget.storageRoot,
       child: ValueListenableBuilder<Locale?>(
         valueListenable: locale,
         builder: (context, resolved, _) {

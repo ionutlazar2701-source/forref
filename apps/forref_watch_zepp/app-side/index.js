@@ -1,60 +1,59 @@
 import { BaseSideService } from "@zeppos/zml/base-side";
+import { sideBuildLine } from "../utils/build_stamp.js";
+import { replyLink } from "../utils/link_channel.js";
 import {
+  GET_SIDE_BUILD_V1,
+  PROBE_BRIDGE_V1,
   PROVISION_BRIDGE_URL,
-  isProvisionMethod,
-  sideFetchBody,
+  blockedDuringPrepare,
+  dispatchSideRequest,
+  probeBridge,
+  sameBuild,
+  sideBuildRecord,
 } from "../utils/provision_bridge.js";
-
-function asObject(value) {
-  if (!value) return null;
-  if (typeof value === "string") {
-    try {
-      return JSON.parse(value);
-    } catch (err) {
-      return null;
-    }
-  }
-  if (value.body && typeof value.body === "string") return asObject(value.body);
-  if (typeof value === "object") return value;
-  return null;
-}
 
 AppSideService(
   BaseSideService({
     onInit() {
+      console.log(sideBuildLine());
       console.log("FORREF_PROVISION side=init url=" + PROVISION_BRIDGE_URL);
     },
     onRequest(req, res) {
-      const method = req && req.method ? req.method : "";
-      if (!isProvisionMethod(method)) {
-        console.log("FORREF_PROVISION side method=" + method + " disposition=refused");
-        res(null, { disposition: "refused", reason: "method" });
-        return;
-      }
-      const body = sideFetchBody(method, req.params || {});
-      if (!body) {
-        console.log("FORREF_PROVISION side method=" + method + " disposition=refused");
-        res(null, { disposition: "refused", reason: "message" });
-        return;
-      }
-      this.fetch({
-        url: PROVISION_BRIDGE_URL,
-        method: "POST",
-        timeout: 4000,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      }).then((response) => {
-        const data = asObject(response);
-        if (!data || data.disposition == null) {
-          console.log("FORREF_PROVISION side method=" + method + " disposition=unavailable");
-          res(null, { disposition: "unavailable" });
+      const link = replyLink(req);
+      if (link) {
+        if (link.error) {
+          console.log("FORREF_LINK tx=recover reason=" + link.error);
+          res({ reason: link.error }, null);
           return;
         }
-        console.log("FORREF_PROVISION side method=" + method + " disposition=" + data.disposition);
-        res(null, data);
-      }).catch(() => {
-        console.log("FORREF_PROVISION side method=" + method + " disposition=unavailable");
-        res(null, { disposition: "unavailable" });
+        console.log("FORREF_LINK tx=pong seq=" + link.body.seq);
+        res(null, link.body);
+        return;
+      }
+      const method = req && req.method ? req.method : "";
+      if (method === GET_SIDE_BUILD_V1) {
+        console.log(sideBuildLine());
+        res(null, sideBuildRecord());
+        return;
+      }
+      if (method === PROBE_BRIDGE_V1) {
+        if (!sameBuild((req && req.params) || {})) {
+          console.log("FORREF_PROVISION tx=probe disposition=refused reason=parity");
+          res(null, { disposition: "refused", reason: "parity", hop: "side", category: "parity", durable: false });
+          return;
+        }
+        probeBridge((options) => this.fetch(options)).then((body) => {
+          res(null, body);
+        });
+        return;
+      }
+      if (blockedDuringPrepare(method)) {
+        console.log("FORREF_PROVISION tx=side method=" + method + " disposition=refused reason=prepare-only");
+        res(null, { disposition: "refused", reason: "prepare-only", hop: "side", category: "prepare-only", durable: false });
+        return;
+      }
+      dispatchSideRequest(req, (options) => this.fetch(options)).then((body) => {
+        res(null, body);
       });
     },
   }),

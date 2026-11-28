@@ -733,15 +733,32 @@ final class MatchApplicationBoundary
       ),
     );
     if (saved is WatchProvisionStageRefused) {
+      final fields = saved.changed.join(' ');
       return WatchProvisionDecision(
         state: WatchProvisionState.authorityConflict,
         trace: const [WatchProvisionState.authorityConflict],
-        reason: saved.reason,
+        reason: fields.isEmpty ? saved.reason : '${saved.reason} $fields',
         canonical: decision.canonical,
         contentHash: decision.contentHash,
       );
     }
     return decision;
+  }
+
+  /// Reads the stored stage identity. Does not write and does not return a
+  /// canonical document.
+  Future<WatchProvisionInspection> inspectWatchProvision({
+    required String matchId,
+    required String requestedContentHash,
+    required String requestedWriterDeviceId,
+    required String requestedPrincipalId,
+  }) {
+    return _store.inspectWatchProvision(
+      matchId: matchId,
+      requestedContentHash: requestedContentHash,
+      requestedWriterDeviceId: requestedWriterDeviceId,
+      requestedPrincipalId: requestedPrincipalId,
+    );
   }
 
   /// Drops CONFIG_PREPARED. Does not create or restore a phone authority root.

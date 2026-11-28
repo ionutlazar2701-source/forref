@@ -28,6 +28,7 @@ const ROUTES = [
   "page/gt/review/index.page",
   "page/gt/settings/index.page",
   "page/gt/provision/index.page",
+  "page/gt/link/index.page",
   "page/gt/cautions/index.page",
   "page/gt/neutral/index.page",
   "page/gt/halftime/index.page",
@@ -145,11 +146,11 @@ test("filled turquoise and blue keep black labels in both states", () => {
   assert.ok(contrast(TEXT_PRIMARY, CANVAS) >= 7);
 });
 
-test("the manifest still has the 24 current routes and each one paints through the shared shell", () => {
+test("the manifest still has the current routes and each one paints through the shared shell", () => {
   assert.deepEqual(appJson.targets.gt.module.page.pages, ROUTES);
   assert.equal(appJson.app.appId, 29566);
-  assert.equal(appJson.app.version.name, "1.0.16");
-  assert.equal(appJson.app.version.code, 16);
+  assert.equal(appJson.app.version.name, "1.0.33");
+  assert.equal(appJson.app.version.code, 33);
   for (const route of ROUTES) {
     const source = readFileSync(new URL("../" + route + ".js", import.meta.url), "utf8");
     assert.equal(source.includes("stack(") || source.includes("paintBase("), true, route);
