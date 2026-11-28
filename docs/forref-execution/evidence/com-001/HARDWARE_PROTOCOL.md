@@ -1,6 +1,6 @@
 # COM-001 Bip 6 protocol
 
-State: **1.0.34 SOFTWARE PASS. HARDWARE GATE PENDING. LOCK DISABLED**. Watch source is `1.0.34` (`watch-pair-034`, rev `121d2bfea53ce325cea2cc0e69d59f806c828c0b`). Rows H1–H11 and E1–E8 stay **LOCAL GATE REQUIRED**. This file does not certify the Bip 6.
+State: **1.0.34 SOFTWARE PASS. HARDWARE GATE PENDING. LOCK DISABLED**. Watch source is `1.0.34` (`watch-pair-034`, rev `121d2bfea53ce325cea2cc0e69d59f806c828c0b`). Package `dist/29566-FORREF-1.0.34-20261128172845.zab`, sha256 `ecce27ca297465041b0f8923b6988d5bd34e7f8a031eeb8df2667326e1e3133b`. The QR is in `TEST_RESULTS.md` and expires 19:28 Europe/Bucharest on 5 December 2026. Rows H1–H11 and E1–E8 stay **LOCAL GATE REQUIRED**. This file does not certify the Bip 6.
 
 Do not uninstall FORREF Watch, the Zepp app, or FORREF Mobile. Do not reset a match, clear storage, cancel a prepared provision, or delete a correlation file. Do not type an installation UUID. Do not tap Prepare and listen, Listen, Enroll witness, or Cancel prepared. Do not tap Provision on the watch.
 
