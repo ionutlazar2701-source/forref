@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:forref_match_core/forref_match_core.dart';
 import 'package:forref_match_persistence/sqlite_durable_match_store.dart';
+import 'package:forref_match_persistence/watch_identity.dart';
 import 'package:match_core/match_core.dart';
 import 'package:referee_phone/match_application/match_application_boundary.dart';
 
@@ -197,6 +198,23 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     try {
       response.headers.set(HttpHeaders.cacheControlHeader, 'no-store');
       response.headers.contentType = ContentType.json;
+      if (request.method == 'GET' &&
+          (request.uri.path == '/' ||
+              request.uri.path == forrefWatchProvisionPath)) {
+        response.statusCode = HttpStatus.ok;
+        _write(response, {
+          'disposition': 'listening',
+          'reason': 'listening',
+          'writes': 0,
+          'matchId': _matchId ?? '',
+          'saved': false,
+          'd1Certified': false,
+        });
+        debugPrint(
+          'FORREF_PROVISION tx=listen method=GET match=${_matchId ?? ''} writes=0',
+        );
+        return;
+      }
       if (request.method != 'POST' ||
           request.uri.path != forrefWatchProvisionPath) {
         response.statusCode = HttpStatus.notFound;
@@ -268,7 +286,13 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     }
     final stage = await boundary.durableStore.readWatchProvisionStage(matchId);
     if (stage == null) return _refused('missing');
-    if (stage.writerDeviceId != installationId) return _refused('installation');
+    if (body['principalId'] != null &&
+        body['principalId'] != stage.principalId) {
+      return _refused('principal');
+    }
+    if (stage.writerDeviceId != installationId) {
+      return _classifyOther(stage, body, installationId, requestId);
+    }
     if (_installationId != null && _installationId != installationId) {
       return _refused('correlation-conflict');
     }
@@ -283,7 +307,11 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
       return _refused('order');
     }
     if (operation == 'pending') {
-      return _pending(stage, installationId, requestId);
+      final prepared = _pending(stage, installationId, requestId);
+      if (prepared['disposition'] == 'prepared') {
+        await _observeWitness(stage, body, installationId, requestId);
+      }
+      return prepared;
     }
     if (body['matchId'] != matchId ||
         body['contentHash'] != stage.contentHash) {
@@ -299,6 +327,66 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
       return _rememberActivation(stage, body, installationId, requestId);
     }
     return _refused('operation');
+  }
+
+  Future<Map<String, Object?>> _classifyOther(
+    WatchProvisionPhoneStage stage,
+    Map<String, Object?> body,
+    String installationId,
+    String requestId,
+  ) async {
+    final claim = _witnessClaim(body['witness']);
+    if (claim.absent) return _refused('installation');
+    final result = await boundary.durableStore.classifyWatchInstallation(
+      matchId: stage.matchId,
+      principalId: stage.principalId,
+      installationId: installationId,
+      requestId: requestId,
+      candidateKind: claim.kind,
+      digest: claim.digest,
+      witnessMalformed: claim.malformed,
+      sourceBuilds: claim.sourceBuilds,
+    );
+    final reason = switch (result) {
+      WatchIdentityAppended(:final reason) => reason,
+      WatchIdentityRefused(:final reason) => reason,
+    };
+    final preview = claim.digest == null ? '' : digestPreview(claim.digest!);
+    debugPrint(
+      'FORREF_PROVISION tx=identity reason=$reason installation=$installationId request=$requestId match=${stage.matchId} preview=$preview grade=$watchEvidenceUnverifiedDevice',
+    );
+    return _refused(reason);
+  }
+
+  Future<void> _observeWitness(
+    WatchProvisionPhoneStage stage,
+    Map<String, Object?> body,
+    String installationId,
+    String requestId,
+  ) async {
+    final claim = _witnessClaim(body['witness']);
+    if (claim.absent) return;
+    if (claim.malformed || claim.digest == null) {
+      debugPrint(
+        'FORREF_PROVISION tx=identity reason=witness-malformed installation=$installationId request=$requestId match=${stage.matchId}',
+      );
+      return;
+    }
+    final result = await boundary.durableStore.observeWatchWitness(
+      matchId: stage.matchId,
+      principalId: stage.principalId,
+      installationId: installationId,
+      requestId: requestId,
+      digest: claim.digest!,
+      sourceBuilds: claim.sourceBuilds,
+    );
+    final reason = switch (result) {
+      WatchIdentityAppended(:final reason) => reason,
+      WatchIdentityRefused(:final reason) => reason,
+    };
+    debugPrint(
+      'FORREF_PROVISION tx=identity reason=$reason installation=$installationId request=$requestId match=${stage.matchId} preview=${digestPreview(claim.digest!)} grade=$watchEvidenceUnverifiedDevice',
+    );
   }
 
   Map<String, Object?> _pending(
@@ -554,6 +642,95 @@ String describeDebugCorrelation(String? text) {
   } on Object {
     return 'correlation=corrupt';
   }
+}
+
+final class _WitnessClaim {
+  const _WitnessClaim({
+    required this.absent,
+    required this.malformed,
+    required this.kind,
+    required this.digest,
+    required this.sourceBuilds,
+  });
+
+  final bool absent;
+  final bool malformed;
+  final String kind;
+  final Uint8List? digest;
+  final String sourceBuilds;
+}
+
+_WitnessClaim _witnessClaim(Object? witness) {
+  if (witness == null) {
+    return const _WitnessClaim(
+      absent: true,
+      malformed: false,
+      kind: 'absent',
+      digest: null,
+      sourceBuilds: '',
+    );
+  }
+  if (witness is! Map) {
+    return const _WitnessClaim(
+      absent: false,
+      malformed: true,
+      kind: 'absent',
+      digest: null,
+      sourceBuilds: '',
+    );
+  }
+  if (witness.containsKey('uuid') ||
+      witness.containsKey('platformUuid') ||
+      witness['schema'] != watchWitnessSchema ||
+      witness['digestVersion'] != watchCandidateDigestVersion ||
+      witness['evidenceGrade'] != watchEvidenceUnverifiedDevice) {
+    return const _WitnessClaim(
+      absent: false,
+      malformed: true,
+      kind: 'absent',
+      digest: null,
+      sourceBuilds: '',
+    );
+  }
+  final builds = witness['sourceBuilds'];
+  final sourceBuilds = builds is String ? builds : '';
+  final kind = witness['candidateKind'];
+  if (kind == 'absent' || kind == 'model_only') {
+    return _WitnessClaim(
+      absent: false,
+      malformed: false,
+      kind: kind as String,
+      digest: null,
+      sourceBuilds: sourceBuilds,
+    );
+  }
+  if (kind != 'platform_uuid') {
+    return _WitnessClaim(
+      absent: false,
+      malformed: true,
+      kind: 'absent',
+      digest: null,
+      sourceBuilds: sourceBuilds,
+    );
+  }
+  final hex = witness['candidateDigest'];
+  final digest = hex is String ? decodeDigestHex(hex) : null;
+  if (digest == null) {
+    return _WitnessClaim(
+      absent: false,
+      malformed: true,
+      kind: 'platform_uuid',
+      digest: null,
+      sourceBuilds: sourceBuilds,
+    );
+  }
+  return _WitnessClaim(
+    absent: false,
+    malformed: false,
+    kind: 'platform_uuid',
+    digest: digest,
+    sourceBuilds: sourceBuilds,
+  );
 }
 
 Future<Map<String, Object?>?> _readBody(HttpRequest request) async {

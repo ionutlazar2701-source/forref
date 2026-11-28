@@ -782,6 +782,12 @@ abstract class AppLocalizations {
   /// **'Prepare and listen'**
   String get watchProvisionPrepare;
 
+  /// No description provided for @watchProvisionListen.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen'**
+  String get watchProvisionListen;
+
   /// No description provided for @watchProvisionInspect.
   ///
   /// In en, this message translates to:

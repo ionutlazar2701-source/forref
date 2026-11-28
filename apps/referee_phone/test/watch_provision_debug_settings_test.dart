@@ -102,6 +102,7 @@ void main() {
     expect(find.text('Watch installation UUID'), findsOneWidget);
     expect(find.text('No saved match selected'), findsOneWidget);
     expect(find.text('Prepare and listen'), findsOneWidget);
+    expect(find.text('Listen'), findsOneWidget);
     expect(find.text('Inspect provision'), findsOneWidget);
     expect(find.text('Cancel prepared'), findsOneWidget);
 

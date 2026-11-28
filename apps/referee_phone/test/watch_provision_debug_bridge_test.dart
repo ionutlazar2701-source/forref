@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
 import 'package:referee_phone/infrastructure/match_memory/match_application_composition.dart';
+import 'package:forref_match_persistence/watch_identity.dart';
 import 'package:referee_phone/officiate/watch_provision_debug_bridge.dart';
 
 void main() {
@@ -382,6 +383,94 @@ void main() {
       ),
       isNull,
     );
+  });
+
+  test('listen reports recovery-required without changing the writer',
+      () async {
+    await composition.boundary.prepareWatchOperatedMatch(
+      canonicalMessage: canonical,
+      phoneOriginDeviceId: identity.originDeviceId,
+    );
+    expect(
+      await bridge.start('match-watch-001'),
+      WatchProvisionBridgeDisposition.listening,
+    );
+    final digest = encodeDigestHex(candidateDigestBytes(
+      '00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff',
+    ));
+    final witness = {
+      'schema': watchWitnessSchema,
+      'candidateKind': 'platform_uuid',
+      'candidateDigest': digest,
+      'digestVersion': 1,
+      'evidenceGrade': watchEvidenceUnverifiedDevice,
+      'sourceBuilds': 'identity-detect-031',
+    };
+    final prepared = await _post(bridge, {
+      'operation': 'pending',
+      'installationId': fixture['localInstallationId'],
+      'requestId': '11111111-2222-4333-8444-555555555555',
+      'generation': 1,
+      'witness': witness,
+    });
+    expect(prepared['disposition'], 'prepared');
+    expect(prepared.containsKey('canonical'), isTrue);
+    final eventsBefore = await composition.boundary.durableStore
+        .readWatchIdentityEvents('match-watch-001');
+    expect(
+      eventsBefore.map((event) => event.eventKind),
+      contains('watch_witness_observed'),
+    );
+    final stageBefore =
+        await composition.boundary.durableStore.readWatchProvisionStage(
+      'match-watch-001',
+    );
+    final client = HttpClient();
+    try {
+      final request = await client.getUrl(
+        Uri.parse('http://${bridge.loopbackEndpoint}/'),
+      );
+      final response = await request.close();
+      final text = await utf8.decodeStream(response);
+      final body = (jsonDecode(text) as Map).cast<String, Object?>();
+      expect(response.statusCode, 200);
+      expect(body['disposition'], 'listening');
+      expect(body['writes'], 0);
+    } finally {
+      client.close(force: true);
+    }
+    final candidate = await _post(bridge, {
+      'operation': 'pending',
+      'installationId': 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+      'requestId': '99999999-8888-4777-8666-555555555555',
+      'generation': 1,
+      'witness': witness,
+    });
+    expect(candidate['disposition'], 'refused');
+    expect(candidate['reason'], 'recovery-required');
+    expect(candidate.containsKey('canonical'), isFalse);
+    final stageAfter =
+        await composition.boundary.durableStore.readWatchProvisionStage(
+      'match-watch-001',
+    );
+    expect(stageAfter?.canonical, stageBefore?.canonical);
+    expect(stageAfter?.writerDeviceId, stageBefore?.writerDeviceId);
+    expect(stageAfter?.contentHash, stageBefore?.contentHash);
+    expect(
+      await composition.boundary.durableStore.readGenerationOneAuthorityRoot(
+        'match-watch-001',
+      ),
+      isNull,
+    );
+    final auth =
+        await composition.boundary.durableStore.authorizeInstallationEnrollment(
+      matchId: 'match-watch-001',
+      principalId: stageAfter!.principalId,
+      previousInstallationId: stageAfter.writerDeviceId,
+      installationId: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+    );
+    expect(auth, isA<WatchIdentityRefused>());
+    expect((auth as WatchIdentityRefused).reason, 'authorization-unavailable');
   });
 
   test('an unprepared bridge does not invent a document', () async {

@@ -137,6 +137,7 @@
   "watchProvisionTitle": "Watch provision",
   "watchProvisionInstallation": "Watch installation UUID",
   "watchProvisionPrepare": "Prepare and listen",
+  "watchProvisionListen": "Listen",
   "watchProvisionInspect": "Inspect provision",
   "watchProvisionCancel": "Cancel prepared",
   "watchProvisionNoMatch": "No saved match selected",

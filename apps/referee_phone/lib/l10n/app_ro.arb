@@ -129,6 +129,7 @@
   "watchProvisionTitle": "Provizionare ceas",
   "watchProvisionInstallation": "UUID instalare ceas",
   "watchProvisionPrepare": "Pregătește și ascultă",
+  "watchProvisionListen": "Ascultă",
   "watchProvisionInspect": "Inspectează provizionarea",
   "watchProvisionCancel": "Anulează pregătirea",
   "watchProvisionNoMatch": "Niciun meci salvat selectat",

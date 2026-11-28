@@ -2,6 +2,10 @@
 
 State: **SOFTWARE PASS / HARDWARE GATE PENDING**. Not a Level 2 pass. The phone was not installed from this environment. The `1.0.27` ASCII QR was decoded as a package check and was not scanned on a phone.
 
+Identity detection, watch source `1.0.31` (`identity-detect-031`): `packages/forref_match_persistence` `dart test test/watch_identity_test.dart` passed 7 tests. `apps/forref_watch_zepp` `npm test` passed 286 tests, 0 failed. `flutter test test/watch_provision_debug_bridge_test.dart test/watch_provision_debug_settings_test.dart` passed 12 tests. The bridge test observed `reason=observed` for the current writer and `reason=recovery-required` for a second installation, with the stage canonical, writer, and hash unchanged and the generation-1 root absent. `authorizeInstallationEnrollment` returned `authorization-unavailable`. GET `/` returned `listening` and `writes=0`. These rows are not Bip 6 results. H1–H11 in `HARDWARE_PROTOCOL.md` stay **LOCAL GATE REQUIRED**.
+
+Shared digest vector: platform hex `00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff`, SHA-256 domain `forref-candidate-v1:`, digest `26c41755b96d53042c3b66daefff51082ea5ec9c70c4d4c6e0fffb6bde19954c`. The Dart and JavaScript tests both check the `abc` SHA-256 vector `ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad`, and the JavaScript test checks this domain digest.
+
 Open package: functional commit `b89abb97e2c31162e145f6b62041ee2d6f3aed3d`. Boot stamp `afbb3ae`. Boot name `com-001-open`. App `29566`, version `1.0.22` (code 22). `npm test`: 260 pass, 0 fail.
 
 `1.0.21` still rebooted the Bip 6 from a black screen. That package called `App()` through a helper, and the provision page still imported `@zeppos/zml/3.0/module/messaging/plugin/app`. `1.0.22` restores the direct `App({...})` registration used by `1.0.19`, which opened. No watch page, `app.js`, or app-service file imports `@zeppos/zml`. The built device package contains `FORREF_APP` and `com-001-open`. It does not contain `__scopedGlobals__`, `TransferFile`, `createConnect`, `BaseApp`, or `hmBle`. Those strings remain in the phone-side bundle only.

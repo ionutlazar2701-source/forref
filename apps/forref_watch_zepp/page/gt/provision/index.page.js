@@ -1,3 +1,4 @@
+import { getDeviceInfo } from "@zos/device";
 import { readFileSync, readdirSync, writeFileSync } from "@zos/fs";
 import { back } from "@zos/router";
 import { appPlugin } from "@zeppos/zml/3.0/module/messaging/plugin/app";
@@ -14,6 +15,7 @@ import {
   resolveInstallationCard,
   splitInstallationId,
 } from "../../../utils/installation_label";
+import { witnessFromInfo } from "../../../utils/identity_witness";
 import { durablePath, readDurableText, resolveInstallation } from "../../../utils/installation_continuity";
 import { t } from "../../../utils/text";
 import { ACCENT, TEXT_PRIMARY, TEXT_WARNING } from "../../../utils/theme";
@@ -70,10 +72,20 @@ function statusLabel(status) {
   if (status === "prepared") return t("stagePrepared");
   if (status === "locked") return t("stageLocked");
   if (status === "activated") return t("stageActivated");
+  if (status === "recovery-required") return t("recoveryRequired");
   return String(status || "");
 }
 
+function currentWitness() {
+  try {
+    return witnessFromInfo(getDeviceInfo());
+  } catch (err) {
+    return witnessFromInfo(null);
+  }
+}
+
 function outcomeStatus(view) {
+  if (view && view.reason === "recovery-required") return "recovery-required";
   if (!view) return "refused";
   if (view.ok && view.transport === "recorded") return "activated";
   if (view.stage === "report") return "activated";
@@ -108,6 +120,11 @@ Page({
   build() {
     console.log("FORREF_PROVISION page=build");
     console.log(deviceBuildLine());
+    try {
+      console.log(currentWitness().line);
+    } catch (err) {
+      console.log("FORREF_WITNESS kind=absent class=unavailable len=0");
+    }
     try {
       bindBack(false);
     } catch (err) {
@@ -237,6 +254,11 @@ Page({
         createFileProvisionStore(provisionFiles(), PROVISION_ROOT_FILE, PROVISION_ADMISSION_FILE),
       ),
       request: (message) => messaging.request(message, { timeout: PROVISION_PAGE_TIMEOUT_MS }),
+      readWitness: () => {
+        const read = currentWitness();
+        console.log(read.line);
+        return read.witness;
+      },
     }).then((view) => {
       this.finishPrepare(kept, view);
     }).catch((err) => {

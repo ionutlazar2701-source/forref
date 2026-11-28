@@ -1,5 +1,29 @@
 # COM-001 Bip 6 protocol
 
+State: **IDENTITY DETECTION BUILT. HARDWARE NOT RUN. LOCK DISABLED**. Watch source is `1.0.31` (`identity-detect-031`). No Bip 6 log for this build is attached. Rows H1–H11 stay **LOCAL GATE REQUIRED**. Do not uninstall FORREF Watch, the Zepp app, or FORREF Mobile. Do not cancel a prepared stage. Do not type a new installation UUID over the stored writer.
+
+## 1.0.31 detection trial
+
+Install the `1.0.31` package in place, then force-stop Zepp and open it again. On the phone debug build, open Settings, select the saved match, and tap **Listen**. Listen does not prepare a match. From the phone browser open `http://127.0.0.1:47221/`. The body is `disposition=listening` and `writes=0`. That browser line is not a Zepp POST.
+
+On the watch, open PROVISION and copy `FORREF_WITNESS` before the tap. The line names `kind`, `class`, `len`, and, when a digest exists, `preview` as four hex characters, three dots, and four hex characters. It does not contain the platform id or the full digest. Then tap Provision once.
+
+| Gate | What to record | Pass is not available until the founder attaches the log |
+| --- | --- | --- |
+| H1 | `FORREF_WITNESS` class and length. API level if the firmware line shows it. | `class=hex64` with `len=64`, or `class=unavailable` / `unsupported-or-invalid` with no match. |
+| H2 | The same witness line after reopen and reboot, plus `FORREF_IDENTITY` `id`. | Same preview when the class is `hex64`. Same installation id, or an explicit `case=recovery`. |
+| H3 | In-place upgrade from `1.0.30` to `1.0.31`. Version code 31. Pre and post installation id and preview. | A changed installation id is a HOLD. Do not adopt the old id. |
+| H4 | True uninstall and reinstall of FORREF Watch only. | New installation id. Phone stage writer unchanged. Phone reason `recovery-required` only when a prior witness exists. |
+| H5 | Phone Listen, Chrome GET, then the Zepp POST. | GET `listening` and the Zepp `http` line are separate. `Error -2` remains a transport HOLD. |
+| H6 | Pending from the current writer with a witness. | Phone log `reason=observed` and one `watch_witness_observed` row. A Prepare-only database has no witness. |
+| H7 | A later installation with the same preview. | `reason=recovery-required`. No `disposition=prepared`. Writer unchanged. |
+| H8 | A different model, a wrong principal, or a different digest. | `installation`, `installation-conflict`, or `identity-evidence-unavailable`. No other match id in the response. |
+| H9 | Repeat the same request id. | One event. The same reason. |
+| H10 | A match that already has a generation-1 root. | The root device id is unchanged. The new installation does not lock or record. |
+| H11 | Kick off on the already authorized watch and turn Bluetooth off for 30 seconds. | The clock continues. The phone link is not required. |
+
+The phone sentence for H7 is the watch status `RECOVERY REQUIRED` / `RECUPERARE NECESARĂ`. That means a possible previously used watch. This installation cannot officiate that match. It is not an authenticated device and it is not a writer transfer.
+
 State: **PREPARE NOT TESTED. LOCK DISABLED**. No Bip 6 `FORREF_IDENTITY` line and no `tx=probe` line were attached for `1.0.29`. Those rows stay **LOCAL GATE REQUIRED**. Across successive Bip 6 builds the displayed installation UUID changed: `166e7c3b-…-e43e`, `03e0d543-…-0a51`, `12a79650-…-f966`. FORREF Mobile kept the previous writer and returned `prepared-conflict`. The watch code minted a new random UUID whenever `forref_watch_installation_v1.txt` read as missing, and those files were written under a bare name. Zepp documents `data://` as the directory kept across an upgrade. This repository has no device log that shows those files were deleted. Do not treat the three UUIDs as proof that Zepp wiped storage. `1.0.28` side parity and the HTTP probe stay separate rows and are still not certified. Unit tests do not certify the Bip 6. Do not mark Level 2 from this file.
 
 App id `29566`, version `1.0.30` (code 30), boot `build=com-004r-share rev=29dee454fa5ebba73442387275abf45decfb7499`. Install `dist/29566-FORREF-1.0.30-20261128123821.zab`. The previous package remains `dist/29566-FORREF-1.0.29-20261128115804.zab`. Do not install `1.0.20` or `1.0.21`. Do not uninstall the Zepp app, FORREF Mobile, or FORREF Watch. Do not clear the watch UUID, the correlation file, a prepared match, or an authority root. `app.bin` has no `createConnect` and no `GET_WATCH_PROVISION`. The PROVISION page bundle contains `data://`, `FORREF_IDENTITY`, `runPrepare`, and `GET_WATCH_PROVISION`. It does not contain `runHandshake`, `runSideDiagnostic`, or `SUBMIT_WATCH_LOCK`. `app-side.js` still refuses lock and activation with `prepare-only` before fetch. `app-side.js` contains `tx=side-build` and does not contain `tx=recover method=`. The QR is in `TEST_RESULTS.md`. It expires 14:38 Europe/Bucharest on 5 December 2026.

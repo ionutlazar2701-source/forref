@@ -369,6 +369,9 @@ class AppLocalizationsRo extends AppLocalizations {
   String get watchProvisionPrepare => 'Pregătește și ascultă';
 
   @override
+  String get watchProvisionListen => 'Ascultă';
+
+  @override
   String get watchProvisionInspect => 'Inspectează provizionarea';
 
   @override

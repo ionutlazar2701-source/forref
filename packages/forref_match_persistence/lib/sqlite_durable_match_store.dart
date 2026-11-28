@@ -1,10 +1,13 @@
 import 'dart:io';
+import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:forref_match_core/canonical_record_form.dart';
 import 'package:forref_match_core/forref_match_core.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import 'record_storage_encoding.dart';
+import 'watch_identity.dart';
 
 /// Decoded committed records plus any rows that could not be decoded.
 final class CommittedMatchMemorySnapshot {
@@ -206,6 +209,12 @@ final class SqliteDurableMatchStore
   /// A throw rolls the transaction back. It does not simulate power loss.
   void Function()? abortBeforeCommitForTest;
 
+  /// Test-only abort for identity-event commits. Match-record tests do not
+  /// set this, so a sporting abort cannot roll back a provision stage.
+  void Function()? abortIdentityCommitForTest;
+
+  final Random _identityRandom = Random.secure();
+
   /// Opens [file], applies the D1 pragmas, and creates the append-only table.
   ///
   /// SQLite replays or rolls back a hot rollback journal during open.
@@ -317,6 +326,84 @@ final class SqliteDurableMatchStore
         writer_device_id TEXT NOT NULL,
         principal_id TEXT NOT NULL
       )
+    ''');
+    _db.execute('''
+      CREATE TABLE IF NOT EXISTS watch_identity_events (
+        event_sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_id TEXT NOT NULL UNIQUE,
+        event_schema_version INTEGER NOT NULL CHECK (event_schema_version = 1),
+        event_kind TEXT NOT NULL CHECK (event_kind IN (
+          'prepare_intent',
+          'watch_witness_observed',
+          'candidate_seen'
+        )),
+        match_id TEXT NOT NULL,
+        principal_id TEXT NOT NULL,
+        prior_installation_id TEXT NULL,
+        observed_installation_id TEXT NOT NULL,
+        candidate_kind TEXT NOT NULL CHECK (candidate_kind IN (
+          'platform_uuid', 'model_only', 'absent'
+        )),
+        candidate_digest BLOB NULL CHECK (
+          candidate_digest IS NULL OR length(candidate_digest) = 32
+        ),
+        digest_version INTEGER NOT NULL CHECK (digest_version = 1),
+        evidence_grade TEXT NOT NULL CHECK (evidence_grade IN (
+          'typed-installation',
+          'watch-message-observed/unverified-device-identity'
+        )),
+        channel_trace_id TEXT NULL,
+        protocol_request_id TEXT NOT NULL,
+        prior_event_id TEXT NULL,
+        authorization_event_id TEXT NULL CHECK (authorization_event_id IS NULL),
+        created_at_ms INTEGER NOT NULL,
+        source_builds TEXT NOT NULL CHECK (length(source_builds) <= 160),
+        CHECK (
+          (event_kind = 'prepare_intent'
+            AND candidate_kind = 'absent'
+            AND candidate_digest IS NULL
+            AND evidence_grade = 'typed-installation'
+            AND prior_installation_id IS NULL)
+          OR
+          (event_kind = 'watch_witness_observed'
+            AND candidate_kind = 'platform_uuid'
+            AND length(candidate_digest) = 32
+            AND evidence_grade = 'watch-message-observed/unverified-device-identity'
+            AND prior_installation_id IS NULL)
+          OR
+          (event_kind = 'candidate_seen'
+            AND candidate_kind = 'platform_uuid'
+            AND length(candidate_digest) = 32
+            AND evidence_grade = 'watch-message-observed/unverified-device-identity'
+            AND prior_installation_id IS NOT NULL)
+        )
+      )
+    ''');
+    _db.execute('''
+      CREATE UNIQUE INDEX IF NOT EXISTS watch_identity_events_request
+      ON watch_identity_events (match_id, protocol_request_id, event_kind)
+    ''');
+    _db.execute('''
+      CREATE INDEX IF NOT EXISTS watch_identity_events_match
+      ON watch_identity_events (match_id, observed_installation_id)
+    ''');
+    _db.execute('''
+      CREATE INDEX IF NOT EXISTS watch_identity_events_digest
+      ON watch_identity_events (match_id, candidate_digest)
+    ''');
+    _db.execute('''
+      CREATE TRIGGER IF NOT EXISTS watch_identity_events_no_update
+      BEFORE UPDATE ON watch_identity_events
+      BEGIN
+        SELECT RAISE(ABORT, 'watch_identity_events is append-only');
+      END
+    ''');
+    _db.execute('''
+      CREATE TRIGGER IF NOT EXISTS watch_identity_events_no_delete
+      BEFORE DELETE ON watch_identity_events
+      BEGIN
+        SELECT RAISE(ABORT, 'watch_identity_events is append-only');
+      END
     ''');
   }
 
@@ -929,7 +1016,8 @@ final class SqliteDurableMatchStore
         if (existing.contentHash == stage.contentHash &&
             existing.writerDeviceId == stage.writerDeviceId &&
             existing.principalId == stage.principalId) {
-          _commitTransaction();
+          _ensurePrepareIntentLocked(existing);
+          _commitIdentityOrRollback();
           return WatchProvisionStageSaved(existing);
         }
         _db.execute('ROLLBACK');
@@ -973,12 +1061,427 @@ final class SqliteDurableMatchStore
           stage.principalId,
         ],
       );
-      _commitTransaction();
+      _ensurePrepareIntentLocked(stage);
+      _commitIdentityOrRollback();
       return WatchProvisionStageSaved(stage);
     } catch (error) {
       _rollbackIfNeeded();
       return WatchProvisionStageRefused('prepare aborted: $error');
     }
+  }
+
+  /// Production enrollment is closed. This method writes nothing.
+  Future<WatchIdentityResult> authorizeInstallationEnrollment({
+    required String matchId,
+    required String principalId,
+    required String previousInstallationId,
+    required String installationId,
+  }) {
+    // The arguments name the future binding. This build does not read them
+    // and does not write an enrollment event.
+    return Future<WatchIdentityResult>.value(
+      WatchIdentityRefused(
+        matchId.isEmpty &&
+                principalId.isEmpty &&
+                previousInstallationId.isEmpty &&
+                installationId.isEmpty
+            ? 'authorization-unavailable'
+            : 'authorization-unavailable',
+      ),
+    );
+  }
+
+  Future<List<WatchIdentityEvent>> readWatchIdentityEvents(String matchId) {
+    return _serialized(() async => _readIdentityEventsLocked(matchId));
+  }
+
+  Future<WatchIdentityProjection> readWatchIdentityProjection(String matchId) {
+    return _serialized(() async {
+      final stage = _readWatchProvisionStageLocked(matchId);
+      return projectIdentity(
+        stagePresent: stage != null,
+        stageWriterId: stage?.writerDeviceId,
+        events: _readIdentityEventsLocked(matchId),
+      );
+    });
+  }
+
+  /// Appends a witness for the current stage writer. A different installation
+  /// is refused here and must go through [classifyWatchInstallation].
+  Future<WatchIdentityResult> observeWatchWitness({
+    required String matchId,
+    required String principalId,
+    required String installationId,
+    required String requestId,
+    required Uint8List digest,
+    required String sourceBuilds,
+  }) {
+    return _serialized(
+      () async => _observeWatchWitness(
+        matchId: matchId,
+        principalId: principalId,
+        installationId: installationId,
+        requestId: requestId,
+        digest: digest,
+        sourceBuilds: sourceBuilds,
+      ),
+    );
+  }
+
+  /// Recognizes a later installation. It does not change the stage or root.
+  Future<WatchIdentityResult> classifyWatchInstallation({
+    required String matchId,
+    required String principalId,
+    required String installationId,
+    required String requestId,
+    required String candidateKind,
+    required Uint8List? digest,
+    required bool witnessMalformed,
+    required String sourceBuilds,
+  }) {
+    return _serialized(
+      () async => _classifyWatchInstallation(
+        matchId: matchId,
+        principalId: principalId,
+        installationId: installationId,
+        requestId: requestId,
+        candidateKind: candidateKind,
+        digest: digest,
+        witnessMalformed: witnessMalformed,
+        sourceBuilds: sourceBuilds,
+      ),
+    );
+  }
+
+  WatchIdentityResult _observeWatchWitness({
+    required String matchId,
+    required String principalId,
+    required String installationId,
+    required String requestId,
+    required Uint8List digest,
+    required String sourceBuilds,
+  }) {
+    if (digest.length != 32) {
+      return const WatchIdentityRefused('identity-evidence-unavailable');
+    }
+    _db.execute('BEGIN IMMEDIATE');
+    try {
+      final stage = _readWatchProvisionStageLocked(matchId);
+      if (stage == null) {
+        _db.execute('ROLLBACK');
+        return const WatchIdentityRefused('missing');
+      }
+      if (stage.principalId != principalId) {
+        _db.execute('ROLLBACK');
+        return const WatchIdentityRefused('principal');
+      }
+      if (stage.writerDeviceId != installationId) {
+        _db.execute('ROLLBACK');
+        return const WatchIdentityRefused('installation');
+      }
+      final existing = _readIdentityByRequestLocked(
+        matchId: matchId,
+        requestId: requestId,
+        eventKind: 'watch_witness_observed',
+      );
+      if (existing != null) {
+        _db.execute('ROLLBACK');
+        if (existing.observedInstallationId == installationId &&
+            sameDigest(existing.candidateDigest, digest)) {
+          return WatchIdentityAppended(existing, reason: 'replay');
+        }
+        return const WatchIdentityRefused('replay-conflict');
+      }
+      final eventId = _insertIdentityEventLocked(
+        eventKind: 'watch_witness_observed',
+        matchId: matchId,
+        principalId: principalId,
+        observedInstallationId: installationId,
+        priorInstallationId: null,
+        candidateKind: 'platform_uuid',
+        digest: digest,
+        evidenceGrade: watchEvidenceUnverifiedDevice,
+        requestId: requestId,
+        priorEventId: null,
+        sourceBuilds: sourceBuilds,
+      );
+      _commitIdentityOrRollback();
+      final stored = _readIdentityByIdLocked(eventId);
+      if (stored == null) {
+        return const WatchIdentityRefused('identity-evidence-unavailable');
+      }
+      return WatchIdentityAppended(stored, reason: 'observed');
+    } catch (error) {
+      _rollbackIfNeeded();
+      return WatchIdentityRefused('observe aborted: $error');
+    }
+  }
+
+  WatchIdentityResult _classifyWatchInstallation({
+    required String matchId,
+    required String principalId,
+    required String installationId,
+    required String requestId,
+    required String candidateKind,
+    required Uint8List? digest,
+    required bool witnessMalformed,
+    required String sourceBuilds,
+  }) {
+    _db.execute('BEGIN IMMEDIATE');
+    try {
+      final stage = _readWatchProvisionStageLocked(matchId);
+      if (stage == null) {
+        _db.execute('ROLLBACK');
+        return const WatchIdentityRefused('missing');
+      }
+      final beforeCanonical = stage.canonical;
+      final beforeHash = stage.contentHash;
+      final beforeWriter = stage.writerDeviceId;
+      final beforePrincipal = stage.principalId;
+      final beforeStage = stage.stage;
+      if (stage.principalId != principalId) {
+        _db.execute('ROLLBACK');
+        return const WatchIdentityRefused('principal');
+      }
+      if (stage.writerDeviceId == installationId) {
+        _db.execute('ROLLBACK');
+        return const WatchIdentityRefused('current-writer');
+      }
+      if (witnessMalformed ||
+          candidateKind != 'platform_uuid' ||
+          digest == null ||
+          digest.length != 32) {
+        _db.execute('ROLLBACK');
+        return const WatchIdentityRefused('identity-evidence-unavailable');
+      }
+      final projection = projectIdentity(
+        stagePresent: true,
+        stageWriterId: stage.writerDeviceId,
+        events: _readIdentityEventsLocked(matchId),
+      );
+      if (projection.state == 'candidate-conflict') {
+        _db.execute('ROLLBACK');
+        return const WatchIdentityRefused('candidate-conflict');
+      }
+      final eligible = projection.eligibleDigest;
+      if (eligible == null) {
+        _db.execute('ROLLBACK');
+        return const WatchIdentityRefused('installation');
+      }
+      if (!sameDigest(eligible, digest)) {
+        _db.execute('ROLLBACK');
+        return const WatchIdentityRefused('installation-conflict');
+      }
+      final existing = _readIdentityByRequestLocked(
+        matchId: matchId,
+        requestId: requestId,
+        eventKind: 'candidate_seen',
+      );
+      if (existing != null) {
+        _db.execute('ROLLBACK');
+        if (existing.observedInstallationId == installationId &&
+            sameDigest(existing.candidateDigest, digest)) {
+          return WatchIdentityAppended(existing, reason: 'recovery-required');
+        }
+        return const WatchIdentityRefused('replay-conflict');
+      }
+      final witness = _latestWitnessLocked(matchId, stage.writerDeviceId);
+      final eventId = _insertIdentityEventLocked(
+        eventKind: 'candidate_seen',
+        matchId: matchId,
+        principalId: principalId,
+        observedInstallationId: installationId,
+        priorInstallationId: stage.writerDeviceId,
+        candidateKind: 'platform_uuid',
+        digest: digest,
+        evidenceGrade: watchEvidenceUnverifiedDevice,
+        requestId: requestId,
+        priorEventId: witness?.eventId,
+        sourceBuilds: sourceBuilds,
+      );
+      _commitIdentityOrRollback();
+      final after = _readWatchProvisionStageLocked(matchId);
+      if (after == null ||
+          after.canonical != beforeCanonical ||
+          after.contentHash != beforeHash ||
+          after.writerDeviceId != beforeWriter ||
+          after.principalId != beforePrincipal ||
+          after.stage != beforeStage) {
+        return const WatchIdentityRefused('authority-conflict');
+      }
+      final stored = _readIdentityByIdLocked(eventId);
+      if (stored == null) {
+        return const WatchIdentityRefused('identity-evidence-unavailable');
+      }
+      return WatchIdentityAppended(stored, reason: 'recovery-required');
+    } catch (error) {
+      _rollbackIfNeeded();
+      return WatchIdentityRefused('classify aborted: $error');
+    }
+  }
+
+  void _ensurePrepareIntentLocked(WatchProvisionPhoneStage stage) {
+    final requestId = 'prepare:${stage.contentHash}';
+    final existing = _readIdentityByRequestLocked(
+      matchId: stage.matchId,
+      requestId: requestId,
+      eventKind: 'prepare_intent',
+    );
+    if (existing != null) return;
+    _insertIdentityEventLocked(
+      eventKind: 'prepare_intent',
+      matchId: stage.matchId,
+      principalId: stage.principalId,
+      observedInstallationId: stage.writerDeviceId,
+      priorInstallationId: null,
+      candidateKind: 'absent',
+      digest: null,
+      evidenceGrade: watchEvidenceTypedInstallation,
+      requestId: requestId,
+      priorEventId: null,
+      sourceBuilds: 'phone-prepare',
+    );
+  }
+
+  String _insertIdentityEventLocked({
+    required String eventKind,
+    required String matchId,
+    required String principalId,
+    required String observedInstallationId,
+    required String? priorInstallationId,
+    required String candidateKind,
+    required Uint8List? digest,
+    required String evidenceGrade,
+    required String requestId,
+    required String? priorEventId,
+    required String sourceBuilds,
+  }) {
+    final bounded = sourceBuilds.length <= 160
+        ? sourceBuilds
+        : sourceBuilds.substring(0, 160);
+    final eventId = _newEventId();
+    _db.execute(
+      '''
+      INSERT INTO watch_identity_events (
+        event_id, event_schema_version, event_kind, match_id, principal_id,
+        prior_installation_id, observed_installation_id, candidate_kind,
+        candidate_digest, digest_version, evidence_grade, channel_trace_id,
+        protocol_request_id, prior_event_id, authorization_event_id,
+        created_at_ms, source_builds
+      ) VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, NULL, ?, ?)
+      ''',
+      [
+        eventId,
+        eventKind,
+        matchId,
+        principalId,
+        priorInstallationId,
+        observedInstallationId,
+        candidateKind,
+        digest,
+        evidenceGrade,
+        requestId,
+        requestId,
+        priorEventId,
+        DateTime.now().millisecondsSinceEpoch,
+        bounded,
+      ],
+    );
+    return eventId;
+  }
+
+  void _commitIdentityOrRollback() {
+    final abort = abortIdentityCommitForTest;
+    if (abort != null) abort();
+    _commitTransaction();
+  }
+
+  WatchIdentityEvent? _latestWitnessLocked(String matchId, String writerId) {
+    WatchIdentityEvent? latest;
+    for (final event in _readIdentityEventsLocked(matchId)) {
+      if (event.eventKind != 'watch_witness_observed') continue;
+      if (event.observedInstallationId != writerId) continue;
+      latest = event;
+    }
+    return latest;
+  }
+
+  WatchIdentityEvent? _readIdentityByRequestLocked({
+    required String matchId,
+    required String requestId,
+    required String eventKind,
+  }) {
+    for (final event in _readIdentityEventsLocked(matchId)) {
+      if (event.protocolRequestId == requestId &&
+          event.eventKind == eventKind) {
+        return event;
+      }
+    }
+    return null;
+  }
+
+  WatchIdentityEvent? _readIdentityByIdLocked(String eventId) {
+    final rows = _db.select(
+      '''
+      SELECT event_sequence, event_id, event_kind, match_id, principal_id,
+             observed_installation_id, prior_installation_id, candidate_kind,
+             candidate_digest, evidence_grade, protocol_request_id, prior_event_id
+      FROM watch_identity_events
+      WHERE event_id = ?
+      ''',
+      [eventId],
+    );
+    if (rows.isEmpty) return null;
+    return _identityFromRow(rows.first);
+  }
+
+  List<WatchIdentityEvent> _readIdentityEventsLocked(String matchId) {
+    final rows = _db.select(
+      '''
+      SELECT event_sequence, event_id, event_kind, match_id, principal_id,
+             observed_installation_id, prior_installation_id, candidate_kind,
+             candidate_digest, evidence_grade, protocol_request_id, prior_event_id
+      FROM watch_identity_events
+      WHERE match_id = ?
+      ORDER BY event_sequence
+      ''',
+      [matchId],
+    );
+    return [for (final row in rows) _identityFromRow(row)];
+  }
+
+  WatchIdentityEvent _identityFromRow(Row row) {
+    final digest = row.columnAt(8);
+    Uint8List? bytes;
+    if (digest is Uint8List) {
+      bytes = digest;
+    } else if (digest is List<int>) {
+      bytes = Uint8List.fromList(digest);
+    }
+    return WatchIdentityEvent(
+      eventSequence: row.columnAt(0) as int,
+      eventId: row.columnAt(1) as String,
+      eventKind: row.columnAt(2) as String,
+      matchId: row.columnAt(3) as String,
+      principalId: row.columnAt(4) as String,
+      observedInstallationId: row.columnAt(5) as String,
+      priorInstallationId: row.columnAt(6) as String?,
+      candidateKind: row.columnAt(7) as String,
+      candidateDigest: bytes,
+      evidenceGrade: row.columnAt(9) as String,
+      protocolRequestId: row.columnAt(10) as String,
+      priorEventId: row.columnAt(11) as String?,
+    );
+  }
+
+  String _newEventId() {
+    final bytes = List<int>.generate(16, (_) => _identityRandom.nextInt(256));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    final hex =
+        bytes.map((byte) => byte.toRadixString(16).padLeft(2, '0')).join();
+    return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
+        '${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
   }
 
   GenerationOneRootCommitResult _lockPreparedWatchAuthority({

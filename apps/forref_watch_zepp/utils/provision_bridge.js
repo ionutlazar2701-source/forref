@@ -1,4 +1,5 @@
 import { BUILD_CODE, BUILD_NAME, BUILD_REV, BUILD_VERSION } from "./build_stamp.js";
+import { sanitizeWitness } from "./identity_witness.js";
 import { parseWatchProvisionV1 } from "./watch_provision.js";
 
 export const PROVISION_BRIDGE_URL = "http://127.0.0.1:47221/watch-provision/v1";
@@ -214,12 +215,15 @@ export function sideFetchBody(method, params) {
     return null;
   }
   if (method === GET_WATCH_PROVISION_V1) {
-    return {
+    const body = {
       operation: "pending",
       installationId: source.installationId,
       requestId: source.requestId,
       generation: 1,
     };
+    const witness = sanitizeWitness(source.witness);
+    if (witness) body.witness = witness;
+    return body;
   }
   if (typeof source.matchId !== "string" || source.matchId === "" || typeof source.contentHash !== "string") {
     return null;
@@ -576,10 +580,12 @@ async function runPrepareBody(deps, installation) {
   if (!correlation.ok) {
     return { ok: false, stage: "identity", reason: correlation.reason, installationId: installation.id, requestId: correlation.requestId || "", transport: "" };
   }
+  const witness = typeof deps.readWitness === "function" ? deps.readWitness() : null;
   const pending = await ask(deps, GET_WATCH_PROVISION_V1, {
     installationId: installation.id,
     requestId: correlation.requestId,
     generation: 1,
+    witness: witness,
   });
   if (correlation.matchId && pending && pending.disposition === "prepared" && (pending.matchId !== correlation.matchId || pending.contentHash !== correlation.contentHash)) {
     provisionLog(deps.log, { tx: "recover", reason: "binding", request: correlation.requestId, match: correlation.matchId });

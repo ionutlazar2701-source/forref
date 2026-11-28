@@ -66,6 +66,10 @@ class _WatchProvisionDebugSectionState
             onTap: _prepare,
           ),
           ListTile(
+            title: Text(l10n.watchProvisionListen),
+            onTap: _listen,
+          ),
+          ListTile(
             title: Text(l10n.watchProvisionInspect),
             onTap: _inspect,
           ),
@@ -158,6 +162,30 @@ class _WatchProvisionDebugSectionState
     final listening = await bridge.start(match.matchId);
     if (!mounted) return;
     setState(() => _status = '${listening.name} ${prepared.contentHash}');
+  }
+
+  Future<void> _listen() async {
+    final scope = AppScope.of(context);
+    final boundary = scope.matchApplication;
+    final identity = scope.captureIdentity;
+    final root = scope.storageRoot;
+    final match = _selectedMatch();
+    if (boundary == null || identity == null || root == null || match == null) {
+      setState(() => _status = 'missing');
+      return;
+    }
+    final bridge = _bridge ??
+        WatchProvisionDebugBridge(
+          boundary: boundary,
+          phoneOriginDeviceId: identity.originDeviceId,
+          correlationFile: File(
+            '${root.path}/forref_watch_provision_correlation_v1.json',
+          ),
+        );
+    _bridge = bridge;
+    final listening = await bridge.start(match.matchId);
+    if (!mounted) return;
+    setState(() => _status = listening.name);
   }
 
   Future<void> _inspect() async {
