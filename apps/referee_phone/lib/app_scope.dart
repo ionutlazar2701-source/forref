@@ -6,6 +6,7 @@ import 'package:referee_phone/infrastructure/competition_rules/phone_match_captu
 import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dart';
 import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_store.dart';
 import 'package:referee_phone/match_application/match_application_boundary.dart';
+import 'package:referee_phone/officiate/watch_sync_coordinator.dart';
 
 class AppScope extends InheritedWidget {
   const AppScope({
@@ -17,6 +18,7 @@ class AppScope extends InheritedWidget {
     this.matchCaptureContext,
     this.temporalEvidence,
     this.storageRoot,
+    required this.sync,
     required super.child,
   });
 
@@ -38,6 +40,9 @@ class AppScope extends InheritedWidget {
   /// Application support directory. The debug provision file lives here.
   final Directory? storageRoot;
 
+  /// Pairing and match sync. Settings does not own this.
+  final WatchSyncCoordinator sync;
+
   static AppScope of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<AppScope>();
     assert(scope != null, 'AppScope missing');
@@ -52,5 +57,6 @@ class AppScope extends InheritedWidget {
       oldWidget.captureIdentity != captureIdentity ||
       oldWidget.matchCaptureContext != matchCaptureContext ||
       oldWidget.temporalEvidence != temporalEvidence ||
-      oldWidget.storageRoot?.path != storageRoot?.path;
+      oldWidget.storageRoot?.path != storageRoot?.path ||
+      !identical(oldWidget.sync, sync);
 }

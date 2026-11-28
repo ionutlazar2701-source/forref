@@ -5,12 +5,12 @@
     "appName": "FORREF",
     "appType": "app",
     "version": {
-      "code": 35,
-      "name": "1.0.35"
+      "code": 36,
+      "name": "1.0.36"
     },
     "icon": "icon.png",
     "vender": "zepp",
-    "description": "FORREF WATCH CONFIG 035"
+    "description": "FORREF WATCH SYNC 036"
   },
   "permissions": [
     "data:os.device.info",

@@ -1,5 +1,6 @@
 import { BUILD_CODE, BUILD_NAME, BUILD_REV, BUILD_VERSION } from "./build_stamp.js";
 import { sanitizeWitness } from "./identity_witness.js";
+import { commitVerified } from "./match_registry.js";
 import { parseWatchProvisionV1 } from "./watch_provision.js";
 
 export const PROVISION_BRIDGE_URL = "http://127.0.0.1:47221/watch-provision/v1";
@@ -35,6 +36,12 @@ export function isProvisionMethod(method) {
 // A caller that still asks is refused before fetch.
 export function blockedDuringPrepare(method) {
   return method === SUBMIT_WATCH_LOCK_V1 || method === REPORT_WATCH_ACTIVATED_V1;
+}
+
+function freshRequestId(deps, current) {
+  const next = deps && typeof deps.allocate === "function" ? deps.allocate() : "";
+  if (UUID.test(next) && next !== current) return next;
+  return uuid();
 }
 
 function uuid() {
@@ -234,6 +241,9 @@ export function sideFetchBody(method, params) {
     };
     const witness = sanitizeWitness(source.witness);
     if (witness) body.witness = witness;
+    if (typeof source.matchId === "string" && source.matchId && source.matchId.indexOf("/") < 0 && source.matchId.indexOf("\\") < 0) {
+      body.matchId = source.matchId;
+    }
     return body;
   }
   if (typeof source.matchId !== "string" || source.matchId === "" || typeof source.contentHash !== "string") {
@@ -416,6 +426,8 @@ export function acceptPrepared(body, installationId, requestId) {
     contentHash: document.contentHash,
     homeName: document.homeName,
     awayName: document.awayName,
+    homeTeamId: document.homeTeamId,
+    awayTeamId: document.awayTeamId,
     halfDurationMs: document.halfDurationMs,
   };
 }
@@ -439,6 +451,8 @@ export function applyPrepared(admission, body, installationId, requestId) {
     contentHash: prepared.contentHash,
     homeName: prepared.homeName,
     awayName: prepared.awayName,
+    homeTeamId: prepared.homeTeamId,
+    awayTeamId: prepared.awayTeamId,
     halfDurationMs: prepared.halfDurationMs,
     installationId: installationId,
     requestId: requestId,
@@ -622,7 +636,8 @@ export function transferPresentation(view, attempt, limit) {
   let result = "failed";
   if (pairingRetryable(view)) result = "phone-unreachable";
   else if (reason.indexOf("installation") >= 0 || reason.indexOf("recovery-required") >= 0) result = "writer-kept";
-  else if (reason === "binding" || reason === "canonical" || reason === "conflict" || reason.indexOf("generation") >= 0) result = "conflict";
+  else if (reason === "binding" || reason === "canonical" || reason === "conflict" || reason === "reprovision" || reason.indexOf("generation") >= 0) result = "conflict";
+  else if (reason === "registry-write" || reason === "root-write" || reason === "root-readback" || reason === "verification-write" || reason === "verification-readback") result = "storage";
   return { done: true, view: Object.assign({}, view || {}, { result: result, attempts: attempt }) };
 }
 
@@ -642,7 +657,7 @@ async function runTransfer(deps) {
   const opened = openHandshake(deps);
   if (!opened.ok) return opened.result;
   try {
-    const prepared = await runPrepareBody(deps, opened.installation);
+    const prepared = await runPrepareBody(Object.assign({ transfer: true }, deps), opened.installation);
     if (!prepared.ok) return prepared;
     const acked = await ask(deps, ACK_WATCH_CONFIG_VERIFIED_V1, prepared.receipt);
     const accepted = acceptVerified(acked, prepared.receipt);
@@ -661,6 +676,33 @@ async function runTransfer(deps) {
         transport: (acked && acked.disposition) || "unavailable",
         durable: false,
       };
+    }
+    if (deps.registry) {
+      const committed = commitVerified(deps.registry, {
+        matchId: prepared.matchId,
+        homeTeamId: prepared.homeTeamId,
+        homeName: prepared.homeName,
+        awayTeamId: prepared.awayTeamId,
+        awayName: prepared.awayName,
+        halfDurationMs: prepared.halfDurationMs,
+        contentHash: prepared.contentHash,
+        writerDeviceId: prepared.installationId,
+        generation: 1,
+        status: "verified",
+      });
+      if (!committed.ok) {
+        return {
+          ok: false,
+          stage: "verified",
+          reason: committed.reason || "registry-write",
+          installationId: prepared.installationId,
+          requestId: prepared.requestId,
+          matchId: prepared.matchId,
+          contentHash: prepared.contentHash,
+          transport: "refused",
+          durable: false,
+        };
+      }
     }
     const minutes = Math.round((prepared.halfDurationMs || 0) / 60000);
     return {
@@ -724,12 +766,32 @@ async function runPrepareBody(deps, installation) {
     return { ok: false, stage: "identity", reason: correlation.reason, installationId: installation.id, requestId: correlation.requestId || "", transport: "" };
   }
   const witness = typeof deps.readWitness === "function" ? deps.readWitness() : null;
-  const pending = await ask(deps, GET_WATCH_PROVISION_V1, {
+  let pending = await ask(deps, GET_WATCH_PROVISION_V1, {
     installationId: installation.id,
     requestId: correlation.requestId,
     generation: 1,
     witness: witness,
+    matchId: correlation.matchId || "",
   });
+  if (deps.transfer && correlation.matchId && pending && pending.disposition === "prepared" && pending.matchId !== correlation.matchId) {
+    const freshId = freshRequestId(deps, correlation.requestId);
+    const saved = saveCorrelation(deps.requestStore, {
+      installationId: installation.id,
+      requestId: freshId,
+      generation: 1,
+      phase: "pending",
+    });
+    if (!saved.ok) {
+      return { ok: false, stage: "identity", reason: saved.reason || "correlation-write", installationId: installation.id, requestId: freshId, transport: "" };
+    }
+    correlation = saved;
+    pending = await ask(deps, GET_WATCH_PROVISION_V1, {
+      installationId: installation.id,
+      requestId: freshId,
+      generation: 1,
+      witness: witness,
+    });
+  }
   if (correlation.matchId && pending && pending.disposition === "prepared" && (pending.matchId !== correlation.matchId || pending.contentHash !== correlation.contentHash)) {
     provisionLog(deps.log, { tx: "recover", reason: "binding", request: correlation.requestId, match: correlation.matchId });
     return {
@@ -743,7 +805,14 @@ async function runPrepareBody(deps, installation) {
       transport: "refused",
     };
   }
-  const verified = applyPrepared(deps.admission, pending, installation.id, correlation.requestId);
+  let admission = deps.admission;
+  if (deps.transfer && typeof deps.admissionFor === "function" && pending && pending.matchId) {
+    admission = deps.admissionFor(pending.matchId);
+    if (!admission) {
+      return { ok: false, stage: "prepared", reason: "registry", installationId: installation.id, requestId: correlation.requestId, matchId: pending.matchId, transport: "refused", durable: false };
+    }
+  }
+  const verified = applyPrepared(admission, pending, installation.id, correlation.requestId);
   if (!verified.ok) {
     const local = !!(pending && pending.disposition === "prepared");
     const hop = local ? "watch" : (pending && pending.hop) || "watch";
@@ -792,6 +861,8 @@ async function runPrepareBody(deps, installation) {
     contentHash: verified.contentHash,
     homeName: verified.homeName,
     awayName: verified.awayName,
+    homeTeamId: verified.homeTeamId,
+    awayTeamId: verified.awayTeamId,
     halfDurationMs: verified.halfDurationMs,
     transport: "prepared",
     durable: false,

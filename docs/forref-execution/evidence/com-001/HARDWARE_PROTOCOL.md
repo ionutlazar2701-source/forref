@@ -1,5 +1,34 @@
 # COM-001 Bip 6 protocol
 
+## Several matches on one paired watch
+
+State: **1.0.36 SOFTWARE PASS. HARDWARE GATE PENDING. NOT ACTIVATED. LOCAL GATE REQUIRED**. Watch source is `1.0.36` (`watch-sync-036`, rev `85a15f4997531554f4e89dc854857efb937841fd`). Package `dist/29566-FORREF-1.0.36-20261128194248.zab`, sha256 `b8ce86c7c6f3f2a81a6024598988dd437a3d0729cc23b0ebeb7030237c0b5104`. The QR is in `TEST_RESULTS.md` and expires 21:42 Europe/Bucharest on 5 December 2026. One stored pairing can receive Match A, Match B, and Match C. Each verified match stays in Officiate after the referee leaves Settings and after the watch restarts. Lock, activation, and official Kick Off stay disabled. A transferred match remains CONFIG VERIFIED. This section does not certify the Bip 6.
+
+The stored pairing is the installation identity on the phone. It is not an open Bluetooth socket. The debug listener is loopback HTTP inside the Flutter debug process, on `127.0.0.1:47221`. The Zepp Side Service posts there while the Zepp app is running. Leaving Settings keeps that listener. Force-stopping Zepp, or ending the FORREF process, ends it. The next launch binds again from the stored pairing. The referee does not type a UUID again. An active match does not use this channel.
+
+Do not uninstall either app. Do not type an installation UUID. Do not tap Enroll, Prepare, Listen, or Cancel. Do not delete a correlation file. RECEIVE is the watch pull for a match that the phone is already holding.
+
+1. Install the 1.0.36 watch package in place. Force-stop Zepp, open Zepp, and stay on Home.
+2. On the phone, from this branch, run `flutter run -d RZCY11BDMTX`. Open Settings. If the watch is not already paired, tap **Connect Watch**, then on the watch tap **CONFIRM**. The phone shows Connected & Verified. Leave Settings on the phone. Leave Provision on the watch.
+3. Save three matches that have not been kicked off. For each one, open Settings, select that match, and tap **Send to Watch**. The phone shows Waiting for watch, then Syncing while the watch is reading it.
+4. On the watch, open SETTINGS, then PROVISION, and tap **RECEIVE** once for that match. The phone shows **Verified on watch**. Repeat Send to Watch and RECEIVE for the second match, then the third. Leave Provision.
+5. On the watch open OFFICIATE. The list shows the three verified matches by their team names, with **Verified · not activated**. Tap each match. The summary shows the two team names and the half length, for example `45 + 45`.
+6. Restart the watch. Open OFFICIATE again. The same three matches and the same summaries are there.
+7. Turn Bluetooth off, then on. On the phone, save another match and tap **Send to Watch**. On the watch tap **RECEIVE**. The phone shows **Verified on watch** without Connect Watch and without a UUID. OFFICIATE lists that match with the earlier three.
+
+| Screen | Meaning |
+| --- | --- |
+| Paired | The installation is stored. The listener is not up yet. |
+| Ready to sync | The phone is listening for this pairing. |
+| Reconnecting | The phone is binding the listener again from the stored pairing. |
+| Offline | The last bind failed. The stored installation remains. |
+| Not synced | This saved match has no watch transfer yet. |
+| Waiting for watch | The phone is holding this match until the watch asks for it. |
+| Syncing | The watch has the document and has not finished the read-back. |
+| Verified on watch | The watch stored this match and the phone accepted the read-back. Authority stays inactive. |
+| Retry required | The last attempt stopped before verification. The stored matches remain. Send to Watch again. |
+| Verified · not activated, on the watch | This list entry is a verified configuration. It is not an officiating match. |
+
 ## Send to Watch
 
 State: **1.0.35 SOFTWARE PASS. HARDWARE GATE PENDING. NOT ACTIVATED**. Watch source is `1.0.35` (`watch-config-035`, rev `a8db8e206942861ef3e2c2a6b889b754ac052e0e`). Package `dist/29566-FORREF-1.0.35-20261128184642.zab`, sha256 `bce7066b98e2e2cf1d541b2b60634c0b0a9c72464d0d5457b903a5b195c3dcfc`. The QR is in `TEST_RESULTS.md` and expires 20:46 Europe/Bucharest on 5 December 2026. The paired watch receives one saved match. The phone shows Configuration Verified only after the watch reads the configuration back. Lock and activation stay disabled. No authority root is created. This section does not certify the Bip 6.

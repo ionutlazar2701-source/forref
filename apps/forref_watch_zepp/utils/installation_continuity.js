@@ -13,6 +13,7 @@ const PAIR_CORRELATION_FILE = "forref_watch_pair_correlation_v1.txt";
 const PAIR_ROOT_FILE = "forref_watch_pair_v1.root";
 const PAIR_ADMISSION_FILE = "forref_watch_pair_v1.admission";
 const TRANSFER_CORRELATION_FILE = "forref_watch_transfer_correlation_v1.txt";
+const MATCH_REGISTRY_FILE = "forref_watch_match_registry_v1.txt";
 const TRANSFER_ROOT_FILE = "forref_watch_transfer_v1.root";
 const TRANSFER_ADMISSION_FILE = "forref_watch_transfer_v1.admission";
 
@@ -111,6 +112,13 @@ function admissionState(text) {
   if ((text || "").indexOf("state=WATCH_ACTIVATED") >= 0) return "activated";
   if ((text || "").indexOf("state=WATCH_CONFIG_VERIFIED") >= 0) return "prepared";
   return "";
+}
+
+function combinePresence(left, right) {
+  if (left === "unreadable" || right === "unreadable") return "unreadable";
+  if (left === "conflict" || right === "conflict") return "conflict";
+  if (left === "present" || right === "present") return "present";
+  return "absent";
 }
 
 function enrollPresence(correlation, root, admission) {
@@ -220,6 +228,7 @@ export function resolveInstallation(fs) {
   const transferCorrelation = filePair(fs, TRANSFER_CORRELATION_FILE);
   const transferRoot = filePair(fs, TRANSFER_ROOT_FILE);
   const transferAdmission = filePair(fs, TRANSFER_ADMISSION_FILE);
+  const transferRegistry = filePair(fs, MATCH_REGISTRY_FILE);
   const journalPresent = pairPresence(journal) !== "absent" || journalListed(names);
   const files = {
     installation: installation.data.presence === "present" || installation.legacy.presence === "present"
@@ -236,7 +245,7 @@ export function resolveInstallation(fs) {
     context: pairPresence(context),
     enroll: enrollPresence(enrollCorrelation, enrollRoot, enrollAdmission),
     pair: enrollPresence(pairCorrelation, pairRoot, pairAdmission),
-    transfer: enrollPresence(transferCorrelation, transferRoot, transferAdmission),
+    transfer: combinePresence(enrollPresence(transferCorrelation, transferRoot, transferAdmission), pairPresence(transferRegistry)),
   };
   const admissionText = admission.data.text || admission.legacy.text;
   const correlationText = correlation.data.text || correlation.legacy.text;

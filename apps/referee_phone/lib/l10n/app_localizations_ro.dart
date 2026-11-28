@@ -460,6 +460,36 @@ class AppLocalizationsRo extends AppLocalizations {
   }
 
   @override
+  String get watchLinkPaired =>
+      'Asociat. Ceasul rămâne asociat când ieși din Setări.';
+
+  @override
+  String get watchLinkOffline => 'Deconectat. Ceasul asociat a rămas.';
+
+  @override
+  String get watchLinkReconnecting => 'Se reconectează.';
+
+  @override
+  String get watchLinkReady => 'Gata de sincronizare.';
+
+  @override
+  String get watchSyncNotSynced => 'Nesincronizat.';
+
+  @override
+  String get watchSyncWaiting => 'Așteaptă ceasul.';
+
+  @override
+  String get watchSyncSyncing => 'Se sincronizează.';
+
+  @override
+  String watchSyncVerified(String home, String away, int minutes) {
+    return 'Verificat pe ceas. $home – $away, $minutes min. Neactivat.';
+  }
+
+  @override
+  String get watchSyncRetry => 'Reîncearcă. Meciul stocat a rămas.';
+
+  @override
   String watchPairFailed(String reason) {
     return 'Asocierea s-a oprit ($reason). Scriitorul stocat nu a fost schimbat.';
   }

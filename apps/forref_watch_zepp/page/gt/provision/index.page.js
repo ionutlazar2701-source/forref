@@ -9,6 +9,7 @@ import { createFileProvisionStore } from "../../../utils/provision_transport";
 import { createWatchProvisionAdmission } from "../../../utils/watch_provision";
 import { attachDeviceMessaging, nextLinkVisit, retireLinkVisit } from "../../../utils/device_messaging";
 import { deviceBuildLine } from "../../../utils/build_stamp";
+import { MATCH_REGISTRY_FILE, transferAdmissionName, transferRootName } from "../../../utils/match_registry";
 import { ENROLL_ADMISSION_FILE, ENROLL_CORRELATION_FILE, ENROLL_ROOT_FILE, PAIR_ADMISSION_FILE, PAIR_CORRELATION_FILE, PAIR_ROOT_FILE, PROVISION_CORRELATION_FILE, PROVISION_PAGE_TIMEOUT_MS, TRANSFER_ADMISSION_FILE, TRANSFER_CORRELATION_FILE, TRANSFER_ROOT_FILE, confirmPairing, readProvisionEvidence, receiveMatch, runPrepare } from "../../../utils/provision_bridge";
 import {
   installationLineSize,
@@ -73,6 +74,8 @@ function statusLabel(status) {
   if (status === "prepared") return t("stagePrepared");
   if (status === "verified") return t("pairVerified");
   if (status === "config-verified") return t("configVerified");
+  if (status === "storage") return t("matchesKept");
+  if (status === "conflict") return t("configKept");
   if (status === "phone-unreachable") return t("pairUnreachable");
   if (status === "writer-kept") return t("pairWriterKept");
   if (status === "locked") return t("stageLocked");
@@ -326,6 +329,13 @@ Page({
         createFileProvisionStore(provisionFiles(), rootFile, admissionFile),
       ),
       request: (message) => messaging.request(message, { timeout: PROVISION_PAGE_TIMEOUT_MS }),
+      admissionFor: (matchId) => {
+        const root = transferRootName(matchId);
+        const marker = transferAdmissionName(matchId);
+        if (!root || !marker) return null;
+        return createWatchProvisionAdmission(createFileProvisionStore(provisionFiles(), root, marker));
+      },
+      registry: fileStore(MATCH_REGISTRY_FILE),
       readWitness: () => {
         const read = currentWitness();
         console.log(read.line);
