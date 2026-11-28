@@ -396,6 +396,7 @@ G2 follows G1’s approval and does not wait for G0. G3 waits for G0 PASS. G4 wa
 | R3 | 28 Nov 2026 | Section 14. Founder disposition of H1 and H2. G1 execution contract. No application code. |
 | R4 | 28 Nov 2026 | G1-C1 and G1-C2. Non-setup rows stay on the match list. Production entry audit. No application code. |
 | R5 | 28 Nov 2026 | G1-C3. Match Setup writes require a fresh persisted `setup` status. Whitelist unchanged. No application code. |
+| R6 | 28 Nov 2026 | Section 14.9. The check-then-upsert gap has no second production writer. No persistence lock. No application code. |
 
 Publication of R2:
 
@@ -610,3 +611,23 @@ After each attempt, separately, the stored match equals the sentinel write: stat
 A setup match that stays `setup` still saves. That is the existing section 14.3 case: `Save match` returns to the list and leaves status `setup`.
 
 No file is added to section 14.1. Rollback of the setup page restores the unguarded `_persistSetup`, `_addPlayer`, `_persistCompetitionRules`, and `_load`. The new STOP in section 14.5 is the implementation failure for this subsection.
+
+### 14.9 Concurrency of the setup check and the upsert
+
+`getMatch` and `upsertMatch` are separate Drift transactions. `upsertMatch` is `insertOnConflictUpdate` of the whole in-memory aggregate. It has no `WHERE` on `status`. `MatchSession.replace` assigns `_match` and then awaits that upsert. It does not read status. A status change that commits after the authorization read returns, and before that upsert commits, would be overwritten by the stale aggregate, including a return to `setup`.
+
+That gap is not an atomic authorization-and-write. G1 does not claim a persistence invariant. It claims ordinary release-navigation protection: the user cannot open the live page, and a setup save re-reads status before it writes.
+
+No second production writer can use the gap on the G1 baseline `919c906`:
+
+- `apps/referee_phone` has no `Isolate.spawn` and no background sync. The watch does not write `ref_app_matches`.
+- `upsertMatch` is called from `MatchSession.replace` and from `matches_page.dart` `_newMatch`. `_newMatch` inserts a new match id.
+- `replace` is reached from the setup page, the live page, and summary `finish`. The live page is not mounted after G1. Summary and setup are different stack entries: the list pushes one of them, setup does not push summary, and summary does not push setup.
+- The setup page does not listen to the session. `replace` notifies listeners before the upsert, and that notification does not start another write. The session ticker only calls `notifyListeners`.
+- Kick-off goes through `MatchApplicationBoundary.commitKickOff`, which writes Match Memory. It is not an `upsertMatch` of the legacy row. The setup page does not call it.
+
+Under those writers, the implementation is safe. The read and the upsert can be separated by an await, and nothing else queued on the UI isolate changes that row's status in between.
+
+A deterministic race test would need a second writer inside that await, or a seam in `replace` or `upsertMatch`. Neither exists. Adding one would expand the whitelist and would be a new synchronization mechanism. This slice does not add it. The section 14.8 tests remain the ones that apply: they change status before the tap, so the fresh read refuses. They do not interleave a write inside `replace`.
+
+An atomic conditional update would require `local_match_database.dart` at minimum, and a test in the database test file. Both are outside section 14.1. That change is not necessary for G1 and is not approved. A later writer, such as replication, must not treat this check as compare-and-swap. That later writer is outside this slice.
