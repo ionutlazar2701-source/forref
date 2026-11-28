@@ -531,6 +531,31 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
   }
 }
 
+/// Read-only description of the phone correlation file. It never includes a
+/// canonical document.
+String describeDebugCorrelation(String? text) {
+  if (text == null || text.trim().isEmpty) return 'correlation=absent';
+  try {
+    final decoded = jsonDecode(text);
+    if (decoded is! Map) return 'correlation=corrupt';
+    final requestId = decoded['requestId'];
+    final phase = decoded['phase'];
+    final matchId = decoded['matchId'];
+    final contentHash = decoded['contentHash'];
+    final generation = decoded['generation'];
+    if (requestId is! String ||
+        phase is! String ||
+        matchId is! String ||
+        contentHash is! String ||
+        generation != 1) {
+      return 'correlation=corrupt';
+    }
+    return 'correlation request=$requestId phase=$phase generation=1 match=$matchId hash=$contentHash';
+  } on Object {
+    return 'correlation=corrupt';
+  }
+}
+
 Future<Map<String, Object?>?> _readBody(HttpRequest request) async {
   final chunks = <int>[];
   await for (final chunk in request) {

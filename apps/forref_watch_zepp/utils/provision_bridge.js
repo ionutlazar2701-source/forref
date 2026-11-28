@@ -15,10 +15,10 @@ export function isProvisionMethod(method) {
     method === REPORT_WATCH_ACTIVATED_V1;
 }
 
-// COM-003 proves the prepared document only. Lock and activation stay
-// refused on the side service until a later physical trial.
-export function blockedDuringPrepare(method) {
-  return method === SUBMIT_WATCH_LOCK_V1 || method === REPORT_WATCH_ACTIVATED_V1;
+// COM-004 sends lock and activation on the same fetch as the prepared
+// document. A caller that still asks is not blocked here.
+export function blockedDuringPrepare() {
+  return false;
 }
 
 function uuid() {
@@ -70,6 +70,86 @@ function correlationFromParsed(parsed) {
     record.contentHash = parsed.contentHash;
   }
   return record;
+}
+
+export function readCorrelation(store) {
+  const read = store && store.read ? store.read() : null;
+  if (!read || read.status === "unreadable") {
+    return { ok: false, present: false, reason: "correlation-unreadable", requestId: "", generation: 1, phase: "", matchId: "", contentHash: "" };
+  }
+  if (read.status !== "ok" || !read.text) {
+    return { ok: true, present: false, reason: "absent", requestId: "", generation: 1, phase: "absent", matchId: "", contentHash: "" };
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(read.text);
+  } catch (err) {
+    return { ok: false, present: false, reason: "correlation-corrupt", requestId: "", generation: 1, phase: "", matchId: "", contentHash: "" };
+  }
+  const record = correlationFromParsed(parsed);
+  const trimmed = String(read.text).trim();
+  const current = record ? correlationText(record) : "";
+  const legacy = parsed && typeof parsed === "object" ? legacyCorrelationText(parsed.installationId, parsed.requestId) : "";
+  if (!record || (trimmed !== current && trimmed !== legacy)) {
+    return { ok: false, present: false, reason: "correlation-corrupt", requestId: "", generation: 1, phase: "", matchId: "", contentHash: "" };
+  }
+  return {
+    ok: true,
+    present: true,
+    reason: "",
+    requestId: record.requestId,
+    generation: 1,
+    phase: record.phase,
+    matchId: record.matchId,
+    contentHash: record.contentHash,
+    installationId: record.installationId,
+  };
+}
+
+// Reads the stored correlation and the watch admission. It does not allocate
+// a request id and does not write either file.
+export function readProvisionEvidence(installation, correlationStore, admission) {
+  const installationId = installation && installation.ok ? installation.id : "";
+  const before = correlationStore && correlationStore.read ? correlationStore.read() : null;
+  const correlation = readCorrelation(correlationStore);
+  const stored = installationId && admission ? admission.loadDurable(installationId, false) : null;
+  const after = correlationStore && correlationStore.read ? correlationStore.read() : null;
+  const sameText = !before || !after || before.status === after.status && before.text === after.text;
+  const hash = correlation.contentHash || "";
+  const storedHash = stored && stored.contentHash ? stored.contentHash : "";
+  const verified = stored && (stored.state === "WATCH_CONFIG_VERIFIED" || stored.state === "WATCH_ACTIVATED");
+  const readback = !!(verified && hash && storedHash === hash);
+  const canonical = readback ? "accepted" : storedHash ? "rejected" : "absent";
+  const phase = correlation.phase || "absent";
+  const lock = phase === "activated" || phase === "reported" ? 1 : 0;
+  const activation = phase === "reported" ? 1 : 0;
+  const fields = {
+    tx: "evidence",
+    installation: installationId,
+    request: correlation.requestId,
+    match: correlation.matchId,
+    hash: hash,
+    generation: 1,
+    phase: phase,
+    canonical: canonical,
+    readback: readback ? 1 : 0,
+    durable: readback ? 1 : 0,
+    lock: lock,
+    activation: activation,
+    wrote: sameText ? 0 : 1,
+  };
+  return Object.assign({ line: evidenceLine(fields), ok: correlation.ok && sameText }, fields);
+}
+
+function evidenceLine(fields) {
+  const parts = ["FORREF_PROVISION"];
+  const keys = Object.keys(fields);
+  for (let i = 0; i < keys.length; i += 1) {
+    const value = fields[keys[i]];
+    if (value == null || value === "") continue;
+    parts.push(keys[i] + "=" + value);
+  }
+  return parts.join(" ");
 }
 
 export function loadCorrelation(store, installationId, allocate) {

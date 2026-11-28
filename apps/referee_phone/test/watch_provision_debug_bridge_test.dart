@@ -7,6 +7,26 @@ import 'package:referee_phone/infrastructure/match_memory/match_application_comp
 import 'package:referee_phone/officiate/watch_provision_debug_bridge.dart';
 
 void main() {
+  test('correlation evidence names the stored identity and not the document',
+      () {
+    const canonical =
+        '{"schema":"forref.watch-provision.v1","teams":{"home":{"name":"North"}}}';
+    final line = describeDebugCorrelation(jsonEncode({
+      'requestId': '11111111-2222-4333-8444-555555555555',
+      'phase': 'pending',
+      'matchId': 'match-watch-001',
+      'contentHash': 'ab' * 32,
+      'generation': 1,
+      'canonical': canonical,
+    }));
+    expect(line, contains('request=11111111-2222-4333-8444-555555555555'));
+    expect(line, contains('phase=pending'));
+    expect(line, contains('generation=1'));
+    expect(line.contains('North'), isFalse);
+    expect(line.contains(canonical), isFalse);
+    expect(describeDebugCorrelation(null), 'correlation=absent');
+  });
+
   late Directory temp;
   late MatchApplicationComposition composition;
   late PhoneCaptureIdentity identity;
@@ -41,7 +61,8 @@ void main() {
     expect(forrefWatchProvisionPath, '/watch-provision/v1');
   });
 
-  test('a pending request returns the stored canonical and not a payload', () async {
+  test('a pending request returns the stored canonical and not a payload',
+      () async {
     await composition.boundary.prepareWatchOperatedMatch(
       canonicalMessage: canonical,
       phoneOriginDeviceId: identity.originDeviceId,
@@ -155,7 +176,8 @@ void main() {
       'match-watch-001',
     );
     expect(root?.deviceId, fixture['localInstallationId']);
-    final stage = await composition.boundary.durableStore.readWatchProvisionStage(
+    final stage =
+        await composition.boundary.durableStore.readWatchProvisionStage(
       'match-watch-001',
     );
     expect(stage?.canonical, canonical);
@@ -170,7 +192,8 @@ void main() {
       'readBack': true,
     });
     expect(recorded['disposition'], 'recorded');
-    expect(bridge.lastActivation?['requestId'], '11111111-2222-4333-8444-555555555555');
+    expect(bridge.lastActivation?['requestId'],
+        '11111111-2222-4333-8444-555555555555');
   });
 
   test('a lock before pending does not commit a root', () async {
@@ -199,7 +222,8 @@ void main() {
     );
   });
 
-  test('a lost lock response keeps one root and the same correlation', () async {
+  test('a lost lock response keeps one root and the same correlation',
+      () async {
     final file = File('${temp.path}/correlation.json');
     await bridge.stop();
     bridge = WatchProvisionDebugBridge(
@@ -231,7 +255,8 @@ void main() {
       'readBack': true,
     });
     expect(locked.body['durable'], isTrue);
-    final root = await composition.boundary.durableStore.readGenerationOneAuthorityRoot(
+    final root =
+        await composition.boundary.durableStore.readGenerationOneAuthorityRoot(
       'match-watch-001',
     );
     expect(root?.deviceId, fixture['localInstallationId']);
@@ -278,7 +303,8 @@ void main() {
     expect(again.status, 200);
     expect(again.body['disposition'], 'locked');
     expect(again.body['reason'], 'idempotent-lock');
-    final kept = await composition.boundary.durableStore.readGenerationOneAuthorityRoot(
+    final kept =
+        await composition.boundary.durableStore.readGenerationOneAuthorityRoot(
       'match-watch-001',
     );
     expect(kept?.deviceId, root?.deviceId);
@@ -306,7 +332,8 @@ void main() {
       correlationFile: file,
     );
     bridge = reported;
-    expect(reported.lastActivation?['requestId'], '11111111-2222-4333-8444-555555555555');
+    expect(reported.lastActivation?['requestId'],
+        '11111111-2222-4333-8444-555555555555');
     await reported.start('match-watch-001');
     final repeat = await _exchange(reported, {
       'operation': 'activation',
@@ -320,7 +347,8 @@ void main() {
     });
     expect(repeat.body['disposition'], 'recorded');
     expect(repeat.body['requestId'], '11111111-2222-4333-8444-555555555555');
-    final still = await composition.boundary.durableStore.readGenerationOneAuthorityRoot(
+    final still =
+        await composition.boundary.durableStore.readGenerationOneAuthorityRoot(
       'match-watch-001',
     );
     expect(still?.deviceId, root?.deviceId);

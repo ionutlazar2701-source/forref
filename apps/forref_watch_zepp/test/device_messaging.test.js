@@ -87,8 +87,7 @@ test("the provision page paints the UUID before it opens messaging", () => {
   assert.equal(page.includes('from "@zeppos/zml/3.0/module/messaging/plugin/app"'), true);
   assert.equal(page.includes("base-app"), false);
   assert.equal(page.includes("BasePage"), false);
-  assert.equal(page.includes("runPrepare"), true);
-  assert.equal(page.includes("runHandshake"), false);
-  assert.equal(page.indexOf("prepareInstallation") < page.indexOf("runPrepare({"), true);
+  assert.equal(page.includes("runHandshake"), true);
+  assert.equal(page.indexOf("prepareInstallation") < page.indexOf("runHandshake({"), true);
   assert.equal(page.includes("page=build"), true);
 });

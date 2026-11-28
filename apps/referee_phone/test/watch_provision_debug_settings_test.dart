@@ -59,6 +59,9 @@ void main() {
     expect(section, contains('bridge.start(match.matchId)'));
     expect(section, contains('boundary.cancelPreparedWatchMatch('));
     expect(section, contains('boundary.inspectWatchProvision('));
+    expect(section, contains('describeDebugCorrelation('));
+    expect(section, contains('readAsStringSync()'));
+    expect(section.contains('writeAsStringSync'), isFalse);
     expect(section.contains('DELETE FROM'), isFalse);
     expect(section, contains("'\${listening.name} \${prepared.contentHash}'"));
     expect(bridge, contains('kDebugMode && _debugPermitted()'));

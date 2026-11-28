@@ -1,6 +1,6 @@
 import { BaseSideService } from "@zeppos/zml/base-side";
 import { replyLink } from "../utils/link_channel.js";
-import { PROVISION_BRIDGE_URL, blockedDuringPrepare, dispatchSideRequest } from "../utils/provision_bridge.js";
+import { PROVISION_BRIDGE_URL, dispatchSideRequest } from "../utils/provision_bridge.js";
 
 AppSideService(
   BaseSideService({
@@ -17,11 +17,6 @@ AppSideService(
         }
         console.log("FORREF_LINK tx=pong seq=" + link.body.seq);
         res(null, link.body);
-        return;
-      }
-      if (blockedDuringPrepare(req && req.method)) {
-        console.log("FORREF_PROVISION tx=response method=" + req.method + " disposition=refused reason=prepare-only");
-        res({ reason: "prepare-only" }, null);
         return;
       }
       dispatchSideRequest(req, (options) => this.fetch(options)).then((body) => {

@@ -170,7 +170,9 @@ class _WatchProvisionDebugSectionState
     }
     final report = await _loadInspection(match, identity.authorityPrincipalId);
     if (!mounted) return;
-    setState(() => _status = report == null ? 'match' : report.line);
+    final correlation = describeDebugCorrelation(_correlationText());
+    setState(() => _status =
+        report == null ? 'match $correlation' : '${report.line} $correlation');
   }
 
   Future<void> _cancelPrepared() async {
@@ -194,6 +196,15 @@ class _WatchProvisionDebugSectionState
     );
     if (!mounted) return;
     setState(() => _status = outcome.reason);
+  }
+
+  String? _correlationText() {
+    final root = AppScope.of(context).storageRoot;
+    if (root == null) return null;
+    final file =
+        File('${root.path}/forref_watch_provision_correlation_v1.json');
+    if (!file.existsSync()) return null;
+    return file.readAsStringSync();
   }
 
   Match? _selectedMatch() {

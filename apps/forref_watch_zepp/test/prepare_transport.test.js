@@ -9,6 +9,7 @@ import {
   classifyFetchFailure,
   classifySideFailure,
   dispatchSideRequest,
+  readProvisionEvidence,
   runPrepare,
 } from "../utils/provision_bridge.js";
 
@@ -87,15 +88,16 @@ test("a canonical document that disagrees with the watch is refused", async () =
   assert.deepEqual(calls, ["GET_WATCH_PROVISION_V1"]);
 });
 
-test("the prepare build refuses lock and activation before the phone bridge", () => {
-  assert.equal(blockedDuringPrepare("SUBMIT_WATCH_LOCK_V1"), true);
-  assert.equal(blockedDuringPrepare("REPORT_WATCH_ACTIVATED_V1"), true);
-  assert.equal(blockedDuringPrepare("GET_WATCH_PROVISION_V1"), false);
-  assert.equal(blockedDuringPrepare("PING"), false);
-  assert.equal(side.indexOf("replyLink") < side.indexOf("blockedDuringPrepare"), true);
-  assert.equal(side.indexOf("blockedDuringPrepare") < side.indexOf("dispatchSideRequest"), true);
-  assert.equal(page.includes("runPrepare"), true);
-  assert.equal(page.includes("runHandshake"), false);
+test("the lock build reads stored evidence and then runs the handshake", () => {
+  assert.equal(blockedDuringPrepare("SUBMIT_WATCH_LOCK_V1"), false);
+  assert.equal(blockedDuringPrepare("REPORT_WATCH_ACTIVATED_V1"), false);
+  assert.equal(side.includes("blockedDuringPrepare"), false);
+  assert.equal(side.includes("prepare-only"), false);
+  assert.equal(side.indexOf("replyLink") < side.indexOf("dispatchSideRequest"), true);
+  assert.equal(page.includes("readProvisionEvidence"), true);
+  assert.equal(page.includes("runHandshake"), true);
+  assert.equal(page.indexOf("readProvisionEvidence") < page.indexOf("start() {"), true);
+  assert.equal(page.slice(page.indexOf("build() {"), page.indexOf("start() {")).includes("attachDeviceMessaging"), false);
   assert.equal(page.includes("SUBMIT_WATCH_LOCK_V1"), false);
   assert.equal(page.includes("REPORT_WATCH_ACTIVATED_V1"), false);
   assert.equal(page.includes("homeName"), false);
@@ -154,4 +156,51 @@ test("side fetch names timeout, refusal, malformed payload, and connection refus
   const timed = await dispatchSideRequest(request, () => Promise.reject({ reason: "deadline" }));
   assert.equal(timed.category, "timeout");
   assert.equal(timed.reason, "timeout");
+});
+
+test("stored evidence is read without writing a new request", async () => {
+  const bridge = deps(() => Promise.resolve(preparedBody()));
+  const prepared = await runPrepare(bridge);
+  assert.equal(prepared.ok, true);
+  const before = bridge.requestStore.read().text;
+  const evidence = readProvisionEvidence(
+    { ok: true, id: installationId },
+    bridge.requestStore,
+    bridge.admission,
+  );
+  assert.equal(bridge.requestStore.read().text, before);
+  assert.equal(evidence.installation, installationId);
+  assert.equal(evidence.request, requestId);
+  assert.equal(evidence.match, document.matchId);
+  assert.equal(evidence.hash, fixture.contentHash);
+  assert.equal(evidence.generation, 1);
+  assert.equal(evidence.phase, "verified");
+  assert.equal(evidence.canonical, "accepted");
+  assert.equal(evidence.readback, 1);
+  assert.equal(evidence.durable, 1);
+  assert.equal(evidence.lock, 0);
+  assert.equal(evidence.activation, 0);
+  assert.equal(evidence.wrote, 0);
+  assert.equal(evidence.line.includes(fixture.canonical), false);
+  assert.equal(evidence.line.includes("North"), false);
+  const empty = createMemoryTextStore();
+  let writes = 0;
+  const guarded = {
+    read() {
+      return empty.read();
+    },
+    write() {
+      writes += 1;
+      return { status: "ok" };
+    },
+  };
+  const blank = readProvisionEvidence(
+    { ok: true, id: installationId },
+    guarded,
+    createWatchProvisionAdmission(createMemoryProvisionStore()),
+  );
+  assert.equal(writes, 0);
+  assert.equal(blank.phase, "absent");
+  assert.equal(blank.lock, 0);
+  assert.equal(blank.activation, 0);
 });

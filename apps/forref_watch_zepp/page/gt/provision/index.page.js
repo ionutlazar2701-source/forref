@@ -8,7 +8,7 @@ import { readStoredText } from "../../../utils/goal_journal";
 import { createFileProvisionStore } from "../../../utils/provision_transport";
 import { createWatchProvisionAdmission } from "../../../utils/watch_provision";
 import { attachDeviceMessaging, nextLinkVisit, retireLinkVisit } from "../../../utils/device_messaging";
-import { PROVISION_CORRELATION_FILE, PROVISION_PAGE_TIMEOUT_MS, runPrepare } from "../../../utils/provision_bridge";
+import { PROVISION_CORRELATION_FILE, PROVISION_PAGE_TIMEOUT_MS, readProvisionEvidence, runHandshake } from "../../../utils/provision_bridge";
 import {
   installationLineSize,
   resolveInstallationCard,
@@ -47,7 +47,18 @@ function runningApp() {
 function statusLabel(status) {
   if (status === "identity") return t("installationReady");
   if (status === "prepared") return t("stagePrepared");
+  if (status === "locked") return t("stageLocked");
+  if (status === "activated") return t("stageActivated");
   return String(status || "");
+}
+
+function outcomeStatus(view) {
+  if (!view) return "refused";
+  if (view.ok && view.transport === "recorded") return "activated";
+  if (view.stage === "report") return "activated";
+  if (view.durable === true && view.transport === "locked") return "locked";
+  if ((view.ok && view.transport === "prepared") || view.stage === "verified" || view.stage === "prepared") return "prepared";
+  return view.reason || "refused";
 }
 
 Page({
@@ -82,11 +93,24 @@ Page({
     }
     try {
       const identified = prepareInstallation(fileStore(INSTALLATION_FILE));
+      let status = identified.ok ? "identity" : "unavailable";
+      if (identified.ok) {
+        const evidence = readProvisionEvidence(
+          identified,
+          fileStore(PROVISION_CORRELATION_FILE),
+          createWatchProvisionAdmission(
+            createFileProvisionStore({ readFileSync: readFileSync, writeFileSync: writeFileSync }, PROVISION_ROOT_FILE, PROVISION_ADMISSION_FILE),
+          ),
+        );
+        console.log(evidence.line);
+        if (evidence.phase === "verified") status = "prepared";
+        if (evidence.phase === "activated" || evidence.phase === "reported") status = "activated";
+      }
       this._view = {
         ok: identified.ok,
         id: identified.id || "",
         reason: identified.reason || "",
-        status: identified.ok ? "identity" : "unavailable",
+        status: status,
       };
       console.log(
         "FORREF_PROVISION outcome=" +
@@ -181,7 +205,7 @@ Page({
     const admission = createWatchProvisionAdmission(
       createFileProvisionStore({ readFileSync: readFileSync, writeFileSync: writeFileSync }, PROVISION_ROOT_FILE, PROVISION_ADMISSION_FILE),
     );
-    runPrepare({
+    runHandshake({
       loadInstallation: () => prepareInstallation(fileStore(INSTALLATION_FILE)),
       requestStore: fileStore(PROVISION_CORRELATION_FILE),
       admission: admission,
@@ -202,7 +226,8 @@ Page({
   finishPrepare(kept, view) {
     this._busy = false;
     const id = kept || (view && view.installationId) || "";
-    const prepared = !!(view && view.ok && view.transport === "prepared");
+    const status = outcomeStatus(view);
+    const named = status === "prepared" || status === "locked" || status === "activated";
     if (this._closed) {
       console.log("FORREF_PROVISION tx=drop installation=" + id + " reason=" + (view && view.reason ? view.reason : ""));
       return;
@@ -211,15 +236,17 @@ Page({
       ok: !!id,
       id: id,
       reason: view && view.reason ? view.reason : "",
-      status: prepared ? "prepared" : (view && view.reason) || "refused",
+      status: status,
     };
+    const outcome = status === "prepared" ? "PREPARED" : status === "locked" ? "LOCKED" : status === "activated" ? "ACTIVATED" : "REFUSED";
     console.log(
-      "FORREF_PROVISION outcome=" + (prepared ? "PREPARED" : "REFUSED") +
+      "FORREF_PROVISION outcome=" + outcome +
         " installation=" + id +
         " request=" + ((view && view.requestId) || "") +
         " match=" + ((view && view.matchId) || "") +
         " hash=" + ((view && view.contentHash) || "") +
-        " canonical=" + (prepared ? "accepted" : "rejected") +
+        " generation=1" +
+        " canonical=" + (named ? "accepted" : "rejected") +
         " hop=" + ((view && view.hop) || "") +
         " category=" + ((view && view.category) || "") +
         " reason=" + ((view && view.reason) || ""),
