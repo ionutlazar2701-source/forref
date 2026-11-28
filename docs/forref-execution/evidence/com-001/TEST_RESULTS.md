@@ -2,7 +2,32 @@
 
 State: **SOFTWARE PASS / HARDWARE GATE PENDING**. Not a Level 2 pass. The phone was not installed from this environment. The `1.0.27` ASCII QR was decoded as a package check and was not scanned on a phone.
 
-Identity detection, watch source `1.0.31` (`identity-detect-031`): `packages/forref_match_persistence` `dart test test/watch_identity_test.dart` passed 7 tests. `apps/forref_watch_zepp` `npm test` passed 286 tests, 0 failed. `flutter test test/watch_provision_debug_bridge_test.dart test/watch_provision_debug_settings_test.dart` passed 12 tests. The bridge test observed `reason=observed` for the current writer and `reason=recovery-required` for a second installation, with the stage canonical, writer, and hash unchanged and the generation-1 root absent. `authorizeInstallationEnrollment` returned `authorization-unavailable`. GET `/` returned `listening` and `writes=0`. These rows are not Bip 6 results. H1–H11 in `HARDWARE_PROTOCOL.md` stay **LOCAL GATE REQUIRED**.
+Identity detection, functional commit `b4cde9ed17a6ef0ee304265164a146474b7802e9`, boot `build=identity-detect-031 rev=b4cde9ed17a6ef0ee304265164a146474b7802e9`. `packages/forref_match_persistence` `dart test test/watch_identity_test.dart` passed 7 tests. `apps/forref_watch_zepp` `npm test` passed 286 tests, 0 failed. `flutter test test/watch_provision_debug_bridge_test.dart test/watch_provision_debug_settings_test.dart` passed 12 tests. `./tool/verify_cloud.sh` passed. The bridge test observed `reason=observed` for the current writer and `reason=recovery-required` for a second installation, with the stage canonical, writer, and hash unchanged and the generation-1 root absent. `authorizeInstallationEnrollment` returned `authorization-unavailable`. GET `/` returned `listening` and `writes=0`. These rows are not Bip 6 results. H1–H11 in `HARDWARE_PROTOCOL.md` stay **LOCAL GATE REQUIRED**.
+
+Zeus CLI 1.10.3, target Amazfit Bip 6, device sources `9765120`, `9765121`, `10158337`. App id `29566`, version `1.0.31` (code 31). The preview package is `dist/29566-FORREF-1.0.31-20261128135952.zab` (408519 bytes, sha256 `8820bbf9c1df19b1080d2d4b8ad1855ae645a2f35ba8c8a7be0d38e0581bd325`). It is not committed. `app.bin` contains `identity-detect-031` and does not contain `GET_WATCH_PROVISION` or `createConnect`. The provision page bundle contains `forref.identity-witness.v1` and `FORREF_WITNESS`. The side bundle contains `prepare-only`. The QR expires `2026-12-05 13:59:54` on the machine clock (UTC), which is 15:59 Europe/Bucharest. This package does not certify a Bip 6 witness, a Zepp POST, lock, or activation.
+
+```
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+█ ▄▄▄▄▄ █ ▀▀▄ █ ███▄██▄▄█▀▄▀█▀█ ▄▄▄▄▄ █
+█ █   █ ███ ▄▄  ██  ▄  ▀ ▄ ▀█▄█ █   █ █
+█ █▄▄▄█ █ ▄▄ █▄▀▄▀ ▄▄██ ██ ██▀█ █▄▄▄█ █
+█▄▄▄▄▄▄▄█ █ ▀ █▄█ █▄▀▄█▄█ █ ▀ █▄▄▄▄▄▄▄█
+█▄▄ ██ ▄▀▄  ██▄██ ▄██▀▀▄  █▀▀▄▄  ▄█▀  █
+█ ▀▄█▀▀▄ ▄▄▀▄██ ▄██  ▀█▀▄▀▄█▄▀█▄▀ ▄█ ▄█
+██▄▄▀█▄▄▀▄▀▄▄  ▀█▀ █▄ ██▀▄▀█▀ █ ▄█ ▀  █
+█  █▀█▀▄▄ ██▀ ▄▄▄▀█▀ ▄▄█▄▄█▀ ▀▀▄ ▄██▄▄█
+█ ▀█▀▀ ▄ ██ ███▀ ▀█▀▀▀▀█ ▀▀█▀   ▀█ ▀█ █
+█▀█▄▀ █▄▄▄ ▄▄█▄▀ █▄▄▄██▀▄▄▄▀ █▄ █ ▀█▀ █
+█▀  █▀ ▄▄ █▀▄ ██▄ ▀▀▀▀█▀ ▀▀▄  ▄  █▄█▄▀█
+█  ▄█▄▄▄ █▀▄▀ ██▄ █▄▄ █▀▄██▀  █▀ █▀▄█▄█
+██▄▀▀ ▄▄▀▄▀▀██▀██ ▄▀▄▀▀█  █▀▀▄▀  ███  █
+█▄▄█▄ ▀▄█▄ █▄██▀▄ ▄  ▀██ ▀▄█▄▄▄▀█  ▄█ █
+█▄▄█▄▄▄▄█▀ ▄▄ ▄█▀ ██▀▄▀█▀▄▀█  ▄▄▄ ▄▀ ▀█
+█ ▄▄▄▄▄ █▀▄ ▀ ██ ██ ▄ ▄█ ██▀▀ █▄█ █▄█ █
+█ █   █ ███ ██ ▄ ▀▄▀  ▀█ ▀▀█▄▄ ▄▄  ▀▀██
+█ █▄▄▄█ █ ▀▄▄█▀█ ▀▄▀▄██▀▄ █▀   █▀▄▀▄█▄█
+█▄▄▄▄▄▄▄█▄██▄▄▄█▄█▄█▄▄███▄███▄█▄██▄██▄█
+```
 
 Shared digest vector: platform hex `00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff`, SHA-256 domain `forref-candidate-v1:`, digest `26c41755b96d53042c3b66daefff51082ea5ec9c70c4d4c6e0fffb6bde19954c`. The Dart and JavaScript tests both check the `abc` SHA-256 vector `ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad`, and the JavaScript test checks this domain digest.
 

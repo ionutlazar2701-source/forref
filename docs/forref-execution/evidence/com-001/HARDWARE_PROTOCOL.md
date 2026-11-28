@@ -1,6 +1,6 @@
 # COM-001 Bip 6 protocol
 
-State: **IDENTITY DETECTION BUILT. HARDWARE NOT RUN. LOCK DISABLED**. Watch source is `1.0.31` (`identity-detect-031`). No Bip 6 log for this build is attached. Rows H1–H11 stay **LOCAL GATE REQUIRED**. Do not uninstall FORREF Watch, the Zepp app, or FORREF Mobile. Do not cancel a prepared stage. Do not type a new installation UUID over the stored writer.
+State: **IDENTITY DETECTION BUILT. HARDWARE NOT RUN. LOCK DISABLED**. Watch source is `1.0.31` (`identity-detect-031`, rev `b4cde9ed17a6ef0ee304265164a146474b7802e9`). Package `dist/29566-FORREF-1.0.31-20261128135952.zab`, sha256 `8820bbf9c1df19b1080d2d4b8ad1855ae645a2f35ba8c8a7be0d38e0581bd325`. The QR is in `TEST_RESULTS.md` and expires 15:59 Europe/Bucharest on 5 December 2026. No Bip 6 log for this build is attached. Rows H1–H11 stay **LOCAL GATE REQUIRED**. Do not uninstall FORREF Watch, the Zepp app, or FORREF Mobile. Do not cancel a prepared stage. Do not type a new installation UUID over the stored writer.
 
 ## 1.0.31 detection trial
 
