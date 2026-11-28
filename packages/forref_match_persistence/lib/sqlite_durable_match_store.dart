@@ -86,9 +86,80 @@ final class WatchProvisionStageSaved extends WatchProvisionStageWrite {
 }
 
 final class WatchProvisionStageRefused extends WatchProvisionStageWrite {
-  const WatchProvisionStageRefused(this.reason);
+  const WatchProvisionStageRefused(this.reason,
+      {this.changed = const <String>[]});
 
   final String reason;
+
+  /// Identity fields that differ. Empty when the refusal is not a conflict.
+  ///
+  /// Values are `content-hash`, `writer-device`, and `principal`. The stored
+  /// row is left unchanged.
+  final List<String> changed;
+}
+
+/// Debug comparison of a stored provision stage. It has no canonical document.
+final class WatchProvisionInspection {
+  const WatchProvisionInspection({
+    required this.matchId,
+    required this.present,
+    required this.stage,
+    required this.contentHash,
+    required this.writerDeviceId,
+    required this.principalId,
+    required this.rootPresent,
+    required this.sportingRecords,
+    required this.changed,
+  });
+
+  const WatchProvisionInspection.absent(String matchId)
+      : this(
+          matchId: matchId,
+          present: false,
+          stage: '',
+          contentHash: '',
+          writerDeviceId: '',
+          principalId: '',
+          rootPresent: false,
+          sportingRecords: false,
+          changed: const <String>[],
+        );
+
+  final String matchId;
+  final bool present;
+  final String stage;
+  final String contentHash;
+  final String writerDeviceId;
+  final String principalId;
+  final bool rootPresent;
+  final bool sportingRecords;
+  final List<String> changed;
+
+  String get line {
+    if (!present) return 'stage=absent';
+    final fields = changed.isEmpty ? 'none' : changed.join(',');
+    final root = rootPresent ? 'present' : 'absent';
+    final records = sportingRecords ? 'present' : 'absent';
+    return 'stage=$stage changed=$fields root=$root records=$records '
+        'stored-hash=$contentHash stored-writer=$writerDeviceId '
+        'stored-principal=$principalId';
+  }
+}
+
+/// Names which stored identity fields differ from a new preparation request.
+List<String> watchProvisionChangedFields({
+  required String storedContentHash,
+  required String storedWriterDeviceId,
+  required String storedPrincipalId,
+  required String requestedContentHash,
+  required String requestedWriterDeviceId,
+  required String requestedPrincipalId,
+}) {
+  return [
+    if (storedContentHash != requestedContentHash) 'content-hash',
+    if (storedWriterDeviceId != requestedWriterDeviceId) 'writer-device',
+    if (storedPrincipalId != requestedPrincipalId) 'principal',
+  ];
 }
 
 /// CONFIG_PREPARED was removed. No authority root was created or restored.
@@ -437,6 +508,37 @@ final class SqliteDurableMatchStore
   /// Prepared watch provision. This row is not an authority root.
   Future<WatchProvisionPhoneStage?> readWatchProvisionStage(String matchId) {
     return _serialized(() async => _readWatchProvisionStageLocked(matchId));
+  }
+
+  /// Compares a stored stage with a requested identity. Does not write.
+  Future<WatchProvisionInspection> inspectWatchProvision({
+    required String matchId,
+    required String requestedContentHash,
+    required String requestedWriterDeviceId,
+    required String requestedPrincipalId,
+  }) {
+    return _serialized(() async {
+      final existing = _readWatchProvisionStageLocked(matchId);
+      if (existing == null) return WatchProvisionInspection.absent(matchId);
+      return WatchProvisionInspection(
+        matchId: matchId,
+        present: true,
+        stage: existing.stage,
+        contentHash: existing.contentHash,
+        writerDeviceId: existing.writerDeviceId,
+        principalId: existing.principalId,
+        rootPresent: _readGenerationOneAuthorityRootLocked(matchId) != null,
+        sportingRecords: _matchHasCommittedRecordsLocked(matchId),
+        changed: watchProvisionChangedFields(
+          storedContentHash: existing.contentHash,
+          storedWriterDeviceId: existing.writerDeviceId,
+          storedPrincipalId: existing.principalId,
+          requestedContentHash: requestedContentHash,
+          requestedWriterDeviceId: requestedWriterDeviceId,
+          requestedPrincipalId: requestedPrincipalId,
+        ),
+      );
+    });
   }
 
   /// Stores CONFIG_PREPARED. Does not insert a generation-1 root.
@@ -831,7 +933,17 @@ final class SqliteDurableMatchStore
           return WatchProvisionStageSaved(existing);
         }
         _db.execute('ROLLBACK');
-        return const WatchProvisionStageRefused('prepared-conflict');
+        return WatchProvisionStageRefused(
+          'prepared-conflict',
+          changed: watchProvisionChangedFields(
+            storedContentHash: existing.contentHash,
+            storedWriterDeviceId: existing.writerDeviceId,
+            storedPrincipalId: existing.principalId,
+            requestedContentHash: stage.contentHash,
+            requestedWriterDeviceId: stage.writerDeviceId,
+            requestedPrincipalId: stage.principalId,
+          ),
+        );
       }
       final root = _readGenerationOneAuthorityRootLocked(stage.matchId);
       if (root != null &&

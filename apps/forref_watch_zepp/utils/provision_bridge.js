@@ -284,7 +284,10 @@ function provisionLog(log, fields) {
 
 export function acceptPrepared(body, installationId, requestId) {
   if (!body || typeof body !== "object") return { ok: false, reason: "unavailable" };
-  if (body.disposition !== "prepared") return { ok: false, reason: body.disposition || body.reason || "unavailable" };
+  if (body.disposition !== "prepared") {
+    const detail = body.reason && body.reason !== body.disposition ? body.reason : body.disposition;
+    return { ok: false, reason: detail || "unavailable" };
+  }
   if (Object.prototype.hasOwnProperty.call(body, "payloadVersion")) return { ok: false, reason: "payload" };
   if (body.schema !== "forref.watch-provision.v1") return { ok: false, reason: "schema" };
   if (body.installationId !== installationId || body.requestId !== requestId || body.generation !== 1) {
@@ -402,6 +405,7 @@ function forwardPhase(current, next) {
 async function ask(deps, method, params) {
   provisionLog(deps.log, {
     tx: "request",
+    hop: "device",
     method: method,
     installation: params.installationId,
     request: params.requestId,
@@ -413,11 +417,25 @@ async function ask(deps, method, params) {
   try {
     raw = await deps.request({ method: method, params: params });
   } catch (err) {
-    raw = null;
+    const category = classifyFetchFailure(err);
+    provisionLog(deps.log, {
+      tx: "response",
+      hop: "device",
+      category: category,
+      method: method,
+      reason: category,
+      request: params.requestId,
+    });
+    return { disposition: "unavailable", reason: category, hop: "device", category: category, durable: false };
   }
   const normalized = normalizeTransportResponse(raw);
+  const source = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+  const hop = typeof source.hop === "string" && source.hop ? source.hop : "watch";
+  const category = typeof source.category === "string" && source.category ? source.category : normalized.reason || "";
   provisionLog(deps.log, {
     tx: "response",
+    hop: normalized.ok ? "bridge" : hop,
+    category: normalized.ok ? "ok" : category,
     method: method,
     http: normalized.httpStatus == null ? "" : normalized.httpStatus,
     disposition: normalized.disposition,
@@ -425,7 +443,13 @@ async function ask(deps, method, params) {
     request: params.requestId,
   });
   if (!normalized.ok) {
-    return { disposition: normalized.disposition === "refused" ? "refused" : "unavailable", reason: normalized.reason, durable: false };
+    return {
+      disposition: normalized.disposition === "refused" ? "refused" : "unavailable",
+      reason: normalized.reason || source.reason || "unavailable",
+      hop: hop,
+      category: category,
+      durable: false,
+    };
   }
   return normalized.body;
 }
@@ -488,10 +512,25 @@ async function runPrepareBody(deps, installation) {
   }
   const verified = applyPrepared(deps.admission, pending, installation.id, correlation.requestId);
   if (!verified.ok) {
+    const local = !!(pending && pending.disposition === "prepared");
+    const hop = local ? "watch" : (pending && pending.hop) || "watch";
+    const detail = verified.reason || "unavailable";
+    const category = local ? detail : (pending && pending.category) || detail;
+    provisionLog(deps.log, {
+      tx: "normalize",
+      hop: hop,
+      category: category,
+      reason: detail,
+      request: correlation.requestId,
+      match: (pending && pending.matchId) || correlation.matchId || "",
+      hash: (pending && pending.contentHash) || correlation.contentHash || "",
+    });
     return {
       ok: false,
-      stage: pending && pending.disposition === "prepared" ? "prepared" : "transport",
-      reason: verified.reason,
+      stage: local ? "prepared" : "transport",
+      reason: local ? detail : hop + ":" + detail,
+      hop: hop,
+      category: category,
       installationId: installation.id,
       requestId: correlation.requestId,
       transport: pending && pending.disposition || "unavailable",
@@ -607,46 +646,141 @@ async function runHandshakeBody(deps, installation) {
 
 // Side service request. The device page calls messaging.request. This posts
 // that message to the phone debug bridge and returns the reply body.
+export function classifyFetchFailure(err) {
+  const reason = err && typeof err === "object" && err.reason ? String(err.reason) : "";
+  const message = err && typeof err === "object" && err.message ? String(err.message) : String(err || "");
+  const text = (reason + " " + message).toLowerCase();
+  if (reason === "deadline" || text.includes("timeout") || text.includes("timed out") || text.includes("aborterror")) {
+    return "timeout";
+  }
+  if (text.includes("permission") || text.includes("eacces") || text.includes("denied")) {
+    return "permission";
+  }
+  if (text.includes("econnrefused") || text.includes("connection refused")) {
+    return "connection-refused";
+  }
+  return "transport";
+}
+
+export function phoneReasonCode(response) {
+  if (!response || typeof response !== "object" || typeof response.status !== "number") return "";
+  let body = response.body;
+  if (typeof body === "string") body = parseJson(body);
+  if (!body || typeof body !== "object" || Array.isArray(body)) return "";
+  if (typeof body.reason !== "string" || body.reason.length > 80) return "";
+  return body.reason;
+}
+
+export function classifySideFailure(err, normalized) {
+  if (err) {
+    const category = classifyFetchFailure(err);
+    return { hop: "fetch", category: category, reason: category, disposition: "unavailable" };
+  }
+  const status = normalized && typeof normalized.httpStatus === "number" ? normalized.httpStatus : null;
+  const reason = normalized && normalized.reason ? String(normalized.reason) : "unavailable";
+  if (reason === "malformed" || reason === "contradictory" || reason === "disposition") {
+    return { hop: "normalize", category: "malformed", reason: reason, disposition: "unavailable" };
+  }
+  if (status === 401 || status === 403 || reason === "http-401" || reason === "http-403") {
+    return { hop: "bridge", category: "permission", reason: reason, disposition: "unavailable" };
+  }
+  if ((status != null && status >= 400) || reason.indexOf("http-") === 0) {
+    return {
+      hop: "bridge",
+      category: "http-refusal",
+      reason: reason,
+      disposition: normalized && normalized.disposition === "refused" ? "refused" : "unavailable",
+    };
+  }
+  if (normalized && normalized.disposition === "refused") {
+    return { hop: "bridge", category: "http-refusal", reason: reason, disposition: "refused" };
+  }
+  return { hop: "fetch", category: "transport", reason: reason, disposition: "unavailable" };
+}
+
+function sideFailure(classified, detail) {
+  return {
+    disposition: classified.disposition,
+    reason: detail || classified.reason,
+    hop: classified.hop,
+    category: classified.category,
+    durable: false,
+  };
+}
+
 export function dispatchSideRequest(req, fetchImpl, url) {
   const endpoint = url || PROVISION_BRIDGE_URL;
   const method = req && req.method ? req.method : "";
+  const params = (req && req.params) || {};
+  const requestId = params.requestId || "";
   if (!isProvisionMethod(method)) {
-    console.log("FORREF_PROVISION tx=response method=" + method + " disposition=refused reason=method");
-    return Promise.resolve({ disposition: "refused", reason: "method", durable: false });
+    provisionLog(null, { tx: "side", hop: "side", method: method, request: requestId, disposition: "refused", reason: "method" });
+    return Promise.resolve({ disposition: "refused", reason: "method", hop: "side", category: "transport", durable: false });
   }
-  const body = sideFetchBody(method, (req && req.params) || {});
+  const body = sideFetchBody(method, params);
   if (!body) {
-    console.log("FORREF_PROVISION tx=response method=" + method + " disposition=refused reason=message");
-    return Promise.resolve({ disposition: "refused", reason: "message", durable: false });
+    provisionLog(null, { tx: "side", hop: "side", method: method, request: requestId, disposition: "refused", reason: "message" });
+    return Promise.resolve({ disposition: "refused", reason: "message", hop: "side", category: "malformed", durable: false });
   }
-  console.log(
-    "FORREF_PROVISION tx=request method=" + method +
-      " installation=" + body.installationId +
-      " request=" + body.requestId +
-      " match=" + (body.matchId || "") +
-      " hash=" + (body.contentHash || ""),
-  );
+  const started = Date.now();
+  provisionLog(null, {
+    tx: "side",
+    hop: "side",
+    method: method,
+    installation: body.installationId,
+    request: body.requestId,
+    match: body.matchId || "",
+    hash: body.contentHash || "",
+  });
   return fetchWithDeadline(() => fetchImpl({
     url: endpoint,
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-  }), PROVISION_DEADLINE_MS).then((response) => readTransportPayload(response)).then((normalized) => {
-    const disposition = normalized && normalized.ok
-      ? normalized.disposition
-      : normalized && normalized.disposition === "refused" ? "refused" : "unavailable";
-    const reason = normalized && normalized.reason ? normalized.reason : "";
-    console.log(
-      "FORREF_PROVISION tx=response method=" + method +
-        " http=" + (normalized && normalized.httpStatus != null ? normalized.httpStatus : "") +
-        " disposition=" + disposition +
-        " reason=" + reason,
-    );
-    if (normalized && normalized.ok) return normalized.body;
-    return { disposition: disposition, reason: reason || "unavailable", durable: false };
+  }), PROVISION_DEADLINE_MS).then((response) => {
+    const elapsed = Date.now() - started;
+    const phoneReason = phoneReasonCode(response);
+    return readTransportPayload(response).then((normalized) => {
+      if (normalized && normalized.ok) {
+        provisionLog(null, {
+          tx: "fetch",
+          hop: "bridge",
+          category: "ok",
+          method: method,
+          request: body.requestId,
+          elapsed: elapsed,
+          http: normalized.httpStatus == null ? "" : normalized.httpStatus,
+          disposition: normalized.disposition,
+        });
+        return normalized.body;
+      }
+      const classified = classifySideFailure(null, normalized);
+      const detail = phoneReason && classified.category === "http-refusal" ? phoneReason : classified.reason;
+      provisionLog(null, {
+        tx: "fetch",
+        hop: classified.hop,
+        category: classified.category,
+        method: method,
+        request: body.requestId,
+        elapsed: elapsed,
+        http: normalized && normalized.httpStatus != null ? normalized.httpStatus : "",
+        disposition: classified.disposition,
+        reason: detail,
+      });
+      return sideFailure(classified, detail);
+    });
   }).catch((err) => {
-    const reason = err && err.reason === "deadline" ? "deadline" : "unavailable";
-    console.log("FORREF_PROVISION tx=recover method=" + method + " reason=" + reason + " request=" + body.requestId);
-    return { disposition: "unavailable", reason: reason, durable: false };
+    const elapsed = Date.now() - started;
+    const classified = classifySideFailure(err, null);
+    provisionLog(null, {
+      tx: "fetch",
+      hop: classified.hop,
+      category: classified.category,
+      method: method,
+      request: body.requestId,
+      elapsed: elapsed,
+      reason: classified.reason,
+    });
+    return sideFailure(classified, classified.reason);
   });
 }

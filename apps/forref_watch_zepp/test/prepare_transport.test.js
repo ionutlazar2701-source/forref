@@ -3,7 +3,14 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createMemoryProvisionStore, createWatchProvisionAdmission } from "../utils/watch_provision.js";
 import { createMemoryTextStore } from "../utils/provision_transport.js";
-import { blockedDuringPrepare, runPrepare } from "../utils/provision_bridge.js";
+import {
+  acceptPrepared,
+  blockedDuringPrepare,
+  classifyFetchFailure,
+  classifySideFailure,
+  dispatchSideRequest,
+  runPrepare,
+} from "../utils/provision_bridge.js";
 
 const fixture = JSON.parse(readFileSync(new URL("../../../packages/forref_match_core/test/fixtures/watch_provision_v1.json", import.meta.url), "utf8"));
 const document = JSON.parse(fixture.canonical);
@@ -93,9 +100,58 @@ test("the prepare build refuses lock and activation before the phone bridge", ()
   assert.equal(page.includes("REPORT_WATCH_ACTIVATED_V1"), false);
   assert.equal(page.includes("homeName"), false);
   assert.equal(page.includes("canonical="), true);
+  assert.equal(page.includes("hop="), true);
+  assert.equal(page.includes("device:messaging"), true);
   assert.equal(page.includes("onDestroy()"), true);
   assert.equal(page.includes("clock_"), false);
   assert.equal(app.includes("App({"), true);
   assert.equal(app.includes("@zeppos/zml"), false);
   assert.equal(app.includes("startForegroundClock"), true);
+});
+
+test("a transport failure keeps the hop instead of collapsing to unavailable", async () => {
+  const result = await runPrepare(deps(() => Promise.resolve({
+    disposition: "unavailable",
+    reason: "timeout",
+    hop: "fetch",
+    category: "timeout",
+    durable: false,
+  })));
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, "fetch:timeout");
+  assert.equal(result.hop, "fetch");
+  assert.equal(result.category, "timeout");
+  assert.equal(acceptPrepared({ disposition: "unavailable", reason: "timeout" }, installationId, requestId).reason, "timeout");
+});
+
+test("side fetch names timeout, refusal, malformed payload, and connection refusal", async () => {
+  assert.equal(classifyFetchFailure({ reason: "deadline" }), "timeout");
+  assert.equal(classifyFetchFailure(new Error("connect ECONNREFUSED 127.0.0.1:47221")), "connection-refused");
+  assert.equal(classifyFetchFailure(new Error("permission denied")), "permission");
+  assert.equal(classifyFetchFailure(new Error("socket hang up")), "transport");
+  const request = {
+    method: "GET_WATCH_PROVISION_V1",
+    params: { installationId: installationId, requestId: requestId, generation: 1 },
+  };
+  const refused = await dispatchSideRequest(request, () => Promise.resolve({
+    status: 409,
+    body: JSON.stringify({ disposition: "refused", reason: "installation", canonical: fixture.canonical }),
+  }));
+  assert.equal(refused.hop, "bridge");
+  assert.equal(refused.category, "http-refusal");
+  assert.equal(refused.reason, "installation");
+  assert.equal(JSON.stringify(refused).includes(fixture.canonical), false);
+  const denied = await dispatchSideRequest(request, () => Promise.resolve({ status: 403, body: "{}" }));
+  assert.equal(denied.category, "permission");
+  assert.equal(classifySideFailure(null, { httpStatus: 200, reason: "malformed", disposition: "unavailable" }).hop, "normalize");
+  const broken = await dispatchSideRequest(request, () => Promise.resolve({ status: 200, body: "not-json" }));
+  assert.equal(broken.hop, "normalize");
+  assert.equal(broken.category, "malformed");
+  const down = await dispatchSideRequest(request, () => Promise.reject(new Error("connect ECONNREFUSED 127.0.0.1:47221")));
+  assert.equal(down.hop, "fetch");
+  assert.equal(down.category, "connection-refused");
+  assert.equal(down.reason, "connection-refused");
+  const timed = await dispatchSideRequest(request, () => Promise.reject({ reason: "deadline" }));
+  assert.equal(timed.category, "timeout");
+  assert.equal(timed.reason, "timeout");
 });

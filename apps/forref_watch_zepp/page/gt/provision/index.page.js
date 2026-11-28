@@ -174,7 +174,7 @@ Page({
       console.log("FORREF_PROVISION tx=recover reason=init detail=" + detail(err) + " installation=" + kept);
     }
     if (!messaging) {
-      this.finishPrepare(kept, { ok: false, reason: "messaging" });
+      this.finishPrepare(kept, { ok: false, reason: "device:messaging", hop: "device", category: "messaging" });
       return;
     }
     console.log("FORREF_PROVISION messaging=ready visit=" + this._visit + " installation=" + kept);
@@ -189,8 +189,14 @@ Page({
     }).then((view) => {
       this.finishPrepare(kept, view);
     }).catch((err) => {
-      console.log("FORREF_PROVISION tx=recover reason=request detail=" + detail(err) + " installation=" + kept);
-      this.finishPrepare(kept, { ok: false, reason: "request" });
+      const text = detail(err).toLowerCase();
+      const category = text.indexOf("timeout") >= 0 || text.indexOf("timed out") >= 0
+        ? "timeout"
+        : text.indexOf("permission") >= 0 || text.indexOf("denied") >= 0
+          ? "permission"
+          : "transport";
+      console.log("FORREF_PROVISION tx=recover hop=device category=" + category + " reason=" + category + " installation=" + kept);
+      this.finishPrepare(kept, { ok: false, reason: "device:" + category, hop: "device", category: category });
     });
   },
   finishPrepare(kept, view) {
@@ -214,6 +220,8 @@ Page({
         " match=" + ((view && view.matchId) || "") +
         " hash=" + ((view && view.contentHash) || "") +
         " canonical=" + (prepared ? "accepted" : "rejected") +
+        " hop=" + ((view && view.hop) || "") +
+        " category=" + ((view && view.category) || "") +
         " reason=" + ((view && view.reason) || ""),
     );
     console.log("FORREF_D1 outcome=UNCERTIFIED reason=watch-storage-not-certified");

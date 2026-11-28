@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:forref_match_core/forref_match_core.dart';
+import 'package:forref_match_persistence/forref_match_persistence.dart';
 import 'package:match_core/match_core.dart';
 import 'package:referee_phone/app_scope.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
@@ -17,7 +18,8 @@ class WatchProvisionDebugSection extends StatefulWidget {
       _WatchProvisionDebugSectionState();
 }
 
-class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection> {
+class _WatchProvisionDebugSectionState
+    extends State<WatchProvisionDebugSection> {
   final TextEditingController _installation = TextEditingController();
   WatchProvisionDebugBridge? _bridge;
   List<Match> _matches = const [];
@@ -62,6 +64,14 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
           ListTile(
             title: Text(l10n.watchProvisionPrepare),
             onTap: _prepare,
+          ),
+          ListTile(
+            title: Text(l10n.watchProvisionInspect),
+            onTap: _inspect,
+          ),
+          ListTile(
+            title: Text(l10n.watchProvisionCancel),
+            onTap: _cancelPrepared,
           ),
           if (_status.isNotEmpty) ListTile(title: Text(_status)),
           if (_bridge?.lastActivation != null)
@@ -137,11 +147,79 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
     if (!mounted) return;
     if (prepared.state != WatchProvisionState.configPrepared &&
         prepared.state != WatchProvisionState.phoneAuthorityLocked) {
-      setState(() => _status = prepared.reason);
+      final report =
+          await _loadInspection(match, identity.authorityPrincipalId);
+      if (!mounted) return;
+      final line = report == null ? '' : report.line;
+      setState(() => _status =
+          line.isEmpty ? prepared.reason : '${prepared.reason} $line');
       return;
     }
     final listening = await bridge.start(match.matchId);
     if (!mounted) return;
     setState(() => _status = '${listening.name} ${prepared.contentHash}');
+  }
+
+  Future<void> _inspect() async {
+    final scope = AppScope.of(context);
+    final identity = scope.captureIdentity;
+    final match = _selectedMatch();
+    if (identity == null || match == null) {
+      setState(() => _status = 'missing');
+      return;
+    }
+    final report = await _loadInspection(match, identity.authorityPrincipalId);
+    if (!mounted) return;
+    setState(() => _status = report == null ? 'match' : report.line);
+  }
+
+  Future<void> _cancelPrepared() async {
+    final scope = AppScope.of(context);
+    final boundary = scope.matchApplication;
+    final identity = scope.captureIdentity;
+    final match = _selectedMatch();
+    if (boundary == null || identity == null || match == null) {
+      setState(() => _status = 'missing');
+      return;
+    }
+    final report = await _loadInspection(match, identity.authorityPrincipalId);
+    if (!mounted) return;
+    if (report == null || !report.present) {
+      setState(() => _status = 'not-prepared');
+      return;
+    }
+    final outcome = await boundary.cancelPreparedWatchMatch(
+      matchId: report.matchId,
+      contentHash: report.contentHash,
+    );
+    if (!mounted) return;
+    setState(() => _status = outcome.reason);
+  }
+
+  Match? _selectedMatch() {
+    for (final item in _matches) {
+      if (item.matchId == _matchId) return item;
+    }
+    return null;
+  }
+
+  Future<WatchProvisionInspection?> _loadInspection(
+    Match match,
+    String principalId,
+  ) async {
+    final boundary = AppScope.of(context).matchApplication;
+    if (boundary == null) return null;
+    final document = documentForSavedMatch(
+      match: match,
+      principalId: principalId,
+      installationId: _installation.text.trim(),
+    );
+    if (document == null) return null;
+    return boundary.inspectWatchProvision(
+      matchId: match.matchId,
+      requestedContentHash: document.contentHash,
+      requestedWriterDeviceId: document.writerDeviceId,
+      requestedPrincipalId: document.principalId,
+    );
   }
 }

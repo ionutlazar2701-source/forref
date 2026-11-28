@@ -165,7 +165,8 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
       }
       _server = server;
       server.listen(_answer, onError: (Object _) {});
-      debugPrint('FORREF_PROVISION listening=$loopbackEndpoint match=$_matchId');
+      debugPrint(
+          'FORREF_PROVISION listening=$loopbackEndpoint match=$_matchId');
       return _set(WatchProvisionBridgeDisposition.listening);
     } on Object {
       return _set(WatchProvisionBridgeDisposition.failed);
@@ -192,10 +193,12 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
 
   Future<void> _answer(HttpRequest request) async {
     final response = request.response;
+    final started = DateTime.now();
     try {
       response.headers.set(HttpHeaders.cacheControlHeader, 'no-store');
       response.headers.contentType = ContentType.json;
-      if (request.method != 'POST' || request.uri.path != forrefWatchProvisionPath) {
+      if (request.method != 'POST' ||
+          request.uri.path != forrefWatchProvisionPath) {
         response.statusCode = HttpStatus.notFound;
         _write(response, const {
           'disposition': 'refused',
@@ -217,7 +220,7 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
               : HttpStatus.conflict;
       _write(response, answer);
       debugPrint(
-        'FORREF_PROVISION tx=response disposition=$disposition reason=${answer['reason']} http=${response.statusCode}',
+        'FORREF_PROVISION tx=response disposition=$disposition reason=${answer['reason'] ?? ''} http=${response.statusCode} elapsed=${DateTime.now().difference(started).inMilliseconds}',
       );
     } on Object {
       response.statusCode = HttpStatus.internalServerError;
@@ -272,6 +275,9 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     if (_requestId != null && _requestId != requestId) {
       return _refused('correlation');
     }
+    debugPrint(
+      'FORREF_PROVISION tx=bridge operation=$operation installation=$installationId request=$requestId match=$matchId',
+    );
     _trace('request', operation, installationId, requestId);
     if (operation != 'pending' && _requestId == null) {
       return _refused('order');
@@ -279,7 +285,8 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     if (operation == 'pending') {
       return _pending(stage, installationId, requestId);
     }
-    if (body['matchId'] != matchId || body['contentHash'] != stage.contentHash) {
+    if (body['matchId'] != matchId ||
+        body['contentHash'] != stage.contentHash) {
       return _refused('binding');
     }
     if (body['canonical'] != null && body['canonical'] != stage.canonical) {
@@ -299,7 +306,8 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     String installationId,
     String requestId,
   ) {
-    if (stage.stage != 'CONFIG_PREPARED' && stage.stage != 'PHONE_AUTHORITY_LOCKED') {
+    if (stage.stage != 'CONFIG_PREPARED' &&
+        stage.stage != 'PHONE_AUTHORITY_LOCKED') {
       return _refused('stage');
     }
     final document = parseWatchProvisionV1(stage.canonical).document;

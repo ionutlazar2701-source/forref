@@ -183,6 +183,18 @@ void main() {
       canonicalMessage: canonical,
       phoneOriginDeviceId: identity.originDeviceId,
     );
+    final stored = await composition.boundary.durableStore
+        .readWatchProvisionStage('match-watch-001');
+    final inspection = await composition.boundary.inspectWatchProvision(
+      matchId: 'match-watch-001',
+      requestedContentHash: stored!.contentHash,
+      requestedWriterDeviceId: stored.writerDeviceId,
+      requestedPrincipalId: 'other-principal',
+    );
+    expect(inspection.changed, ['principal']);
+    expect(inspection.rootPresent, isFalse);
+    expect(inspection.sportingRecords, isFalse);
+    expect(inspection.line.contains(stored.canonical), isFalse);
     final wrong = await composition.boundary.cancelPreparedWatchMatch(
       matchId: 'match-watch-001',
       contentHash: 'not-the-hash',
