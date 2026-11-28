@@ -60,6 +60,20 @@ Logs are `FORREF_PROVISION` lines with `tx=request`, `tx=response`, `tx=transiti
 | HTTP 409, HTTP 500, malformed JSON, contradictory `prepared`/`locked` | No new root | No canonical stored | Request id kept, disposition not a success |
 | Lock before any pending | No root | n/a | Refused `order` |
 
+## COM-003R provision diagnosis
+
+Current package: functional commit `b577dd41cbbb82867233203acb6b79b5d7e273da`. Boot stamp `3c3483f`. Boot name `com-003r-prepare`. App `29566`, version `1.0.26` (code 26). `npm test`: 273 pass, 0 fail.
+
+The founder reported the `1.0.25` page, with no console excerpt attached. With Bluetooth connected, PROVISION showed `unavailable`. With Bluetooth disabled, it showed `messaging`. After Bluetooth reconnect, it showed `unavailable`. FORREF Mobile accepted a newly created match and returned `listening`. Previously prepared matches returned `prepared-conflict` across later development builds. `1.0.24` PING, navigation, and Bluetooth reconnect stay the founder-reported pass from the section below.
+
+`unavailable` on `1.0.25` was the collapsed status after a request had been attempted. `acceptPrepared` kept `disposition` and dropped the inner reason, and the side fetch mapped every non-deadline error to the same word. PING never calls that fetch, so a PONG does not show which hop failed. `messaging` is the status when the visit socket is not attached, which is what Bluetooth off produces.
+
+`1.0.26` keeps the direct `App({...})` registration and the prepare-only request. The page status is `hop:category` when the request fails. The hops are `device` (request id generated, or the socket was not attached), `side` (the side service received the method and request id), `fetch` (local HTTP started, with status, category, and elapsed milliseconds), `bridge` (the Flutter debug bridge received the operation and returned a status), and `normalize` (the watch accepted or refused the reply). Categories are `timeout`, `permission`, `connection-refused`, `malformed`, `transport`, and `http-refusal`. A phone refusal such as `installation` stays in `reason` and the page shows `bridge:installation`. Logs name `installation`, `request`, `match`, and `hash`. They do not include the canonical document or the team names. Lock and activation stay refused by the side service before `fetch`.
+
+`prepared-conflict` is the phone refusing to replace a `watch_provision_stages` row. The stored content hash, writer device id, or principal id differs from the document that this build would write. The row is not overwritten. A new match has no row, so it can listen. Debug Settings shows Inspect provision and Cancel prepared. Inspect names the stage and which of `content-hash`, `writer-device`, and `principal` changed, plus whether a generation-1 root or a sporting record is present. It does not show the canonical document. Cancel prepared calls `cancelPreparedWatchMatch` with the stored content hash. That succeeds only when the stage is exactly `CONFIG_PREPARED`, the hash matches, no generation-1 root exists, and no sporting record exists. The authority root is not reset, a conflicting identity is not overwritten, and match history is not deleted. After a successful cancel, Prepare and listen can store the new document for the same match.
+
+The built `app.bin` contains `FORREF_APP`, `com-003r-prepare`, and `b577dd41`. It does not contain `__scopedGlobals__`, `TransferFile`, `createConnect`, `disConnect`, `BaseApp`, `hmBle`, or `GET_WATCH_PROVISION`. `page/gt/provision/index.page.bin` contains `createConnect`, `GET_WATCH_PROVISION`, `runPrepare`, and `device:messaging`. It does not contain `SUBMIT_WATCH_LOCK`. This scan is a package check. It is not a Bip 6 result for `1.0.26`.
+
 ## COM-003 prepare transport
 
 Current package: functional commit `01a29c0b1e06b3e098938df61fa66274b1f5bcbe`. Boot stamp `f8ff017`. Boot name `com-003-prepare`. App `29566`, version `1.0.25` (code 25). `npm test`: 271 pass, 0 fail.
@@ -96,21 +110,23 @@ This scan is a package check. It is not a Bip 6 result. Opening Home must stay u
 
 ## Suite
 
-`npm test` in `apps/forref_watch_zepp` on `1.0.25`: 271 pass, 0 fail. The `1.0.24` tree was 268 pass, 0 fail. The `1.0.23` tree was 263 pass, 0 fail.
+`npm test` in `apps/forref_watch_zepp` on `1.0.26`: 273 pass, 0 fail. The `1.0.25` tree was 271 pass, 0 fail. The `1.0.24` tree was 268 pass, 0 fail. The `1.0.23` tree was 263 pass, 0 fail.
 
 `flutter test test/watch_provision_debug_settings_test.dart test/watch_provision_debug_bridge_test.dart` in `apps/referee_phone`: 10 pass, 0 fail.
 
-`./tool/verify_cloud.sh` on the `1.0.25` tree: PASSED. The phone suite inside it reported `All tests passed!`.
+`./tool/verify_cloud.sh` on the `1.0.26` tree: PASSED. The phone suite inside it reported `All tests passed!`. The `1.0.25` tree had also passed.
 
 ## Diagnostic package
 
-Install `1.0.25`. Do not install `1.0.20` or `1.0.21`. `1.0.24` is the build the founder reported as passing repeated PING, navigation, and Bluetooth reconnect. No console log was attached to that report.
+Install `1.0.26`. Do not install `1.0.20` or `1.0.21`. `1.0.24` is the build the founder reported as passing repeated PING, navigation, and Bluetooth reconnect. No console log was attached to that report. `1.0.25` is the build whose page showed `unavailable` with Bluetooth connected, `messaging` with Bluetooth disabled, and `unavailable` again after reconnect. No console excerpt was attached to that report. The phone on that trial returned `listening` for a new match and `prepared-conflict` for a match that already had a prepared row.
 
-Opening `1.0.25` must show Home and must not reboot the watch. Home → SETTINGS → PROVISION shows the installation UUID before any tap. On the phone, enter that UUID, choose one saved match, and tap Prepare and listen. The Zepp app stays open on that phone. Tap Provision on the watch. The watch log contains `tx=request method=GET_WATCH_PROVISION_V1`, then `outcome=PREPARED` with the same `installation`, `request`, `match`, and `hash` as the phone `listening` line, and `canonical=accepted`. The page shows CONFIG PREPARED. The log does not contain `SUBMIT_WATCH_LOCK_V1` or `REPORT_WATCH_ACTIVATED_V1`. The phone has no new authority root. Leave PROVISION and open it again, then tap Provision. The request id stays the same. A reboot, a lock request, or a hash that differs from the phone fails the trial. Do not lock, activate, or replicate a sporting event.
+Opening `1.0.26` must show Home and must not reboot the watch. Home → SETTINGS → PROVISION shows the installation UUID before any tap. On the phone, enter that UUID, choose one saved match, and tap Prepare and listen. If the status is `prepared-conflict`, tap Inspect provision and copy the `changed=` fields. Cancel prepared is available only for a `CONFIG_PREPARED` row whose stored hash matches and that has no generation-1 root and no sporting record. After that cancel, Prepare and listen can return `listening` for the same match. The Zepp app stays open on that phone. Tap Provision on the watch. A failure page shows the hop and category, for example `fetch:timeout` or `bridge:installation`. The watch log contains `tx=request hop=device method=GET_WATCH_PROVISION_V1`, then `tx=side`, `tx=fetch` with `elapsed`, and `outcome=PREPARED` with the same `installation`, `request`, `match`, and `hash` as the phone `listening` line, and `canonical=accepted`. The page shows CONFIG PREPARED. The log does not contain `SUBMIT_WATCH_LOCK_V1` or `REPORT_WATCH_ACTIVATED_V1`. The phone has no new authority root. Leave PROVISION and open it again, then tap Provision. The request id stays the same. A reboot, a lock request, or a hash that differs from the phone fails the trial. Do not lock, activate, or replicate a sporting event.
 
 Home → SETTINGS → PROVISION shows the installation UUID before the tap. The first console line on that page is `FORREF_PROVISION page=init`, then `page=build`, then `device width=` `height=` `layout=` and `installation=` with the 36-character id. A storage failure logs `tx=recover` and draws `INSTALLATION UNAVAILABLE`. Messaging opens on the Provision tap.
 
-Zeus CLI 1.10.3, target Amazfit Bip 6, device sources `9765120`, `9765121`, `10158337`. App id `29566`, version `1.0.25` (code 25), boot `build=com-003-prepare rev=01a29c0b1e06b3e098938df61fa66274b1f5bcbe`. The preview package is `dist/29566-FORREF-1.0.25-20261128090106.zab` (400886 bytes, sha256 `a54d1c044a2b5812c75ea50bf18861bc55d51b44b9396410a1132777cd28e297`). It is not committed. The QR expires `2026-12-05 09:01:11` on the machine clock (UTC), which is 11:01 Europe/Bucharest. The QR was not scanned here. This package does not certify the prepared response on a Bip 6.
+Zeus CLI 1.10.3, target Amazfit Bip 6, device sources `9765120`, `9765121`, `10158337`. App id `29566`, version `1.0.26` (code 26), boot `build=com-003r-prepare rev=b577dd41cbbb82867233203acb6b79b5d7e273da`. The preview package is `dist/29566-FORREF-1.0.26-20261128092614.zab` (402140 bytes, sha256 `f1e21da770d391ed8f5e53d44dcc0c7c151133d4922833aa87a469600b5518e6`). It is not committed. The QR expires `2026-12-05 09:26:17` on the machine clock (UTC), which is 11:26 Europe/Bucharest. The QR was not scanned here. This package does not certify the prepared response on a Bip 6.
+
+`1.0.25` remains `dist/29566-FORREF-1.0.25-20261128090106.zab` (400886 bytes, sha256 `a54d1c044a2b5812c75ea50bf18861bc55d51b44b9396410a1132777cd28e297`), boot `build=com-003-prepare rev=01a29c0b1e06b3e098938df61fa66274b1f5bcbe`. Its QR expired text was `2026-12-05 09:01:11` UTC, 11:01 Europe/Bucharest. The founder reported the page words above. No console excerpt was attached.
 
 `1.0.24` remains `dist/29566-FORREF-1.0.24-20261128084201.zab` (390810 bytes, sha256 `6325f613bfb7cd730cb43fd665f294059d3df6808acb8f4d12123e9d161b6db7`), boot `build=com-002r-link rev=63bf267d3031941b443f86473187903f3008627f`. Its QR expired text was `2026-12-05 08:42:05` UTC, 10:42 Europe/Bucharest. The founder reported PING, navigation, and Bluetooth reconnect as pass on that build. No console excerpt was attached.
 
@@ -123,28 +139,28 @@ The previous open package remains `dist/29566-FORREF-1.0.22-20261128075209.zab` 
 `1.0.18` (`dist/29566-FORREF-1.0.18-20261127100800.zab`, sha256 `38bae40d41a92d9c6aa426810adbc2406b263e69ae28ab604e13d9cf84108583`) is the build that opened a blank provision page. The `1.0.17` package is the earlier transport build.
 
 ```
-[FORREF - 1.0.25]
+[FORREF - 1.0.26]
 Supported device: Amazfit Bip 6
 ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-█ ▄▄▄▄▄ ██▀▀▄▄▄ █▀█▄█▀▄▄██▄▀█▀█ ▄▄▄▄▄ █
-█ █   █ █▀███ ▀▄██▀▄▀█ ▄▀ ▀▄█▀█ █   █ █
-█ █▄▄▄█ █▄▄█▀▀▀ █ █▄█ █▀▄▀▀▄█ █ █▄▄▄█ █
-█▄▄▄▄▄▄▄█▄█ ▀▄█ ▀ █▄█ █▄█▄█ ▀ █▄▄▄▄▄▄▄█
-█ ▄██▀ ▄▄▀ █▄▀▀▄▄█ ▀█▄▀▀▀▄▄▄▀▀██▀ ▄█▀██
-█▄▄▄  ▀▄ █▀▀█▀██ ▄▄▄█ █ ███▄▄ ▄  ▀▄▄▀ █
-██  █▀ ▄▄▄▄▀▄▄▀█▄ ▄█  ██▀ ▀█▀ █▄▄█ ▀ ▄█
-█▄█▀█▄█▄▄▀▄▄ ▄█▄▄███▀█▄ █ ▄▄ ▄  ▀▀█ █ █
-█▄ ▄█▀▀▄▀ ▄ ▄▀▀▄▀▀▄██▀▀▄▀█ ▄▀▀▀▄ ▄  ▄▄█
-█▀█▀█▀█▄▀▀ █▄▀▄▀▄▀█▀ ▄█▀▄ ▄▀ █▄▄█ ▀█▀▄█
-████ ▀▀▄▀█▀██▄█▄████ ██▄▀█ ▀ ██▄▀ ▄ ███
-█ ▄█▀▄▄▄▄  █ ▄▄▀▄ ██▀▄█ █▀▄  ▀▄█▀▄▀█▄ █
-█▀▀▄▄▀▀▄▄ ▀ █▀▄▀█ ▄█▀ ▀█ ▄█▀▀▄▀▄ ███ ▄█
-█ █▀▄▀▀▄ ▄ ██▀█  ▀█▄▀▄█ ▀██ ▄▀██▄█ ▀▄▄█
-█▄█▄▄█▄▄▄ ███▄▄▄█▀▀▀ █▀▄   ▄  ▄▄▄ ▄ ▀██
-█ ▄▄▄▄▄ █ ▀ ▀▄█▄ ███▄ ▄█ ▀█▀▀ █▄█ █▄█▄█
-█ █   █ ██▄ ▄▀▀▀▄▄ █▀█▀ ▀█  ▄   ▄▄ ▄ ▀█
-█ █▄▄▄█ █▀  █▀ ▄ ▀█▄█▄█ █▄▄  ▀▀▀ █▀█▄ █
-█▄▄▄▄▄▄▄█▄██▄▄▄█▄▄▄█▄▄███▄███▄█▄██▄██▄█
+█ ▄▄▄▄▄ █ ▀▀▄ ▀██▀▄███▄▄█▀▄▀█▀█ ▄▄▄▄▄ █
+█ █   █ ███ ▄▄▄ █▄▄▀▀  ▀ ▄ ▀█▄█ █   █ █
+█ █▄▄▄█ █ ▄▄ █▄▀█▀█▄███ ██ ██▀█ █▄▄▄█ █
+█▄▄▄▄▄▄▄█ █ ▀ █▄█▄█▄█ █▄█ █ ▀ █▄▄▄▄▄▄▄█
+█   ▀█ ▄▀▄▄ ██▀▀█ ▄▀█ ▀▄  █▀▀▄▄  ▄█▀  █
+██▄▄██ ▄▄▄▀▀▄█▄  ▄██ ██▀▄▀▄█▄▀█▄▀ ▄█ ▄█
+█ █ █▀█▄▀ ▄▀▄ ▀█ ▀ ██ ██▀▄▀█▀ █ ▄█ ▀  █
+█▄▀█▀ ▄▄▀▄▀ ▀ ██▄▀▄▄  ▄█▄▄█▀ ▀▀▄ ▄██▄▄█
+█▄▄▄▄  ▄▄▄█▄██▀▀▄▀██  ▀█ ▀▀█▀   ▀█ ▀█ █
+█▀▄▄█  ▄▄██▄▄██▄▄ ▄  ██▀▄▄▄▀ █▄ █ ▀█▀ █
+██▄ ▀▀▀▄▄▄█▀▄ ▄▀  █▀█ █▀ ▀▀▄  ▄  █▄█▄▀█
+██▄ ▀▄▀▄▄ ▄█▀ █▄▄██▀▄██▀▄██▀  █▀ █▀▄█▄█
+██▀▄  █▄ █▀▄█████ ▀█▀ ▀█  █▀▀▄▀  ███  █
+█▄▄▀█▄▄▄▀ ▀ ▄██▀  █▄ ▀██ ▀▄█▄▄▄▀█  ▄█ █
+█▄▄▄▄██▄█ ▄█▄ █▀ ▀▄▀▀▄▀█▀▄▀█  ▄▄▄ ▄▀ ▀█
+█ ▄▄▄▄▄ █▀▀ ▀ █ ▄ █▄▄ ▄█ ██▀▀ █▄█ █▄█ █
+█ █   █ ███▀██ ▄▄▀▄▀  ▀█ ▀▀█▄▄ ▄▄  ▀▀██
+█ █▄▄▄█ █ ▀ ▄█▀█ ▄▄▀▄██▀▄ █▀   █▀▄▀▄█▄█
+█▄▄▄▄▄▄▄█▄▄▄▄▄▄██▄▄█▄▄███▄███▄█▄██▄██▄█
 ```
 
 ```
