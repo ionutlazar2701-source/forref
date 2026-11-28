@@ -395,6 +395,7 @@ G2 follows G1’s approval and does not wait for G0. G3 waits for G0 PASS. G4 wa
 | R2 | 28 Nov 2026 | This file. Point-by-point responses, transport topology, state model, field matrix, gates G0–G5, failure scenarios, and HUMAN GATES H1–H8. No application code. |
 | R3 | 28 Nov 2026 | Section 14. Founder disposition of H1 and H2. G1 execution contract. No application code. |
 | R4 | 28 Nov 2026 | G1-C1 and G1-C2. Non-setup rows stay on the match list. Production entry audit. No application code. |
+| R5 | 28 Nov 2026 | G1-C3. Match Setup writes require a fresh persisted `setup` status. Whitelist unchanged. No application code. |
 
 Publication of R2:
 
@@ -501,6 +502,7 @@ Stop the G1 implementation and return to this file if any of these appear:
 - The setup action still calls `goReady` or still navigates to `/live`.
 - The match list or the summary control still navigates to `/live`.
 - A `ready`, `live`, `paused`, `halfTime`, or `fullTime` row pushes `MatchSetupPage` or writes the stored match.
+- A direct `/setup` route, or a save after the persisted status has left `setup`, calls `replace`, `goReady`, `upsertMatch`, `ensureForMatch`, or `saveForMatch`.
 - The pull request is opened against #86 or as extra commits on #90.
 - The same pull request starts G0, G2, G3, G4, or G5, or writes a decision for H3–H8.
 - `flutter test` in `apps/referee_phone` fails.
@@ -563,4 +565,48 @@ Hold-file tests beyond section 14.6:
 
 Later unmerged phone branches are not the G1 base and are not in the file whitelist. On `origin/cursor/forref-mobile-002-officiate-preparation`, `origin/cursor/forref-mobile-002v-visual-system`, and `origin/cursor/forref-mobile-003-android-sync`, `_open` takes a `ListedFixture` and sends `FixtureGroup.current` to `AppRouter.liveMatch`. The watch-bridge and cadence branches still use the same three `main` sites. G1 does not edit those branches. Rebasing them onto the G1 commit is a later audit. It is a STOP for this slice if the G1 diff is not against `919c906`.
 
-The file whitelist in section 14.1, the rollback in section 14.4, and the STOP conditions in section 14.5 stay in force. The additional STOP in section 14.5 covers a held-status row that opens setup or writes the match.
+The file whitelist in section 14.1, the rollback in section 14.4, and the STOP conditions in section 14.5 stay in force. The additional STOP in section 14.5 covers a held-status row that opens setup or writes the match. Section 14.8 adds the setup-write STOP. It does not add a file to the whitelist.
+
+### 14.8 G1-C3 — Match Setup authorization boundary
+
+Accepted as the remaining safety issue on 28 Nov 2026. G1-C1 stops the match list from opening the editor. It does not stop `AppRouter.onGenerateRoute` from building `MatchSetupPage` for `/setup` with any non-null match id. `_persistSetup` then calls `MatchSession.replace`, which writes the in-memory match. That method does not read `MatchStatus`.
+
+The router arm stays. `onGenerateRoute` is synchronous and has no `LocalMatchDatabase`. Teaching it to query the row would require editing `apps/referee_phone/lib/app.dart`, which is outside the section 14.1 whitelist. That amendment is not required. The safety property is enforced inside `match_setup_page.dart`, which is already on the whitelist. Do not add `app.dart`, `match_session.dart`, or `match_competition_rules_store.dart`.
+
+`MatchSession.replace` stays unchanged. The dormant live page uses it for capture. A setup-only check inside `replace` would block that page and would be a whitelist expansion. G1 does not change Match Core, does not add a domain type, and does not delete `live_match_page.dart`.
+
+Authorization is one private read on the setup page. Immediately before every setup write, and before the editor is shown, the page calls `database.getMatch(matchId)` on `AppScope`'s `LocalMatchDatabase`. That read is the SQLite row assembled by `getMatch`, not `session.match`. The write is allowed only when the row exists and `status` is `MatchStatus.setup`. A null row, any other status, or a read that throws is a refusal. The in-memory session is ignored for this decision, including when `session.match.status` is still `setup`.
+
+On a refusal the page does not call `replace`, `goReady`, `upsertMatch`, `ensureForMatch`, or `saveForMatch`. It does not copy the form into the session. It leaves the route: `Navigator.pop` when `canPop` is true, otherwise `pushNamedAndRemoveUntil` to `AppRouter.matches`. No new localization string is required.
+
+`_load` performs this read before `rulesStore.ensureForMatch` and before it constructs `MatchSession`. `ensureForMatch` writes `forref_match_competition_rules.json` when the match id is absent. A direct `/setup` open of a non-setup match must not create that key.
+
+These are the configuration writes reachable from Match Setup. Each one uses the fresh read, including the path that remains after `_goLive` becomes the save action from section 14.2:
+
+- `_persistSetup` writes team names, competition, venue, half length, and crew through `session.replace`.
+- The save button is the only caller of that persist. It does not call `goReady`.
+- `_addPlayer` writes `squads` through `session.replace` for home and for away. The read happens after the dialog returns and before `replace`.
+- `_persistCompetitionRules` writes `MatchCompetitionRulesStore.saveForMatch` from either format `ListTile` and from the penalty `CheckboxListTile`. The read happens before `setState` updates the choice and before `saveForMatch`.
+- `_load` calls `ensureForMatch` only after the fresh read allows editing.
+
+Text typed into a controller is not a stored mutation until one of those methods runs.
+
+Tests in `mobile_live_entry_hold_test.dart`, using the real `RefereeApp` router. Snapshot the stored match (`status`, `updatedAt`, score, both team names, squad player ids) and the bytes of `forref_match_competition_rules.json` before each attempt.
+
+Direct route, one case for `MatchStatus.live` and one for `MatchStatus.completed`:
+
+- From the match list, `pushNamed(AppRouter.matchSetup, arguments: matchId)`.
+- After the page settles, the current route is `/`. The tree does not contain `Match setup` or `Kick-off`.
+- The match snapshot and the rules-file bytes are unchanged. When the file had no key for that match id, it still has no key.
+
+Status change after the editor is open. Start from a `setup` match so the fields are on screen. Then `upsertMatch` the same id with `status: MatchStatus.live` and a sentinel home-team name, without going through the page. The session object is left as it was. Then:
+
+- Type a different home-team name and tap `Save match`.
+- Confirm the add-player dialog for the home squad.
+- Tap the no-extra-time format row.
+
+After each attempt, separately, the stored match equals the sentinel write: status `live`, sentinel home name, same squad ids. The rules-file bytes equal the snapshot taken after the editor opened and before the sentinel write. The route returns to `/`. Repeat the save attempt once with the external status set to `completed` instead of `live`.
+
+A setup match that stays `setup` still saves. That is the existing section 14.3 case: `Save match` returns to the list and leaves status `setup`.
+
+No file is added to section 14.1. Rollback of the setup page restores the unguarded `_persistSetup`, `_addPlayer`, `_persistCompetitionRules`, and `_load`. The new STOP in section 14.5 is the implementation failure for this subsection.
