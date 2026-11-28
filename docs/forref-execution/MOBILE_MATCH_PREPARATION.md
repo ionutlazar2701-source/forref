@@ -393,6 +393,7 @@ G2 follows G1’s approval and does not wait for G0. G3 waits for G0 PASS. G4 wa
 | R0 | 28 Nov 2026 | Original discovery. Later copied to `docs/forref-development/MOBILE_MATCH_PREPARATION.md` on PR #89. That pull request is not this negotiation file. |
 | R1 | 28 Nov 2026 | Founder amendments MP-01–MP-07 in Google Doc `1ZYJFwGi8cCJ2SXwQkqNKPPPVNSBRGn11`. Preserved as section 9. |
 | R2 | 28 Nov 2026 | This file. Point-by-point responses, transport topology, state model, field matrix, gates G0–G5, failure scenarios, and HUMAN GATES H1–H8. No application code. |
+| R3 | 28 Nov 2026 | Section 14. Founder disposition of H1 and H2. G1 execution contract. No application code. |
 
 Publication of R2:
 
@@ -407,4 +408,98 @@ Round 2 disposition, short:
 - Accepted: MP-02, MP-03’s state split, MP-05’s matrix, MP-06’s independent gates, MP-07’s branch rules.
 - Counterproposed: MP-01’s assumption that the watch opens `127.0.0.1`; MP-04’s use of `updatedAt` as a revision.
 - Blocked: the Side Service Fetch hop to the Flutter listener remains **BLOCKED: TRANSPORT TOPOLOGY** until one G0 trace.
-- Unresolved HUMAN GATES: H1–H8.
+- Unresolved HUMAN GATES at the end of Round 2: H1–H8. Section 14 records the later Founder disposition. H3–H8 stay open.
+
+---
+
+## 14. Founder disposition of Round 2, and the G1 Execution Contract
+
+Recorded 28 Nov 2026, Europe/Bucharest. The Founder accepted sections 1–13 as the planning baseline.
+
+- MP-02, MP-03, MP-05, MP-06, and MP-07 remain accepted.
+- MP-01 remains the hardware topology gate. No transport redesign.
+- MP-04 remains accepted: `updatedAt` alone is not a safe configuration revision.
+- **H1: APPROVED.** G1 is the first isolated implementation slice, and only after this contract is the file-level spec.
+- **H2: APPROVED.** G0 is one bounded hardware trace of the existing phone build `973aee4` and watch build `cd64f18` or `902152b`. No new listener, no new URL, no code change in the G0 trace.
+- **H3–H8: OPEN.** This contract does not decide them.
+
+This section does not authorize the G1 code commit. It is the spec that a later, separate pull request must follow.
+
+### 14.1 Baseline and pull request boundary
+
+Read against `origin/main` at `919c906`, which is the parent of this documentation branch. The future code branch is `cursor/mobile-live-entry-hold-0e7d`, created from that commit. Its pull request targets `main`. It is not stacked on #90, #86, #71, #69, #68, or #67. PR #90 stays a draft and is not merged as part of G1.
+
+Allowed files in that future pull request:
+
+- `apps/referee_phone/lib/routing/app_router.dart`
+- `apps/referee_phone/lib/features/match_setup/match_setup_page.dart`
+- `apps/referee_phone/lib/features/matches/matches_page.dart`
+- `apps/referee_phone/lib/features/match_summary/match_summary_page.dart`
+- `apps/referee_phone/lib/l10n/app_en.arb`
+- `apps/referee_phone/lib/l10n/app_ro.arb`
+- the generated `app_localizations*.dart` files that `flutter gen-l10n` already commits in this app
+- `apps/referee_phone/test/widget_test.dart`
+- `apps/referee_phone/test/mobile_live_entry_hold_test.dart` (new)
+
+No other file.
+
+### 14.2 Route and control behavior
+
+Production navigation must not build `LiveMatchPage`. The class stays in `apps/referee_phone/lib/features/live_match/live_match_page.dart`. `MatchSession.goReady`, `kickOff`, and `saveEvent` stay in `apps/referee_phone/lib/match/match_session.dart` with their current bodies.
+
+`AppRouter.liveMatch` stays the string `/live` so existing names still compile. `onGenerateRoute` in `app_router.dart` no longer has an arm that returns `LiveMatchPage`. A request named `/live`, with or without a match id, returns `MatchesPage`, which is the same page the `default` arm already returns. Delete the unused `LiveMatchPage` import from `app_router.dart`. There is no Android `VIEW` intent for this route in the phone manifest.
+
+`matches_page.dart` `_open` today is:
+
+```dart
+MatchStatus.setup => AppRouter.matchSetup,
+MatchStatus.completed => AppRouter.matchSummary,
+_ => AppRouter.liveMatch,
+```
+
+The third arm becomes `AppRouter.matchSetup`. Completed matches still open the summary. Setup matches still open setup. Ready, live, paused, half-time, extra-time, and full-time rows open setup. They do not open `/live`.
+
+`match_setup_page.dart` `_goLive` today persists, then calls `session.goReady()` when status is `setup`, then `pushNamedAndRemoveUntil` to `/live`. Replace that method with a save that:
+
+- still awaits `_persistSetup()`
+- does not call `goReady`
+- does not call `Navigator.pushNamed`, `pushNamedAndRemoveUntil`, or `pushReplacementNamed` with `AppRouter.liveMatch`
+- then `Navigator.pop` when `canPop` is true, otherwise `pushNamedAndRemoveUntil` to `AppRouter.matches`
+
+The bottom `FilledButton` stops using `l10n.liveMatch`. Add `setupSave` to both arb files: English `Save match`, Romanian `Salvează meciul`. Regenerate the localization classes from those arb files. The button `onPressed` is the save method above.
+
+`match_summary_page.dart` today pushes `AppRouter.liveMatch` from the `backToMatch` control. That control calls `Navigator.pop` when `canPop` is true, otherwise it navigates to `AppRouter.matches`. It does not push `/live`. The existing `l10n.backToMatch` string may stay; its destination may not be the live page.
+
+Settings stays a language page. It has no live route today and gains none.
+
+### 14.3 Tests
+
+New `apps/referee_phone/test/mobile_live_entry_hold_test.dart`:
+
+- After creating a match and tapping `Save match`, the widget tree contains `Match setup` or `Matches`, and does not contain `Kick-off`. The stored match status is still `MatchStatus.setup`.
+- Opening a stored match whose status is `ready` pushes setup, not `LiveMatchPage`.
+- Opening a stored match whose status is `completed` pushes summary. Tapping `Back to match` does not build `LiveMatchPage`.
+- `AppRouter.onGenerateRoute` for name `/live` and a non-null match id builds `MatchesPage`. The route builder’s widget runtime type is not `LiveMatchPage`.
+
+`widget_test.dart` helper `enterLiveMatch` is the release path today: it taps the text `Live Match`. Change that helper so it pushes `LiveMatchPage(matchId:)` with a `MaterialPageRoute` from the running test navigator. The helper must not call `pushNamed(AppRouter.liveMatch)` and must not tap a production control labeled `Live Match`. The thirteen existing call sites keep covering kick-off, goal, and the dormant page. `match_started_cutover_test.dart` still asserts that `live_match_page.dart` does not contain `session.kickOff`.
+
+Software PASS for G1 is `flutter test` in `apps/referee_phone` on the G1 branch, including the new hold file and the existing live-page source tests. That PASS is not a watch result and not G0.
+
+### 14.4 Rollback
+
+Rollback is `git revert` of the G1 commit on `cursor/mobile-live-entry-hold-0e7d`, or restoring the four production files and the two arb files from `919c906` and regenerating localizations. `LiveMatchPage` and `MatchSession.goReady` are already unchanged, so rollback does not reconstruct them. After rollback, `_open` again sends non-setup, non-completed matches to `/live`, and the setup button again calls `goReady` and pushes `/live`.
+
+### 14.5 STOP conditions
+
+Stop the G1 implementation and return to this file if any of these appear:
+
+- A diff touches `packages/forref_match_core`, `packages/forref_match_persistence`, `packages/match_core`, `apps/forref_watch_zepp`, the loopback listener, or `MatchConfigurationPayload`.
+- `live_match_page.dart` is deleted, gutted, or given a new production entry.
+- `onGenerateRoute` still returns `LiveMatchPage`, or a new production route name returns it.
+- The setup action still calls `goReady` or still navigates to `/live`.
+- The match list or the summary control still navigates to `/live`.
+- The pull request is opened against #86 or as extra commits on #90.
+- The same pull request starts G0, G2, G3, G4, or G5, or writes a decision for H3–H8.
+- `flutter test` in `apps/referee_phone` fails.
+
+G0 stays a Founder trace of binaries that already exist. It is not part of the G1 commit. H3–H8 are not implied by saving a match or by hiding `/live`.
