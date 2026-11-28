@@ -394,6 +394,7 @@ G2 follows G1’s approval and does not wait for G0. G3 waits for G0 PASS. G4 wa
 | R1 | 28 Nov 2026 | Founder amendments MP-01–MP-07 in Google Doc `1ZYJFwGi8cCJ2SXwQkqNKPPPVNSBRGn11`. Preserved as section 9. |
 | R2 | 28 Nov 2026 | This file. Point-by-point responses, transport topology, state model, field matrix, gates G0–G5, failure scenarios, and HUMAN GATES H1–H8. No application code. |
 | R3 | 28 Nov 2026 | Section 14. Founder disposition of H1 and H2. G1 execution contract. No application code. |
+| R4 | 28 Nov 2026 | G1-C1 and G1-C2. Non-setup rows stay on the match list. Production entry audit. No application code. |
 
 Publication of R2:
 
@@ -457,7 +458,7 @@ MatchStatus.completed => AppRouter.matchSummary,
 _ => AppRouter.liveMatch,
 ```
 
-The third arm becomes `AppRouter.matchSetup`. Completed matches still open the summary. Setup matches still open setup. Ready, live, paused, half-time, extra-time, and full-time rows open setup. They do not open `/live`.
+The third arm does not open setup. G1-C1 in section 14.6 is the binding behavior: `ready`, `live`, `paused`, `halfTime`, and `fullTime` stay on the match list. Completed matches still open the summary. Setup matches still open setup. There is no `MatchStatus` value for extra time. Extra time is a `PeriodId`, and it is not a separate list route.
 
 `match_setup_page.dart` `_goLive` today persists, then calls `session.goReady()` when status is `setup`, then `pushNamedAndRemoveUntil` to `/live`. Replace that method with a save that:
 
@@ -476,10 +477,11 @@ Settings stays a language page. It has no live route today and gains none.
 
 New `apps/referee_phone/test/mobile_live_entry_hold_test.dart`:
 
-- After creating a match and tapping `Save match`, the widget tree contains `Match setup` or `Matches`, and does not contain `Kick-off`. The stored match status is still `MatchStatus.setup`.
-- Opening a stored match whose status is `ready` pushes setup, not `LiveMatchPage`.
+- After creating a match and tapping `Save match`, the current route is the match list. The tree does not contain `Kick-off`. The stored match status is still `MatchStatus.setup`.
+- Opening a stored match whose status is `ready`, `live`, `paused`, `halfTime`, or `fullTime` does not push a route. Section 14.6 states the assertions.
 - Opening a stored match whose status is `completed` pushes summary. Tapping `Back to match` does not build `LiveMatchPage`.
-- `AppRouter.onGenerateRoute` for name `/live` and a non-null match id builds `MatchesPage`. The route builder’s widget runtime type is not `LiveMatchPage`.
+- `AppRouter.onGenerateRoute` for name `/live`, with and without a match id, builds `MatchesPage`. The route builder’s widget runtime type is not `LiveMatchPage`.
+- A source assertion in the same hold file scans `apps/referee_phone/lib` and finds `LiveMatchPage(` only in `live_match_page.dart`. Section 14.7 states the rest of the audit tests.
 
 `widget_test.dart` helper `enterLiveMatch` is the release path today: it taps the text `Live Match`. Change that helper so it pushes `LiveMatchPage(matchId:)` with a `MaterialPageRoute` from the running test navigator. The helper must not call `pushNamed(AppRouter.liveMatch)` and must not tap a production control labeled `Live Match`. The thirteen existing call sites keep covering kick-off, goal, and the dormant page. `match_started_cutover_test.dart` still asserts that `live_match_page.dart` does not contain `session.kickOff`.
 
@@ -498,8 +500,67 @@ Stop the G1 implementation and return to this file if any of these appear:
 - `onGenerateRoute` still returns `LiveMatchPage`, or a new production route name returns it.
 - The setup action still calls `goReady` or still navigates to `/live`.
 - The match list or the summary control still navigates to `/live`.
+- A `ready`, `live`, `paused`, `halfTime`, or `fullTime` row pushes `MatchSetupPage` or writes the stored match.
 - The pull request is opened against #86 or as extra commits on #90.
 - The same pull request starts G0, G2, G3, G4, or G5, or writes a decision for H3–H8.
 - `flutter test` in `apps/referee_phone` fails.
 
 G0 stays a Founder trace of binaries that already exist. It is not part of the G1 commit. H3–H8 are not implied by saving a match or by hiding `/live`.
+
+### 14.6 G1-C1 — Non-setup match safety
+
+Accepted in principle on 28 Nov 2026. This subsection replaces the earlier option, in section 10 and in the first draft of section 14.2, that a non-setup row may open Match Setup.
+
+`matches_page.dart` `_open` becomes an exhaustive switch on `MatchStatus`:
+
+- `MatchStatus.setup` pushes `AppRouter.matchSetup` with that match id, then reloads the list. This is the only status that opens the editor from a row.
+- `MatchStatus.completed` pushes `AppRouter.matchSummary` with that match id, then reloads the list.
+- `MatchStatus.ready`, `MatchStatus.live`, `MatchStatus.paused`, `MatchStatus.halfTime`, and `MatchStatus.fullTime` return before `pushNamed` and before any database call. The current route stays `AppRouter.matches`. The `ListTile` may keep its `onTap`. The tap does not navigate.
+
+`_newMatch` is unchanged. It still creates a `setup` match and opens setup. The setup primary button still follows section 14.2: persist, do not call `goReady`, return to the list.
+
+The held-status path must not call `upsertMatch`, `goReady`, `kickOff`, or `saveEvent`. Editing a match that has left `setup` is not part of G1. That edit stays closed until a later slice proves it safe. H3–H8 do not decide it.
+
+Hold-file tests, one case for each of `ready`, `live`, `paused`, `halfTime`, and `fullTime`:
+
+- Store a match in that status with a known `updatedAt`, score, and both team names.
+- Pump the real `RefereeApp` router, find the row, and tap it.
+- The current route name is `/`. The tree contains `Matches` and does not contain `Match setup` or `Kick-off`.
+- Read the match back. `status`, `updatedAt`, score, and both team names are unchanged.
+
+Completed-row test: the tap builds `MatchSummaryPage`. `Back to match` then returns to `/` and does not build `LiveMatchPage`. Setup-row test: the tap still builds `MatchSetupPage`.
+
+### 14.7 G1-C2 — Production entry audit
+
+Audit of the G1 baseline `919c906`, which is `origin/main`. `RefereeApp` uses one `MaterialApp`. Its only generator is `AppRouter.onGenerateRoute`. `initialRoute` is `/`. There is no `routes:` map and no `GoRouter`. `apps/referee_phone/android/app/src/main/AndroidManifest.xml` has one activity intent filter, `MAIN` / `LAUNCHER`. It has no `VIEW` intent and no host for `/live`.
+
+The only production expression `LiveMatchPage(` is `app_router.dart` when the route name is `/live` and the argument is a non-null `String`. No test file constructs `LiveMatchPage(` today. `widget_test.dart` reaches the page by tapping the text `Live Match`, which uses that production route.
+
+Production navigations whose target is `AppRouter.liveMatch`:
+
+- `matches_page.dart` `_open`, the default arm, from each `ListTile` `onTap`.
+- `match_setup_page.dart` `_goLive`, from the bottom `FilledButton` whose label is `l10n.liveMatch`.
+- `match_summary_page.dart`, from the `TextButton` whose label is `l10n.backToMatch`.
+
+`live_match_page.dart` itself pushes `/setup` from the app bar and `/summary` from the full-time control, and it calls `MatchSession` methods for kick-off and the other live actions. Those run only after the page exists. G1 does not edit that file. Removing the three navigations and the router arm makes those controls unreachable in production.
+
+Named routes after the change:
+
+- `/` builds `MatchesPage`.
+- `/setup` with a match id builds `MatchSetupPage`. Without a match id it already falls through to `MatchesPage`.
+- `/summary` with a match id builds `MatchSummaryPage`. Without a match id it falls through to `MatchesPage`.
+- `/settings` builds `SettingsPage`.
+- `/live` with or without a match id builds `MatchesPage`.
+- Any other name builds `MatchesPage`.
+
+No production route, button, list row, or generated name builds `LiveMatchPage`. The class and its constructor stay. Direct construction is allowed only in `widget_test.dart` `enterLiveMatch`, which pushes `MaterialPageRoute` with `builder: (_) => LiveMatchPage(matchId: matchId)`. That helper must not call `pushNamed(AppRouter.liveMatch)`. The thirteen existing call sites stay. `mobile_live_entry_hold_test.dart` must not contain `LiveMatchPage(`.
+
+Hold-file tests beyond section 14.6:
+
+- `onGenerateRoute` for `/live` with a match id, `/live` with a null argument, and a name that is not one of the five constants, each builds `MatchesPage`.
+- After `Save match`, after each held-status row tap, and after `Back to match`, `find.byType(LiveMatchPage)` finds nothing.
+- The source scan described in section 14.3 fails if any file under `apps/referee_phone/lib` other than `live_match_page.dart` contains `LiveMatchPage(`.
+
+Later unmerged phone branches are not the G1 base and are not in the file whitelist. On `origin/cursor/forref-mobile-002-officiate-preparation`, `origin/cursor/forref-mobile-002v-visual-system`, and `origin/cursor/forref-mobile-003-android-sync`, `_open` takes a `ListedFixture` and sends `FixtureGroup.current` to `AppRouter.liveMatch`. The watch-bridge and cadence branches still use the same three `main` sites. G1 does not edit those branches. Rebasing them onto the G1 commit is a later audit. It is a STOP for this slice if the G1 diff is not against `919c906`.
+
+The file whitelist in section 14.1, the rollback in section 14.4, and the STOP conditions in section 14.5 stay in force. The additional STOP in section 14.5 covers a held-status row that opens setup or writes the match.
