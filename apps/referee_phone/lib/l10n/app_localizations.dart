@@ -860,6 +860,72 @@ abstract class AppLocalizations {
   /// **'Stored watch {stored} was kept. This watch {request} was not adopted.'**
   String watchPairWriterKept(String stored, String request);
 
+  /// No description provided for @watchTransferSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to Watch'**
+  String get watchTransferSend;
+
+  /// No description provided for @watchTransferHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a saved match, then send it to the paired watch.'**
+  String get watchTransferHint;
+
+  /// No description provided for @watchTransferWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the watch to verify this match.'**
+  String get watchTransferWaiting;
+
+  /// No description provided for @watchTransferVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Configuration Verified. {home} v {away}, {minutes} min. Not activated.'**
+  String watchTransferVerified(String home, String away, int minutes);
+
+  /// No description provided for @watchTransferReplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Configuration Verified. {home} v {away}, {minutes} min, was already saved.'**
+  String watchTransferReplay(String home, String away, int minutes);
+
+  /// No description provided for @watchTransferKept.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored watch was kept ({detail}).'**
+  String watchTransferKept(String detail);
+
+  /// No description provided for @watchTransferUnpaired.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair the watch before sending a match.'**
+  String get watchTransferUnpaired;
+
+  /// No description provided for @watchTransferFixture.
+  ///
+  /// In en, this message translates to:
+  /// **'This match is a pairing record. Choose a saved match.'**
+  String get watchTransferFixture;
+
+  /// No description provided for @watchTransferStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'This match has already started.'**
+  String get watchTransferStarted;
+
+  /// No description provided for @watchTransferConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'The stored match configuration was kept.'**
+  String get watchTransferConflict;
+
+  /// No description provided for @watchTransferFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer stopped ({reason}). The stored writer was not changed.'**
+  String watchTransferFailed(String reason);
+
   /// No description provided for @watchPairFailed.
   ///
   /// In en, this message translates to:

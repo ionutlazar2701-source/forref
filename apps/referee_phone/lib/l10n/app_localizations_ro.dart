@@ -415,6 +415,51 @@ class AppLocalizationsRo extends AppLocalizations {
   }
 
   @override
+  String get watchTransferSend => 'Trimite către ceas';
+
+  @override
+  String get watchTransferHint =>
+      'Alege un meci salvat, apoi trimite-l către ceasul asociat.';
+
+  @override
+  String get watchTransferWaiting =>
+      'Așteaptă ca ceasul să verifice acest meci.';
+
+  @override
+  String watchTransferVerified(String home, String away, int minutes) {
+    return 'Configurație verificată. $home – $away, $minutes min. Neactivat.';
+  }
+
+  @override
+  String watchTransferReplay(String home, String away, int minutes) {
+    return 'Configurație verificată. $home – $away, $minutes min, era deja salvat.';
+  }
+
+  @override
+  String watchTransferKept(String detail) {
+    return 'Ceasul stocat a rămas ($detail).';
+  }
+
+  @override
+  String get watchTransferUnpaired =>
+      'Asociază ceasul înainte să trimiți un meci.';
+
+  @override
+  String get watchTransferFixture =>
+      'Acest meci este o înregistrare de asociere. Alege un meci salvat.';
+
+  @override
+  String get watchTransferStarted => 'Acest meci a început deja.';
+
+  @override
+  String get watchTransferConflict => 'Configurația stocată a rămas.';
+
+  @override
+  String watchTransferFailed(String reason) {
+    return 'Transferul s-a oprit ($reason). Scriitorul stocat nu a fost schimbat.';
+  }
+
+  @override
   String watchPairFailed(String reason) {
     return 'Asocierea s-a oprit ($reason). Scriitorul stocat nu a fost schimbat.';
   }

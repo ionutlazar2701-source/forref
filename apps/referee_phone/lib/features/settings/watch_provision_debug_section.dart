@@ -8,6 +8,7 @@ import 'package:match_core/match_core.dart';
 import 'package:referee_phone/app_scope.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
 import 'package:referee_phone/officiate/watch_enroll_session.dart';
+import 'package:referee_phone/officiate/watch_match_transfer.dart';
 import 'package:referee_phone/officiate/watch_pairing_session.dart';
 import 'package:referee_phone/officiate/watch_provision_debug_bridge.dart';
 
@@ -26,6 +27,8 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
   WatchProvisionDebugBridge? _bridge;
   WatchProvisionDebugBridge? _enrollBridge;
   WatchProvisionDebugBridge? _pairBridge;
+  WatchProvisionDebugBridge? _transferBridge;
+  String _transferStatus = '';
   List<Match> _matches = const [];
   String? _matchId;
   String _status = '';
@@ -43,6 +46,7 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
     _bridge?.stop();
     _enrollBridge?.stop();
     _pairBridge?.stop();
+    _transferBridge?.stop();
     super.dispose();
   }
 
@@ -50,6 +54,7 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _pairBridge?.resumePairing();
+      _transferBridge?.resumeTransfer();
     }
   }
 
@@ -72,6 +77,11 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
             title: Text(l10n.watchPairConnect),
             subtitle: Text(_pairSubtitle(l10n)),
             onTap: _connectWatch,
+          ),
+          ListTile(
+            title: Text(l10n.watchTransferSend),
+            subtitle: Text(_transferSubtitle(l10n)),
+            onTap: _sendToWatch,
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -166,6 +176,71 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
     };
   }
 
+  String _transferSubtitle(AppLocalizations l10n) {
+    final result = _transferBridge?.transferResult;
+    final code = result?.code ?? _transferStatus;
+    if (code.isEmpty) return l10n.watchTransferHint;
+    final minutes = (result?.halfDurationMs ?? 0) ~/ 60000;
+    final home = result?.homeName ?? '';
+    final away = result?.awayName ?? '';
+    return switch (code) {
+      'waiting' => l10n.watchTransferWaiting,
+      'verified' => l10n.watchTransferVerified(home, away, minutes),
+      'replay' => l10n.watchTransferReplay(home, away, minutes),
+      'writer-kept' => l10n.watchTransferKept(result?.reason ?? ''),
+      'unpaired' => l10n.watchTransferUnpaired,
+      'fixture' => l10n.watchTransferFixture,
+      'started' => l10n.watchTransferStarted,
+      'conflict' => l10n.watchTransferConflict,
+      _ => l10n.watchTransferFailed(
+          result != null && result.reason.isNotEmpty ? result.reason : code),
+    };
+  }
+
+  Future<void> _sendToWatch() async {
+    final scope = AppScope.of(context);
+    final boundary = scope.matchApplication;
+    final identity = scope.captureIdentity;
+    final root = scope.storageRoot;
+    final database = scope.database;
+    final match = _selectedMatch();
+    if (boundary == null || identity == null || root == null || match == null) {
+      setState(() => _status = 'missing');
+      return;
+    }
+    await _bridge?.stop();
+    await _enrollBridge?.stop();
+    await _pairBridge?.stop();
+    final bridge = _transferBridge ??
+        WatchProvisionDebugBridge(
+          boundary: boundary,
+          phoneOriginDeviceId: identity.originDeviceId,
+          correlationFile: File('${root.path}/$transferWatchCorrelationName'),
+        );
+    _transferBridge = bridge;
+    bridge.removeListener(_onTransfer);
+    bridge.addListener(_onTransfer);
+    final opened = await sendMatchToWatch(
+      storageRoot: root,
+      database: database,
+      boundary: boundary,
+      phoneOriginDeviceId: identity.originDeviceId,
+      principalId: identity.authorityPrincipalId,
+      match: match,
+      transferBridge: bridge,
+      historicalBridge: _bridge,
+      pairBridge: _pairBridge,
+      enrollBridge: _enrollBridge,
+    );
+    if (!mounted) return;
+    setState(() => _transferStatus = opened.status);
+  }
+
+  void _onTransfer() {
+    if (!mounted) return;
+    setState(() {});
+  }
+
   Future<void> _connectWatch() async {
     final scope = AppScope.of(context);
     final boundary = scope.matchApplication;
@@ -178,6 +253,7 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
     }
     await _bridge?.stop();
     await _enrollBridge?.stop();
+    await _transferBridge?.stop();
     final bridge = _pairBridge ??
         WatchProvisionDebugBridge(
           boundary: boundary,

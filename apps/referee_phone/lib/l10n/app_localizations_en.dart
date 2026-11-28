@@ -412,6 +412,51 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get watchTransferSend => 'Send to Watch';
+
+  @override
+  String get watchTransferHint =>
+      'Select a saved match, then send it to the paired watch.';
+
+  @override
+  String get watchTransferWaiting =>
+      'Waiting for the watch to verify this match.';
+
+  @override
+  String watchTransferVerified(String home, String away, int minutes) {
+    return 'Configuration Verified. $home v $away, $minutes min. Not activated.';
+  }
+
+  @override
+  String watchTransferReplay(String home, String away, int minutes) {
+    return 'Configuration Verified. $home v $away, $minutes min, was already saved.';
+  }
+
+  @override
+  String watchTransferKept(String detail) {
+    return 'Stored watch was kept ($detail).';
+  }
+
+  @override
+  String get watchTransferUnpaired => 'Pair the watch before sending a match.';
+
+  @override
+  String get watchTransferFixture =>
+      'This match is a pairing record. Choose a saved match.';
+
+  @override
+  String get watchTransferStarted => 'This match has already started.';
+
+  @override
+  String get watchTransferConflict =>
+      'The stored match configuration was kept.';
+
+  @override
+  String watchTransferFailed(String reason) {
+    return 'Transfer stopped ($reason). The stored writer was not changed.';
+  }
+
+  @override
   String watchPairFailed(String reason) {
     return 'Pairing stopped ($reason). The stored writer was not changed.';
   }

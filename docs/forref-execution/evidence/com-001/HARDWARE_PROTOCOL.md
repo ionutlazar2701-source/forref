@@ -1,5 +1,31 @@
 # COM-001 Bip 6 protocol
 
+## Send to Watch
+
+State: **1.0.35 SOFTWARE PASS. HARDWARE GATE PENDING. NOT ACTIVATED**. Watch source is `1.0.35` (`watch-config-035`, rev `a8db8e206942861ef3e2c2a6b889b754ac052e0e`). Package `dist/29566-FORREF-1.0.35-20261128184642.zab`, sha256 `bce7066b98e2e2cf1d541b2b60634c0b0a9c72464d0d5457b903a5b195c3dcfc`. The QR is in `TEST_RESULTS.md` and expires 20:46 Europe/Bucharest on 5 December 2026. The paired watch receives one saved match. The phone shows Configuration Verified only after the watch reads the configuration back. Lock and activation stay disabled. No authority root is created. This section does not certify the Bip 6.
+
+Do not uninstall either app. Do not type an installation UUID. Do not tap Provision, Enroll, Prepare, Listen, or Cancel. Do not delete a correlation file.
+
+1. Install the MCT watch package in place. Force-stop Zepp, open Zepp, and stay on Home.
+2. On the phone, from this branch, run `flutter run -d RZCY11BDMTX`. Open Settings. If the watch is not already paired, tap **Connect Watch**, then on the watch tap **CONFIRM**. The phone shows Connected & Verified.
+3. Choose a saved match that has not been kicked off. Tap **Send to Watch**. The phone says it is waiting for the watch.
+4. On the watch, open SETTINGS, then PROVISION. Tap **RECEIVE** once.
+5. The phone shows **Configuration Verified**, the two team names, the half length, and **Not activated**. The watch shows the same two names, `45 + 45` when the halves are 45 minutes, and **Verified · not activated**. Tap **RECEIVE** again. The phone says the match was already saved.
+
+| Screen | Meaning |
+| --- | --- |
+| Configuration Verified | The watch stored this match and read it back. Authority is not activated. |
+| Configuration Verified, already saved | The same watch repeated the transfer. The stored configuration was not written again. |
+| Waiting for the watch | The phone is holding the match until the watch verifies it. |
+| Pair the watch before sending a match | Connect Watch has not stored a witness. |
+| This match is a pairing record | The selected match is the pairing fixture. Choose another saved match. |
+| This match has already started | Kick-off has happened. The configuration was not sent. |
+| The stored match configuration was kept | The saved document does not match the stored one. Nothing was replaced. |
+| Stored watch was kept | A different installation arrived. The writer was not replaced. |
+| Phone unreachable, on the watch | The side service could not reach the phone after three tries. Tap Send to Watch and RECEIVE again. |
+
+## Connect Watch
+
 State: **1.0.34 SOFTWARE PASS. HARDWARE GATE PENDING. LOCK DISABLED**. Watch source is `1.0.34` (`watch-pair-034`, rev `121d2bfea53ce325cea2cc0e69d59f806c828c0b`). Package `dist/29566-FORREF-1.0.34-20261128172845.zab`, sha256 `ecce27ca297465041b0f8923b6988d5bd34e7f8a031eeb8df2667326e1e3133b`. The QR is in `TEST_RESULTS.md` and expires 19:28 Europe/Bucharest on 5 December 2026. Rows H1–H11 and E1–E8 stay **LOCAL GATE REQUIRED**. This file does not certify the Bip 6.
 
 Do not uninstall FORREF Watch, the Zepp app, or FORREF Mobile. Do not reset a match, clear storage, cancel a prepared provision, or delete a correlation file. Do not type an installation UUID. Do not tap Prepare and listen, Listen, Enroll witness, or Cancel prepared. Do not tap Provision on the watch.

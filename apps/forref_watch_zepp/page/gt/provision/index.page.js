@@ -9,7 +9,7 @@ import { createFileProvisionStore } from "../../../utils/provision_transport";
 import { createWatchProvisionAdmission } from "../../../utils/watch_provision";
 import { attachDeviceMessaging, nextLinkVisit, retireLinkVisit } from "../../../utils/device_messaging";
 import { deviceBuildLine } from "../../../utils/build_stamp";
-import { ENROLL_ADMISSION_FILE, ENROLL_CORRELATION_FILE, ENROLL_ROOT_FILE, PAIR_ADMISSION_FILE, PAIR_CORRELATION_FILE, PAIR_ROOT_FILE, PROVISION_CORRELATION_FILE, PROVISION_PAGE_TIMEOUT_MS, confirmPairing, readProvisionEvidence, runPrepare } from "../../../utils/provision_bridge";
+import { ENROLL_ADMISSION_FILE, ENROLL_CORRELATION_FILE, ENROLL_ROOT_FILE, PAIR_ADMISSION_FILE, PAIR_CORRELATION_FILE, PAIR_ROOT_FILE, PROVISION_CORRELATION_FILE, PROVISION_PAGE_TIMEOUT_MS, TRANSFER_ADMISSION_FILE, TRANSFER_CORRELATION_FILE, TRANSFER_ROOT_FILE, confirmPairing, readProvisionEvidence, receiveMatch, runPrepare } from "../../../utils/provision_bridge";
 import {
   installationLineSize,
   resolveInstallationCard,
@@ -72,6 +72,7 @@ function statusLabel(status) {
   if (status === "identity") return t("installationReady");
   if (status === "prepared") return t("stagePrepared");
   if (status === "verified") return t("pairVerified");
+  if (status === "config-verified") return t("configVerified");
   if (status === "phone-unreachable") return t("pairUnreachable");
   if (status === "writer-kept") return t("pairWriterKept");
   if (status === "locked") return t("stageLocked");
@@ -213,7 +214,12 @@ Page({
         card.line.w,
     );
     textAt(card.title.x, card.title.y, card.title.w, card.title.h, t("provision"), Math.round(m.width * 0.045), ACCENT);
-    if (view.ok && view.id) {
+    if (view.ok && view.status === "config-verified") {
+      const minutes = view.minutes || 0;
+      textAt(card.line.x, card.line.y, card.line.w, card.line.h, view.summaryHome || "", 22, TEXT_PRIMARY);
+      textAt(card.line2.x, card.line2.y, card.line2.w, card.line2.h, view.summaryAway || "", 22, TEXT_PRIMARY);
+      textAt(card.status.x, card.status.y, card.status.w, card.status.h, minutes + " + " + minutes + "  " + t("configVerified"), 18, TEXT_WARNING);
+    } else if (view.ok && view.id) {
       const lines = splitInstallationId(view.id);
       const size = installationLineSize(card.line.w, card.line.h, lines[0] || view.id);
       textAt(card.line.x, card.line.y, card.line.w, card.line.h, lines[0] || "", size, TEXT_PRIMARY);
@@ -231,6 +237,12 @@ Page({
     const confirm = place(m, card.back.y + card.back.h + 6, 40, card.back.w);
     if (confirm.ok) {
       button(confirm.x, confirm.y, confirm.w, confirm.h, t("confirmPairing"), () => this.confirmPairing(), null, "provision-confirm", m);
+      const receive = place(m, confirm.y + confirm.h + 6, 40, confirm.w);
+      if (receive.ok) {
+        button(receive.x, receive.y, receive.w, receive.h, t("receiveMatch"), () => this.receiveMatch(), null, "provision-receive", m);
+      } else {
+        console.log("FORREF_TRANSFER tx=layout reason=hidden");
+      }
     } else {
       console.log("FORREF_PAIR tx=layout reason=hidden");
     }
@@ -256,6 +268,12 @@ Page({
     console.log("FORREF_PAIR tx=preflight historical=" + before.status + " bytes=" + before.bytes);
     this.begin("pair");
   },
+  receiveMatch() {
+    const before = historicalCorrelationSnapshot();
+    this._historicalText = before.text;
+    console.log("FORREF_TRANSFER tx=preflight historical=" + before.status + " bytes=" + before.bytes);
+    this.begin("transfer");
+  },
   enrollWitness() {
     const before = historicalCorrelationSnapshot();
     this._historicalText = before.text;
@@ -273,7 +291,8 @@ Page({
     }
     const enroll = kind === "enroll";
     const pairing = kind === "pair";
-    const isolated = enroll || pairing;
+    const transfer = kind === "transfer";
+    const isolated = enroll || pairing || transfer;
     const app = runningApp();
     if (!app || !app.globalData) {
       this.finishPrepare(kept, { ok: false, reason: "app" });
@@ -289,14 +308,17 @@ Page({
       this.finishPrepare(kept, { ok: false, reason: "device:messaging", hop: "device", category: "messaging" });
       return;
     }
-    console.log("FORREF_PROVISION messaging=ready visit=" + this._visit + " installation=" + kept + " namespace=" + (pairing ? "pair" : enroll ? "enroll" : "historical"));
-    const requestStore = pairing
-      ? fileStore(PAIR_CORRELATION_FILE)
-      : enroll
-        ? fileStore(ENROLL_CORRELATION_FILE)
-        : fileStore(PROVISION_CORRELATION_FILE);
-    const rootFile = pairing ? PAIR_ROOT_FILE : enroll ? ENROLL_ROOT_FILE : PROVISION_ROOT_FILE;
-    const admissionFile = pairing ? PAIR_ADMISSION_FILE : enroll ? ENROLL_ADMISSION_FILE : PROVISION_ADMISSION_FILE;
+    const namespace = transfer ? "transfer" : pairing ? "pair" : enroll ? "enroll" : "historical";
+    console.log("FORREF_PROVISION messaging=ready visit=" + this._visit + " installation=" + kept + " namespace=" + namespace);
+    const requestStore = transfer
+      ? fileStore(TRANSFER_CORRELATION_FILE)
+      : pairing
+        ? fileStore(PAIR_CORRELATION_FILE)
+        : enroll
+          ? fileStore(ENROLL_CORRELATION_FILE)
+          : fileStore(PROVISION_CORRELATION_FILE);
+    const rootFile = transfer ? TRANSFER_ROOT_FILE : pairing ? PAIR_ROOT_FILE : enroll ? ENROLL_ROOT_FILE : PROVISION_ROOT_FILE;
+    const admissionFile = transfer ? TRANSFER_ADMISSION_FILE : pairing ? PAIR_ADMISSION_FILE : enroll ? ENROLL_ADMISSION_FILE : PROVISION_ADMISSION_FILE;
     const deps = {
       loadInstallation: () => ({ ok: true, id: kept, reason: "" }),
       requestStore: requestStore,
@@ -315,7 +337,7 @@ Page({
         else resolve();
       }),
     };
-    const pending = pairing ? confirmPairing(deps) : runPrepare({
+    const pending = transfer ? receiveMatch(deps) : pairing ? confirmPairing(deps) : runPrepare({
       loadInstallation: deps.loadInstallation,
       requestStore: deps.requestStore,
       admission: deps.admission,
@@ -341,7 +363,7 @@ Page({
     this._busy = false;
     const id = kept || (view && view.installationId) || "";
     const status = outcomeStatus(view);
-    const named = status === "prepared" || status === "locked" || status === "activated";
+    const named = status === "config-verified" || status === "prepared" || status === "locked" || status === "activated";
     if (this._closed) {
       console.log("FORREF_PROVISION tx=drop installation=" + id + " reason=" + (view && view.reason ? view.reason : ""));
       return;
@@ -351,8 +373,11 @@ Page({
       id: id,
       reason: view && view.reason ? view.reason : "",
       status: status,
+      summaryHome: view && view.summaryHome ? view.summaryHome : "",
+      summaryAway: view && view.summaryAway ? view.summaryAway : "",
+      minutes: view && view.minutes ? view.minutes : 0,
     };
-    const outcome = status === "prepared" ? "PREPARED" : status === "locked" ? "LOCKED" : status === "activated" ? "ACTIVATED" : "REFUSED";
+    const outcome = status === "config-verified" ? "CONFIG_VERIFIED" : status === "prepared" ? "PREPARED" : status === "locked" ? "LOCKED" : status === "activated" ? "ACTIVATED" : "REFUSED";
     console.log(
       "FORREF_PROVISION outcome=" + outcome +
         " installation=" + id +
