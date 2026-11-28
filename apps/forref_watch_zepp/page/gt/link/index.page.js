@@ -1,4 +1,5 @@
 import { back } from "@zos/router";
+import { appPlugin } from "@zeppos/zml/3.0/module/messaging/plugin/app";
 import { bindBack, clear, logDevice, stack } from "../../../utils/chrome";
 import { attachDeviceMessaging } from "../../../utils/device_messaging";
 import { isPong, nextLinkSeq, pingRequest } from "../../../utils/link_channel";
@@ -12,10 +13,7 @@ function detail(err) {
 }
 
 function loadPlugin() {
-  return import("@zeppos/zml/3.0/module/messaging/plugin/app").then((mod) => {
-    if (!mod || typeof mod.appPlugin !== "function") return null;
-    return mod.appPlugin;
-  });
+  return Promise.resolve(typeof appPlugin === "function" ? appPlugin : null);
 }
 
 Page({

@@ -34,9 +34,9 @@ test("the link page loads messaging on tap and the side answers before provision
   const buildAt = page.indexOf("build() {");
   const pingAt = page.indexOf("ping() {");
   assert.equal(buildAt > 0 && pingAt > buildAt, true);
-  assert.equal(page.slice(buildAt, pingAt).includes("import("), false);
+  assert.equal(page.slice(buildAt, pingAt).includes("appPlugin"), false);
   assert.equal(page.slice(buildAt, pingAt).includes("attachDeviceMessaging"), false);
-  assert.equal(page.includes('import("@zeppos/zml/3.0/module/messaging/plugin/app")'), true);
+  assert.equal(page.includes('from "@zeppos/zml/3.0/module/messaging/plugin/app"'), true);
   assert.equal(page.includes("base-app"), false);
   assert.equal(page.includes("disConnect"), false);
   assert.equal(page.includes("runHandshake"), false);
