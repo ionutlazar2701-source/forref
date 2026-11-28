@@ -10,8 +10,12 @@ export const ENROLL_ADMISSION_FILE = "forref_watch_enroll_v1.admission";
 export const PAIR_CORRELATION_FILE = "forref_watch_pair_correlation_v1.txt";
 export const PAIR_ROOT_FILE = "forref_watch_pair_v1.root";
 export const PAIR_ADMISSION_FILE = "forref_watch_pair_v1.admission";
+export const TRANSFER_CORRELATION_FILE = "forref_watch_transfer_correlation_v1.txt";
+export const TRANSFER_ROOT_FILE = "forref_watch_transfer_v1.root";
+export const TRANSFER_ADMISSION_FILE = "forref_watch_transfer_v1.admission";
 
 export const GET_WATCH_PROVISION_V1 = "GET_WATCH_PROVISION_V1";
+export const ACK_WATCH_CONFIG_VERIFIED_V1 = "ACK_WATCH_CONFIG_VERIFIED_V1";
 export const SUBMIT_WATCH_LOCK_V1 = "SUBMIT_WATCH_LOCK_V1";
 export const REPORT_WATCH_ACTIVATED_V1 = "REPORT_WATCH_ACTIVATED_V1";
 export const GET_SIDE_BUILD_V1 = "GET_SIDE_BUILD_V1";
@@ -22,6 +26,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 export function isProvisionMethod(method) {
   return method === GET_WATCH_PROVISION_V1 ||
+    method === ACK_WATCH_CONFIG_VERIFIED_V1 ||
     method === SUBMIT_WATCH_LOCK_V1 ||
     method === REPORT_WATCH_ACTIVATED_V1;
 }
@@ -242,6 +247,12 @@ export function sideFetchBody(method, params) {
     contentHash: source.contentHash,
     writerDeviceId: source.installationId,
   };
+  if (method === ACK_WATCH_CONFIG_VERIFIED_V1) {
+    body.operation = "verified";
+    body.readBack = source.readBack === true;
+    body.type = "WATCH_PROVISION_VERIFIED_V1";
+    return body;
+  }
   if (method === SUBMIT_WATCH_LOCK_V1) {
     body.operation = "lock";
     body.readBack = source.readBack === true;
@@ -330,7 +341,7 @@ export function normalizeTransportResponse(raw) {
   if (status != null && status !== 200) return transportFailure("http-" + status, status);
   if (!body || typeof body !== "object" || Array.isArray(body)) return transportFailure("malformed", status);
   const disposition = body.disposition;
-  if (disposition !== "prepared" && disposition !== "locked" && disposition !== "recorded" && disposition !== "refused" && disposition !== "unavailable") {
+  if (disposition !== "prepared" && disposition !== "verified" && disposition !== "locked" && disposition !== "recorded" && disposition !== "refused" && disposition !== "unavailable") {
     return transportFailure("disposition", status);
   }
   if (status === 200 && (disposition === "refused" || disposition === "unavailable")) {
@@ -339,13 +350,16 @@ export function normalizeTransportResponse(raw) {
   if (disposition === "prepared" && (body.durable === true || typeof body.canonical !== "string" || body.saved === true || body.d1Certified === true)) {
     return transportFailure("contradictory", status);
   }
+  if (disposition === "verified" && (body.durable === true || body.saved === true || body.d1Certified === true)) {
+    return transportFailure("contradictory", status);
+  }
   if (disposition === "locked" && (body.durable !== true || body.saved === true || body.d1Certified === true)) {
     return transportFailure("contradictory", status);
   }
   if (disposition === "recorded" && (body.saved === true || body.d1Certified === true || body.durable === true)) {
     return transportFailure("contradictory", status);
   }
-  if (disposition === "prepared" || disposition === "locked" || disposition === "recorded") {
+  if (disposition === "prepared" || disposition === "verified" || disposition === "locked" || disposition === "recorded") {
     return { ok: true, disposition: disposition, reason: body.reason || "", durable: body.durable === true, httpStatus: status, body: body };
   }
   return { ok: false, disposition: disposition, reason: body.reason || disposition, durable: false, httpStatus: status, body: null };
@@ -402,6 +416,7 @@ export function acceptPrepared(body, installationId, requestId) {
     contentHash: document.contentHash,
     homeName: document.homeName,
     awayName: document.awayName,
+    halfDurationMs: document.halfDurationMs,
   };
 }
 
@@ -424,6 +439,7 @@ export function applyPrepared(admission, body, installationId, requestId) {
     contentHash: prepared.contentHash,
     homeName: prepared.homeName,
     awayName: prepared.awayName,
+    halfDurationMs: prepared.halfDurationMs,
     installationId: installationId,
     requestId: requestId,
     receipt: {
@@ -582,6 +598,94 @@ export function pairingPresentation(view, attempt, limit) {
   return { done: true, view: Object.assign({}, view || {}, { result: result, attempts: attempt }) };
 }
 
+export function acceptVerified(body, receipt) {
+  if (!body || typeof body !== "object") return { ok: false, reason: "unavailable" };
+  if (body.disposition !== "verified") return { ok: false, reason: body.reason || body.disposition || "verified" };
+  if (body.durable === true || body.saved === true || body.d1Certified === true) {
+    return { ok: false, reason: "authority" };
+  }
+  if (!receipt || body.matchId !== receipt.matchId || body.contentHash !== receipt.contentHash || body.requestId !== receipt.requestId) {
+    return { ok: false, reason: "binding" };
+  }
+  if (body.installationId !== receipt.installationId || body.generation !== 1) {
+    return { ok: false, reason: "binding" };
+  }
+  return { ok: true, reason: body.reason || "" };
+}
+
+export function transferPresentation(view, attempt, limit) {
+  if (view && view.ok && view.result === "config-verified") {
+    return { done: true, view: Object.assign({}, view, { attempts: attempt }) };
+  }
+  if (pairingRetryable(view) && attempt < limit) return { done: false, view: view };
+  const reason = view && view.reason ? String(view.reason) : "";
+  let result = "failed";
+  if (pairingRetryable(view)) result = "phone-unreachable";
+  else if (reason.indexOf("installation") >= 0 || reason.indexOf("recovery-required") >= 0) result = "writer-kept";
+  else if (reason === "binding" || reason === "canonical" || reason === "conflict" || reason.indexOf("generation") >= 0) result = "conflict";
+  return { done: true, view: Object.assign({}, view || {}, { result: result, attempts: attempt }) };
+}
+
+export async function receiveMatch(deps) {
+  const limit = deps && deps.attempts ? deps.attempts : 3;
+  let last = { ok: false, stage: "transport", reason: "transport", category: "transport", hop: "fetch" };
+  for (let attempt = 1; attempt <= limit; attempt += 1) {
+    last = await runTransfer(deps);
+    const presented = transferPresentation(last, attempt, limit);
+    if (presented.done) return presented.view;
+    if (deps && typeof deps.wait === "function") await deps.wait(attempt);
+  }
+  return transferPresentation(last, limit, limit).view;
+}
+
+async function runTransfer(deps) {
+  const opened = openHandshake(deps);
+  if (!opened.ok) return opened.result;
+  try {
+    const prepared = await runPrepareBody(deps, opened.installation);
+    if (!prepared.ok) return prepared;
+    const acked = await ask(deps, ACK_WATCH_CONFIG_VERIFIED_V1, prepared.receipt);
+    const accepted = acceptVerified(acked, prepared.receipt);
+    if (!accepted.ok) {
+      const category = acked && acked.category ? acked.category : accepted.reason;
+      return {
+        ok: false,
+        stage: acked && acked.hop === "device" ? "transport" : "verified",
+        reason: accepted.reason,
+        hop: (acked && acked.hop) || "bridge",
+        category: category,
+        installationId: prepared.installationId,
+        requestId: prepared.requestId,
+        matchId: prepared.matchId,
+        contentHash: prepared.contentHash,
+        transport: (acked && acked.disposition) || "unavailable",
+        durable: false,
+      };
+    }
+    const minutes = Math.round((prepared.halfDurationMs || 0) / 60000);
+    return {
+      ok: true,
+      stage: "verified",
+      result: "config-verified",
+      reason: accepted.reason,
+      installationId: prepared.installationId,
+      requestId: prepared.requestId,
+      matchId: prepared.matchId,
+      contentHash: prepared.contentHash,
+      homeName: prepared.homeName,
+      awayName: prepared.awayName,
+      summaryHome: prepared.homeName,
+      summaryAway: prepared.awayName,
+      halfDurationMs: prepared.halfDurationMs,
+      minutes: minutes,
+      transport: "verified",
+      durable: false,
+    };
+  } finally {
+    handshakeOpen.delete(opened.installation.id);
+  }
+}
+
 export async function confirmPairing(deps) {
   const limit = deps && deps.attempts ? deps.attempts : 3;
   let last = { ok: false, stage: "transport", reason: "transport", category: "transport", hop: "fetch" };
@@ -688,6 +792,7 @@ async function runPrepareBody(deps, installation) {
     contentHash: verified.contentHash,
     homeName: verified.homeName,
     awayName: verified.awayName,
+    halfDurationMs: verified.halfDurationMs,
     transport: "prepared",
     durable: false,
     receipt: verified.receipt,

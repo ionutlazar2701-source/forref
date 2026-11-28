@@ -166,6 +166,41 @@
       "request": {"type": "String"}
     }
   },
+  "watchTransferSend": "Send to Watch",
+  "watchTransferHint": "Select a saved match, then send it to the paired watch.",
+  "watchTransferWaiting": "Waiting for the watch to verify this match.",
+  "watchTransferVerified": "Configuration Verified. {home} v {away}, {minutes} min. Not activated.",
+  "@watchTransferVerified": {
+    "placeholders": {
+      "home": {"type": "String"},
+      "away": {"type": "String"},
+      "minutes": {"type": "int"}
+    }
+  },
+  "watchTransferReplay": "Configuration Verified. {home} v {away}, {minutes} min, was already saved.",
+  "@watchTransferReplay": {
+    "placeholders": {
+      "home": {"type": "String"},
+      "away": {"type": "String"},
+      "minutes": {"type": "int"}
+    }
+  },
+  "watchTransferKept": "Stored watch was kept ({detail}).",
+  "@watchTransferKept": {
+    "placeholders": {
+      "detail": {"type": "String"}
+    }
+  },
+  "watchTransferUnpaired": "Pair the watch before sending a match.",
+  "watchTransferFixture": "This match is a pairing record. Choose a saved match.",
+  "watchTransferStarted": "This match has already started.",
+  "watchTransferConflict": "The stored match configuration was kept.",
+  "watchTransferFailed": "Transfer stopped ({reason}). The stored writer was not changed.",
+  "@watchTransferFailed": {
+    "placeholders": {
+      "reason": {"type": "String"}
+    }
+  },
   "watchPairFailed": "Pairing stopped ({reason}). The stored writer was not changed.",
   "@watchPairFailed": {
     "placeholders": {

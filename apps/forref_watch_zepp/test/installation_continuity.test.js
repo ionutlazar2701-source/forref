@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { PROVISION_ADMISSION_FILE, PROVISION_ROOT_FILE } from "../utils/goal_admission.js";
 import { INSTALLATION_FILE } from "../utils/installation_id.js";
 import { durablePath, resolveInstallation } from "../utils/installation_continuity.js";
-import { ENROLL_CORRELATION_FILE, PAIR_CORRELATION_FILE, PROVISION_CORRELATION_FILE } from "../utils/provision_bridge.js";
+import { ENROLL_CORRELATION_FILE, PAIR_CORRELATION_FILE, PROVISION_CORRELATION_FILE, TRANSFER_CORRELATION_FILE } from "../utils/provision_bridge.js";
 import { stageMarker } from "../utils/watch_provision.js";
 
 const kept = "166e7c3b-1111-4222-8333-000000000e43";
@@ -159,4 +159,17 @@ test("a pair file blocks a new installation uuid and is not copied onto the hist
   assert.equal(paired.files[PAIR_CORRELATION_FILE], pairText);
   assert.equal(Object.prototype.hasOwnProperty.call(paired.files, PROVISION_CORRELATION_FILE), false);
   assert.equal(source.includes("copyLegacy(fs, PAIR_"), false);
+});
+
+test("a transfer file blocks a new installation uuid and is not copied onto the historical names", () => {
+  const transferText = '{"installationId":"' + kept + '","requestId":"44444444-4444-4444-8444-444444444444","generation":1,"phase":"verified"}';
+  const stored = memoryFs({ [TRANSFER_CORRELATION_FILE]: transferText });
+  const blocked = resolveInstallation(stored);
+  assert.equal(blocked.ok, false);
+  assert.equal(blocked.reason, "lost-identity-state");
+  assert.equal(blocked.line.includes("transfer=present"), true);
+  assert.equal(stored.writes.length, 0);
+  assert.equal(stored.files[TRANSFER_CORRELATION_FILE], transferText);
+  assert.equal(Object.prototype.hasOwnProperty.call(stored.files, PROVISION_CORRELATION_FILE), false);
+  assert.equal(source.includes("copyLegacy(fs, TRANSFER_"), false);
 });

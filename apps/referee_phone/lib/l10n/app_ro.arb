@@ -142,6 +142,17 @@
   "watchPairVerified": "Conectat și verificat. Ceas {installation}. Meciul anterior nu a fost schimbat.",
   "watchPairReplay": "Conectat și verificat. Ceasul {installation} era deja asociat.",
   "watchPairWriterKept": "Ceasul stocat {stored} a rămas. Acest ceas {request} nu a fost preluat.",
+  "watchTransferSend": "Trimite către ceas",
+  "watchTransferHint": "Alege un meci salvat, apoi trimite-l către ceasul asociat.",
+  "watchTransferWaiting": "Așteaptă ca ceasul să verifice acest meci.",
+  "watchTransferVerified": "Configurație verificată. {home} – {away}, {minutes} min. Neactivat.",
+  "watchTransferReplay": "Configurație verificată. {home} – {away}, {minutes} min, era deja salvat.",
+  "watchTransferKept": "Ceasul stocat a rămas ({detail}).",
+  "watchTransferUnpaired": "Asociază ceasul înainte să trimiți un meci.",
+  "watchTransferFixture": "Acest meci este o înregistrare de asociere. Alege un meci salvat.",
+  "watchTransferStarted": "Acest meci a început deja.",
+  "watchTransferConflict": "Configurația stocată a rămas.",
+  "watchTransferFailed": "Transferul s-a oprit ({reason}). Scriitorul stocat nu a fost schimbat.",
   "watchPairFailed": "Asocierea s-a oprit ({reason}). Scriitorul stocat nu a fost schimbat.",
   "clockWithAdded": "{clock} +{minutes}"
 }

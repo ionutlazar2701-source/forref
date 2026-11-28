@@ -1,6 +1,10 @@
 # COM-001 software results
 
-State: **SOFTWARE PASS / HARDWARE GATE PENDING**. Not a Level 2 pass. The phone was not installed from this environment. Automated tests do not establish a Bip 6 pairing pass. H1–H11 and E1–E8 stay **LOCAL GATE REQUIRED**.
+State: **SOFTWARE PASS / HARDWARE GATE PENDING**. Not a Level 2 pass. The phone was not installed from this environment. Automated tests do not establish a Bip 6 pass. H1–H11 and E1–E8 stay **LOCAL GATE REQUIRED**.
+
+## Send to Watch
+
+A paired installation is read from the pairing stage. Send to Watch prepares a different saved match with that writer and returns the canonical `forref.watch-provision.v1` document on `pending`. The phone stays Waiting. The watch validates the document, writes it, and reads it back. It then sends `ACK_WATCH_CONFIG_VERIFIED_V1`. The phone shows Configuration Verified only for that acknowledgement. A second acknowledgement is `replay` and does not add a witness or a root. A different installation is refused. A different team name is `conflict` and the stored stage stays. A live match and the pairing fixture are refused before a listener starts. A dropped acknowledgement is retried. A new bridge reloads phase `verified` and shows the same match. Lock and activation are not called. The historical correlation and the pairing writer stay.
 
 ## Connect Watch
 

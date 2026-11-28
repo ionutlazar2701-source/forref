@@ -100,13 +100,19 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
   WatchProvisionBridgeDisposition _disposition =
       WatchProvisionBridgeDisposition.stopped;
   bool _acceptFirstWriter = false;
+  bool _acceptTransferAck = false;
   Match? _pairingMatch;
   String? _pairingPrincipalId;
   WatchPairingResult? _pairingResult;
+  WatchTransferResult? _transferResult;
 
   String? get matchId => _matchId;
 
   String? get boundRequestId => _requestId;
+
+  String? get boundContentHash => _contentHash;
+
+  String get boundPhase => _phase;
 
   bool get correlationIntact => !_correlationBroken;
 
@@ -119,6 +125,10 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
   bool get acceptingFirstWriter => _acceptFirstWriter;
 
   WatchPairingResult? get pairingResult => _pairingResult;
+
+  bool get acceptingTransferAck => _acceptTransferAck;
+
+  WatchTransferResult? get transferResult => _transferResult;
 
   String get loopbackEndpoint {
     final server = _server;
@@ -203,6 +213,39 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     return _bindLoopback();
   }
 
+  /// Listens for a watch that already has a writer on [matchId].
+  ///
+  /// The document is returned on `pending`. Configuration Verified is recorded
+  /// only after `verified`. This does not lock or activate.
+  Future<WatchProvisionBridgeDisposition> listenForTransfer(
+    String matchId,
+  ) async {
+    _acceptTransferAck = true;
+    final started = await start(matchId);
+    if (started != WatchProvisionBridgeDisposition.listening) return started;
+    final stage = await boundary.durableStore.readWatchProvisionStage(matchId);
+    final document =
+        stage == null ? null : parseWatchProvisionV1(stage.canonical).document;
+    _noteTransfer(
+      code: _phase == 'verified' ? 'replay' : 'waiting',
+      reason: _phase == 'verified' ? 'stored' : '',
+      matchId: matchId,
+      homeName: document?.homeName ?? '',
+      awayName: document?.awayName ?? '',
+      halfDurationMs: document?.halfDurationMs ?? 0,
+      contentHash: stage?.contentHash ?? '',
+    );
+    return started;
+  }
+
+  /// Rebinds a transfer listener. A stored verification stays verified.
+  Future<WatchProvisionBridgeDisposition> resumeTransfer() {
+    if (!_acceptTransferAck || _matchId == null || _matchId!.isEmpty) {
+      return Future<WatchProvisionBridgeDisposition>.value(_disposition);
+    }
+    return listenForTransfer(_matchId!);
+  }
+
   Future<WatchProvisionBridgeDisposition> _bindLoopback() async {
     if (_server != null) return _set(WatchProvisionBridgeDisposition.listening);
     try {
@@ -277,6 +320,7 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
       final answer = await handle(body);
       final disposition = answer['disposition'];
       response.statusCode = disposition == 'prepared' ||
+              disposition == 'verified' ||
               disposition == 'locked' ||
               disposition == 'recorded'
           ? HttpStatus.ok
@@ -398,6 +442,17 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
           storedWriter: current.writerDeviceId,
         );
       }
+      if (_acceptTransferAck && answer['disposition'] == 'refused') {
+        _noteTransfer(
+          code: watchTransferRefusal('${answer['reason'] ?? ''}'),
+          reason: '${answer['reason'] ?? ''}',
+          matchId: current.matchId,
+          homeName: _transferResult?.homeName ?? '',
+          awayName: _transferResult?.awayName ?? '',
+          halfDurationMs: _transferResult?.halfDurationMs ?? 0,
+          contentHash: current.contentHash,
+        );
+      }
       debugPrint(
         formatWatchWriterComparison(
           requestMatchId: requestMatch,
@@ -446,8 +501,34 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
         observe = true;
         observeReason =
             await _observeWitness(stage, body, installationId, requestId);
+        if (_acceptTransferAck &&
+            (observeReason == 'installation-conflict' ||
+                observeReason == 'witness-malformed')) {
+          return traced(_refused(observeReason), observe: false);
+        }
+        if (_acceptTransferAck && _phase != 'verified') {
+          final document = parseWatchProvisionV1(stage.canonical).document;
+          _noteTransfer(
+            code: 'waiting',
+            reason: observeReason,
+            matchId: stage.matchId,
+            homeName: document?.homeName ?? '',
+            awayName: document?.awayName ?? '',
+            halfDurationMs: document?.halfDurationMs ?? 0,
+            contentHash: stage.contentHash,
+          );
+        }
       }
       return traced(prepared, observe: observe, observeReason: observeReason);
+    }
+    if (operation == 'verified') {
+      if (!_acceptTransferAck) {
+        return traced(_refused('operation'), observe: false);
+      }
+      return traced(
+        _acknowledgeVerified(stage, body, installationId, requestId),
+        observe: false,
+      );
     }
     if (body['matchId'] != matchId ||
         body['contentHash'] != stage.contentHash) {
@@ -478,6 +559,9 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     }
     if (path.endsWith('forref_watch_pair_correlation_v1.json')) {
       return 'pair';
+    }
+    if (path.endsWith('forref_watch_transfer_correlation_v1.json')) {
+      return 'transfer';
     }
     if (path.endsWith('forref_watch_provision_correlation_v1.json')) {
       return 'historical';
@@ -565,6 +649,83 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     );
     debugPrint(
       'FORREF_PAIR tx=result code=$code reason=$reason match=$matchId stored=$storedWriter request=$requestInstallation',
+    );
+    notifyListeners();
+  }
+
+  Map<String, Object?> _acknowledgeVerified(
+    WatchProvisionPhoneStage stage,
+    Map<String, Object?> body,
+    String installationId,
+    String requestId,
+  ) {
+    if (stage.stage != 'CONFIG_PREPARED') return _refused('stage');
+    if (body['readBack'] != true ||
+        body['type'] != 'WATCH_PROVISION_VERIFIED_V1' ||
+        body['generation'] != 1) {
+      return _refused('receipt');
+    }
+    if (body['writerDeviceId'] != null &&
+        body['writerDeviceId'] != installationId) {
+      return _refused('installation');
+    }
+    final document = parseWatchProvisionV1(stage.canonical).document;
+    if (document == null || document.contentHash != stage.contentHash) {
+      return _refused('canonical');
+    }
+    final replay = _phase == 'verified';
+    if (!_persist(_forwardPhase('verified'))) {
+      return _refused('correlation-write');
+    }
+    _noteTransfer(
+      code: replay ? 'replay' : 'verified',
+      reason: replay ? 'replay' : 'read-back',
+      matchId: stage.matchId,
+      homeName: document.homeName,
+      awayName: document.awayName,
+      halfDurationMs: document.halfDurationMs,
+      contentHash: stage.contentHash,
+    );
+    return {
+      'disposition': 'verified',
+      'reason': replay ? 'replay' : '',
+      'schema': 'forref.watch-provision.v1',
+      'matchId': stage.matchId,
+      'contentHash': stage.contentHash,
+      'installationId': installationId,
+      'requestId': requestId,
+      'generation': 1,
+      'homeName': document.homeName,
+      'awayName': document.awayName,
+      'halfDurationMs': document.halfDurationMs,
+      'saved': false,
+      'durable': false,
+      'd1Certified': false,
+    };
+  }
+
+  void _noteTransfer({
+    required String code,
+    required String reason,
+    required String matchId,
+    required String homeName,
+    required String awayName,
+    required int halfDurationMs,
+    required String contentHash,
+  }) {
+    _transferResult = WatchTransferResult(
+      code: code,
+      reason: reason,
+      matchId: matchId,
+      homeName: homeName,
+      awayName: awayName,
+      halfDurationMs: halfDurationMs,
+      contentHash: contentHash,
+    );
+    debugPrint(
+      'FORREF_TRANSFER tx=result code=$code reason=$reason match=$matchId '
+      'home=$homeName away=$awayName minutes=${halfDurationMs ~/ 60000} '
+      'hash=$contentHash',
     );
     notifyListeners();
   }
@@ -714,7 +875,10 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
           matchId.isEmpty ||
           contentHash is! String ||
           contentHash.length != 64 ||
-          (phase != 'pending' && phase != 'locked' && phase != 'recorded')) {
+          (phase != 'pending' &&
+              phase != 'verified' &&
+              phase != 'locked' &&
+              phase != 'recorded')) {
         _correlationBroken = true;
         return;
       }
@@ -738,7 +902,13 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
   }
 
   String _forwardPhase(String next) {
-    const rank = <String, int>{'': 0, 'pending': 1, 'locked': 2, 'recorded': 3};
+    const rank = <String, int>{
+      '': 0,
+      'pending': 1,
+      'verified': 2,
+      'locked': 3,
+      'recorded': 4,
+    };
     if ((rank[_phase] ?? 0) > (rank[next] ?? 0)) return _phase;
     return next;
   }
@@ -797,6 +967,42 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
       'd1Certified': false,
     };
   }
+}
+
+/// Screen result for Send to Watch. It is not an authority lock.
+final class WatchTransferResult {
+  const WatchTransferResult({
+    required this.code,
+    required this.reason,
+    required this.matchId,
+    required this.homeName,
+    required this.awayName,
+    required this.halfDurationMs,
+    required this.contentHash,
+  });
+
+  /// `waiting`, `verified`, `replay`, `writer-kept`, `conflict`, or `failed`.
+  final String code;
+  final String reason;
+  final String matchId;
+  final String homeName;
+  final String awayName;
+  final int halfDurationMs;
+  final String contentHash;
+}
+
+/// Maps a transfer refusal onto the screen. It does not write.
+String watchTransferRefusal(String reason) {
+  if (reason.contains('installation') || reason.contains('recovery-required')) {
+    return 'writer-kept';
+  }
+  if (reason == 'binding' ||
+      reason == 'canonical' ||
+      reason == 'correlation-conflict' ||
+      reason == 'generation') {
+    return 'conflict';
+  }
+  return 'failed';
 }
 
 /// Screen result for Connect Watch. The bridge records it. It does not write.
