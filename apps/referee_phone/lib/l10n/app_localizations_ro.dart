@@ -390,6 +390,36 @@ class AppLocalizationsRo extends AppLocalizations {
   String get watchProvisionUnavailable => 'Puntea de depanare nu e disponibilă';
 
   @override
+  String get watchPairConnect => 'Conectează ceasul';
+
+  @override
+  String get watchPairHint => 'Apoi confirmă asocierea pe ceas.';
+
+  @override
+  String get watchPairWaiting =>
+      'Așteaptă ceasul. Deschide Provizionare și atinge Confirmă.';
+
+  @override
+  String watchPairVerified(String installation) {
+    return 'Conectat și verificat. Ceas $installation. Meciul anterior nu a fost schimbat.';
+  }
+
+  @override
+  String watchPairReplay(String installation) {
+    return 'Conectat și verificat. Ceasul $installation era deja asociat.';
+  }
+
+  @override
+  String watchPairWriterKept(String stored, String request) {
+    return 'Ceasul stocat $stored a rămas. Acest ceas $request nu a fost preluat.';
+  }
+
+  @override
+  String watchPairFailed(String reason) {
+    return 'Asocierea s-a oprit ($reason). Scriitorul stocat nu a fost schimbat.';
+  }
+
+  @override
   String clockWithAdded(String clock, int minutes) {
     return '$clock +$minutes';
   }

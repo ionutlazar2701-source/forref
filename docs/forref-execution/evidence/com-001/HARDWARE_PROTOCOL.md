@@ -1,8 +1,32 @@
 # COM-001 Bip 6 protocol
 
-State: **1.0.33 SOFTWARE PASS. ENROLLMENT HARDWARE GATE PENDING. LOCK DISABLED**. Watch source is `1.0.33` (`identity-enroll-033`, rev `e0628d1a1fd272862b4642929dd0aea7d3055e70`). Package `dist/29566-FORREF-1.0.33-20261128151319.zab`, sha256 `9d89033fb92c81b7136b7a5fb654d5793595a12d67d3505133dca3c79a624d63`. The QR is in `TEST_RESULTS.md` and expires 17:13 Europe/Bucharest on 5 December 2026. Rows H1–H11 and the enrollment rows E1–E8 stay **LOCAL GATE REQUIRED**. This file does not certify the Bip 6.
+State: **PAIRING SOFTWARE PASS. HARDWARE GATE PENDING. LOCK DISABLED**. Connect Watch takes the installation id from the watch. It does not ask for a typed UUID. The watch package stamp follows this protocol in `TEST_RESULTS.md`. Rows H1–H11 and E1–E8 stay **LOCAL GATE REQUIRED**. This file does not certify the Bip 6.
 
-Do not uninstall FORREF Watch, the Zepp app, or FORREF Mobile. Do not reset the match, clear storage, cancel a prepared provision, delete a correlation file, or type the old writer over the current installation UUID. Do not tap Provision on the watch. Do not tap Prepare and listen for the old match. A fingerprint match is not authentication and does not move the stored writer.
+Do not uninstall FORREF Watch, the Zepp app, or FORREF Mobile. Do not reset a match, clear storage, cancel a prepared provision, or delete a correlation file. Do not type an installation UUID. Do not tap Prepare and listen, Listen, Enroll witness, or Cancel prepared. Do not tap Provision on the watch.
+
+## Connect Watch
+
+The Zepp Side Service runs inside the Zepp app on the phone and fetches `http://127.0.0.1:47221/watch-provision/v1`. That is the supported path in this repository. The watch does not open the phone's loopback by itself, and this flow does not add a cloud call.
+
+`bridge:installation` was the phone refusing a request whose installation id was not the stored writer. That writer had been taken from the UUID typed on the phone before the watch spoke. `fetch:transport` is the side-service fetch failing with an error that is not a timeout, a permission failure, or a refused connection. The listener existed only after a manual Settings action.
+
+Connect Watch listens before a writer exists. The first valid watch request stores that watch as the writer of a new pairing match and shows **Connected & Verified** on the phone. The watch shows the same words. A second confirm stays verified. A different watch is refused. The phone shows the stored preview and the request preview, and the stored writer stays. The historical match and its correlation file are not written. A dead phone is retried three times. The watch then shows **Phone unreachable**.
+
+The listener is in the debug phone build. The release manifest still has no `INTERNET` permission. A match in progress does not use this port.
+
+1. Install the pairing watch package in place. Force-stop Zepp from Android Settings, then open Zepp. Open FORREF and stay on Home. A reboot on open fails the trial.
+2. On the phone, from this branch, run `flutter run -d RZCY11BDMTX` without uninstalling. Open Settings. Tap **Connect Watch**. The screen says it is waiting for the watch.
+3. On the watch, open SETTINGS, then PROVISION. Tap **CONFIRM** once.
+4. The phone shows **Connected & Verified** and a short watch preview. The watch shows **Connected & Verified**. Tap **CONFIRM** again. The phone stays **Connected & Verified** and says the watch was already paired.
+5. If the phone says the stored watch was kept, stop. That screen names both previews. Do not type a UUID over the stored writer.
+
+| Result on the phone | What it means |
+| --- | --- |
+| Connected & Verified | The watch installation was stored for this pairing match. The previous match was not changed. |
+| Connected & Verified, already paired | The same watch repeated the request. One witness remains. |
+| Stored watch … was kept | A different installation arrived. The stored writer was not replaced. |
+| Pairing stopped | The phone refused the request. The reason is on that line. The stored writer was not changed. |
+| Phone unreachable, on the watch | The side service could not reach the phone listener after three tries. Tap Connect Watch and confirm again. |
 
 ## 1.0.33 enrollment trial
 

@@ -136,5 +136,12 @@
   "watchProvisionReadEnroll": "Citește înscrierea",
   "watchProvisionNoMatch": "Niciun meci salvat selectat",
   "watchProvisionUnavailable": "Puntea de depanare nu e disponibilă",
+  "watchPairConnect": "Conectează ceasul",
+  "watchPairHint": "Apoi confirmă asocierea pe ceas.",
+  "watchPairWaiting": "Așteaptă ceasul. Deschide Provizionare și atinge Confirmă.",
+  "watchPairVerified": "Conectat și verificat. Ceas {installation}. Meciul anterior nu a fost schimbat.",
+  "watchPairReplay": "Conectat și verificat. Ceasul {installation} era deja asociat.",
+  "watchPairWriterKept": "Ceasul stocat {stored} a rămas. Acest ceas {request} nu a fost preluat.",
+  "watchPairFailed": "Asocierea s-a oprit ({reason}). Scriitorul stocat nu a fost schimbat.",
   "clockWithAdded": "{clock} +{minutes}"
 }

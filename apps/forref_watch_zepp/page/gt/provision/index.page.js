@@ -9,7 +9,7 @@ import { createFileProvisionStore } from "../../../utils/provision_transport";
 import { createWatchProvisionAdmission } from "../../../utils/watch_provision";
 import { attachDeviceMessaging, nextLinkVisit, retireLinkVisit } from "../../../utils/device_messaging";
 import { deviceBuildLine } from "../../../utils/build_stamp";
-import { ENROLL_ADMISSION_FILE, ENROLL_CORRELATION_FILE, ENROLL_ROOT_FILE, PROVISION_CORRELATION_FILE, PROVISION_PAGE_TIMEOUT_MS, readProvisionEvidence, runPrepare } from "../../../utils/provision_bridge";
+import { ENROLL_ADMISSION_FILE, ENROLL_CORRELATION_FILE, ENROLL_ROOT_FILE, PAIR_ADMISSION_FILE, PAIR_CORRELATION_FILE, PAIR_ROOT_FILE, PROVISION_CORRELATION_FILE, PROVISION_PAGE_TIMEOUT_MS, confirmPairing, readProvisionEvidence, runPrepare } from "../../../utils/provision_bridge";
 import {
   installationLineSize,
   resolveInstallationCard,
@@ -71,6 +71,9 @@ function runningApp() {
 function statusLabel(status) {
   if (status === "identity") return t("installationReady");
   if (status === "prepared") return t("stagePrepared");
+  if (status === "verified") return t("pairVerified");
+  if (status === "phone-unreachable") return t("pairUnreachable");
+  if (status === "writer-kept") return t("pairWriterKept");
   if (status === "locked") return t("stageLocked");
   if (status === "activated") return t("stageActivated");
   if (status === "recovery-required") return t("recoveryRequired");
@@ -100,6 +103,7 @@ function logEnrollmentCompare(beforeText) {
 }
 
 function outcomeStatus(view) {
+  if (view && view.result) return view.result;
   if (view && view.reason === "recovery-required") return "recovery-required";
   if (!view) return "refused";
   if (view.ok && view.transport === "recorded") return "activated";
@@ -224,11 +228,11 @@ Page({
     }
     button(card.action.x, card.action.y, card.action.w, card.action.h, t("provision"), () => this.start(), null, "provision-start", m);
     button(card.back.x, card.back.y, card.back.w, card.back.h, t("back"), () => back(), null, "provision-back", m);
-    const enroll = place(m, card.back.y + card.back.h + 6, 40, card.back.w);
-    if (enroll.ok) {
-      button(enroll.x, enroll.y, enroll.w, enroll.h, t("enrollWitness"), () => this.enrollWitness(), null, "provision-enroll", m);
+    const confirm = place(m, card.back.y + card.back.h + 6, 40, card.back.w);
+    if (confirm.ok) {
+      button(confirm.x, confirm.y, confirm.w, confirm.h, t("confirmPairing"), () => this.confirmPairing(), null, "provision-confirm", m);
     } else {
-      console.log("FORREF_ENROLL tx=layout reason=hidden");
+      console.log("FORREF_PAIR tx=layout reason=hidden");
     }
   },
   paintFallback() {
@@ -246,6 +250,12 @@ Page({
   start() {
     this.begin("historical");
   },
+  confirmPairing() {
+    const before = historicalCorrelationSnapshot();
+    this._historicalText = before.text;
+    console.log("FORREF_PAIR tx=preflight historical=" + before.status + " bytes=" + before.bytes);
+    this.begin("pair");
+  },
   enrollWitness() {
     const before = historicalCorrelationSnapshot();
     this._historicalText = before.text;
@@ -262,6 +272,8 @@ Page({
       return;
     }
     const enroll = kind === "enroll";
+    const pairing = kind === "pair";
+    const isolated = enroll || pairing;
     const app = runningApp();
     if (!app || !app.globalData) {
       this.finishPrepare(kept, { ok: false, reason: "app" });
@@ -277,11 +289,15 @@ Page({
       this.finishPrepare(kept, { ok: false, reason: "device:messaging", hop: "device", category: "messaging" });
       return;
     }
-    console.log("FORREF_PROVISION messaging=ready visit=" + this._visit + " installation=" + kept + " namespace=" + (enroll ? "enroll" : "historical"));
-    const requestStore = enroll ? fileStore(ENROLL_CORRELATION_FILE) : fileStore(PROVISION_CORRELATION_FILE);
-    const rootFile = enroll ? ENROLL_ROOT_FILE : PROVISION_ROOT_FILE;
-    const admissionFile = enroll ? ENROLL_ADMISSION_FILE : PROVISION_ADMISSION_FILE;
-    runPrepare({
+    console.log("FORREF_PROVISION messaging=ready visit=" + this._visit + " installation=" + kept + " namespace=" + (pairing ? "pair" : enroll ? "enroll" : "historical"));
+    const requestStore = pairing
+      ? fileStore(PAIR_CORRELATION_FILE)
+      : enroll
+        ? fileStore(ENROLL_CORRELATION_FILE)
+        : fileStore(PROVISION_CORRELATION_FILE);
+    const rootFile = pairing ? PAIR_ROOT_FILE : enroll ? ENROLL_ROOT_FILE : PROVISION_ROOT_FILE;
+    const admissionFile = pairing ? PAIR_ADMISSION_FILE : enroll ? ENROLL_ADMISSION_FILE : PROVISION_ADMISSION_FILE;
+    const deps = {
       loadInstallation: () => ({ ok: true, id: kept, reason: "" }),
       requestStore: requestStore,
       admission: createWatchProvisionAdmission(
@@ -293,8 +309,21 @@ Page({
         console.log(read.line);
         return read.witness;
       },
-    }).then((view) => {
-      if (enroll) logEnrollmentCompare(this._historicalText);
+      attempts: 3,
+      wait: () => new Promise((resolve) => {
+        if (typeof setTimeout === "function") setTimeout(resolve, 300);
+        else resolve();
+      }),
+    };
+    const pending = pairing ? confirmPairing(deps) : runPrepare({
+      loadInstallation: deps.loadInstallation,
+      requestStore: deps.requestStore,
+      admission: deps.admission,
+      request: deps.request,
+      readWitness: deps.readWitness,
+    });
+    pending.then((view) => {
+      if (isolated) logEnrollmentCompare(this._historicalText);
       this.finishPrepare(kept, view);
     }).catch((err) => {
       const text = detail(err).toLowerCase();
@@ -304,7 +333,7 @@ Page({
           ? "permission"
           : "transport";
       console.log("FORREF_PROVISION tx=recover hop=device category=" + category + " reason=" + category + " installation=" + kept);
-      if (enroll) logEnrollmentCompare(this._historicalText);
+      if (isolated) logEnrollmentCompare(this._historicalText);
       this.finishPrepare(kept, { ok: false, reason: "device:" + category, hop: "device", category: category });
     });
   },

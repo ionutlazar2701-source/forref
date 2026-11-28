@@ -1,6 +1,10 @@
 # COM-001 software results
 
-State: **SOFTWARE PASS / HARDWARE GATE PENDING**. Not a Level 2 pass. The phone was not installed from this environment. Automated tests do not establish an enrollment hardware pass. H1–H11 and E1–E8 stay **LOCAL GATE REQUIRED**.
+State: **SOFTWARE PASS / HARDWARE GATE PENDING**. Not a Level 2 pass. The phone was not installed from this environment. Automated tests do not establish a Bip 6 pairing pass. H1–H11 and E1–E8 stay **LOCAL GATE REQUIRED**.
+
+## Connect Watch
+
+The side service on the phone fetches `127.0.0.1:47221`. `bridge:installation` is that fetch returning a writer mismatch. `fetch:transport` is the same fetch failing without a timeout, permission, or refused-connection classification. Connect Watch no longer prepares a writer from a typed UUID. The first valid watch request stores the watch installation on a new pairing match. A different later watch is `writer-kept`. The historical stage and correlation stay. The watch retries transport failures three times, then reports `phone-unreachable`. The phone screen shows Connected & Verified, already paired, or the two installation previews. `npm test` in `apps/forref_watch_zepp` passed 292 tests. The phone pairing tests covered a missing stage, one witness, replay, a kept writer, historical bytes unchanged, and a listener that resumes on the same match.
 
 ## Writer comparison
 

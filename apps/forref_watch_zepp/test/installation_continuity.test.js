@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { PROVISION_ADMISSION_FILE, PROVISION_ROOT_FILE } from "../utils/goal_admission.js";
 import { INSTALLATION_FILE } from "../utils/installation_id.js";
 import { durablePath, resolveInstallation } from "../utils/installation_continuity.js";
-import { ENROLL_CORRELATION_FILE, PROVISION_CORRELATION_FILE } from "../utils/provision_bridge.js";
+import { ENROLL_CORRELATION_FILE, PAIR_CORRELATION_FILE, PROVISION_CORRELATION_FILE } from "../utils/provision_bridge.js";
 import { stageMarker } from "../utils/watch_provision.js";
 
 const kept = "166e7c3b-1111-4222-8333-000000000e43";
@@ -145,4 +145,18 @@ test("an enroll file blocks a new installation uuid and is not copied onto the h
   assert.equal(Object.prototype.hasOwnProperty.call(known.files, PROVISION_CORRELATION_FILE), false);
   assert.equal(source.includes(ENROLL_CORRELATION_FILE), true);
   assert.equal(source.includes("copyLegacy(fs, ENROLL_"), false);
+});
+
+test("a pair file blocks a new installation uuid and is not copied onto the historical names", () => {
+  const pairText = '{"installationId":"' + kept + '","requestId":"44444444-4444-4444-8444-444444444444","generation":1,"phase":"pending"}';
+  const paired = memoryFs({ [PAIR_CORRELATION_FILE]: pairText });
+  const blocked = resolveInstallation(paired);
+  assert.equal(blocked.ok, false);
+  assert.equal(blocked.reason, "lost-identity-state");
+  assert.equal(blocked.created, false);
+  assert.equal(blocked.line.includes("pair=present"), true);
+  assert.equal(paired.writes.length, 0);
+  assert.equal(paired.files[PAIR_CORRELATION_FILE], pairText);
+  assert.equal(Object.prototype.hasOwnProperty.call(paired.files, PROVISION_CORRELATION_FILE), false);
+  assert.equal(source.includes("copyLegacy(fs, PAIR_"), false);
 });

@@ -93,22 +93,22 @@ test("enrollment prepare writes the enroll files and leaves the historical corre
   assert.notEqual(ENROLL_ADMISSION_FILE, "forref_watch_provision_v1.admission");
 });
 
-test("the provision page keeps the historical button and adds an enroll control", () => {
+test("the provision page keeps the historical button and confirms pairing", () => {
   const page = readFileSync(new URL("../page/gt/provision/index.page.js", import.meta.url), "utf8");
   const bip6 = { width: 390, height: 450, round: false };
   const card = resolveInstallationCard(bip6);
-  const enroll = place(bip6, card.back.y + card.back.h + 6, 40, card.back.w);
+  const confirm = place(bip6, card.back.y + card.back.h + 6, 40, card.back.w);
   assert.equal(card.ok, true);
-  assert.equal(enroll.ok, true);
-  assert.equal(page.includes('fileStore(PROVISION_CORRELATION_FILE)'), true);
-  assert.equal(page.includes("ENROLL_CORRELATION_FILE"), true);
-  assert.equal(page.includes("ENROLL_ROOT_FILE"), true);
-  assert.equal(page.includes("ENROLL_ADMISSION_FILE"), true);
-  assert.equal(page.includes('name: "provision-enroll"') || page.includes('"provision-enroll"'), true);
-  assert.equal(page.includes("FORREF_ENROLL tx=preflight"), true);
+  assert.equal(confirm.ok, true);
+  assert.equal(page.includes("fileStore(PROVISION_CORRELATION_FILE)"), true);
+  assert.equal(page.includes("PAIR_CORRELATION_FILE"), true);
+  assert.equal(page.includes("PAIR_ROOT_FILE"), true);
+  assert.equal(page.includes("PAIR_ADMISSION_FILE"), true);
+  assert.equal(page.includes('"provision-confirm"'), true);
+  assert.equal(page.includes("FORREF_PAIR tx=preflight"), true);
   assert.equal(page.includes("historical-same="), true);
   assert.equal(page.includes("unlink"), false);
   assert.equal(page.includes("runHandshake"), false);
   assert.equal(page.includes("SUBMIT_WATCH_LOCK_V1"), false);
-  assert.equal(page.indexOf("this.start()") < page.indexOf("this.enrollWitness()"), true);
+  assert.equal(page.indexOf("this.start()") < page.indexOf("this.confirmPairing()"), true);
 });

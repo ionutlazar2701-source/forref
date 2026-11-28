@@ -824,6 +824,48 @@ abstract class AppLocalizations {
   /// **'Debug bridge unavailable'**
   String get watchProvisionUnavailable;
 
+  /// No description provided for @watchPairConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Watch'**
+  String get watchPairConnect;
+
+  /// No description provided for @watchPairHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Then confirm pairing on the watch.'**
+  String get watchPairHint;
+
+  /// No description provided for @watchPairWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the watch. Open Provision and tap Confirm.'**
+  String get watchPairWaiting;
+
+  /// No description provided for @watchPairVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected & Verified. Watch {installation}. The previous match was not changed.'**
+  String watchPairVerified(String installation);
+
+  /// No description provided for @watchPairReplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected & Verified. Watch {installation} was already paired.'**
+  String watchPairReplay(String installation);
+
+  /// No description provided for @watchPairWriterKept.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored watch {stored} was kept. This watch {request} was not adopted.'**
+  String watchPairWriterKept(String stored, String request);
+
+  /// No description provided for @watchPairFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Pairing stopped ({reason}). The stored writer was not changed.'**
+  String watchPairFailed(String reason);
+
   /// No description provided for @clockWithAdded.
   ///
   /// In en, this message translates to:
