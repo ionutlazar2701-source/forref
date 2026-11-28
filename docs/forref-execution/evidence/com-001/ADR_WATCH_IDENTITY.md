@@ -14,13 +14,26 @@ Three facts stay separate:
 
 ## Digest
 
-Version 1 input is the UTF-8 bytes of `forref-candidate-v1:` plus 64 lowercase hex characters. Only a string matching `[0-9a-fA-F]{64}` is folded to lowercase. Any other value, including a missing `uuid` and API evidence below 4.2, is `unavailable` or `unsupported-or-invalid`. It does not become a digest.
+Zepp OS API_LEVEL 4.2 documents `getDeviceInfo().uuid` as a string, “32 bytes in length” ([getDeviceInfo](https://docs.zepp.com/docs/reference/device-app-api/newAPI/device/getDeviceInfo/), Chinese source `长度 32 字节`). The page does not say hexadecimal and does not say 64 characters. Permission `data:os.device.info` is already on the watch manifest.
 
-Shared vector, checked by the Dart and JavaScript tests:
+Build `1.0.31` required `[0-9a-fA-F]{64}`. On the Amazfit Bip 6 the founder recorded `FORREF_WITNESS kind=absent class=unsupported-or-invalid len=32`. That JavaScript length matches the documented 32-byte string and falsifies the 64-character assumption. The log did not record the alphabet, so length 32 is not by itself a character-set proof. `1.0.30` was uninstalled before that install, so `FORREF_IDENTITY case=fresh created=1` is a new installation, not a failed in-place upgrade.
 
-- Platform hex: `00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff`
-- Digest: `26c41755b96d53042c3b66daefff51082ea5ec9c70c4d4c6e0fffb6bde19954c`
-- Log preview: `26c4...954c`
+Version 1 is unchanged. Its input is the UTF-8 bytes of `forref-candidate-v1:` plus 64 lowercase hex characters. Stored version-1 rows are not recomputed. A version-1 digest is not a version-2 digest.
+
+Version 2 accepts a JavaScript string of exactly 32 code units, each in 0..255. That is the documented 32-byte string. When every byte is ASCII hex, those bytes are lowercased. Any other byte is hashed unchanged. The input is the UTF-8 bytes of `forref-candidate-v2:` followed by those 32 bytes. A code unit above 255 is `non-byte32` and is not hashed. Any other length, a missing value, or a non-string stays without a digest.
+
+The witness log names `class` (`hex32` or `bytes32`), `len`, `utf8`, `hex`, `ascii`, `ctrl`, `preview`, and `v`. It does not contain the platform string or the full digest. `hex=1` means the 32 bytes were ASCII hex. `hex=0` means they were not. That profile is how the next hardware log shows the alphabet without another research build.
+
+Shared vectors, checked by the Dart and JavaScript tests:
+
+- Version 1 platform hex: `00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff`
+- Version 1 digest: `26c41755b96d53042c3b66daefff51082ea5ec9c70c4d4c6e0fffb6bde19954c`
+- Version 1 preview: `26c4...954c`
+- Version 2 platform hex: `00112233445566778899aabbccddeeff`
+- Version 2 digest: `3be95c18a1a81de5a4165d603696e4fe42725cf7c1bc54b5807e1a6ad46358a0`
+- Version 2 preview: `3be9...58a0`
+- Version 2 opaque bytes: 31 times `0x11`, then `0x80`
+- Version 2 opaque digest: `cc618c08acccf2e1aeebcaa197faf07a188a72bf7de0088dfeb535372581f17a`
 
 SHA-256 here is a correlation handle. It is not encryption, anonymity, possession proof, or device authentication. HMAC was not used. A key stored in this database travels with every copy. A key stored only in Android Keystore would make the same watch unrecognizable after a phone reinstall, which is the case this table exists to detect.
 
@@ -46,7 +59,7 @@ Optional object on the existing `operation=pending` body. It is not part of `for
 schema = forref.identity-witness.v1
 candidateKind = platform_uuid
 candidateDigest = 64 lowercase hex characters
-digestVersion = 1
+digestVersion = 1 or 2
 evidenceGrade = watch-message-observed/unverified-device-identity
 sourceBuilds = diagnostic, at most 160 characters
 ```
@@ -62,7 +75,7 @@ Settings in a debug build has Listen. It calls `start` for the selected match an
 | Item | Verdict |
 | --- | --- |
 | N3.0 six contracts | ACCEPT |
-| N3.1 hex64 only; no silent Unicode folding | ACCEPT |
+| N3.1 hex64 only; no silent Unicode folding | MODIFY. API_LEVEL 4.2 and the Bip 6 both give a 32-byte string. Hex64 remains version 1. A 32-byte string is version 2. Code units above 255 and every other length stay unhashed. Version-1 rows are copied, not reinterpreted. |
 | N3.2 evidence grade string | ACCEPT |
 | N3.3 listener independent of Prepare | ACCEPT. MODIFY the message shape: the witness rides on `GET_WATCH_PROVISION_V1`, which the Side Service already forwards. A second operation would not. |
 | N3.4 denial rows and a synthetic pre-registry row | MODIFY. Refusals are not stored. An old stage with no witness is `unverified-pre-registry` in the projection. |

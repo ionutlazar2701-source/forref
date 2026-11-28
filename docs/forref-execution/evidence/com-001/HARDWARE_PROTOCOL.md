@@ -1,22 +1,30 @@
 # COM-001 Bip 6 protocol
 
-State: **IDENTITY DETECTION BUILT. HARDWARE NOT RUN. LOCK DISABLED**. Watch source is `1.0.31` (`identity-detect-031`, rev `b4cde9ed17a6ef0ee304265164a146474b7802e9`). Package `dist/29566-FORREF-1.0.31-20261128135952.zab`, sha256 `8820bbf9c1df19b1080d2d4b8ad1855ae645a2f35ba8c8a7be0d38e0581bd325`. The QR is in `TEST_RESULTS.md` and expires 15:59 Europe/Bucharest on 5 December 2026. No Bip 6 log for this build is attached. Rows H1–H11 stay **LOCAL GATE REQUIRED**. Do not uninstall FORREF Watch, the Zepp app, or FORREF Mobile. Do not cancel a prepared stage. Do not type a new installation UUID over the stored writer.
+State: **1.0.32 BUILT. HARDWARE GATE PENDING. LOCK DISABLED**. `1.0.31` was run on the Amazfit Bip 6. The witness line was `kind=absent class=unsupported-or-invalid len=32`. `FORREF_IDENTITY` was `case=fresh created=1`. `1.0.30` was uninstalled before `1.0.31`, so that fresh installation is not an in-place upgrade result. The software gate had required 64 hex characters. The Zepp OS 4.2 contract and this log both describe a 32-byte string. `1.0.32` accepts that shape as digest version 2. It does not reinterpret a version-1 digest. Rows H1–H11 stay **LOCAL GATE REQUIRED**. This file does not certify the Bip 6.
 
-## 1.0.31 detection trial
+Do not uninstall FORREF Watch, the Zepp app, or FORREF Mobile. Do not reset the match, clear storage, or cancel a prepared provision. Do not type a new installation UUID over the stored writer. A fingerprint match does not create a witness that was never stored, and it does not clear `prepared-conflict`.
 
-Install the `1.0.31` package in place, then force-stop Zepp and open it again. On the phone debug build, open Settings, select the saved match, and tap **Listen**. Listen does not prepare a match. From the phone browser open `http://127.0.0.1:47221/`. The body is `disposition=listening` and `writes=0`. That browser line is not a Zepp POST.
+## 1.0.32 non-destructive trial
 
-On the watch, open PROVISION and copy `FORREF_WITNESS` before the tap. The line names `kind`, `class`, `len`, and, when a digest exists, `preview` as four hex characters, three dots, and four hex characters. It does not contain the platform id or the full digest. Then tap Provision once.
+Install `1.0.32` in place. The version code is 32. Force-stop Zepp from Android Settings, then open Zepp again. Force-stop replaces the loaded Side Service. It does not clear watch files. Open FORREF and stay on Home. A reboot on open fails the trial.
+
+From Home, open SETTINGS, then PROVISION. Do not tap Provision yet. Copy `FORREF_IDENTITY` and `FORREF_WITNESS`. Leave the app and open PROVISION again. Copy both lines. Restart the watch and copy both lines a third time.
+
+`id` on `FORREF_IDENTITY` is the installation UUID. `preview` on `FORREF_WITNESS` is the platform fingerprint. Those are different facts. `case=reused` and `created=0` with the same `id` as the `1.0.31` line is installation continuity. The same `preview` across reopen and reboot is fingerprint continuity. `case=fresh` on this in-place install is a HOLD.
+
+On the phone debug build, from this branch, run `flutter run -d RZCY11BDMTX` without uninstalling. Open Settings, select the saved match, and tap **Listen**. Listen does not prepare a match. If the line is `prepared-conflict`, leave it. Do not Cancel prepared. From the phone browser open `http://127.0.0.1:47221/`. The body is `disposition=listening` and `writes=0`. That browser line is not a Zepp POST. Then tap Provision once on the watch.
+
+The witness line names `kind`, `class`, `len`, `utf8`, `hex`, `ascii`, `ctrl`, and, when a digest exists, `preview` and `v`. `preview` is four hex characters, three dots, and four hex characters. The line does not contain the platform id or the full digest. `hex=1` means the 32 bytes were ASCII hex. `hex=0` means they were not.
 
 | Gate | What to record | Pass is not available until the founder attaches the log |
 | --- | --- | --- |
-| H1 | `FORREF_WITNESS` class and length. API level if the firmware line shows it. | `class=hex64` with `len=64`, or `class=unavailable` / `unsupported-or-invalid` with no match. |
-| H2 | The same witness line after reopen and reboot, plus `FORREF_IDENTITY` `id`. | Same preview when the class is `hex64`. Same installation id, or an explicit `case=recovery`. |
-| H3 | In-place upgrade from `1.0.30` to `1.0.31`. Version code 31. Pre and post installation id and preview. | A changed installation id is a HOLD. Do not adopt the old id. |
-| H4 | True uninstall and reinstall of FORREF Watch only. | New installation id. Phone stage writer unchanged. Phone reason `recovery-required` only when a prior witness exists. |
+| H1 | `FORREF_WITNESS` class, length, `hex`, and preview. | `class=hex32` or `class=bytes32`, `len=32`, `v=2`, and a preview. `non-byte32` or `unsupported-or-invalid` is a HOLD. |
+| H2 | The same witness line after reopen and after a watch restart, plus `FORREF_IDENTITY` `id`. | The same preview. The same installation id, with `case=reused` and `created=0`. |
+| H3 | In-place upgrade from the installed `1.0.31` to `1.0.32`. No uninstall. Pre and post installation id and preview. | A changed installation id is a HOLD. Do not adopt another id. |
+| H4 | Not this trial. Do not uninstall. | A later destructive reinstall is out of scope until H1–H3 have logs. |
 | H5 | Phone Listen, Chrome GET, then the Zepp POST. | GET `listening` and the Zepp `http` line are separate. `Error -2` remains a transport HOLD. |
-| H6 | Pending from the current writer with a witness. | Phone log `reason=observed` and one `watch_witness_observed` row. A Prepare-only database has no witness. |
-| H7 | A later installation with the same preview. | `reason=recovery-required`. No `disposition=prepared`. Writer unchanged. |
+| H6 | Pending from the current writer with a witness. | Phone log `reason=observed` and one `watch_witness_observed` row with `digest_version` 2. A stage that has no witness does not gain one from a different installation. |
+| H7 | A later installation with the same preview, only when a witness row already exists. | `reason=recovery-required`. No `disposition=prepared`. Writer unchanged. If no witness was stored, the reason is `installation`, not `recovery-required`. |
 | H8 | A different model, a wrong principal, or a different digest. | `installation`, `installation-conflict`, or `identity-evidence-unavailable`. No other match id in the response. |
 | H9 | Repeat the same request id. | One event. The same reason. |
 | H10 | A match that already has a generation-1 root. | The root device id is unchanged. The new installation does not lock or record. |

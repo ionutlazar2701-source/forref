@@ -473,6 +473,84 @@ void main() {
     expect((auth as WatchIdentityRefused).reason, 'authorization-unavailable');
   });
 
+  test('a version-2 fingerprint does not invent a missing witness', () async {
+    await composition.boundary.prepareWatchOperatedMatch(
+      canonicalMessage: canonical,
+      phoneOriginDeviceId: identity.originDeviceId,
+    );
+    expect(
+      await bridge.start('match-watch-001'),
+      WatchProvisionBridgeDisposition.listening,
+    );
+    final bytes = platformBytesV2('00112233445566778899aabbccddeeff')!;
+    final witness = {
+      'schema': watchWitnessSchema,
+      'candidateKind': 'platform_uuid',
+      'candidateDigest': encodeDigestHex(candidateDigestV2Bytes(bytes)),
+      'digestVersion': watchCandidateDigestVersionV2,
+      'evidenceGrade': watchEvidenceUnverifiedDevice,
+      'sourceBuilds': 'identity-bytes32-032',
+    };
+    final other = await _post(bridge, {
+      'operation': 'pending',
+      'installationId': 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+      'requestId': '99999999-8888-4777-8666-555555555555',
+      'generation': 1,
+      'witness': witness,
+    });
+    expect(other['disposition'], 'refused');
+    expect(other['reason'], 'installation');
+    final events = await composition.boundary.durableStore
+        .readWatchIdentityEvents('match-watch-001');
+    expect(
+      events.map((event) => event.eventKind),
+      isNot(contains('watch_witness_observed')),
+    );
+    expect(
+      events.map((event) => event.eventKind),
+      isNot(contains('candidate_seen')),
+    );
+    final stage =
+        await composition.boundary.durableStore.readWatchProvisionStage(
+      'match-watch-001',
+    );
+    expect(stage?.writerDeviceId, fixture['localInstallationId']);
+    final same = await _post(bridge, {
+      'operation': 'pending',
+      'installationId': fixture['localInstallationId'],
+      'requestId': '11111111-2222-4333-8444-555555555555',
+      'generation': 1,
+      'witness': witness,
+    });
+    expect(same['disposition'], 'prepared');
+    final observed = await composition.boundary.durableStore
+        .readWatchIdentityEvents('match-watch-001');
+    final witnessEvent = observed
+        .where((event) => event.eventKind == 'watch_witness_observed')
+        .single;
+    expect(witnessEvent.digestVersion, watchCandidateDigestVersionV2);
+    final repeat = await _post(bridge, {
+      'operation': 'pending',
+      'installationId': 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+      'requestId': '99999999-8888-4777-8666-555555555555',
+      'generation': 1,
+      'witness': witness,
+    });
+    expect(repeat['reason'], 'recovery-required');
+    final after =
+        await composition.boundary.durableStore.readWatchProvisionStage(
+      'match-watch-001',
+    );
+    expect(after?.writerDeviceId, stage?.writerDeviceId);
+    expect(after?.canonical, stage?.canonical);
+    expect(
+      await composition.boundary.durableStore.readGenerationOneAuthorityRoot(
+        'match-watch-001',
+      ),
+      isNull,
+    );
+  });
+
   test('an unprepared bridge does not invent a document', () async {
     expect(
       await bridge.start('match-watch-001'),

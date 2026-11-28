@@ -8,6 +8,13 @@ import 'dart:typed_data';
 /// authentication.
 const String watchCandidateDigestDomain = 'forref-candidate-v1:';
 
+/// Domain for a documented 32-byte platform string.
+///
+/// The exact input is the UTF-8 bytes of `forref-candidate-v2:` followed by
+/// 32 raw identifier bytes. ASCII hex is lowercased first. Any other byte is
+/// unchanged. This is not a reinterpretation of a version-1 digest.
+const String watchCandidateDigestDomainV2 = 'forref-candidate-v2:';
+
 const String watchWitnessSchema = 'forref.identity-witness.v1';
 
 const String watchEvidenceTypedInstallation = 'typed-installation';
@@ -16,6 +23,8 @@ const String watchEvidenceUnverifiedDevice =
     'watch-message-observed/unverified-device-identity';
 
 const int watchCandidateDigestVersion = 1;
+
+const int watchCandidateDigestVersionV2 = 2;
 
 /// SHA-256 of [text] as lowercase hex. Matches `utils/sha256_hex.js`.
 String sha256Hex(String text) {
@@ -31,6 +40,53 @@ Uint8List candidateDigestBytes(String normalizedHex) {
     throw ArgumentError('platform id is not lowercase hex64');
   }
   return sha256Bytes(_utf8('$watchCandidateDigestDomain$normalizedHex'));
+}
+
+/// Digest of a 32-byte platform id.
+///
+/// [platformBytes] is the normalized identifier: lowercase ASCII when every
+/// byte is hex, otherwise the original bytes. The domain is
+/// [watchCandidateDigestDomainV2].
+Uint8List candidateDigestV2Bytes(List<int> platformBytes) {
+  if (platformBytes.length != 32) {
+    throw ArgumentError('platform id is not 32 bytes');
+  }
+  for (final byte in platformBytes) {
+    if (byte < 0 || byte > 255) {
+      throw ArgumentError('platform id byte is outside 0..255');
+    }
+  }
+  final prefix = _utf8(watchCandidateDigestDomainV2);
+  final body = Uint8List(prefix.length + 32);
+  body.setRange(0, prefix.length, prefix);
+  body.setRange(prefix.length, body.length, platformBytes);
+  return sha256Bytes(body);
+}
+
+/// Normalized 32-byte form of a platform string, or null when it is not one.
+///
+/// A string of 32 code units, each in 0..255, is the documented shape. When
+/// every byte is ASCII hex, the result is lowercase. Version-1 hex64 strings
+/// are not accepted here.
+List<int>? platformBytesV2(String value) {
+  if (value.length != 32) return null;
+  final bytes = List<int>.filled(32, 0);
+  var hex = true;
+  for (var i = 0; i < 32; i++) {
+    final code = value.codeUnitAt(i);
+    if (code > 255) return null;
+    bytes[i] = code;
+    final isHex = (code >= 0x30 && code <= 0x39) ||
+        (code >= 0x61 && code <= 0x66) ||
+        (code >= 0x41 && code <= 0x46);
+    if (!isHex) hex = false;
+  }
+  if (!hex) return bytes;
+  for (var i = 0; i < 32; i++) {
+    final code = bytes[i];
+    if (code >= 0x41 && code <= 0x46) bytes[i] = code + 0x20;
+  }
+  return bytes;
 }
 
 Uint8List? decodeDigestHex(String hex) {
@@ -77,6 +133,7 @@ final class WatchIdentityEvent {
     required this.priorInstallationId,
     required this.candidateKind,
     required this.candidateDigest,
+    required this.digestVersion,
     required this.evidenceGrade,
     required this.protocolRequestId,
     required this.priorEventId,
@@ -91,6 +148,7 @@ final class WatchIdentityEvent {
   final String? priorInstallationId;
   final String candidateKind;
   final Uint8List? candidateDigest;
+  final int digestVersion;
   final String evidenceGrade;
   final String protocolRequestId;
   final String? priorEventId;
@@ -101,11 +159,16 @@ final class WatchIdentityProjection {
   const WatchIdentityProjection({
     required this.state,
     required this.eligibleDigest,
+    this.eligibleDigestVersion,
   });
 
   /// `absent`, `unverified-pre-registry`, `witnessed`, or `candidate-conflict`.
   final String state;
   final Uint8List? eligibleDigest;
+
+  /// `1` or `2` when [eligibleDigest] is set. A version-1 digest is not a
+  /// version-2 digest, including when the 32 hash bytes happen to match.
+  final int? eligibleDigestVersion;
 }
 
 WatchIdentityProjection projectIdentity({
@@ -116,15 +179,25 @@ WatchIdentityProjection projectIdentity({
   if (!stagePresent || stageWriterId == null || stageWriterId.isEmpty) {
     return const WatchIdentityProjection(state: 'absent', eligibleDigest: null);
   }
-  final digests = <Uint8List>[];
+  final digests = <({int version, Uint8List digest})>[];
   for (final event in events) {
     if (event.eventKind != 'watch_witness_observed') continue;
     if (event.observedInstallationId != stageWriterId) continue;
     if (event.evidenceGrade != watchEvidenceUnverifiedDevice) continue;
+    if (event.digestVersion != watchCandidateDigestVersion &&
+        event.digestVersion != watchCandidateDigestVersionV2) {
+      continue;
+    }
     final digest = event.candidateDigest;
     if (digest == null || digest.length != 32) continue;
-    final known = digests.any((item) => sameDigest(item, digest));
-    if (!known) digests.add(digest);
+    final known = digests.any(
+      (item) =>
+          item.version == event.digestVersion &&
+          sameDigest(item.digest, digest),
+    );
+    if (!known) {
+      digests.add((version: event.digestVersion, digest: digest));
+    }
   }
   if (digests.isEmpty) {
     return const WatchIdentityProjection(
@@ -140,7 +213,8 @@ WatchIdentityProjection projectIdentity({
   }
   return WatchIdentityProjection(
     state: 'witnessed',
-    eligibleDigest: digests.single,
+    eligibleDigest: digests.single.digest,
+    eligibleDigestVersion: digests.single.version,
   );
 }
 

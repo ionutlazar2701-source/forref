@@ -344,6 +344,7 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
       requestId: requestId,
       candidateKind: claim.kind,
       digest: claim.digest,
+      digestVersion: claim.digestVersion,
       witnessMalformed: claim.malformed,
       sourceBuilds: claim.sourceBuilds,
     );
@@ -353,7 +354,7 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     };
     final preview = claim.digest == null ? '' : digestPreview(claim.digest!);
     debugPrint(
-      'FORREF_PROVISION tx=identity reason=$reason installation=$installationId request=$requestId match=${stage.matchId} preview=$preview grade=$watchEvidenceUnverifiedDevice',
+      'FORREF_PROVISION tx=identity reason=$reason installation=$installationId request=$requestId match=${stage.matchId} preview=$preview v=${claim.digestVersion} grade=$watchEvidenceUnverifiedDevice',
     );
     return _refused(reason);
   }
@@ -378,6 +379,7 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
       installationId: installationId,
       requestId: requestId,
       digest: claim.digest!,
+      digestVersion: claim.digestVersion,
       sourceBuilds: claim.sourceBuilds,
     );
     final reason = switch (result) {
@@ -385,7 +387,7 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
       WatchIdentityRefused(:final reason) => reason,
     };
     debugPrint(
-      'FORREF_PROVISION tx=identity reason=$reason installation=$installationId request=$requestId match=${stage.matchId} preview=${digestPreview(claim.digest!)} grade=$watchEvidenceUnverifiedDevice',
+      'FORREF_PROVISION tx=identity reason=$reason installation=$installationId request=$requestId match=${stage.matchId} preview=${digestPreview(claim.digest!)} v=${claim.digestVersion} grade=$watchEvidenceUnverifiedDevice',
     );
   }
 
@@ -650,6 +652,7 @@ final class _WitnessClaim {
     required this.malformed,
     required this.kind,
     required this.digest,
+    required this.digestVersion,
     required this.sourceBuilds,
   });
 
@@ -657,6 +660,7 @@ final class _WitnessClaim {
   final bool malformed;
   final String kind;
   final Uint8List? digest;
+  final int digestVersion;
   final String sourceBuilds;
 }
 
@@ -667,6 +671,7 @@ _WitnessClaim _witnessClaim(Object? witness) {
       malformed: false,
       kind: 'absent',
       digest: null,
+      digestVersion: 0,
       sourceBuilds: '',
     );
   }
@@ -676,19 +681,23 @@ _WitnessClaim _witnessClaim(Object? witness) {
       malformed: true,
       kind: 'absent',
       digest: null,
+      digestVersion: 0,
       sourceBuilds: '',
     );
   }
+  final version = witness['digestVersion'];
   if (witness.containsKey('uuid') ||
       witness.containsKey('platformUuid') ||
       witness['schema'] != watchWitnessSchema ||
-      witness['digestVersion'] != watchCandidateDigestVersion ||
+      (version != watchCandidateDigestVersion &&
+          version != watchCandidateDigestVersionV2) ||
       witness['evidenceGrade'] != watchEvidenceUnverifiedDevice) {
     return const _WitnessClaim(
       absent: false,
       malformed: true,
       kind: 'absent',
       digest: null,
+      digestVersion: 0,
       sourceBuilds: '',
     );
   }
@@ -701,6 +710,7 @@ _WitnessClaim _witnessClaim(Object? witness) {
       malformed: false,
       kind: kind as String,
       digest: null,
+      digestVersion: version as int,
       sourceBuilds: sourceBuilds,
     );
   }
@@ -710,6 +720,7 @@ _WitnessClaim _witnessClaim(Object? witness) {
       malformed: true,
       kind: 'absent',
       digest: null,
+      digestVersion: 0,
       sourceBuilds: sourceBuilds,
     );
   }
@@ -721,6 +732,7 @@ _WitnessClaim _witnessClaim(Object? witness) {
       malformed: true,
       kind: 'platform_uuid',
       digest: null,
+      digestVersion: 0,
       sourceBuilds: sourceBuilds,
     );
   }
@@ -729,6 +741,7 @@ _WitnessClaim _witnessClaim(Object? witness) {
     malformed: false,
     kind: 'platform_uuid',
     digest: digest,
+    digestVersion: version as int,
     sourceBuilds: sourceBuilds,
   );
 }

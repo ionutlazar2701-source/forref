@@ -45,7 +45,11 @@ export function utf8Bytes(text) {
 }
 
 export function sha256Hex(text) {
-  const bytes = utf8Bytes(text);
+  return sha256Of(utf8Bytes(text));
+}
+
+export function sha256Of(input) {
+  const bytes = input.slice();
   const bitLength = bytes.length * 8;
   bytes.push(0x80);
   while ((bytes.length % 64) !== 56) {

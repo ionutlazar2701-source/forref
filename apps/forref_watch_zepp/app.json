@@ -5,12 +5,12 @@
     "appName": "FORREF",
     "appType": "app",
     "version": {
-      "code": 31,
-      "name": "1.0.31"
+      "code": 32,
+      "name": "1.0.32"
     },
     "icon": "icon.png",
     "vender": "zepp",
-    "description": "FORREF IDENTITY DETECT 031"
+    "description": "FORREF IDENTITY BYTES32 032"
   },
   "permissions": [
     "data:os.device.info",

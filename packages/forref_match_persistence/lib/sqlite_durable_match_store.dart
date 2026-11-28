@@ -347,7 +347,7 @@ final class SqliteDurableMatchStore
         candidate_digest BLOB NULL CHECK (
           candidate_digest IS NULL OR length(candidate_digest) = 32
         ),
-        digest_version INTEGER NOT NULL CHECK (digest_version = 1),
+        digest_version INTEGER NOT NULL CHECK (digest_version IN (1, 2)),
         evidence_grade TEXT NOT NULL CHECK (evidence_grade IN (
           'typed-installation',
           'watch-message-observed/unverified-device-identity'
@@ -405,6 +405,127 @@ final class SqliteDurableMatchStore
         SELECT RAISE(ABORT, 'watch_identity_events is append-only');
       END
     ''');
+    _migrateWatchIdentityDigestVersions();
+  }
+
+  /// Copies an existing registry so version-2 digests can be appended.
+  ///
+  /// The copy keeps every column value. It does not rewrite a version-1
+  /// digest. `DROP TABLE` is the schema change; row `DELETE` stays aborted.
+  void _migrateWatchIdentityDigestVersions() {
+    final rows = _db.select(
+      "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'watch_identity_events'",
+    );
+    if (rows.isEmpty) return;
+    final sql = rows.first.columnAt(0) as String? ?? '';
+    if (sql.contains('digest_version IN (1, 2)')) return;
+    _db.execute('BEGIN IMMEDIATE');
+    try {
+      _db.execute('''
+        CREATE TABLE watch_identity_events_next (
+          event_sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+          event_id TEXT NOT NULL UNIQUE,
+          event_schema_version INTEGER NOT NULL CHECK (event_schema_version = 1),
+          event_kind TEXT NOT NULL CHECK (event_kind IN (
+            'prepare_intent',
+            'watch_witness_observed',
+            'candidate_seen'
+          )),
+          match_id TEXT NOT NULL,
+          principal_id TEXT NOT NULL,
+          prior_installation_id TEXT NULL,
+          observed_installation_id TEXT NOT NULL,
+          candidate_kind TEXT NOT NULL CHECK (candidate_kind IN (
+            'platform_uuid', 'model_only', 'absent'
+          )),
+          candidate_digest BLOB NULL CHECK (
+            candidate_digest IS NULL OR length(candidate_digest) = 32
+          ),
+          digest_version INTEGER NOT NULL CHECK (digest_version IN (1, 2)),
+          evidence_grade TEXT NOT NULL CHECK (evidence_grade IN (
+            'typed-installation',
+            'watch-message-observed/unverified-device-identity'
+          )),
+          channel_trace_id TEXT NULL,
+          protocol_request_id TEXT NOT NULL,
+          prior_event_id TEXT NULL,
+          authorization_event_id TEXT NULL CHECK (authorization_event_id IS NULL),
+          created_at_ms INTEGER NOT NULL,
+          source_builds TEXT NOT NULL CHECK (length(source_builds) <= 160),
+          CHECK (
+            (event_kind = 'prepare_intent'
+              AND candidate_kind = 'absent'
+              AND candidate_digest IS NULL
+              AND evidence_grade = 'typed-installation'
+              AND prior_installation_id IS NULL)
+            OR
+            (event_kind = 'watch_witness_observed'
+              AND candidate_kind = 'platform_uuid'
+              AND length(candidate_digest) = 32
+              AND evidence_grade = 'watch-message-observed/unverified-device-identity'
+              AND prior_installation_id IS NULL)
+            OR
+            (event_kind = 'candidate_seen'
+              AND candidate_kind = 'platform_uuid'
+              AND length(candidate_digest) = 32
+              AND evidence_grade = 'watch-message-observed/unverified-device-identity'
+              AND prior_installation_id IS NOT NULL)
+          )
+        )
+      ''');
+      _db.execute('''
+        INSERT INTO watch_identity_events_next (
+          event_sequence, event_id, event_schema_version, event_kind, match_id,
+          principal_id, prior_installation_id, observed_installation_id,
+          candidate_kind, candidate_digest, digest_version, evidence_grade,
+          channel_trace_id, protocol_request_id, prior_event_id,
+          authorization_event_id, created_at_ms, source_builds
+        )
+        SELECT
+          event_sequence, event_id, event_schema_version, event_kind, match_id,
+          principal_id, prior_installation_id, observed_installation_id,
+          candidate_kind, candidate_digest, digest_version, evidence_grade,
+          channel_trace_id, protocol_request_id, prior_event_id,
+          authorization_event_id, created_at_ms, source_builds
+        FROM watch_identity_events
+      ''');
+      _db.execute('DROP TRIGGER IF EXISTS watch_identity_events_no_update');
+      _db.execute('DROP TRIGGER IF EXISTS watch_identity_events_no_delete');
+      _db.execute('DROP TABLE watch_identity_events');
+      _db.execute(
+        'ALTER TABLE watch_identity_events_next RENAME TO watch_identity_events',
+      );
+      _db.execute('''
+        CREATE UNIQUE INDEX IF NOT EXISTS watch_identity_events_request
+        ON watch_identity_events (match_id, protocol_request_id, event_kind)
+      ''');
+      _db.execute('''
+        CREATE INDEX IF NOT EXISTS watch_identity_events_match
+        ON watch_identity_events (match_id, observed_installation_id)
+      ''');
+      _db.execute('''
+        CREATE INDEX IF NOT EXISTS watch_identity_events_digest
+        ON watch_identity_events (match_id, candidate_digest)
+      ''');
+      _db.execute('''
+        CREATE TRIGGER IF NOT EXISTS watch_identity_events_no_update
+        BEFORE UPDATE ON watch_identity_events
+        BEGIN
+          SELECT RAISE(ABORT, 'watch_identity_events is append-only');
+        END
+      ''');
+      _db.execute('''
+        CREATE TRIGGER IF NOT EXISTS watch_identity_events_no_delete
+        BEFORE DELETE ON watch_identity_events
+        BEGIN
+          SELECT RAISE(ABORT, 'watch_identity_events is append-only');
+        END
+      ''');
+      _db.execute('COMMIT');
+    } catch (error) {
+      _rollbackIfNeeded();
+      rethrow;
+    }
   }
 
   static const _mainRefereeScopeWire = 'MAIN_REFEREE';
@@ -1106,6 +1227,11 @@ final class SqliteDurableMatchStore
     });
   }
 
+  bool _knownDigestVersion(int digestVersion) {
+    return digestVersion == watchCandidateDigestVersion ||
+        digestVersion == watchCandidateDigestVersionV2;
+  }
+
   /// Appends a witness for the current stage writer. A different installation
   /// is refused here and must go through [classifyWatchInstallation].
   Future<WatchIdentityResult> observeWatchWitness({
@@ -1114,6 +1240,7 @@ final class SqliteDurableMatchStore
     required String installationId,
     required String requestId,
     required Uint8List digest,
+    required int digestVersion,
     required String sourceBuilds,
   }) {
     return _serialized(
@@ -1123,6 +1250,7 @@ final class SqliteDurableMatchStore
         installationId: installationId,
         requestId: requestId,
         digest: digest,
+        digestVersion: digestVersion,
         sourceBuilds: sourceBuilds,
       ),
     );
@@ -1136,6 +1264,7 @@ final class SqliteDurableMatchStore
     required String requestId,
     required String candidateKind,
     required Uint8List? digest,
+    required int digestVersion,
     required bool witnessMalformed,
     required String sourceBuilds,
   }) {
@@ -1147,6 +1276,7 @@ final class SqliteDurableMatchStore
         requestId: requestId,
         candidateKind: candidateKind,
         digest: digest,
+        digestVersion: digestVersion,
         witnessMalformed: witnessMalformed,
         sourceBuilds: sourceBuilds,
       ),
@@ -1159,9 +1289,10 @@ final class SqliteDurableMatchStore
     required String installationId,
     required String requestId,
     required Uint8List digest,
+    required int digestVersion,
     required String sourceBuilds,
   }) {
-    if (digest.length != 32) {
+    if (digest.length != 32 || !_knownDigestVersion(digestVersion)) {
       return const WatchIdentityRefused('identity-evidence-unavailable');
     }
     _db.execute('BEGIN IMMEDIATE');
@@ -1187,6 +1318,7 @@ final class SqliteDurableMatchStore
       if (existing != null) {
         _db.execute('ROLLBACK');
         if (existing.observedInstallationId == installationId &&
+            existing.digestVersion == digestVersion &&
             sameDigest(existing.candidateDigest, digest)) {
           return WatchIdentityAppended(existing, reason: 'replay');
         }
@@ -1200,6 +1332,7 @@ final class SqliteDurableMatchStore
         priorInstallationId: null,
         candidateKind: 'platform_uuid',
         digest: digest,
+        digestVersion: digestVersion,
         evidenceGrade: watchEvidenceUnverifiedDevice,
         requestId: requestId,
         priorEventId: null,
@@ -1224,6 +1357,7 @@ final class SqliteDurableMatchStore
     required String requestId,
     required String candidateKind,
     required Uint8List? digest,
+    required int digestVersion,
     required bool witnessMalformed,
     required String sourceBuilds,
   }) {
@@ -1250,7 +1384,8 @@ final class SqliteDurableMatchStore
       if (witnessMalformed ||
           candidateKind != 'platform_uuid' ||
           digest == null ||
-          digest.length != 32) {
+          digest.length != 32 ||
+          !_knownDigestVersion(digestVersion)) {
         _db.execute('ROLLBACK');
         return const WatchIdentityRefused('identity-evidence-unavailable');
       }
@@ -1264,11 +1399,12 @@ final class SqliteDurableMatchStore
         return const WatchIdentityRefused('candidate-conflict');
       }
       final eligible = projection.eligibleDigest;
-      if (eligible == null) {
+      if (eligible == null || projection.eligibleDigestVersion == null) {
         _db.execute('ROLLBACK');
         return const WatchIdentityRefused('installation');
       }
-      if (!sameDigest(eligible, digest)) {
+      if (projection.eligibleDigestVersion != digestVersion ||
+          !sameDigest(eligible, digest)) {
         _db.execute('ROLLBACK');
         return const WatchIdentityRefused('installation-conflict');
       }
@@ -1280,6 +1416,7 @@ final class SqliteDurableMatchStore
       if (existing != null) {
         _db.execute('ROLLBACK');
         if (existing.observedInstallationId == installationId &&
+            existing.digestVersion == digestVersion &&
             sameDigest(existing.candidateDigest, digest)) {
           return WatchIdentityAppended(existing, reason: 'recovery-required');
         }
@@ -1294,6 +1431,7 @@ final class SqliteDurableMatchStore
         priorInstallationId: stage.writerDeviceId,
         candidateKind: 'platform_uuid',
         digest: digest,
+        digestVersion: digestVersion,
         evidenceGrade: watchEvidenceUnverifiedDevice,
         requestId: requestId,
         priorEventId: witness?.eventId,
@@ -1336,6 +1474,7 @@ final class SqliteDurableMatchStore
       priorInstallationId: null,
       candidateKind: 'absent',
       digest: null,
+      digestVersion: watchCandidateDigestVersion,
       evidenceGrade: watchEvidenceTypedInstallation,
       requestId: requestId,
       priorEventId: null,
@@ -1351,6 +1490,7 @@ final class SqliteDurableMatchStore
     required String? priorInstallationId,
     required String candidateKind,
     required Uint8List? digest,
+    required int digestVersion,
     required String evidenceGrade,
     required String requestId,
     required String? priorEventId,
@@ -1368,7 +1508,7 @@ final class SqliteDurableMatchStore
         candidate_digest, digest_version, evidence_grade, channel_trace_id,
         protocol_request_id, prior_event_id, authorization_event_id,
         created_at_ms, source_builds
-      ) VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, NULL, ?, ?)
+      ) VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?)
       ''',
       [
         eventId,
@@ -1379,6 +1519,7 @@ final class SqliteDurableMatchStore
         observedInstallationId,
         candidateKind,
         digest,
+        digestVersion,
         evidenceGrade,
         requestId,
         requestId,
@@ -1425,7 +1566,8 @@ final class SqliteDurableMatchStore
       '''
       SELECT event_sequence, event_id, event_kind, match_id, principal_id,
              observed_installation_id, prior_installation_id, candidate_kind,
-             candidate_digest, evidence_grade, protocol_request_id, prior_event_id
+             candidate_digest, evidence_grade, protocol_request_id,
+             prior_event_id, digest_version
       FROM watch_identity_events
       WHERE event_id = ?
       ''',
@@ -1440,7 +1582,8 @@ final class SqliteDurableMatchStore
       '''
       SELECT event_sequence, event_id, event_kind, match_id, principal_id,
              observed_installation_id, prior_installation_id, candidate_kind,
-             candidate_digest, evidence_grade, protocol_request_id, prior_event_id
+             candidate_digest, evidence_grade, protocol_request_id,
+             prior_event_id, digest_version
       FROM watch_identity_events
       WHERE match_id = ?
       ORDER BY event_sequence
@@ -1468,6 +1611,7 @@ final class SqliteDurableMatchStore
       priorInstallationId: row.columnAt(6) as String?,
       candidateKind: row.columnAt(7) as String,
       candidateDigest: bytes,
+      digestVersion: row.columnAt(12) as int,
       evidenceGrade: row.columnAt(9) as String,
       protocolRequestId: row.columnAt(10) as String,
       priorEventId: row.columnAt(11) as String?,

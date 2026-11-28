@@ -46,7 +46,7 @@ function untouched() {
 test("the device and side identity is the manifest version", () => {
   assert.equal(BUILD_VERSION, appJson.app.version.name);
   assert.equal(BUILD_CODE, appJson.app.version.code);
-  assert.equal(BUILD_NAME, "identity-detect-031");
+  assert.equal(BUILD_NAME, "identity-bytes32-032");
   assert.equal(BUILD_REV.length > 8, true);
   const record = sideBuildRecord();
   assert.equal(sameBuild(record), true);
