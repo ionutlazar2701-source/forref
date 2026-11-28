@@ -1,6 +1,6 @@
 # COM-001 software results
 
-State: **SOFTWARE PASS / HARDWARE GATE PENDING**. Not a Level 2 pass. The phone was not installed from this environment, and the QR was not scanned here.
+State: **SOFTWARE PASS / HARDWARE GATE PENDING**. Not a Level 2 pass. The phone was not installed from this environment. The `1.0.27` ASCII QR was decoded as a package check and was not scanned on a phone.
 
 Open package: functional commit `b89abb97e2c31162e145f6b62041ee2d6f3aed3d`. Boot stamp `afbb3ae`. Boot name `com-001-open`. App `29566`, version `1.0.22` (code 22). `npm test`: 260 pass, 0 fail.
 
@@ -60,6 +60,16 @@ Logs are `FORREF_PROVISION` lines with `tx=request`, `tx=response`, `tx=transiti
 | HTTP 409, HTTP 500, malformed JSON, contradictory `prepared`/`locked` | No new root | No canonical stored | Request id kept, disposition not a success |
 | Lock before any pending | No root | n/a | Refused `order` |
 
+## COM-004 lock handshake
+
+Current package: functional commit `f6efb1680837a4b2a09ac7c002c99ef9dc2300c4`. Boot stamp `ebf2753`. Boot name `com-004-lock`. App `29566`, version `1.0.27` (code 27). `npm test`: 274 pass, 0 fail.
+
+The founder reported two visual results on `1.0.26`, with no console excerpt attached. FORREF Mobile showed `listening` after the selected match was prepared. The first watch Provision tap showed CONFIG PREGĂTIT. Back → PROVISION → Provision showed CONFIG PREGĂTIT again. The installation UUID, request UUID, match id, content hash, generation, canonical acceptance, and watch readback were not compared. These rows are founder-reported visual passes. They are not a certified correlation.
+
+`1.0.27` keeps the direct `App({...})` registration. Opening PROVISION reads the stored correlation and the watch admission and logs `tx=evidence` with installation, request, match, hash, `generation=1`, phase, `canonical=accepted|rejected|absent`, `readback`, `lock`, and `activation`. That read does not allocate a request id and does not write the correlation file. The phone Inspect provision line adds the stored request id and phase from the correlation file and does not include the canonical document. The tap calls `runHandshake`, which repeats the prepared fetch on the same request id, then `SUBMIT_WATCH_LOCK_V1` with the verified readback receipt, and only then `REPORT_WATCH_ACTIVATED_V1`. The phone commits one generation-1 root on a valid lock and records activation without a second root. A lost lock leaves the watch verified and the same request id. A lost activation leaves the watch activated and retries the report. A conflicting hash, device, or receipt is refused. Clock modules and the match-event journal are not on this path.
+
+The built `app.bin` contains `FORREF_APP`, `com-004-lock`, and `f6efb168`. It does not contain `__scopedGlobals__`, `TransferFile`, `createConnect`, `disConnect`, `BaseApp`, `hmBle`, or `GET_WATCH_PROVISION`. `page/gt/provision/index.page.bin` contains `createConnect`, `runHandshake`, `SUBMIT_WATCH_LOCK`, and `REPORT_WATCH_ACTIVATED`. This scan is a package check. It is not a Bip 6 result for `1.0.27`. LOCK and ACTIVATION remain **NOT TESTED**.
+
 ## COM-003R provision diagnosis
 
 Current package: functional commit `b577dd41cbbb82867233203acb6b79b5d7e273da`. Boot stamp `3c3483f`. Boot name `com-003r-prepare`. App `29566`, version `1.0.26` (code 26). `npm test`: 273 pass, 0 fail.
@@ -110,21 +120,23 @@ This scan is a package check. It is not a Bip 6 result. Opening Home must stay u
 
 ## Suite
 
-`npm test` in `apps/forref_watch_zepp` on `1.0.26`: 273 pass, 0 fail. The `1.0.25` tree was 271 pass, 0 fail. The `1.0.24` tree was 268 pass, 0 fail. The `1.0.23` tree was 263 pass, 0 fail.
+`npm test` in `apps/forref_watch_zepp` on `1.0.27`: 274 pass, 0 fail. The `1.0.26` tree was 273 pass, 0 fail. The `1.0.25` tree was 271 pass, 0 fail. The `1.0.24` tree was 268 pass, 0 fail. The `1.0.23` tree was 263 pass, 0 fail.
 
 `flutter test test/watch_provision_debug_settings_test.dart test/watch_provision_debug_bridge_test.dart` in `apps/referee_phone`: 10 pass, 0 fail.
 
-`./tool/verify_cloud.sh` on the `1.0.26` tree: PASSED. The phone suite inside it reported `All tests passed!`. The `1.0.25` tree had also passed.
+`./tool/verify_cloud.sh` on the `1.0.27` tree: PASSED. The same script passed on the `1.0.26` and `1.0.25` trees. The phone suite inside those runs reported `All tests passed!`.
 
 ## Diagnostic package
 
-Install `1.0.26`. Do not install `1.0.20` or `1.0.21`. `1.0.24` is the build the founder reported as passing repeated PING, navigation, and Bluetooth reconnect. No console log was attached to that report. `1.0.25` is the build whose page showed `unavailable` with Bluetooth connected, `messaging` with Bluetooth disabled, and `unavailable` again after reconnect. No console excerpt was attached to that report. The phone on that trial returned `listening` for a new match and `prepared-conflict` for a match that already had a prepared row.
+Install `1.0.27`. Do not install `1.0.20` or `1.0.21`. `1.0.26` is the build whose page showed CONFIG PREGĂTIT, and CONFIG PREGĂTIT again after Back → PROVISION → Provision, while the phone showed `listening`. No console excerpt was attached, so that pair is not a certified correlation. Open PROVISION on `1.0.27` and copy `tx=evidence` before tapping. Then tap once. The same request id must lock one root and record one activation.
 
 Opening `1.0.26` must show Home and must not reboot the watch. Home → SETTINGS → PROVISION shows the installation UUID before any tap. On the phone, enter that UUID, choose one saved match, and tap Prepare and listen. If the status is `prepared-conflict`, tap Inspect provision and copy the `changed=` fields. Cancel prepared is available only for a `CONFIG_PREPARED` row whose stored hash matches and that has no generation-1 root and no sporting record. After that cancel, Prepare and listen can return `listening` for the same match. The Zepp app stays open on that phone. Tap Provision on the watch. A failure page shows the hop and category, for example `fetch:timeout` or `bridge:installation`. The watch log contains `tx=request hop=device method=GET_WATCH_PROVISION_V1`, then `tx=side`, `tx=fetch` with `elapsed`, and `outcome=PREPARED` with the same `installation`, `request`, `match`, and `hash` as the phone `listening` line, and `canonical=accepted`. The page shows CONFIG PREPARED. The log does not contain `SUBMIT_WATCH_LOCK_V1` or `REPORT_WATCH_ACTIVATED_V1`. The phone has no new authority root. Leave PROVISION and open it again, then tap Provision. The request id stays the same. A reboot, a lock request, or a hash that differs from the phone fails the trial. Do not lock, activate, or replicate a sporting event.
 
 Home → SETTINGS → PROVISION shows the installation UUID before the tap. The first console line on that page is `FORREF_PROVISION page=init`, then `page=build`, then `device width=` `height=` `layout=` and `installation=` with the 36-character id. A storage failure logs `tx=recover` and draws `INSTALLATION UNAVAILABLE`. Messaging opens on the Provision tap.
 
-Zeus CLI 1.10.3, target Amazfit Bip 6, device sources `9765120`, `9765121`, `10158337`. App id `29566`, version `1.0.26` (code 26), boot `build=com-003r-prepare rev=b577dd41cbbb82867233203acb6b79b5d7e273da`. The preview package is `dist/29566-FORREF-1.0.26-20261128092614.zab` (402140 bytes, sha256 `f1e21da770d391ed8f5e53d44dcc0c7c151133d4922833aa87a469600b5518e6`). It is not committed. The QR expires `2026-12-05 09:26:17` on the machine clock (UTC), which is 11:26 Europe/Bucharest. The QR was not scanned here. This package does not certify the prepared response on a Bip 6.
+Zeus CLI 1.10.3, target Amazfit Bip 6, device sources `9765120`, `9765121`, `10158337`. App id `29566`, version `1.0.27` (code 27), boot `build=com-004-lock rev=f6efb1680837a4b2a09ac7c002c99ef9dc2300c4`. The preview package is `dist/29566-FORREF-1.0.27-20261128095218.zab` (403684 bytes, sha256 `493d9f3c825b224f17bbd0e2dd20a63bd1e719ba7bb87d14983b468376944b63`). It is not committed. The QR expires `2026-12-05 09:52:21` on the machine clock (UTC), which is 11:52 Europe/Bucharest. Decoding the ASCII QR yields `zpkd1://api-mifit-de2.zepp.com/custom/tools/app-dial/download/mYERKPtHKexgtRLiQotKEMIqGtmdpEzw`. That decode is a package check. This package does not certify lock or activation on a Bip 6.
+
+`1.0.26` remains `dist/29566-FORREF-1.0.26-20261128092614.zab` (402140 bytes, sha256 `f1e21da770d391ed8f5e53d44dcc0c7c151133d4922833aa87a469600b5518e6`), boot `build=com-003r-prepare rev=b577dd41cbbb82867233203acb6b79b5d7e273da`. Its QR expired text was `2026-12-05 09:26:17` UTC, 11:26 Europe/Bucharest. The founder reported the visual CONFIG PREGĂTIT pair above. No console excerpt was attached.
 
 `1.0.25` remains `dist/29566-FORREF-1.0.25-20261128090106.zab` (400886 bytes, sha256 `a54d1c044a2b5812c75ea50bf18861bc55d51b44b9396410a1132777cd28e297`), boot `build=com-003-prepare rev=01a29c0b1e06b3e098938df61fa66274b1f5bcbe`. Its QR expired text was `2026-12-05 09:01:11` UTC, 11:01 Europe/Bucharest. The founder reported the page words above. No console excerpt was attached.
 
@@ -137,6 +149,31 @@ The previous open package remains `dist/29566-FORREF-1.0.22-20261128075209.zab` 
 `1.0.21` (`dist/29566-FORREF-1.0.21-20261128073806.zab`, sha256 `87e5359aeb774a47ed2a41f3695a7af8dc56083d4d6095c0724c72d84c2de835`) rebooted the watch. Its provision page bundle contained `createConnect`. `1.0.20` (`dist/29566-FORREF-1.0.20-20261127215753.zab`, sha256 `5b0d9a44f47dc500883931b6644ada18fbdc1e9d4dff4631e26bdb3f868554bf`) also stayed black and rebooted. `1.0.19` (`dist/29566-FORREF-1.0.19-20261127101748.zab`, sha256 `84a4589771e69967cdc75a376d197434521c3a0e7cdbb1e7f008dc952ae02482`) paints the UUID and does not initialize `globalData.messaging`.
 
 `1.0.18` (`dist/29566-FORREF-1.0.18-20261127100800.zab`, sha256 `38bae40d41a92d9c6aa426810adbc2406b263e69ae28ab604e13d9cf84108583`) is the build that opened a blank provision page. The `1.0.17` package is the earlier transport build.
+
+```
+[FORREF - 1.0.27]
+Supported device: Amazfit Bip 6
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+█ ▄▄▄▄▄ █▄▀▀▄▄▄▄▄▀▄█▀▀▄▄██ ██▀█ ▄▄▄▄▄ █
+█ █   █ ███▄█  ▄▄▄█▄▄█ █▀  ▄█ █ █   █ █
+█ █▄▄▄█ ██▄▀▄▀█▀█▄▀ █▀██▀▀▀██▄█ █▄▄▄█ █
+█▄▄▄▄▄▄▄█ █ ▀▄▀ █▄█ █ █▄█▄▀▄▀ █▄▄▄▄▄▄▄█
+█ ▄█▄▄▀▄██▄▄▄▀▀ █▄▀▀██▀ ▀▄█▄▀ █▄▀▀██▀▄█
+█ ▄█▀ █▄▀█   ▀█▀▄▄▀▄▀▄█▄ ███▄▄▀   ▄ ▄ █
+█▄    █▄▀▀▀▀▄▄▀▀█ █▀ ███▀ █▀▀ █▄ ▀ ▀ ▄█
+██▀   █▄▄██▄ ▄▄ ▄███▄▄▄▀█ █▄ █   ▀█▀█ █
+██ ▄  █▄▄█▀▀▀▀▄▀▄████ ▀ ▄█ █▀█▄▄ █ ▄▀▄█
+█▄██▀▀█▄█▀▄▀▄▀   █▄  ▀█▀▄  █ █▄▄▀▄▀█▀▄█
+█▄ █▄█▄▄██ ██▄▄ █▄▄▀█▄██▀█▀▀ ▄█▄  ▄▀███
+██▄▄▀ ▀▄▀ ███▄█▀▄█▀██▀█▄ ▀▄▀ █▀█▀█▀▀▀ █
+█▀█▀▄  ▄▄████▀██ ▀███▄▀█ ▄▀█▀▄▀▄▄▀██ ▄█
+█ ▄▀▀█▄▄█▀▄▄█▀█▀ ██▀ ▄█▀▀█▄ ▄ ████  ▄▄█
+█▄██▄▄█▄█  ▀ ▄▄▀▀█ █ ▄▀ █  █  ▄▄▄ ▄▄▄██
+█ ▄▄▄▄▄ ██▀█▀▄▀█▄██  ▄▄█ ▀▀█▀ █▄█ █▄█▄█
+█ █   █ █ █ ▄▀ ▀▄█▀▀ █▀▀▀█▀ ▄   ▄▄ █ ▀█
+█ █▄▄▄█ █▀█▄ ▀ █▄  ▀███▄ ▄▄▀ █▄▀ ▄▀▀▀ █
+█▄▄▄▄▄▄▄█▄▄▄▄▄▄██▄██▄▄███▄███▄█▄██▄██▄█
+```
 
 ```
 [FORREF - 1.0.26]
