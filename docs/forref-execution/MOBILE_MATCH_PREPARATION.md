@@ -399,8 +399,8 @@ Publication of R2:
 - Path: `docs/forref-execution/MOBILE_MATCH_PREPARATION.md`
 - Branch: `cursor/mobile-match-preparation-negotiation-0e7d`
 - Base: `main`
-- Pull request: recorded in the following publication line once the draft pull request exists.
-- Commit: the commit that adds this file.
+- Draft pull request: https://github.com/ionutlazar2701-source/forref/pull/90 (#90)
+- Content commit: `d6ea50154aff6714e7c2c59399081ce0c7da17bf`
 
 Round 2 disposition, short:
 
