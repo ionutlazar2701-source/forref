@@ -2,7 +2,7 @@
 
 ## Send to Watch
 
-State: **MCT-001 SOFTWARE PASS. HARDWARE GATE PENDING. NOT ACTIVATED**. The paired watch receives one saved match. The phone shows Configuration Verified only after the watch reads the configuration back. Lock and activation stay disabled. No authority root is created. This section does not certify the Bip 6.
+State: **1.0.35 SOFTWARE PASS. HARDWARE GATE PENDING. NOT ACTIVATED**. Watch source is `1.0.35` (`watch-config-035`, rev `a8db8e206942861ef3e2c2a6b889b754ac052e0e`). The paired watch receives one saved match. The phone shows Configuration Verified only after the watch reads the configuration back. Lock and activation stay disabled. No authority root is created. This section does not certify the Bip 6.
 
 Do not uninstall either app. Do not type an installation UUID. Do not tap Provision, Enroll, Prepare, Listen, or Cancel. Do not delete a correlation file.
 
