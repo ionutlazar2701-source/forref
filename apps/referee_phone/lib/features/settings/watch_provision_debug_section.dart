@@ -8,6 +8,7 @@ import 'package:match_core/match_core.dart';
 import 'package:referee_phone/app_scope.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
 import 'package:referee_phone/officiate/watch_enroll_session.dart';
+import 'package:referee_phone/officiate/watch_pairing_session.dart';
 import 'package:referee_phone/officiate/watch_provision_debug_bridge.dart';
 
 /// Debug-only control for the local watch provision bridge.
@@ -19,21 +20,37 @@ class WatchProvisionDebugSection extends StatefulWidget {
       _WatchProvisionDebugSectionState();
 }
 
-class _WatchProvisionDebugSectionState
-    extends State<WatchProvisionDebugSection> {
+class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
+    with WidgetsBindingObserver {
   final TextEditingController _installation = TextEditingController();
   WatchProvisionDebugBridge? _bridge;
   WatchProvisionDebugBridge? _enrollBridge;
+  WatchProvisionDebugBridge? _pairBridge;
   List<Match> _matches = const [];
   String? _matchId;
   String _status = '';
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _installation.dispose();
     _bridge?.stop();
     _enrollBridge?.stop();
+    _pairBridge?.stop();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _pairBridge?.resumePairing();
+    }
   }
 
   @override
@@ -51,6 +68,11 @@ class _WatchProvisionDebugSectionState
         if (boundary == null || identity == null || storage == null)
           ListTile(title: Text(l10n.watchProvisionUnavailable))
         else ...[
+          ListTile(
+            title: Text(l10n.watchPairConnect),
+            subtitle: Text(_pairSubtitle(l10n)),
+            onTap: _connectWatch,
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: TextField(
@@ -128,6 +150,59 @@ class _WatchProvisionDebugSectionState
     );
     if (!mounted || selected == null) return;
     setState(() => _matchId = selected);
+  }
+
+  String _pairSubtitle(AppLocalizations l10n) {
+    final result = _pairBridge?.pairingResult;
+    if (result == null) return l10n.watchPairHint;
+    final stored = watchInstallationPreview(result.storedWriter);
+    final request = watchInstallationPreview(result.requestInstallation);
+    return switch (result.code) {
+      'waiting' => l10n.watchPairWaiting,
+      'verified' => l10n.watchPairVerified(request),
+      'replay' => l10n.watchPairReplay(request),
+      'writer-kept' => l10n.watchPairWriterKept(stored, request),
+      _ => l10n.watchPairFailed(result.reason),
+    };
+  }
+
+  Future<void> _connectWatch() async {
+    final scope = AppScope.of(context);
+    final boundary = scope.matchApplication;
+    final identity = scope.captureIdentity;
+    final root = scope.storageRoot;
+    final database = scope.database;
+    if (boundary == null || identity == null || root == null) {
+      setState(() => _status = 'missing');
+      return;
+    }
+    await _bridge?.stop();
+    await _enrollBridge?.stop();
+    final bridge = _pairBridge ??
+        WatchProvisionDebugBridge(
+          boundary: boundary,
+          phoneOriginDeviceId: identity.originDeviceId,
+          correlationFile: File('${root.path}/$pairWatchCorrelationName'),
+        );
+    _pairBridge = bridge;
+    bridge.removeListener(_onPairing);
+    bridge.addListener(_onPairing);
+    final opened = await openWatchPairing(
+      storageRoot: root,
+      database: database,
+      boundary: boundary,
+      phoneOriginDeviceId: identity.originDeviceId,
+      principalId: identity.authorityPrincipalId,
+      pairBridge: bridge,
+      historicalBridge: _bridge,
+    );
+    if (!mounted) return;
+    setState(() => _status = opened.line);
+  }
+
+  void _onPairing() {
+    if (!mounted) return;
+    setState(() {});
   }
 
   Future<void> _prepare() async {

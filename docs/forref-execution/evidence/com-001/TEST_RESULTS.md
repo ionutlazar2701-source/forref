@@ -1,6 +1,36 @@
 # COM-001 software results
 
-State: **SOFTWARE PASS / HARDWARE GATE PENDING**. Not a Level 2 pass. The phone was not installed from this environment. Automated tests do not establish an enrollment hardware pass. H1–H11 and E1–E8 stay **LOCAL GATE REQUIRED**.
+State: **SOFTWARE PASS / HARDWARE GATE PENDING**. Not a Level 2 pass. The phone was not installed from this environment. Automated tests do not establish a Bip 6 pairing pass. H1–H11 and E1–E8 stay **LOCAL GATE REQUIRED**.
+
+## Connect Watch
+
+The side service on the phone fetches `127.0.0.1:47221`. `bridge:installation` is that fetch returning a writer mismatch. `fetch:transport` is the same fetch failing without a timeout, permission, or refused-connection classification. Connect Watch no longer prepares a writer from a typed UUID. The first valid watch request stores the watch installation on a new pairing match. A different later watch is `writer-kept`. The historical stage and correlation stay. The watch retries transport failures three times, then reports `phone-unreachable`. The phone screen shows Connected & Verified, already paired, or the two installation previews. Watch `1.0.34` (`watch-pair-034`, rev `121d2bfea53ce325cea2cc0e69d59f806c828c0b`). `npm test` in `apps/forref_watch_zepp` passed 292 tests before the stamp. The phone pairing tests covered a missing stage, one witness, replay, a kept writer, historical bytes unchanged, and a listener that resumes on the same match.
+
+
+Zeus CLI 1.10.3, target Amazfit Bip 6, device sources `9765120`, `9765121`, `10158337`. App id `29566`, version `1.0.34` (code 34). Functional commit `121d2bfea53ce325cea2cc0e69d59f806c828c0b`. Stamp commit `a8dce1a`. The preview package is `dist/29566-FORREF-1.0.34-20261128172845.zab` (417686 bytes, sha256 `ecce27ca297465041b0f8923b6988d5bd34e7f8a031eeb8df2667326e1e3133b`). It is not committed. `app.bin` contains `watch-pair-034` and the functional rev. The provision page bundle contains `forref_watch_pair_correlation_v1.txt`, `forref-candidate-v2:`, and `FORREF_PAIR`. The side bundle contains `prepare-only`. The QR expires `2026-12-05 17:28:48` on the machine clock (UTC), which is 19:28 Europe/Bucharest. Decoding the QR yields `zpkd1://api-mifit-de2.zepp.com/custom/tools/app-dial/download/jsFxbRRQPLFpPhBReJRaqrcNbGNYBSOp`. That decode is a package check. This package does not certify a Bip 6 pairing.
+
+```
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+█ ▄▄▄▄▄ █▄▀▀▄▄▄ ██ ▀ ▀▄▄██ ██▀█ ▄▄▄▄▄ █
+█ █   █ ███▄█ ▄█▀▀█▄██ █▀  ▄█ █ █   █ █
+█ █▄▄▄█ ██▄▀▄▀▀ ▄▄ ▀████▀▀▀██▄█ █▄▄▄█ █
+█▄▄▄▄▄▄▄█ █ ▀▄▀▄▀▄█▄█ █▄█▄▀▄▀ █▄▄▄▄▄▄▄█
+█  ▀▄▄▀▄█▀ ▄▄▀   ▄██ █▀ ▀▄█▄▀ █▄▀▀██▀▄█
+█ ▄▀██▄▄▀▀▀▄ ▀▄█ ▀  █▄█▄ ███▄▄▀   ▄ ▄ █
+██ ▄▄█ ▄▄█ ▄▄▄▄█ ▀ ▀████▀ █▀▀ █▄ ▀ ▀ ▄█
+█ ▀█ ██▄ ▀▀▀ ▄▄█▄▀█▀ █▄▀█ █▄ █   ▀█▀█ █
+█▄ ▄▀  ▄▀██▄▀▀██ ▄ ▀█ ▀ ▄█ █▀█▄▄ █ ▄▀▄█
+█▄▄█▀█ ▄█▄ █▄▀▀ ▄██▀▄▀█▀▄  █ █▄▄▀▄▀█▀▄█
+█▄▀▄▄▄▀▄▀▀█▀█▄▄▄ ▄▄█ ▄██▀█▀▀ ▄█▄  ▄▀███
+█▄▀ ▄ █▄▀▄▀██▄▄  ▀  ▀▄█▄ ▀▄▀ █▀█▀█▀▀▀ █
+█▀▄▀▄▄▀▄▄▄▀▀█▀▄▀▄▀▄██▄▀█ ▄▀█▀▄▀▄▄▀██ ▄█
+█ ▄▀█▄ ▄ ▄█▀█▀█▄  █  ▄█▀▀█▄ ▄ ████  ▄▄█
+█▄██▄▄█▄█ ▀█ ▄▄▀███▀ ▄▀ █  █  ▄▄▄ ▄▄▄██
+█ ▄▄▄▄▄ ██▄▀▀▄  ▄▀▄  ▄▄█ ▀▀█▀ █▄█ █▄█▄█
+█ █   █ █ █▀▄▀ ▀ ▄█▀ █▀▀▀█▀ ▄   ▄▄ █ ▀█
+█ █▄▄▄█ █▀▄▀ ▀ █ ▀▀ ███▄ ▄▄▀ █▄▀ ▄▀▀▀ █
+█▄▄▄▄▄▄▄█▄██▄▄▄█▄█▄█▄▄███▄███▄█▄██▄██▄█
+```
 
 ## Writer comparison
 

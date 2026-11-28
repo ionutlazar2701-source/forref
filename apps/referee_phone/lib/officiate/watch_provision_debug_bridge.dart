@@ -99,6 +99,10 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
   Map<String, Object?>? _activation;
   WatchProvisionBridgeDisposition _disposition =
       WatchProvisionBridgeDisposition.stopped;
+  bool _acceptFirstWriter = false;
+  Match? _pairingMatch;
+  String? _pairingPrincipalId;
+  WatchPairingResult? _pairingResult;
 
   String? get matchId => _matchId;
 
@@ -111,6 +115,10 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
   WatchProvisionBridgeDisposition get disposition => _disposition;
 
   bool get isListening => _server != null;
+
+  bool get acceptingFirstWriter => _acceptFirstWriter;
+
+  WatchPairingResult? get pairingResult => _pairingResult;
 
   String get loopbackEndpoint {
     final server = _server;
@@ -161,6 +169,41 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
       return _set(WatchProvisionBridgeDisposition.refused);
     }
     _matchId = matchId;
+    return _bindLoopback();
+  }
+
+  /// Listens before a writer exists. The first valid watch request supplies it.
+  Future<WatchProvisionBridgeDisposition> listenForPairing({
+    required Match match,
+    required String principalId,
+  }) async {
+    if (!_permitted) return _set(WatchProvisionBridgeDisposition.refused);
+    if (_requestId != null && _matchId != null && _matchId != match.matchId) {
+      return _set(WatchProvisionBridgeDisposition.refused);
+    }
+    _matchId = match.matchId;
+    _pairingMatch = match;
+    _pairingPrincipalId = principalId;
+    _acceptFirstWriter = true;
+    _notePairing(
+      code: 'waiting',
+      reason: '',
+      matchId: match.matchId,
+      requestInstallation: '',
+      storedWriter: '',
+    );
+    return _bindLoopback();
+  }
+
+  /// Restarts the pairing listener after the debug process resumes.
+  Future<WatchProvisionBridgeDisposition> resumePairing() {
+    if (!_acceptFirstWriter || _matchId == null || _matchId!.isEmpty) {
+      return Future<WatchProvisionBridgeDisposition>.value(_disposition);
+    }
+    return _bindLoopback();
+  }
+
+  Future<WatchProvisionBridgeDisposition> _bindLoopback() async {
     if (_server != null) return _set(WatchProvisionBridgeDisposition.listening);
     try {
       final server = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
@@ -288,8 +331,35 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     if (body['matchId'] != null && body['matchId'] != matchId) {
       return _refused('match');
     }
-    final stage = await boundary.durableStore.readWatchProvisionStage(matchId);
+    var stage = await boundary.durableStore.readWatchProvisionStage(matchId);
+    if (stage == null) {
+      final armed = _pairingMatch;
+      final principalId = _pairingPrincipalId;
+      if (_acceptFirstWriter &&
+          armed != null &&
+          armed.matchId == matchId &&
+          principalId != null &&
+          principalId.isNotEmpty) {
+        final decision = await prepareSavedMatch(
+          match: armed,
+          installationId: installationId,
+          principalId: principalId,
+        );
+        if (decision.state != WatchProvisionState.configPrepared) {
+          _notePairing(
+            code: 'failed',
+            reason: decision.reason,
+            matchId: matchId,
+            requestInstallation: installationId,
+            storedWriter: '',
+          );
+          return _refused(decision.reason);
+        }
+        stage = await boundary.durableStore.readWatchProvisionStage(matchId);
+      }
+    }
     if (stage == null) return _refused('missing');
+    final current = stage;
     if (body['principalId'] != null &&
         body['principalId'] != stage.principalId) {
       return _refused('principal');
@@ -313,17 +383,31 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     Future<Map<String, Object?>> traced(
       Map<String, Object?> answer, {
       required bool observe,
+      String observeReason = '',
     }) {
+      if (_acceptFirstWriter) {
+        _notePairing(
+          code: watchPairingCode(
+            writersMatch: comparison.equal,
+            disposition: '${answer['disposition'] ?? ''}',
+            observeReason: observeReason,
+          ),
+          reason: '${answer['reason'] ?? observeReason}',
+          matchId: current.matchId,
+          requestInstallation: installationId,
+          storedWriter: current.writerDeviceId,
+        );
+      }
       debugPrint(
         formatWatchWriterComparison(
           requestMatchId: requestMatch,
           bridgeMatchId: matchId,
-          stageMatchId: stage.matchId,
+          stageMatchId: current.matchId,
           requestInstallation: installationId,
-          storedWriter: stage.writerDeviceId,
+          storedWriter: current.writerDeviceId,
           canonicalWriter: canonicalWriter,
           comparison: comparison,
-          stageName: stage.stage,
+          stageName: current.stage,
           requestId: requestId,
           bridgeId: identityHashCode(this).toRadixString(16),
           namespace: correlationNamespace,
@@ -357,11 +441,13 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     if (operation == 'pending') {
       final prepared = _pending(stage, installationId, requestId);
       var observe = false;
+      var observeReason = '';
       if (prepared['disposition'] == 'prepared') {
         observe = true;
-        await _observeWitness(stage, body, installationId, requestId);
+        observeReason =
+            await _observeWitness(stage, body, installationId, requestId);
       }
-      return traced(prepared, observe: observe);
+      return traced(prepared, observe: observe, observeReason: observeReason);
     }
     if (body['matchId'] != matchId ||
         body['contentHash'] != stage.contentHash) {
@@ -389,6 +475,9 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     final path = correlationFile?.path ?? '';
     if (path.endsWith('forref_watch_enroll_correlation_v1.json')) {
       return 'enroll';
+    }
+    if (path.endsWith('forref_watch_pair_correlation_v1.json')) {
+      return 'pair';
     }
     if (path.endsWith('forref_watch_provision_correlation_v1.json')) {
       return 'historical';
@@ -427,19 +516,19 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     return _refused(reason);
   }
 
-  Future<void> _observeWitness(
+  Future<String> _observeWitness(
     WatchProvisionPhoneStage stage,
     Map<String, Object?> body,
     String installationId,
     String requestId,
   ) async {
     final claim = _witnessClaim(body['witness']);
-    if (claim.absent) return;
+    if (claim.absent) return '';
     if (claim.malformed || claim.digest == null) {
       debugPrint(
         'FORREF_PROVISION tx=identity reason=witness-malformed installation=$installationId request=$requestId match=${stage.matchId}',
       );
-      return;
+      return 'witness-malformed';
     }
     final result = await boundary.durableStore.observeWatchWitness(
       matchId: stage.matchId,
@@ -457,6 +546,27 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     debugPrint(
       'FORREF_PROVISION tx=identity reason=$reason installation=$installationId request=$requestId match=${stage.matchId} preview=${digestPreview(claim.digest!)} v=${claim.digestVersion} grade=$watchEvidenceUnverifiedDevice',
     );
+    return reason;
+  }
+
+  void _notePairing({
+    required String code,
+    required String reason,
+    required String matchId,
+    required String requestInstallation,
+    required String storedWriter,
+  }) {
+    _pairingResult = WatchPairingResult(
+      code: code,
+      reason: reason,
+      matchId: matchId,
+      requestInstallation: requestInstallation,
+      storedWriter: storedWriter,
+    );
+    debugPrint(
+      'FORREF_PAIR tx=result code=$code reason=$reason match=$matchId stored=$storedWriter request=$requestInstallation',
+    );
+    notifyListeners();
   }
 
   Map<String, Object?> _pending(
@@ -687,6 +797,43 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
       'd1Certified': false,
     };
   }
+}
+
+/// Screen result for Connect Watch. The bridge records it. It does not write.
+final class WatchPairingResult {
+  const WatchPairingResult({
+    required this.code,
+    required this.reason,
+    required this.matchId,
+    required this.requestInstallation,
+    required this.storedWriter,
+  });
+
+  /// `waiting`, `verified`, `replay`, `writer-kept`, or `failed`.
+  final String code;
+  final String reason;
+  final String matchId;
+  final String requestInstallation;
+  final String storedWriter;
+}
+
+String watchPairingCode({
+  required bool writersMatch,
+  required String disposition,
+  required String observeReason,
+}) {
+  if (!writersMatch) return 'writer-kept';
+  if (disposition == 'prepared' && observeReason == 'observed') {
+    return 'verified';
+  }
+  if (disposition == 'prepared' && observeReason == 'replay') return 'replay';
+  return 'failed';
+}
+
+/// Short installation label for the pairing screen.
+String watchInstallationPreview(String id) {
+  if (id.length < 12) return id;
+  return '${id.substring(0, 8)}...${id.substring(id.length - 4)}';
 }
 
 /// Exact writer comparison used by the debug bridge. It does not write.

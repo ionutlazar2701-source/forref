@@ -7,6 +7,9 @@ export const PROVISION_CORRELATION_FILE = "forref_watch_provision_correlation_v1
 export const ENROLL_CORRELATION_FILE = "forref_watch_enroll_correlation_v1.txt";
 export const ENROLL_ROOT_FILE = "forref_watch_enroll_v1.root";
 export const ENROLL_ADMISSION_FILE = "forref_watch_enroll_v1.admission";
+export const PAIR_CORRELATION_FILE = "forref_watch_pair_correlation_v1.txt";
+export const PAIR_ROOT_FILE = "forref_watch_pair_v1.root";
+export const PAIR_ADMISSION_FILE = "forref_watch_pair_v1.admission";
 
 export const GET_WATCH_PROVISION_V1 = "GET_WATCH_PROVISION_V1";
 export const SUBMIT_WATCH_LOCK_V1 = "SUBMIT_WATCH_LOCK_V1";
@@ -556,6 +559,39 @@ function openHandshake(deps) {
   }
   handshakeOpen.add(key);
   return { ok: true, installation: installation, result: null };
+}
+
+export function pairingRetryable(view) {
+  if (!view || view.ok) return false;
+  if (view.stage !== "transport") return false;
+  const category = view.category || "";
+  return category === "timeout" || category === "connection-refused" || category === "transport";
+}
+
+export function pairingPresentation(view, attempt, limit) {
+  if (view && view.ok) {
+    return { done: true, view: Object.assign({}, view, { result: "verified", attempts: attempt }) };
+  }
+  if (pairingRetryable(view) && attempt < limit) return { done: false, view: view };
+  const reason = view && view.reason ? String(view.reason) : "";
+  let result = "failed";
+  if (pairingRetryable(view)) result = "phone-unreachable";
+  else if (reason.indexOf("installation") >= 0 || reason.indexOf("recovery-required") >= 0 || reason.indexOf("correlation-conflict") >= 0) {
+    result = "writer-kept";
+  }
+  return { done: true, view: Object.assign({}, view || {}, { result: result, attempts: attempt }) };
+}
+
+export async function confirmPairing(deps) {
+  const limit = deps && deps.attempts ? deps.attempts : 3;
+  let last = { ok: false, stage: "transport", reason: "transport", category: "transport", hop: "fetch" };
+  for (let attempt = 1; attempt <= limit; attempt += 1) {
+    last = await runPrepare(deps);
+    const presented = pairingPresentation(last, attempt, limit);
+    if (presented.done) return presented.view;
+    if (deps && typeof deps.wait === "function") await deps.wait(attempt);
+  }
+  return pairingPresentation(last, limit, limit).view;
 }
 
 export async function runPrepare(deps) {

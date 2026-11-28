@@ -144,6 +144,34 @@
   "watchProvisionReadEnroll": "Read enroll",
   "watchProvisionNoMatch": "No saved match selected",
   "watchProvisionUnavailable": "Debug bridge unavailable",
+  "watchPairConnect": "Connect Watch",
+  "watchPairHint": "Then confirm pairing on the watch.",
+  "watchPairWaiting": "Waiting for the watch. Open Provision and tap Confirm.",
+  "watchPairVerified": "Connected & Verified. Watch {installation}. The previous match was not changed.",
+  "@watchPairVerified": {
+    "placeholders": {
+      "installation": {"type": "String"}
+    }
+  },
+  "watchPairReplay": "Connected & Verified. Watch {installation} was already paired.",
+  "@watchPairReplay": {
+    "placeholders": {
+      "installation": {"type": "String"}
+    }
+  },
+  "watchPairWriterKept": "Stored watch {stored} was kept. This watch {request} was not adopted.",
+  "@watchPairWriterKept": {
+    "placeholders": {
+      "stored": {"type": "String"},
+      "request": {"type": "String"}
+    }
+  },
+  "watchPairFailed": "Pairing stopped ({reason}). The stored writer was not changed.",
+  "@watchPairFailed": {
+    "placeholders": {
+      "reason": {"type": "String"}
+    }
+  },
   "clockWithAdded": "{clock} +{minutes}",
   "@clockWithAdded": {
     "placeholders": {

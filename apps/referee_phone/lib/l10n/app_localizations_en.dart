@@ -387,6 +387,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get watchProvisionUnavailable => 'Debug bridge unavailable';
 
   @override
+  String get watchPairConnect => 'Connect Watch';
+
+  @override
+  String get watchPairHint => 'Then confirm pairing on the watch.';
+
+  @override
+  String get watchPairWaiting =>
+      'Waiting for the watch. Open Provision and tap Confirm.';
+
+  @override
+  String watchPairVerified(String installation) {
+    return 'Connected & Verified. Watch $installation. The previous match was not changed.';
+  }
+
+  @override
+  String watchPairReplay(String installation) {
+    return 'Connected & Verified. Watch $installation was already paired.';
+  }
+
+  @override
+  String watchPairWriterKept(String stored, String request) {
+    return 'Stored watch $stored was kept. This watch $request was not adopted.';
+  }
+
+  @override
+  String watchPairFailed(String reason) {
+    return 'Pairing stopped ($reason). The stored writer was not changed.';
+  }
+
+  @override
   String clockWithAdded(String clock, int minutes) {
     return '$clock +$minutes';
   }
