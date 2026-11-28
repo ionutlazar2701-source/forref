@@ -28,7 +28,7 @@ test("Home → Settings → Provision → Back keeps officiate and training", ()
   assert.equal(provision.includes("BasePage"), false);
   assert.equal(provision.includes("provision-back"), true);
   assert.equal(provision.includes("back()"), true);
-  assert.equal(provision.includes("prepareInstallation"), true);
+  assert.equal(provision.includes("resolveInstallation"), true);
   assert.equal(provision.includes("installationUnavailable"), true);
   assert.equal(provision.includes("page=build"), true);
   const startAt = provision.indexOf("start() {");

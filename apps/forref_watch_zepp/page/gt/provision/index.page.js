@@ -1,8 +1,7 @@
-import { readFileSync, writeFileSync } from "@zos/fs";
+import { readFileSync, readdirSync, writeFileSync } from "@zos/fs";
 import { back } from "@zos/router";
 import { appPlugin } from "@zeppos/zml/3.0/module/messaging/plugin/app";
 import { bindBack, button, clear, logDevice, paintBase, textAt } from "../../../utils/chrome";
-import { INSTALLATION_FILE } from "../../../utils/installation_id";
 import { PROVISION_ADMISSION_FILE, PROVISION_ROOT_FILE } from "../../../utils/goal_admission";
 import { readStoredText } from "../../../utils/goal_journal";
 import { createFileProvisionStore } from "../../../utils/provision_transport";
@@ -15,14 +14,14 @@ import {
   resolveInstallationCard,
   splitInstallationId,
 } from "../../../utils/installation_label";
-import { prepareInstallation } from "../../../utils/provision_identity";
+import { readDurableText, resolveInstallation } from "../../../utils/installation_continuity";
 import { t } from "../../../utils/text";
 import { ACCENT, TEXT_PRIMARY, TEXT_WARNING } from "../../../utils/theme";
 
 function fileStore(path) {
   return {
     read() {
-      return readStoredText({ readFileSync: readFileSync }, path);
+      return readDurableText({ readFileSync: readFileSync }, path);
     },
     write(text) {
       try {
@@ -94,7 +93,8 @@ Page({
       console.log("FORREF_PROVISION tx=recover reason=back detail=" + detail(err));
     }
     try {
-      const identified = prepareInstallation(fileStore(INSTALLATION_FILE));
+      const identified = resolveInstallation({ readFileSync: readFileSync, writeFileSync: writeFileSync, readdirSync: readdirSync });
+      console.log(identified.line);
       let status = identified.ok ? "identity" : "unavailable";
       if (identified.ok) {
         const evidence = readProvisionEvidence(

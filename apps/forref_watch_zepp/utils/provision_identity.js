@@ -51,7 +51,7 @@ export function readDeviceMessaging(app) {
   return null;
 }
 
-export function prepareInstallation(store) {
+export function prepareInstallation(store, options) {
   let existing;
   try {
     existing = readInstallationId(store);
@@ -63,6 +63,9 @@ export function prepareInstallation(store) {
   }
   if (existing.reason !== "missing-installation") {
     return { ok: false, id: "", reason: existing.reason || "unreadable", created: false };
+  }
+  if (!options || options.allowCreate !== true) {
+    return { ok: false, id: "", reason: "uninspected", created: false };
   }
   let created;
   try {

@@ -89,6 +89,6 @@ test("the provision page paints the UUID before it opens messaging", () => {
   assert.equal(page.includes("BasePage"), false);
   assert.equal(page.includes("runSideDiagnostic"), true);
   assert.equal(page.includes("runHandshake"), false);
-  assert.equal(page.indexOf("prepareInstallation") < page.indexOf("runSideDiagnostic({"), true);
+  assert.equal(page.indexOf("resolveInstallation") < page.indexOf("runSideDiagnostic({"), true);
   assert.equal(page.includes("page=build"), true);
 });

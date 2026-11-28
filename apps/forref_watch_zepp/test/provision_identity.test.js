@@ -54,8 +54,9 @@ test("a plain globalData has no messaging until the device app attaches it", () 
   assert.equal(page.includes("messagingReady"), false);
   assert.equal(page.includes('from "@zeppos/zml/3.0/module/messaging/plugin/app"'), true);
   assert.equal(page.includes("base-app"), false);
-  assert.equal(page.includes("prepareInstallation"), true);
-  assert.equal(page.indexOf("prepareInstallation") < page.indexOf("runSideDiagnostic({"), true);
+  assert.equal(page.includes("resolveInstallation"), true);
+  assert.equal(page.includes("prepareInstallation"), false);
+  assert.equal(page.indexOf("resolveInstallation") < page.indexOf("runSideDiagnostic({"), true);
   assert.equal(page.includes("runHandshake"), false);
   assert.equal(page.includes("readProvisionEvidence"), true);
   assert.equal(page.includes("SUBMIT_WATCH_LOCK_V1"), false);
@@ -73,9 +74,14 @@ test("a valid installation id is shown again and is not rewritten", () => {
   assert.equal(kept.raw, installationId);
 });
 
-test("a missing installation is created once and then reused", () => {
+test("a missing installation is not created until inspection allows it", () => {
+  const blocked = store(null);
+  const refused = prepareInstallation(blocked);
+  assert.equal(refused.ok, false);
+  assert.equal(refused.reason, "uninspected");
+  assert.equal(blocked.writes, 0);
   const fresh = store(null);
-  const created = prepareInstallation(fresh);
+  const created = prepareInstallation(fresh, { allowCreate: true });
   const again = prepareInstallation(fresh);
   assert.equal(created.ok, true);
   assert.equal(created.created, true);
