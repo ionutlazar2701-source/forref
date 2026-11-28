@@ -78,17 +78,12 @@ test("messaging stays readable when connect throws after publish", () => {
   assert.equal(app.globalData.clockEpoch, "e1");
 });
 
-test("the provision page attaches messaging only after the UUID is painted", () => {
-  const buildStart = page.indexOf("build() {");
-  const startFn = page.indexOf("start() {");
-  assert.equal(buildStart > 0, true);
-  assert.equal(startFn > buildStart, true);
-  assert.equal(page.slice(buildStart, startFn).includes("attachDeviceMessaging"), false);
-  assert.equal(page.slice(startFn).includes("readMessaging"), true);
-  assert.equal(page.includes("attachDeviceMessaging(app, appPlugin)"), true);
-  assert.equal(page.includes("@zeppos/zml/3.0/module/messaging/plugin/app"), true);
-  assert.equal(page.includes("BaseApp"), false);
+test("the provision page paints the UUID without loading ZML", () => {
+  assert.equal(page.includes("@zeppos/zml"), false);
+  assert.equal(page.includes("attachDeviceMessaging"), false);
+  assert.equal(page.includes("appPlugin"), false);
   assert.equal(page.includes("BasePage"), false);
+  assert.equal(page.includes("messagingReady"), true);
   assert.equal(page.indexOf("prepareInstallation") < page.indexOf("runHandshake({"), true);
   assert.equal(page.includes("page=build"), true);
 });

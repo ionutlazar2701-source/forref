@@ -5,12 +5,12 @@
     "appName": "FORREF",
     "appType": "app",
     "version": {
-      "code": 21,
-      "name": "1.0.21"
+      "code": 22,
+      "name": "1.0.22"
     },
     "icon": "icon.png",
     "vender": "zepp",
-    "description": "FORREF COM 001 BOOT SAFE"
+    "description": "FORREF COM 001 OPEN"
   },
   "permissions": [
     "data:os.device.info",
