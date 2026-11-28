@@ -2,7 +2,7 @@
 // BUILD_REV is the functional commit. The evidence commit may follow it.
 // Device App and Side Service both import this module, so one package has one id.
 export const BUILD_NAME = "com-004r-share";
-export const BUILD_REV = "c2c9555832e899d1f5412a418d9f2b822ea2958c";
+export const BUILD_REV = "29dee454fa5ebba73442387275abf45decfb7499";
 export const BUILD_VERSION = "1.0.30";
 export const BUILD_CODE = 30;
 
