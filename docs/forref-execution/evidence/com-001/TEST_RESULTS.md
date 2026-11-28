@@ -2,6 +2,37 @@
 
 State: **SOFTWARE PASS / HARDWARE GATE PENDING**. Not a Level 2 pass. The phone was not installed from this environment. Automated tests do not establish a Bip 6 pass. H1–H11 and E1–E8 stay **LOCAL GATE REQUIRED**.
 
+## Several matches on one paired watch
+
+The pairing listener belongs to the app. Closing Settings calls `detachUi()` and leaves the pair and transfer listeners running. The app closes them when the process ends, and the next launch binds again from the stored pairing. A second and a third saved match each get their own stage, canonical hash, and registry row. Repeating a verified match reports `replay` and does not add a witness. A changed hash on the same match is `conflict` and the registry row stays. A different installation is `writer-kept`. A registry that cannot be read stops the send. The watch writes one admission file per match and appends the verified entry to `forref_watch_match_registry_v1.txt`. A second match does not replace the first. A corrupt registry and a failed registry write leave the earlier entries in place. Officiate reads that file. The list is empty when no verified match is stored. Lock and activation stay off that page. The stage column stays `CONFIG_PREPARED` after the phone shows Verified on watch. Verification is the watch read-back plus the phone acknowledgement.
+
+Watch `1.0.36` (`watch-sync-036`, rev `85a15f4997531554f4e89dc854857efb937841fd`). `npm test` in `apps/forref_watch_zepp` passed 296 tests. `./tool/verify_cloud.sh` passed. The phone suite passed 155 tests.
+
+Zeus CLI 1.10.3, target Amazfit Bip 6, device sources `9765120`, `9765121`, `10158337`. App id `29566`, version `1.0.36` (code 36). Functional commit `85a15f4997531554f4e89dc854857efb937841fd`. The preview package is `dist/29566-FORREF-1.0.36-20261128194248.zab` (427509 bytes, sha256 `b8ce86c7c6f3f2a81a6024598988dd437a3d0729cc23b0ebeb7030237c0b5104`). It is not committed. `app.bin` contains `watch-sync-036` and the functional rev. The select page bundle contains `forref_watch_match_registry_v1`. The provision page bundle contains `ACK_WATCH_CONFIG_VERIFIED_V1`. The side bundle contains `prepare-only` and the method name `SUBMIT_WATCH_LOCK_V1`. Lock remains blocked before fetch. The QR expires `2026-12-05 19:42:51` on the machine clock (UTC), which is 21:42 Europe/Bucharest. Decoding the QR yields `zpkd1://api-mifit-de2.zepp.com/custom/tools/app-dial/download/LnyFazFOTVKdiHZAIvTroQCLnYCiHIGH`. That decode is a package check. This package does not certify a Bip 6 transfer.
+
+```
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+█ ▄▄▄▄▄ █▄▀▀▄▄█▄██ ▄ ▀▄▄██ ██▀█ ▄▄▄▄▄ █
+█ █   █ ███▄█ ▄█ ▀█▄▀█ █▀  ▄█ █ █   █ █
+█ █▄▄▄█ ██▄▀▄▀▄█▄▄█▄▄▀██▀▀▀██▄█ █▄▄▄█ █
+█▄▄▄▄▄▄▄█ █ ▀▄▀▄▀▄█▄▀ █▄█▄▀▄▀ █▄▄▄▄▄▄▄█
+█  █  █▄▀▀ ▄▄▀▄ ▄▄██ █▀ ▀▄█▄▀ █▄▀▀██▀▄█
+████▀▄▄▄▄▄▀▀ ▀▄ ▄  ▀▀ █▄ ███▄▄▀   ▄ ▄ █
+█▀▄█▄█ ▄▀█▀█▄▄█▀▄▀▄█ ▄██▀ █▀▀ █▄ ▀ ▀ ▄█
+█ ▀▄▀▄ ▄██▄▄ ▄▄█ █▄▀▄ ▄▀█ █▄ █   ▀█▀█ █
+██▀▄█▀█▄▄ ▄ ▀▀▀█▀█▄▀ ▀▀ ▄█ █▀█▄▄ █ ▄▀▄█
+█▄▀    ▄ █▄▄▄▀   ▄█▄▄▄█▀▄  █ █▄▄▀▄▀█▀▄█
+██▄▀█  ▄▀▄  █▄   █▄▀▀███▀█▀▀ ▄█▄  ▄▀███
+█▀███ ▀▄▀▀▀ █▄█ ▄█ ▀█ █▄ ▀▄▀ █▀█▀█▀▀▀ █
+█▀█ ███▄▀▀  █▀ ▀▄▀▀▀▀▄▀█ ▄▀█▀▄▀▄▄▀██ ▄█
+█ ▄▀▀ ▄▄ ▀ ██▀█▄ ▄█▄ ▄█▀▀█▄ ▄ ████  ▄▄█
+█▄████▄▄█  ▄ ▄▀█ ▄▄▀ ▄▀ █  █  ▄▄▄ ▄▄▄██
+█ ▄▄▄▄▄ ██▄▄▀▄  ▄█▄  ▄▄█ ▀▀█▀ █▄█ █▄█▄█
+█ █   █ █ ▀█▄▀ ▀█▄▀█ █▀▀▀█▀ ▄   ▄▄ █ ▀█
+█ █▄▄▄█ █▀ ▀ ▀ █▄ ▀ ███▄ ▄▄▀ █▄▀ ▄▀▀▀ █
+█▄▄▄▄▄▄▄█▄█▄▄▄▄█▄▄▄█▄▄███▄███▄█▄██▄██▄█
+```
+
 ## Send to Watch
 
 A paired installation is read from the pairing stage. Send to Watch prepares a different saved match with that writer and returns the canonical `forref.watch-provision.v1` document on `pending`. The phone stays Waiting. The watch validates the document, writes it, and reads it back. It then sends `ACK_WATCH_CONFIG_VERIFIED_V1`. The phone shows Configuration Verified only for that acknowledgement. A second acknowledgement is `replay` and does not add a witness or a root. A different installation is refused. A different team name is `conflict` and the stored stage stays. A live match and the pairing fixture are refused before a listener starts. A dropped acknowledgement is retried. A new bridge reloads phase `verified` and shows the same match. Lock and activation are not called. The historical correlation and the pairing writer stay. Watch `1.0.35` (`watch-config-035`, rev `a8db8e206942861ef3e2c2a6b889b754ac052e0e`).
