@@ -2,7 +2,7 @@
 
 ## Send to Watch
 
-State: **1.0.35 SOFTWARE PASS. HARDWARE GATE PENDING. NOT ACTIVATED**. Watch source is `1.0.35` (`watch-config-035`, rev `a8db8e206942861ef3e2c2a6b889b754ac052e0e`). The paired watch receives one saved match. The phone shows Configuration Verified only after the watch reads the configuration back. Lock and activation stay disabled. No authority root is created. This section does not certify the Bip 6.
+State: **1.0.35 SOFTWARE PASS. HARDWARE GATE PENDING. NOT ACTIVATED**. Watch source is `1.0.35` (`watch-config-035`, rev `a8db8e206942861ef3e2c2a6b889b754ac052e0e`). Package `dist/29566-FORREF-1.0.35-20261128184642.zab`, sha256 `bce7066b98e2e2cf1d541b2b60634c0b0a9c72464d0d5457b903a5b195c3dcfc`. The QR is in `TEST_RESULTS.md` and expires 20:46 Europe/Bucharest on 5 December 2026. The paired watch receives one saved match. The phone shows Configuration Verified only after the watch reads the configuration back. Lock and activation stay disabled. No authority root is created. This section does not certify the Bip 6.
 
 Do not uninstall either app. Do not type an installation UUID. Do not tap Provision, Enroll, Prepare, Listen, or Cancel. Do not delete a correlation file.
 

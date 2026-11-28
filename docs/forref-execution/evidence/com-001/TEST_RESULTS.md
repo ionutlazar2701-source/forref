@@ -6,6 +6,31 @@ State: **SOFTWARE PASS / HARDWARE GATE PENDING**. Not a Level 2 pass. The phone 
 
 A paired installation is read from the pairing stage. Send to Watch prepares a different saved match with that writer and returns the canonical `forref.watch-provision.v1` document on `pending`. The phone stays Waiting. The watch validates the document, writes it, and reads it back. It then sends `ACK_WATCH_CONFIG_VERIFIED_V1`. The phone shows Configuration Verified only for that acknowledgement. A second acknowledgement is `replay` and does not add a witness or a root. A different installation is refused. A different team name is `conflict` and the stored stage stays. A live match and the pairing fixture are refused before a listener starts. A dropped acknowledgement is retried. A new bridge reloads phase `verified` and shows the same match. Lock and activation are not called. The historical correlation and the pairing writer stay. Watch `1.0.35` (`watch-config-035`, rev `a8db8e206942861ef3e2c2a6b889b754ac052e0e`).
 
+Zeus CLI 1.10.3, target Amazfit Bip 6, device sources `9765120`, `9765121`, `10158337`. App id `29566`, version `1.0.35` (code 35). Functional commit `a8db8e206942861ef3e2c2a6b889b754ac052e0e`. The preview package is `dist/29566-FORREF-1.0.35-20261128184642.zab` (417220 bytes, sha256 `bce7066b98e2e2cf1d541b2b60634c0b0a9c72464d0d5457b903a5b195c3dcfc`). It is not committed. `app.bin` contains `watch-config-035` and the functional rev. The provision page bundle contains `forref_watch_transfer_correlation_v1.txt` and `ACK_WATCH_CONFIG_VERIFIED_V1`. The side bundle contains `prepare-only`. Lock remains blocked before fetch. The QR expires `2026-12-05 18:46:45` on the machine clock (UTC), which is 20:46 Europe/Bucharest. Decoding the QR yields `zpkd1://api-mifit-de2.zepp.com/custom/tools/app-dial/download/psXbvRXtyCUtDGVobhFgnNjslkBKEPMJ`. That decode is a package check. This package does not certify a Bip 6 transfer.
+
+```
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+█ ▄▄▄▄▄ ██▀▀▄▄█ █▀█▀▄█▄▄██▄▀█▀█ ▄▄▄▄▄ █
+█ █   █ █▀███ ▀███▀▄▄█ ▄▀ ▀▄█▀█ █   █ █
+█ █▄▄▄█ █▄▄█▀▀ ██▄███▄█▀▄▀▀▄█ █ █▄▄▄█ █
+█▄▄▄▄▄▄▄█▄█ ▀▄█ ▀▄█ ▀ █▄█▄█ ▀ █▄▄▄▄▄▄▄█
+█ ▄█▀█ ▄▄▀▄█▄▀█ ▀█ █▀▄▀▀▀▄▄▄▀▀██▀ ▄█▀██
+█ ▀█ ▄█▄▀█ ▄█▀▄█ ▀█▄▀██ ███▄▄ ▄  ▀▄▄▀ █
+█▀  ▀▀▄▄ ▀▄▀▄▄ ██ ▄▀  ██▀ ▀█▀ █▄▄█ ▀ ▄█
+█   ▄█ ▄ ▄█  ▄▄█ █▄▄█▀▄ █ ▄▄ ▄  ▀▀█ █ █
+█ ██▄██▄█▄██▄▀█▄▀▀██▄ ▀▄▀█ ▄▀▀▀▄ ▄  ▄▄█
+█▀ ▄█▄ ▄▄▄▄▄▄▀▄▀ ▀▄█ ██▀▄ ▄▀ █▄▄█ ▀█▀▄█
+█▄▀▄▀██▄▀ ▀▀█▄█▄ █▄█▀▄█▄▀█ ▀ ██▄▀ ▄ ███
+█▀   ▀▄▄█▄█  ▄██ ▀█▀███ █▀▄  ▀▄█▀▄▀█▄ █
+█▀█ █▀ ▄ █  █▀ █▄ ▄▀ ▀▀█ ▄█▀▀▄▀▄ ███ ▄█
+█ █▄ ▄ ▄ ▀▀██▀█▄▄▀█▀▀▄█ ▀██ ▄▀██▄█ ▀▄▄█
+█▄██▄██▄█▀▀██▄▀▄▀▀█▀ █▀▄   ▄  ▄▄▄ ▄ ▀██
+█ ▄▄▄▄▄ █  █▀▄█▄ ▄██▄ ▄█ ▀█▀▀ █▄█ █▄█▄█
+█ █   █ ██▄█▄▀▀▀ ███▀█▀ ▀█  ▄   ▄▄ ▄ ▀█
+█ █▄▄▄█ █▀▀▀█▀ ▄  ▄▀█▄█ █▄▄  ▀▀▀ █▀█▄ █
+█▄▄▄▄▄▄▄█▄▄▄▄▄▄██▄██▄▄███▄███▄█▄██▄██▄█
+```
+
 ## Connect Watch
 
 The side service on the phone fetches `127.0.0.1:47221`. `bridge:installation` is that fetch returning a writer mismatch. `fetch:transport` is the same fetch failing without a timeout, permission, or refused-connection classification. Connect Watch no longer prepares a writer from a typed UUID. The first valid watch request stores the watch installation on a new pairing match. A different later watch is `writer-kept`. The historical stage and correlation stay. The watch retries transport failures three times, then reports `phone-unreachable`. The phone screen shows Connected & Verified, already paired, or the two installation previews. Watch `1.0.34` (`watch-pair-034`, rev `121d2bfea53ce325cea2cc0e69d59f806c828c0b`). `npm test` in `apps/forref_watch_zepp` passed 292 tests before the stamp. The phone pairing tests covered a missing stage, one witness, replay, a kept writer, historical bytes unchanged, and a listener that resumes on the same match.
