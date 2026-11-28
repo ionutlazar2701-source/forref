@@ -1,18 +1,20 @@
 import { readFileSync, writeFileSync } from "@zos/fs";
 import { back } from "@zos/router";
+import { appPlugin } from "@zeppos/zml/3.0/module/messaging/plugin/app";
 import { bindBack, button, clear, logDevice, paintBase, textAt } from "../../../utils/chrome";
 import { INSTALLATION_FILE } from "../../../utils/installation_id";
 import { PROVISION_ADMISSION_FILE, PROVISION_ROOT_FILE } from "../../../utils/goal_admission";
 import { readStoredText } from "../../../utils/goal_journal";
 import { createFileProvisionStore } from "../../../utils/provision_transport";
 import { createWatchProvisionAdmission } from "../../../utils/watch_provision";
-import { PROVISION_CORRELATION_FILE, PROVISION_PAGE_TIMEOUT_MS, runHandshake } from "../../../utils/provision_bridge";
+import { attachDeviceMessaging, nextLinkVisit, retireLinkVisit } from "../../../utils/device_messaging";
+import { PROVISION_CORRELATION_FILE, PROVISION_PAGE_TIMEOUT_MS, runPrepare } from "../../../utils/provision_bridge";
 import {
   installationLineSize,
   resolveInstallationCard,
   splitInstallationId,
 } from "../../../utils/installation_label";
-import { messagingUsable, prepareInstallation } from "../../../utils/provision_identity";
+import { prepareInstallation } from "../../../utils/provision_identity";
 import { t } from "../../../utils/text";
 import { ACCENT, TEXT_PRIMARY, TEXT_WARNING } from "../../../utils/theme";
 
@@ -37,23 +39,39 @@ function detail(err) {
   return message.slice(0, 120);
 }
 
-function readMessaging() {
-  try {
-    const lookup = globalThis.getApp;
-    const app = typeof lookup === "function" ? lookup() : null;
-    const data = app && app._options && app._options.globalData;
-    if (!messagingUsable(data)) return null;
-    return data.messaging;
-  } catch (err) {
-    console.log("FORREF_PROVISION tx=recover reason=messaging detail=" + detail(err));
-    return null;
-  }
+function runningApp() {
+  const lookup = globalThis.getApp;
+  return typeof lookup === "function" ? lookup() : null;
+}
+
+function statusLabel(status) {
+  if (status === "identity") return t("installationReady");
+  if (status === "prepared") return t("stagePrepared");
+  return String(status || "");
 }
 
 Page({
   onInit() {
     this._view = { ok: false, id: "", reason: "", status: "" };
-    console.log("FORREF_PROVISION page=init");
+    this._busy = false;
+    this._closed = false;
+    this._visit = 0;
+    try {
+      this._visit = nextLinkVisit(runningApp());
+    } catch (err) {
+      console.log("FORREF_PROVISION tx=recover reason=visit detail=" + detail(err));
+    }
+    console.log("FORREF_PROVISION page=init visit=" + this._visit);
+  },
+  onDestroy() {
+    this._closed = true;
+    console.log("FORREF_PROVISION page=destroy visit=" + this._visit);
+    try {
+      const retired = retireLinkVisit(runningApp(), this._visit);
+      console.log("FORREF_PROVISION tx=retire visit=" + this._visit + " owner=" + (retired ? "cleared" : "kept"));
+    } catch (err) {
+      console.log("FORREF_PROVISION tx=recover reason=destroy detail=" + detail(err));
+    }
   },
   build() {
     console.log("FORREF_PROVISION page=build");
@@ -118,7 +136,7 @@ Page({
       textAt(card.line.x, card.line.y, card.line.w, card.line.h, lines[0] || "", size, TEXT_PRIMARY);
       textAt(card.line2.x, card.line2.y, card.line2.w, card.line2.h, lines[1] || "", size, TEXT_PRIMARY);
       console.log("FORREF_PROVISION installation=" + view.id + " lines=" + lines.length + " size=" + size);
-      textAt(card.status.x, card.status.y, card.status.w, card.status.h, view.status === "identity" ? t("installationReady") : String(view.status || ""), 20, TEXT_WARNING);
+      textAt(card.status.x, card.status.y, card.status.w, card.status.h, statusLabel(view.status), 20, TEXT_WARNING);
     } else {
       textAt(card.line.x, card.line.y, card.line.w, card.line.h, t("installationUnavailable"), 22, TEXT_WARNING);
       textAt(card.line2.x, card.line2.y, card.line2.w, card.line2.h, view.reason || "exception", 20, TEXT_WARNING);
@@ -141,36 +159,68 @@ Page({
     }
   },
   start() {
+    if (this._busy || this._closed) return;
+    this._busy = true;
     const kept = this._view && this._view.id ? this._view.id : "";
-    const messaging = readMessaging();
-    if (!messaging) {
-      console.log("FORREF_PROVISION tx=recover reason=messaging installation=" + kept);
-      this._view = { ok: !!kept, id: kept, reason: kept ? "" : "messaging", status: "messaging" };
-      try {
-        this.paint();
-      } catch (err) {
-        console.log("FORREF_PROVISION tx=recover reason=paint detail=" + detail(err));
-      }
+    const app = runningApp();
+    if (!app || !app.globalData) {
+      this.finishPrepare(kept, { ok: false, reason: "app" });
       return;
     }
+    let messaging = null;
+    try {
+      messaging = attachDeviceMessaging(app, appPlugin, this._visit);
+    } catch (err) {
+      console.log("FORREF_PROVISION tx=recover reason=init detail=" + detail(err) + " installation=" + kept);
+    }
+    if (!messaging) {
+      this.finishPrepare(kept, { ok: false, reason: "messaging" });
+      return;
+    }
+    console.log("FORREF_PROVISION messaging=ready visit=" + this._visit + " installation=" + kept);
     const admission = createWatchProvisionAdmission(
       createFileProvisionStore({ readFileSync: readFileSync, writeFileSync: writeFileSync }, PROVISION_ROOT_FILE, PROVISION_ADMISSION_FILE),
     );
-    runHandshake({
+    runPrepare({
       loadInstallation: () => prepareInstallation(fileStore(INSTALLATION_FILE)),
       requestStore: fileStore(PROVISION_CORRELATION_FILE),
       admission: admission,
       request: (message) => messaging.request(message, { timeout: PROVISION_PAGE_TIMEOUT_MS }),
     }).then((view) => {
-      const id = kept || (view && view.installationId) || "";
-      this._view = { ok: !!id, id: id, reason: view && view.reason ? view.reason : "", status: view && view.ok ? "recorded" : (view && view.reason) || "refused" };
-      console.log("FORREF_PROVISION outcome=" + (view && view.ok ? "WATCH_ACTIVATED_V1" : "REFUSED") + " reason=" + ((view && view.reason) || ""));
-      console.log("FORREF_D1 outcome=UNCERTIFIED reason=watch-storage-not-certified");
-      this.paint();
+      this.finishPrepare(kept, view);
     }).catch((err) => {
       console.log("FORREF_PROVISION tx=recover reason=request detail=" + detail(err) + " installation=" + kept);
-      this._view = { ok: !!kept, id: kept, reason: kept ? "" : "request", status: "request" };
-      this.paint();
+      this.finishPrepare(kept, { ok: false, reason: "request" });
     });
+  },
+  finishPrepare(kept, view) {
+    this._busy = false;
+    const id = kept || (view && view.installationId) || "";
+    const prepared = !!(view && view.ok && view.transport === "prepared");
+    if (this._closed) {
+      console.log("FORREF_PROVISION tx=drop installation=" + id + " reason=" + (view && view.reason ? view.reason : ""));
+      return;
+    }
+    this._view = {
+      ok: !!id,
+      id: id,
+      reason: view && view.reason ? view.reason : "",
+      status: prepared ? "prepared" : (view && view.reason) || "refused",
+    };
+    console.log(
+      "FORREF_PROVISION outcome=" + (prepared ? "PREPARED" : "REFUSED") +
+        " installation=" + id +
+        " request=" + ((view && view.requestId) || "") +
+        " match=" + ((view && view.matchId) || "") +
+        " hash=" + ((view && view.contentHash) || "") +
+        " canonical=" + (prepared ? "accepted" : "rejected") +
+        " reason=" + ((view && view.reason) || ""),
+    );
+    console.log("FORREF_D1 outcome=UNCERTIFIED reason=watch-storage-not-certified");
+    try {
+      this.paint();
+    } catch (err) {
+      console.log("FORREF_PROVISION tx=recover reason=paint detail=" + detail(err));
+    }
   },
 });

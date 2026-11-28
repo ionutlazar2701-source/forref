@@ -15,6 +15,12 @@ export function isProvisionMethod(method) {
     method === REPORT_WATCH_ACTIVATED_V1;
 }
 
+// COM-003 proves the prepared document only. Lock and activation stay
+// refused on the side service until a later physical trial.
+export function blockedDuringPrepare(method) {
+  return method === SUBMIT_WATCH_LOCK_V1 || method === REPORT_WATCH_ACTIVATED_V1;
+}
+
 function uuid() {
   const bytes = new Array(16);
   for (let i = 0; i < 16; i += 1) bytes[i] = Math.floor(Math.random() * 256);
@@ -424,24 +430,40 @@ async function ask(deps, method, params) {
   return normalized.body;
 }
 
-export async function runHandshake(deps) {
+function openHandshake(deps) {
   const installation = deps.loadInstallation();
   if (!installation.ok) {
-    return { ok: false, stage: "identity", reason: installation.reason || "installation", transport: "" };
+    return { ok: false, installation: null, result: { ok: false, stage: "identity", reason: installation.reason || "installation", transport: "" } };
   }
   const key = installation.id;
   if (handshakeOpen.has(key)) {
-    return { ok: false, stage: "identity", reason: "busy", installationId: installation.id, transport: "" };
+    return { ok: false, installation: null, result: { ok: false, stage: "identity", reason: "busy", installationId: installation.id, transport: "" } };
   }
   handshakeOpen.add(key);
+  return { ok: true, installation: installation, result: null };
+}
+
+export async function runPrepare(deps) {
+  const opened = openHandshake(deps);
+  if (!opened.ok) return opened.result;
   try {
-    return await runHandshakeBody(deps, installation);
+    return await runPrepareBody(deps, opened.installation);
   } finally {
-    handshakeOpen.delete(key);
+    handshakeOpen.delete(opened.installation.id);
   }
 }
 
-async function runHandshakeBody(deps, installation) {
+export async function runHandshake(deps) {
+  const opened = openHandshake(deps);
+  if (!opened.ok) return opened.result;
+  try {
+    return await runHandshakeBody(deps, opened.installation);
+  } finally {
+    handshakeOpen.delete(opened.installation.id);
+  }
+}
+
+async function runPrepareBody(deps, installation) {
   let correlation = loadCorrelation(deps.requestStore, installation.id, deps.allocate);
   if (!correlation.ok) {
     return { ok: false, stage: "identity", reason: correlation.reason, installationId: installation.id, requestId: correlation.requestId || "", transport: "" };
@@ -473,6 +495,7 @@ async function runHandshakeBody(deps, installation) {
       installationId: installation.id,
       requestId: correlation.requestId,
       transport: pending && pending.disposition || "unavailable",
+      durable: false,
     };
   }
   correlation = saveCorrelation(deps.requestStore, {
@@ -486,7 +509,39 @@ async function runHandshakeBody(deps, installation) {
   if (!correlation.ok) {
     return { ok: false, stage: "verified", reason: "correlation-write", installationId: installation.id, requestId: correlation.requestId, matchId: verified.matchId, contentHash: verified.contentHash, transport: "" };
   }
-  provisionLog(deps.log, { tx: "transition", phase: correlation.phase, request: correlation.requestId, match: verified.matchId, hash: verified.contentHash });
+  provisionLog(deps.log, { tx: "transition", phase: correlation.phase, request: correlation.requestId, match: verified.matchId, hash: verified.contentHash, canonical: "accepted" });
+  return {
+    ok: true,
+    stage: "prepared",
+    reason: "",
+    installationId: installation.id,
+    requestId: correlation.requestId,
+    matchId: verified.matchId,
+    contentHash: verified.contentHash,
+    homeName: verified.homeName,
+    awayName: verified.awayName,
+    transport: "prepared",
+    durable: false,
+    receipt: verified.receipt,
+  };
+}
+
+async function runHandshakeBody(deps, installation) {
+  const prepared = await runPrepareBody(deps, installation);
+  if (!prepared.ok) return prepared;
+  const verified = {
+    matchId: prepared.matchId,
+    contentHash: prepared.contentHash,
+    homeName: prepared.homeName,
+    awayName: prepared.awayName,
+    receipt: prepared.receipt,
+  };
+  let correlation = {
+    requestId: prepared.requestId,
+    phase: "verified",
+    matchId: prepared.matchId,
+    contentHash: prepared.contentHash,
+  };
   const locked = await ask(deps, SUBMIT_WATCH_LOCK_V1, verified.receipt);
   const activation = applyActivation(deps.admission, locked, verified.receipt);
   if (!activation.ok) {

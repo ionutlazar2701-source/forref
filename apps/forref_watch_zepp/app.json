@@ -5,12 +5,12 @@
     "appName": "FORREF",
     "appType": "app",
     "version": {
-      "code": 24,
-      "name": "1.0.24"
+      "code": 25,
+      "name": "1.0.25"
     },
     "icon": "icon.png",
     "vender": "zepp",
-    "description": "FORREF COM 002R LINK"
+    "description": "FORREF COM 003 PREPARE"
   },
   "permissions": [
     "data:os.device.info",

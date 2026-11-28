@@ -44,15 +44,17 @@ test("the watch device bundle does not load ZML and registers App directly", () 
   const files = [];
   for (const entry of entries) walkFile(entry, seen, files);
   const link = join(root, "page/gt/link/index.page.js");
+  const provision = join(root, "page/gt/provision/index.page.js");
   const specs = files
-    .filter((file) => file !== link)
+    .filter((file) => file !== link && file !== provision)
     .flatMap((file) => importSpecifiers(readFileSync(file, "utf8")));
   const offenders = specs.filter((spec) => spec.includes("@zeppos/zml") || spec.includes("device_messaging") || spec.includes("device_app"));
   assert.deepEqual(offenders, []);
-  const linkSource = readFileSync(link, "utf8");
-  assert.equal(linkSource.includes('from "@zeppos/zml/3.0/module/messaging/plugin/app"'), true);
-  assert.equal(linkSource.includes("base-app"), false);
-  const bootFiles = files.filter((file) => file.endsWith("/app.js") || file.includes("/app-service/") || file.endsWith("/home/index.page.js") || file.endsWith("/provision/index.page.js"));
+  for (const source of [readFileSync(link, "utf8"), readFileSync(provision, "utf8")]) {
+    assert.equal(source.includes('from "@zeppos/zml/3.0/module/messaging/plugin/app"'), true);
+    assert.equal(source.includes("base-app"), false);
+  }
+  const bootFiles = files.filter((file) => file.endsWith("/app.js") || file.includes("/app-service/") || file.endsWith("/home/index.page.js"));
   const bootText = bootFiles.map((file) => readFileSync(file, "utf8")).join("\n");
   assert.equal(bootText.includes("@zeppos/zml"), false);
   const side = readFileSync(join(root, "app-side/index.js"), "utf8");

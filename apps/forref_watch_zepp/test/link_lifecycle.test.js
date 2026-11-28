@@ -151,8 +151,9 @@ test("LINK destruction retires ownership and PROVISION will not send on that obj
   assert.equal(helper.includes("disConnect"), true);
   assert.equal(helper.includes("clock_"), false);
   assert.equal(helper.includes("installation"), false);
-  assert.equal(provision.includes("messagingUsable"), true);
-  assert.equal(provision.includes("runHandshake"), true);
+  assert.equal(provision.includes("runPrepare"), true);
+  assert.equal(provision.includes("runHandshake"), false);
+  assert.equal(provision.includes("onDestroy()"), true);
   assert.equal(app.includes("App({"), true);
   assert.equal(app.includes("@zeppos/zml"), false);
 });

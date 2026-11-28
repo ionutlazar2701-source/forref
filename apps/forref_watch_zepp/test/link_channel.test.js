@@ -50,7 +50,8 @@ test("the link page loads messaging on tap and the side answers before provision
   assert.equal(page.includes("page=build"), true);
   assert.equal(app.includes("App({"), true);
   assert.equal(app.includes("@zeppos/zml"), false);
-  assert.equal(provision.includes("@zeppos/zml"), false);
+  assert.equal(provision.includes('from "@zeppos/zml/3.0/module/messaging/plugin/app"'), true);
+  assert.equal(provision.includes("base-app"), false);
   assert.equal(settings.includes('push({ url: "page/gt/link/index.page" })'), true);
   assert.equal(side.indexOf("replyLink") < side.indexOf("dispatchSideRequest"), true);
   assert.equal(side.includes("GET_WATCH_PROVISION_V1"), false);
