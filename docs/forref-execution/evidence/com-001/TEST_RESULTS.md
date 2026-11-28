@@ -66,7 +66,7 @@ Logs are `FORREF_PROVISION` lines with `tx=request`, `tx=response`, `tx=transiti
 
 `flutter test test/watch_provision_debug_settings_test.dart test/watch_provision_debug_bridge_test.dart` in `apps/referee_phone`: 10 pass, 0 fail.
 
-`./tool/verify_cloud.sh` on the 1.0.21 tree: PASSED. This 1.0.22 change does not touch the phone or Match Core packages. The watch suite above is the check for this package.
+`./tool/verify_cloud.sh` on this tree: PASSED. The phone suite inside it reported `All tests passed!`.
 
 ## Diagnostic package
 
