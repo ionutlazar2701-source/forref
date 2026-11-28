@@ -94,11 +94,11 @@ void main() {
     final conflict =
         await store.saveWatchProvisionPrepared(_stage(hash: 'hash-2'));
     expect(conflict, isA<WatchProvisionStageRefused>());
-    expect(
-        (conflict as WatchProvisionStageRefused).reason, 'prepared-conflict');
+    final refused = conflict as WatchProvisionStageRefused;
+    expect(refused.reason, 'prepared-conflict');
     expect((await store.readWatchProvisionStage('match-1'))?.contentHash,
         'hash-1');
-    expect((conflict as WatchProvisionStageRefused).changed, ['content-hash']);
+    expect(refused.changed, ['content-hash']);
     final writer =
         await store.saveWatchProvisionPrepared(_stage(writer: 'watch-2'));
     expect((writer as WatchProvisionStageRefused).changed, ['writer-device']);
