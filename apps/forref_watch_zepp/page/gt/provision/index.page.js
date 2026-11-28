@@ -12,6 +12,8 @@ import {
   resolveInstallationCard,
   splitInstallationId,
 } from "../../../utils/installation_label";
+import { appPlugin } from "@zeppos/zml/3.0/module/messaging/plugin/app";
+import { attachDeviceMessaging } from "../../../utils/device_messaging";
 import { prepareInstallation, readDeviceMessaging } from "../../../utils/provision_identity";
 import { t } from "../../../utils/text";
 import { ACCENT, TEXT_PRIMARY, TEXT_WARNING } from "../../../utils/theme";
@@ -41,7 +43,14 @@ function readMessaging() {
   try {
     const lookup = globalThis.getApp;
     const app = typeof lookup === "function" ? lookup() : null;
-    return readDeviceMessaging(app);
+    const existing = readDeviceMessaging(app);
+    if (existing) {
+      console.log("FORREF_PROVISION messaging=ready");
+      return existing;
+    }
+    const attached = attachDeviceMessaging(app, appPlugin);
+    console.log("FORREF_PROVISION messaging=" + (attached ? "ready" : "absent"));
+    return attached;
   } catch (err) {
     console.log("FORREF_PROVISION tx=recover reason=messaging detail=" + detail(err));
     return null;

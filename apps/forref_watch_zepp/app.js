@@ -1,9 +1,13 @@
 import { setWakeUpRelaunch } from "@zos/display";
-import { BaseApp } from "@zeppos/zml/base-app";
 import { bootLine } from "./utils/build_stamp";
 import { startForegroundClock, stopForegroundClock } from "./utils/clock_foreground_bind";
 import { openDeviceApp } from "./utils/device_app";
 import { attachMatchTelemetry, releaseMatchTelemetry } from "./utils/telemetry_bind";
+
+// Plain App registration. @zeppos/zml BaseApp reads
+// __$$app$$__.__globals__.__scopedGlobals__ and opens BLE before App()
+// runs. 1.0.20 did that: Bip 6 stayed black, then rebooted.
+// Messaging is attached from the provision page, after Home has painted.
 
 function detail(err) {
   const message = err && err.message ? String(err.message) : String(err || "exception");
@@ -48,7 +52,7 @@ function shutdown() {
   console.log("FORREF_APP onDestroy");
 }
 
-openDeviceApp(App, BaseApp, {
+openDeviceApp(App, {
   onCreate: boot,
   onDestroy: shutdown,
   log: (line) => console.log(line),

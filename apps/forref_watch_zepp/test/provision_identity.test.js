@@ -45,7 +45,8 @@ test("a plain globalData has no messaging until the device app attaches it", () 
   assert.equal(messagingReady(globalData), true);
   assert.equal(readDeviceMessaging({ globalData }), messaging);
   assert.equal(readDeviceMessaging({ _options: { globalData: { demo: true } }, globalData }), messaging);
-  assert.equal(app.includes("BaseApp"), true);
+  assert.equal(app.includes('from "@zeppos/zml'), false);
+  assert.equal(/import\s*\{[^}]*\bBaseApp\b/.test(app), false);
   assert.equal(app.includes("openDeviceApp"), true);
   assert.equal(app.includes("startForegroundClock"), true);
   assert.equal(app.includes("setWakeUpRelaunch"), true);
