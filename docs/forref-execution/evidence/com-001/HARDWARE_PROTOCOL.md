@@ -1,6 +1,6 @@
 # COM-001 Bip 6 protocol
 
-State: **1.0.33 SOFTWARE PASS. ENROLLMENT HARDWARE GATE PENDING. LOCK DISABLED**. Watch source is `1.0.33` (`identity-enroll-033`). The diagnostic package is recorded in `TEST_RESULTS.md` after the stamp. Rows H1–H11 and the enrollment rows E1–E8 stay **LOCAL GATE REQUIRED**. This file does not certify the Bip 6.
+State: **1.0.33 SOFTWARE PASS. ENROLLMENT HARDWARE GATE PENDING. LOCK DISABLED**. Watch source is `1.0.33` (`identity-enroll-033`, rev `e0628d1a1fd272862b4642929dd0aea7d3055e70`). Package `dist/29566-FORREF-1.0.33-20261128151319.zab`, sha256 `9d89033fb92c81b7136b7a5fb654d5793595a12d67d3505133dca3c79a624d63`. The QR is in `TEST_RESULTS.md` and expires 17:13 Europe/Bucharest on 5 December 2026. Rows H1–H11 and the enrollment rows E1–E8 stay **LOCAL GATE REQUIRED**. This file does not certify the Bip 6.
 
 Do not uninstall FORREF Watch, the Zepp app, or FORREF Mobile. Do not reset the match, clear storage, cancel a prepared provision, delete a correlation file, or type the old writer over the current installation UUID. Do not tap Provision on the watch. Do not tap Prepare and listen for the old match. A fingerprint match is not authentication and does not move the stored writer.
 

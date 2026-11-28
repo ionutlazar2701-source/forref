@@ -8,9 +8,34 @@ The historical correlation is persistent on both sides. The watch reuses `forref
 
 Enrollment uses `forref_watch_enroll_correlation_v1.txt`, `forref_watch_enroll_v1.root`, `forref_watch_enroll_v1.admission`, and `forref_watch_enroll_correlation_v1.json`. The phone creates one match with team ids `forref-enroll-home` and `forref-enroll-away` only when that enroll file is absent. The next open reuses it. The historical file bytes, stage writer, content hash, principal, canonical text, identity events, generation-1 root, committed-record count, and Drift row are compared before and after. The session does not cancel, lock, activate, or write the historical correlation.
 
-`apps/forref_watch_zepp` `node --test test/enroll_isolation.test.js test/installation_continuity.test.js` passed. A prepare through the enroll store left the historical correlation text and admission bytes unchanged and reused the enroll request id on the second call. A missing installation uuid with only the enroll file returned `lost-identity-state` and wrote nothing. `flutter test test/watch_enroll_session_test.dart test/watch_provision_debug_settings_test.dart` passed. The phone test started the historical listener, opened the enroll listener on another match, and read `disposition=listening` with `writes=0`. A version-2 witness for the current installation stored one `watch_witness_observed`. The same request returned `reason=replay` and left that one row. Digest version 1 on that request returned `reason=replay-conflict` and left the version-2 row. Another installation returned `reason=recovery-required` and did not add a second eligible witness. The historical stage writer, hash, principal, canonical text, identity event, root, committed records, correlation bytes, and Drift timestamp were unchanged. A corrupt enroll file was left in place. These rows are not Bip 6 results.
+`apps/forref_watch_zepp` `npm test` passed 290 tests, 0 failed. A prepare through the enroll store left the historical correlation text and admission bytes unchanged and reused the enroll request id on the second call. A missing installation uuid with only the enroll file returned `lost-identity-state` and wrote nothing. `flutter test test/watch_enroll_session_test.dart test/watch_provision_debug_settings_test.dart` passed. The phone test started the historical listener, opened the enroll listener on another match, and read `disposition=listening` with `writes=0`. A version-2 witness for the current installation stored one `watch_witness_observed`. The same request returned `reason=replay` and left that one row. Digest version 1 on that request returned `reason=replay-conflict` and left the version-2 row. Another installation returned `reason=recovery-required` and did not add a second eligible witness. The historical stage writer, hash, principal, canonical text, identity event, root, committed records, correlation bytes, and Drift timestamp were unchanged. A corrupt enroll file was left in place. These rows are not Bip 6 results. E1–E8 in `HARDWARE_PROTOCOL.md` stay **LOCAL GATE REQUIRED**.
 
-The diagnostic package is attached after the stamp commit. Founder steps are E1–E8 in `HARDWARE_PROTOCOL.md`.
+Functional commit `e0628d1a1fd272862b4642929dd0aea7d3055e70`. Stamp commit `8ec6e34a8c6bba8fc9eccc7566beba5436a433f7`. Boot `build=identity-enroll-033 rev=e0628d1a1fd272862b4642929dd0aea7d3055e70`.
+
+Zeus CLI 1.10.3, target Amazfit Bip 6, device sources `9765120`, `9765121`, `10158337`. App id `29566`, version `1.0.33` (code 33). The preview package is `dist/29566-FORREF-1.0.33-20261128151319.zab` (413738 bytes, sha256 `9d89033fb92c81b7136b7a5fb654d5793595a12d67d3505133dca3c79a624d63`). It is not committed. `app.bin` contains `identity-enroll-033` and the functional rev. It does not contain `GET_WATCH_PROVISION` or `createConnect`. The provision page bundle contains `forref_watch_enroll_correlation_v1.txt`, `forref-candidate-v2:`, `forref.identity-witness.v1`, and `FORREF_WITNESS`. The side bundle contains `prepare-only`. The QR expires `2026-12-05 15:13:22` on the machine clock (UTC), which is 17:13 Europe/Bucharest. Decoding the QR yields `zpkd1://api-mifit-de2.zepp.com/custom/tools/app-dial/download/wouJhedXVSHmHtAKFrQQHrZLQeqVFMqg`. That decode is a package check. This package does not certify a Bip 6 witness, a Zepp POST, lock, or activation.
+
+```
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+█ ▄▄▄▄▄ █▄▀▀▄▄ ▀▄█▄▄▀█▄▄██ ██▀█ ▄▄▄▄▄ █
+█ █   █ ███▄█  ▄ ▀█▄▄  █▀  ▄█ █ █   █ █
+█ █▄▄▄█ ██▄▀▄▀█ ▄ ▀▀▄███▀▀▀██▄█ █▄▄▄█ █
+█▄▄▄▄▄▄▄█ █ ▀▄▀▄▀▄█ ▀ █▄█▄▀▄▀ █▄▄▄▄▄▄▄█
+█▄▄█▄▄▀▄▀▀▄▄▄▀█▄████▀█▀ ▀▄█▄▀ █▄▀▀██▀▄█
+█▀▀▄█▄ ▄▄▀▄▄ ▀█  ▀▀▀▀▄█▄ ███▄▄▀   ▄ ▄ █
+█▄█▄▀▀ ▄ ▄ ▄▄▄ █ ▀▄█▀▄██▀ █▀▀ █▄ ▀ ▀ ▄█
+██ ▀██ ▄▄▄██ ▄█ ▄ ▄▄▄▄▄▀█ █▄ █   ▀█▀█ █
+█▀█▀██ ▄▀▀▄█▀▀████▄▀▀▀▀ ▄█ █▀█▄▄ █ ▄▀▄█
+██▄▄ █ ▄▀█▄▄▄▀▀▀▄█▄ ▄██▀▄  █ █▄▄▀▄▀█▀▄█
+█▀▄▄█▄▄▄▀▀▄██▄  ▄█ ▀▀███▀█▀▀ ▄█▄  ▄▀███
+█▄  █ ▀▄▀▀ ▄█▄█▀▄  █▀▀█▄ ▀▄▀ █▀█▀█▀▀▀ █
+█▀█ █▀█▄ ▄ ██▀▀█▄▀ ▀▄█▀█ ▄▀█▀▄▀▄▄▀██ ▄█
+█ ▄█  ▄▄▀▀ ▀█▀▄█  █  ▄█▀▀█▄ ▄ ████  ▄▄█
+█▄█████▄█ █▀ ▄▄█ ▄▀█ ▄▀ █  █  ▄▄▄ ▄▄▄██
+█ ▄▄▄▄▄ ███▄▀▄▀█  ▄▀ ▄▄█ ▀▀█▀ █▄█ █▄█▄█
+█ █   █ █ ▀▀▄▀ ▀▄▄█▀ █▀▀▀█▀ ▄   ▄▄ █ ▀█
+█ █▄▄▄█ █▀█▄ ▀ █   ▄███▄ ▄▄▀ █▄▀ ▄▀▀▀ █
+█▄▄▄▄▄▄▄█▄▄▄▄▄▄██▄▄█▄▄███▄███▄█▄██▄██▄█
+```
 
 ## 1.0.32 byte-string identifier
 
