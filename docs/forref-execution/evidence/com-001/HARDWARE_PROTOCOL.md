@@ -1,6 +1,6 @@
 # COM-001 Bip 6 protocol
 
-State: **PAIRING SOFTWARE PASS. HARDWARE GATE PENDING. LOCK DISABLED**. Connect Watch takes the installation id from the watch. It does not ask for a typed UUID. The watch package stamp follows this protocol in `TEST_RESULTS.md`. Rows H1–H11 and E1–E8 stay **LOCAL GATE REQUIRED**. This file does not certify the Bip 6.
+State: **1.0.34 SOFTWARE PASS. HARDWARE GATE PENDING. LOCK DISABLED**. Watch source is `1.0.34` (`watch-pair-034`, rev `121d2bfea53ce325cea2cc0e69d59f806c828c0b`). Rows H1–H11 and E1–E8 stay **LOCAL GATE REQUIRED**. This file does not certify the Bip 6.
 
 Do not uninstall FORREF Watch, the Zepp app, or FORREF Mobile. Do not reset a match, clear storage, cancel a prepared provision, or delete a correlation file. Do not type an installation UUID. Do not tap Prepare and listen, Listen, Enroll witness, or Cancel prepared. Do not tap Provision on the watch.
 
