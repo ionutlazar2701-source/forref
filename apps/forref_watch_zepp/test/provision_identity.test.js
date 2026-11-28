@@ -51,7 +51,8 @@ test("a plain globalData has no messaging until the device app attaches it", () 
   assert.equal(app.includes("startForegroundClock"), true);
   assert.equal(app.includes("setWakeUpRelaunch"), true);
   assert.equal(page.includes("BasePage"), false);
-  assert.equal(page.includes("messagingReady"), true);
+  assert.equal(page.includes("messagingUsable"), true);
+  assert.equal(page.includes("messagingReady"), false);
   assert.equal(page.includes("@zeppos/zml"), false);
   assert.equal(page.includes("prepareInstallation"), true);
   assert.equal(page.indexOf("prepareInstallation") < page.indexOf("runHandshake({"), true);

@@ -13,6 +13,34 @@ export function messagingReady(globalData) {
   return true;
 }
 
+// A cached ZML object can still have request() after the page that opened
+// the socket has been destroyed. connectStatus, the completed shake, and the
+// side port are the health signals on @zeppos/zml 0.0.38. Objects without a
+// transport are the test doubles and stay usable.
+export function messagingAlive(messaging) {
+  if (!messagingReady({ messaging: messaging })) return false;
+  const transport = messaging.transport;
+  if (!transport || typeof transport !== "object") return true;
+  try {
+    const ble = transport.ble;
+    if (ble && typeof ble.connectStatus === "function" && !ble.connectStatus()) return false;
+    if (typeof transport.shakeStatus === "number" && transport.shakeStatus !== 3) return false;
+    if ("appSidePort" in transport && !transport.appSidePort) return false;
+  } catch (err) {
+    return false;
+  }
+  return true;
+}
+
+// PROVISION may send only while the LINK visit that opened the socket is still
+// the owner. Page destruction sets the owner to 0. A full app restart has no
+// messaging object yet.
+export function messagingUsable(globalData) {
+  if (!messagingReady(globalData) || !messagingAlive(globalData.messaging)) return false;
+  const visit = globalData.linkSocketVisit;
+  return typeof visit === "number" && Number.isInteger(visit) && visit >= 1;
+}
+
 // Zepp pages read getApp()._options.globalData. BaseApp also assigns the same
 // object as this.globalData during onCreate. Accept either location.
 export function readDeviceMessaging(app) {

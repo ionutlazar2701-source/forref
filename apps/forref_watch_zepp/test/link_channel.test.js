@@ -39,7 +39,14 @@ test("the link page loads messaging on tap and the side answers before provision
   assert.equal(page.includes('from "@zeppos/zml/3.0/module/messaging/plugin/app"'), true);
   assert.equal(page.includes("base-app"), false);
   assert.equal(page.includes("disConnect"), false);
+  assert.equal(page.includes("onDestroy()"), true);
+  assert.equal(page.includes("page=destroy"), true);
+  assert.equal(page.includes("tx=retire"), true);
+  assert.equal(page.includes("tx=timeout"), true);
+  assert.equal(page.includes("tx=drop"), true);
+  assert.equal(page.includes("_closed"), true);
   assert.equal(page.includes("runHandshake"), false);
+  assert.equal(page.includes("clock_"), false);
   assert.equal(page.includes("page=build"), true);
   assert.equal(app.includes("App({"), true);
   assert.equal(app.includes("@zeppos/zml"), false);
