@@ -2,6 +2,10 @@
 
 State: **SOFTWARE PASS / HARDWARE GATE PENDING**. Not a Level 2 pass. The phone was not installed from this environment. Automated tests do not establish an enrollment hardware pass. H1–H11 and E1–E8 stay **LOCAL GATE REQUIRED**.
 
+## Writer comparison
+
+The 1.0.33 hardware log `tx=identity reason=installation` is the `_classifyOther` branch. That branch runs only when `watch_provision_stages.writer_device_id` is not the request `installationId`. Settings Inspect compares the text field with the picker match. It does not read the watch body, so `changed=none` can be true for the typed UUID while the request UUID is refused. The phone now logs `tx=writer-compare` with both UUIDs, `equal`, `mismatch-at`, the branch, whether `_observeWitness` ran, and Inspect of the same stage using the request UUID. The comparison is not trimmed or lowercased. A matching request stores one version-2 witness. A mismatched request stores none, leaves the writer in place, and Inspect of the stored writer stays `changed` empty while Inspect of the request writer is `writer-device`. A second Enroll tap with a different typed UUID returns `enroll-writer`, leaves the listener and the stage writer, and the new UUID is still `reason=installation`. The watch package stays `1.0.33`. The next Bip 6 step is the read-only procedure in `HARDWARE_PROTOCOL.md`. It is not an enrollment pass.
+
 ## 1.0.33 isolated enrollment
 
 The historical correlation is persistent on both sides. The watch reuses `forref_watch_provision_correlation_v1.txt` for the current installation. The phone bridge loads `forref_watch_provision_correlation_v1.json` and will not listen for a different match while that request is bound. `stop` does not delete the file. A second match on those files is not an isolated session.

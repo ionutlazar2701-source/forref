@@ -294,43 +294,107 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
         body['principalId'] != stage.principalId) {
       return _refused('principal');
     }
-    if (stage.writerDeviceId != installationId) {
-      return _classifyOther(stage, body, installationId, requestId);
+    final requestMatch =
+        body['matchId'] is String ? body['matchId'] as String : '';
+    final comparison = compareWatchWriters(
+      stored: stage.writerDeviceId,
+      requested: installationId,
+    );
+    final canonicalWriter =
+        parseWatchProvisionV1(stage.canonical).document?.writerDeviceId ?? '';
+    final inspection = await boundary.inspectWatchProvision(
+      matchId: stage.matchId,
+      requestedContentHash: stage.contentHash,
+      requestedWriterDeviceId: installationId,
+      requestedPrincipalId: stage.principalId,
+    );
+    final inspectChanged =
+        inspection.changed.isEmpty ? 'none' : inspection.changed.join(',');
+    Future<Map<String, Object?>> traced(
+      Map<String, Object?> answer, {
+      required bool observe,
+    }) {
+      debugPrint(
+        formatWatchWriterComparison(
+          requestMatchId: requestMatch,
+          bridgeMatchId: matchId,
+          stageMatchId: stage.matchId,
+          requestInstallation: installationId,
+          storedWriter: stage.writerDeviceId,
+          canonicalWriter: canonicalWriter,
+          comparison: comparison,
+          stageName: stage.stage,
+          requestId: requestId,
+          bridgeId: identityHashCode(this).toRadixString(16),
+          namespace: correlationNamespace,
+          inspectChanged: inspectChanged,
+          observeInvoked: observe,
+          disposition: '${answer['disposition'] ?? ''}',
+          reason: '${answer['reason'] ?? ''}',
+        ),
+      );
+      return Future<Map<String, Object?>>.value(answer);
+    }
+
+    if (!comparison.equal) {
+      final answer =
+          await _classifyOther(stage, body, installationId, requestId);
+      return traced(answer, observe: false);
     }
     if (_installationId != null && _installationId != installationId) {
-      return _refused('correlation-conflict');
+      return traced(_refused('correlation-conflict'), observe: false);
     }
     if (_requestId != null && _requestId != requestId) {
-      return _refused('correlation');
+      return traced(_refused('correlation'), observe: false);
     }
     debugPrint(
       'FORREF_PROVISION tx=bridge operation=$operation installation=$installationId request=$requestId match=$matchId',
     );
     _trace('request', operation, installationId, requestId);
     if (operation != 'pending' && _requestId == null) {
-      return _refused('order');
+      return traced(_refused('order'), observe: false);
     }
     if (operation == 'pending') {
       final prepared = _pending(stage, installationId, requestId);
+      var observe = false;
       if (prepared['disposition'] == 'prepared') {
+        observe = true;
         await _observeWitness(stage, body, installationId, requestId);
       }
-      return prepared;
+      return traced(prepared, observe: observe);
     }
     if (body['matchId'] != matchId ||
         body['contentHash'] != stage.contentHash) {
-      return _refused('binding');
+      return traced(_refused('binding'), observe: false);
     }
     if (body['canonical'] != null && body['canonical'] != stage.canonical) {
-      return _refused('canonical');
+      return traced(_refused('canonical'), observe: false);
     }
     if (operation == 'lock') {
-      return _lock(stage, body, installationId, requestId);
+      return traced(
+        await _lock(stage, body, installationId, requestId),
+        observe: false,
+      );
     }
     if (operation == 'activation') {
-      return _rememberActivation(stage, body, installationId, requestId);
+      return traced(
+        _rememberActivation(stage, body, installationId, requestId),
+        observe: false,
+      );
     }
-    return _refused('operation');
+    return traced(_refused('operation'), observe: false);
+  }
+
+  String get correlationNamespace {
+    final path = correlationFile?.path ?? '';
+    if (path.endsWith('forref_watch_enroll_correlation_v1.json')) {
+      return 'enroll';
+    }
+    if (path.endsWith('forref_watch_provision_correlation_v1.json')) {
+      return 'historical';
+    }
+    if (correlationFile == null) return 'memory';
+    return 'other';
   }
 
   Future<Map<String, Object?>> _classifyOther(
@@ -623,6 +687,99 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
       'd1Certified': false,
     };
   }
+}
+
+/// Exact writer comparison used by the debug bridge. It does not write.
+final class WatchWriterComparison {
+  const WatchWriterComparison({
+    required this.equal,
+    required this.mismatchAt,
+    required this.branch,
+  });
+
+  final bool equal;
+
+  /// First index where the code units differ, or the shorter length.
+  final int? mismatchAt;
+
+  /// `current-writer` or `other-installation`.
+  final String branch;
+}
+
+WatchWriterComparison compareWatchWriters({
+  required String stored,
+  required String requested,
+}) {
+  if (stored == requested) {
+    return const WatchWriterComparison(
+      equal: true,
+      mismatchAt: null,
+      branch: 'current-writer',
+    );
+  }
+  final limit =
+      stored.length < requested.length ? stored.length : requested.length;
+  var index = 0;
+  while (index < limit &&
+      stored.codeUnitAt(index) == requested.codeUnitAt(index)) {
+    index++;
+  }
+  return WatchWriterComparison(
+    equal: false,
+    mismatchAt: index,
+    branch: 'other-installation',
+  );
+}
+
+String _writerUnit(String value, int? index) {
+  if (index == null) return '';
+  if (index < 0 || index >= value.length) return 'end';
+  return value.codeUnitAt(index).toRadixString(16);
+}
+
+/// One read-only line. It names both UUIDs and does not include a canonical
+/// document or a digest.
+String formatWatchWriterComparison({
+  required String requestMatchId,
+  required String bridgeMatchId,
+  required String stageMatchId,
+  required String requestInstallation,
+  required String storedWriter,
+  required String canonicalWriter,
+  required WatchWriterComparison comparison,
+  required String stageName,
+  required String requestId,
+  required String bridgeId,
+  required String namespace,
+  required String inspectChanged,
+  required bool observeInvoked,
+  required String disposition,
+  required String reason,
+}) {
+  final mismatch = comparison.mismatchAt?.toString() ?? 'none';
+  return 'FORREF_PROVISION tx=writer-compare '
+      'request-match=$requestMatchId '
+      'bridge-match=$bridgeMatchId '
+      'stage-match=$stageMatchId '
+      'request-installation=$requestInstallation '
+      'stored-writer=$storedWriter '
+      'canonical-writer=$canonicalWriter '
+      'column-canonical=${canonicalWriter == storedWriter ? 1 : 0} '
+      'equal=${comparison.equal ? 1 : 0} '
+      'mismatch-at=$mismatch '
+      'request-len=${requestInstallation.length} '
+      'stored-len=${storedWriter.length} '
+      'mismatch-request-unit=${_writerUnit(requestInstallation, comparison.mismatchAt)} '
+      'mismatch-stored-unit=${_writerUnit(storedWriter, comparison.mismatchAt)} '
+      'stage=$stageName '
+      'request=$requestId '
+      'bridge=$bridgeId '
+      'namespace=$namespace '
+      'inspect-changed=$inspectChanged '
+      'branch=${comparison.branch} '
+      'observe=${observeInvoked ? 1 : 0} '
+      'disposition=$disposition '
+      'reason=$reason';
 }
 
 /// Read-only description of the phone correlation file. It never includes a

@@ -16,6 +16,29 @@ On the watch, open SETTINGS, then PROVISION. Do not tap PROVISION. Tap ENROLL on
 
 A conflicting digest version and a different installation are covered by `watch_enroll_session_test.dart`. They return `replay-conflict` and `recovery-required` without a second eligible witness and without changing the historical stage. This build does not offer a watch control that sends a forged digest. Do not treat that automated result as a Bip 6 pass.
 
+## Writer comparison, read only
+
+The 1.0.33 phone log `tx=identity reason=installation` is printed by `_classifyOther`. That branch runs only when the SQLite column `writer_device_id` for the listener match is not the request `installationId`. The comparison is the raw string. `_observeWitness` is not called, so no `watch_witness_observed` row is stored. Settings Inspect does not read the watch body. It compares the installation typed in the text field with the stage of the match selected in the picker. `changed=none` means that text field matches the stored writer of the selected match. The identity line prints the request installation, not the stored writer. Those two screens can both look right while the request and the column differ.
+
+This phone patch does not move the writer, cancel the stage, delete a correlation, or change the watch package. Watch `1.0.33` stays installed. Rerun the phone debug build from this branch with `flutter run -d RZCY11BDMTX`. Do not uninstall either app. Do not tap Cancel prepared. Do not tap Provision on the watch. Do not tap Prepare and listen. Leave the installation field as `0f864ebe-0b89-404d-af72-a98f34ce4e5e`.
+
+Tap **Enroll witness** once. Continue only when the open line is `status=listening` or `status=reused` and `match=e932fd5d-20c9-4f3a-8b6b-1ba5032bc81a`. `enroll-writer`, `enroll-ambiguous`, `enroll-installation`, or any other match id stops the trial. Copy that line and do not type a different UUID. Chrome GET `http://127.0.0.1:47221/` must show that same match and `writes=0`. On the watch open SETTINGS, then PROVISION, and tap ENROLL once.
+
+Copy the full phone line `FORREF_PROVISION tx=writer-compare`. Then tap Inspect for that same match and copy that line too.
+
+| Field | How to read it |
+| --- | --- |
+| `equal` | `1` means the request UUID and the SQLite writer were the same string. `0` means they were not. |
+| `mismatch-at` | Zero-based index of the first code unit that differs. `none` when `equal=1`. |
+| `mismatch-request-unit` and `mismatch-stored-unit` | Those code units in hexadecimal. `end` means that string is shorter. |
+| `branch` | `other-installation` is `_classifyOther`. `current-writer` continues toward the witness. |
+| `observe` | `0` means `_observeWitness` was not called. `1` means it was called. |
+| `inspect-changed` | Inspect of this same store and `stage-match`, using the request UUID as the requested writer. `writer-device` means the request is not the stored writer. `none` means it is. |
+| Settings `changed=none` | The text field, not the watch body. It can be `none` while `inspect-changed=writer-device`. |
+| `column-canonical` | `0` means the writer inside the stored canonical text differs from the column. The patch records that. It does not rewrite either value. |
+
+Do not Cancel prepared after reading the line. Do not type a UUID over the stored writer. Do not tap Provision. This procedure does not certify enrollment. E1–E8 stay **LOCAL GATE REQUIRED**.
+
 | Gate | What to record | Pass is not available until the founder attaches the log |
 | --- | --- | --- |
 | E1 | `FORREF_ENROLL tx=open` before the watch tap. | `status=listening`, `same=1`, a new match id, the old writer, `root=0`. |

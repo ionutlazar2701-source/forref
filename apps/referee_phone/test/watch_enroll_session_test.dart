@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forref_match_core/forref_match_core.dart';
 import 'package:forref_match_persistence/forref_match_persistence.dart';
@@ -13,13 +14,13 @@ import 'package:referee_phone/match/new_match.dart';
 import 'package:referee_phone/officiate/watch_enroll_session.dart';
 import 'package:referee_phone/officiate/watch_provision_debug_bridge.dart';
 
-void main() {
-  const historicalInstallation = '11111111-1111-4111-8111-111111111111';
-  const currentInstallation = '22222222-2222-4222-8222-222222222222';
-  const otherInstallation = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
-  const watchRequest = '44444444-4444-4444-8444-444444444444';
-  const port = 47241;
+const historicalInstallation = '11111111-1111-4111-8111-111111111111';
+const currentInstallation = '22222222-2222-4222-8222-222222222222';
+const otherInstallation = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
+const watchRequest = '44444444-4444-4444-8444-444444444444';
+const port = 47241;
 
+void main() {
   late Directory temp;
   late LocalMatchDatabase database;
   late MatchApplicationComposition composition;
@@ -345,6 +346,296 @@ void main() {
     expect(source.contains(historicalWatchCorrelationName), isTrue);
     expect(source.contains(enrollWatchCorrelationName), isTrue);
   });
+
+  test('a matching enrollment request observes the current writer', () async {
+    final logs = _capturePrint();
+    final opened = await _openEnrollment(temp, database, composition, identity);
+    final response = await _post(opened.bridge, {
+      'operation': 'pending',
+      'installationId': currentInstallation,
+      'requestId': watchRequest,
+      'generation': 1,
+      'witness': _witness(),
+    });
+    expect(response['disposition'], 'prepared');
+    final line = _writerLine(logs);
+    expect(line, contains('equal=1'));
+    expect(line, contains('mismatch-at=none'));
+    expect(line, contains('branch=current-writer'));
+    expect(line, contains('observe=1'));
+    expect(line, contains('disposition=prepared'));
+    expect(line, contains('inspect-changed=none'));
+    expect(line, contains('namespace=enroll'));
+    expect(line, contains('stage-match=${opened.matchId}'));
+    expect(line, contains('request-installation=$currentInstallation'));
+    expect(line, contains('stored-writer=$currentInstallation'));
+    expect(line, contains('column-canonical=1'));
+    expect(line.contains('Enroll Home'), isFalse);
+    expect(line.contains('forref.watch-provision'), isFalse);
+    final events = await composition.boundary.durableStore
+        .readWatchIdentityEvents(opened.matchId);
+    expect(
+      events.where((event) => event.eventKind == 'watch_witness_observed'),
+      hasLength(1),
+    );
+    final stage = await composition.boundary.durableStore
+        .readWatchProvisionStage(opened.matchId);
+    expect(stage?.writerDeviceId, currentInstallation);
+    final inspection = await composition.boundary.inspectWatchProvision(
+      matchId: opened.matchId,
+      requestedContentHash: stage!.contentHash,
+      requestedWriterDeviceId: currentInstallation,
+      requestedPrincipalId: stage.principalId,
+    );
+    expect(inspection.changed, isEmpty);
+    expect(
+      await composition.boundary.durableStore.readGenerationOneAuthorityRoot(
+        opened.matchId,
+      ),
+      isNull,
+    );
+  });
+
+  test(
+      'a mismatched request is another installation and Inspect still matches the stored writer',
+      () async {
+    final logs = _capturePrint();
+    final opened = await _openEnrollment(temp, database, composition, identity);
+    final response = await _post(opened.bridge, {
+      'operation': 'pending',
+      'installationId': otherInstallation,
+      'requestId': '55555555-5555-4555-8555-555555555555',
+      'generation': 1,
+      'witness': _witness(),
+    });
+    expect(response['disposition'], 'refused');
+    expect(response['reason'], 'installation');
+    expect(response.containsKey('canonical'), isFalse);
+    final line = _writerLine(logs);
+    expect(line, contains('equal=0'));
+    expect(line, contains('mismatch-at=0'));
+    expect(line, contains('branch=other-installation'));
+    expect(line, contains('observe=0'));
+    expect(line, contains('disposition=refused'));
+    expect(line, contains('reason=installation'));
+    expect(line, contains('inspect-changed=writer-device'));
+    expect(line, contains('request-installation=$otherInstallation'));
+    expect(line, contains('stored-writer=$currentInstallation'));
+    expect(line, contains('mismatch-request-unit=61'));
+    expect(line, contains('mismatch-stored-unit=32'));
+    expect(line, contains('namespace=enroll'));
+    expect(line.contains('Enroll Home'), isFalse);
+    final events = await composition.boundary.durableStore
+        .readWatchIdentityEvents(opened.matchId);
+    expect(
+      events.where((event) => event.eventKind == 'watch_witness_observed'),
+      isEmpty,
+    );
+    final stage = await composition.boundary.durableStore
+        .readWatchProvisionStage(opened.matchId);
+    expect(stage?.writerDeviceId, currentInstallation);
+    final typed = await composition.boundary.inspectWatchProvision(
+      matchId: opened.matchId,
+      requestedContentHash: stage!.contentHash,
+      requestedWriterDeviceId: currentInstallation,
+      requestedPrincipalId: stage.principalId,
+    );
+    expect(typed.changed, isEmpty);
+    final requested = await composition.boundary.inspectWatchProvision(
+      matchId: opened.matchId,
+      requestedContentHash: stage.contentHash,
+      requestedWriterDeviceId: otherInstallation,
+      requestedPrincipalId: stage.principalId,
+    );
+    expect(requested.changed, ['writer-device']);
+    expect(requested.writerDeviceId, currentInstallation);
+    expect(
+      await composition.boundary.durableStore.readGenerationOneAuthorityRoot(
+        opened.matchId,
+      ),
+      isNull,
+    );
+  });
+
+  test('a second enrollment open does not retarget a listening writer',
+      () async {
+    const staleInstallation = '33333333-3333-4333-8333-333333333333';
+    final opened = await _openEnrollment(temp, database, composition, identity);
+    final historicalFile = File('${temp.path}/$historicalWatchCorrelationName');
+    final historicalBytes = historicalFile.readAsBytesSync();
+    final again = await openWatchEnrollment(
+      storageRoot: temp,
+      database: database,
+      boundary: composition.boundary,
+      phoneOriginDeviceId: identity.originDeviceId,
+      principalId: identity.authorityPrincipalId,
+      installationId: staleInstallation,
+      enrollBridge: opened.bridge,
+      historicalBridge: opened.historical,
+    );
+    expect(again.status, 'enroll-writer');
+    expect(again.matchId, opened.matchId);
+    expect(opened.bridge.isListening, isTrue);
+    expect(historicalFile.readAsBytesSync(), historicalBytes);
+    var stage = await composition.boundary.durableStore
+        .readWatchProvisionStage(opened.matchId);
+    expect(stage?.writerDeviceId, currentInstallation);
+
+    final logs = _capturePrint();
+    final refused = await _post(opened.bridge, {
+      'operation': 'pending',
+      'installationId': staleInstallation,
+      'requestId': '66666666-6666-4666-8666-666666666666',
+      'generation': 1,
+      'witness': _witness(),
+    });
+    expect(refused['disposition'], 'refused');
+    expect(refused['reason'], 'installation');
+    final refusedLine = _writerLine(logs);
+    expect(refusedLine, contains('branch=other-installation'));
+    expect(refusedLine, contains('observe=0'));
+    expect(refusedLine, contains('stored-writer=$currentInstallation'));
+    expect(refusedLine, contains('request-installation=$staleInstallation'));
+    stage = await composition.boundary.durableStore
+        .readWatchProvisionStage(opened.matchId);
+    expect(stage?.writerDeviceId, currentInstallation);
+
+    logs.clear();
+    final observed = await _post(opened.bridge, {
+      'operation': 'pending',
+      'installationId': currentInstallation,
+      'requestId': watchRequest,
+      'generation': 1,
+      'witness': _witness(),
+    });
+    expect(observed['disposition'], 'prepared');
+    final observedLine = _writerLine(logs);
+    expect(observedLine, contains('branch=current-writer'));
+    expect(observedLine, contains('observe=1'));
+    expect(observedLine, contains('equal=1'));
+    final events = await composition.boundary.durableStore
+        .readWatchIdentityEvents(opened.matchId);
+    expect(
+      events.where((event) => event.eventKind == 'watch_witness_observed'),
+      hasLength(1),
+    );
+    stage = await composition.boundary.durableStore
+        .readWatchProvisionStage(opened.matchId);
+    expect(stage?.writerDeviceId, currentInstallation);
+    expect(historicalFile.readAsBytesSync(), historicalBytes);
+    expect(
+      await composition.boundary.durableStore.readGenerationOneAuthorityRoot(
+        opened.matchId,
+      ),
+      isNull,
+    );
+  });
+}
+
+class _OpenedEnrollment {
+  const _OpenedEnrollment(this.bridge, this.historical, this.matchId);
+  final WatchProvisionDebugBridge bridge;
+  final WatchProvisionDebugBridge historical;
+  final String matchId;
+}
+
+Future<_OpenedEnrollment> _openEnrollment(
+  Directory temp,
+  LocalMatchDatabase database,
+  MatchApplicationComposition composition,
+  PhoneCaptureIdentity identity,
+) async {
+  final historical = newLocalMatch(DateTime.utc(2026, 11, 28)).copyWith(
+    teams: const Teams(
+      home: Team(teamId: 'team-north-001', name: 'North'),
+      away: Team(teamId: 'team-south-001', name: 'South'),
+    ),
+  );
+  await database.upsertMatch(historical);
+  final document = documentForSavedMatch(
+    match: historical,
+    principalId: identity.authorityPrincipalId,
+    installationId: historicalInstallation,
+  );
+  expect(document, isNotNull);
+  await composition.boundary.prepareWatchOperatedMatch(
+    canonicalMessage: document!.canonical,
+    phoneOriginDeviceId: identity.originDeviceId,
+  );
+  final stage = await composition.boundary.durableStore
+      .readWatchProvisionStage(historical.matchId);
+  final historicalFile = File('${temp.path}/$historicalWatchCorrelationName');
+  historicalFile.writeAsStringSync(
+    jsonEncode({
+      'v': 1,
+      'generation': 1,
+      'phase': 'pending',
+      'requestId': '33333333-3333-4333-8333-333333333333',
+      'installationId': historicalInstallation,
+      'matchId': historical.matchId,
+      'contentHash': stage!.contentHash,
+    }),
+    flush: true,
+  );
+  final historicalBridge = WatchProvisionDebugBridge(
+    boundary: composition.boundary,
+    phoneOriginDeviceId: identity.originDeviceId,
+    port: port,
+    correlationFile: historicalFile,
+  );
+  addTearDown(historicalBridge.stop);
+  expect(
+    await historicalBridge.start(historical.matchId),
+    WatchProvisionBridgeDisposition.listening,
+  );
+  final enrollBridge = WatchProvisionDebugBridge(
+    boundary: composition.boundary,
+    phoneOriginDeviceId: identity.originDeviceId,
+    port: port,
+    correlationFile: File('${temp.path}/$enrollWatchCorrelationName'),
+  );
+  addTearDown(enrollBridge.stop);
+  final opened = await openWatchEnrollment(
+    storageRoot: temp,
+    database: database,
+    boundary: composition.boundary,
+    phoneOriginDeviceId: identity.originDeviceId,
+    principalId: identity.authorityPrincipalId,
+    installationId: currentInstallation,
+    enrollBridge: enrollBridge,
+    historicalBridge: historicalBridge,
+  );
+  expect(opened.status, 'listening');
+  expect(opened.historicalUnchanged, isTrue);
+  return _OpenedEnrollment(enrollBridge, historicalBridge, opened.matchId);
+}
+
+List<String> _capturePrint() {
+  final logs = <String>[];
+  final previous = debugPrint;
+  debugPrint = (String? message, {int? wrapWidth}) {
+    if (message != null) logs.add(message);
+  };
+  addTearDown(() {
+    debugPrint = previous;
+  });
+  return logs;
+}
+
+String _writerLine(List<String> logs) {
+  return logs.singleWhere((line) => line.contains('tx=writer-compare'));
+}
+
+Map<String, Object?> _witness() {
+  final bytes = platformBytesV2('00112233445566778899aabbccddeeff')!;
+  return {
+    'schema': watchWitnessSchema,
+    'candidateKind': 'platform_uuid',
+    'candidateDigest': encodeDigestHex(candidateDigestV2Bytes(bytes)),
+    'digestVersion': watchCandidateDigestVersionV2,
+    'evidenceGrade': watchEvidenceUnverifiedDevice,
+    'sourceBuilds': 'identity-enroll-033',
+  };
 }
 
 Future<Map<String, Object?>> _post(

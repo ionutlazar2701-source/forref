@@ -8,6 +8,84 @@ import 'package:forref_match_persistence/watch_identity.dart';
 import 'package:referee_phone/officiate/watch_provision_debug_bridge.dart';
 
 void main() {
+  test('writer comparison is exact and names the first differing code unit',
+      () {
+    const stored = '22222222-2222-4222-8222-222222222222';
+    const requested = '22222222-2222-4222-8222-222222222223';
+    final same = compareWatchWriters(stored: stored, requested: stored);
+    expect(same.equal, isTrue);
+    expect(same.mismatchAt, isNull);
+    expect(same.branch, 'current-writer');
+    final differ = compareWatchWriters(stored: stored, requested: requested);
+    expect(differ.equal, isFalse);
+    expect(differ.mismatchAt, 35);
+    expect(differ.branch, 'other-installation');
+    expect(stored == requested, isFalse);
+    final longer = compareWatchWriters(
+      stored: stored,
+      requested: '$stored ',
+    );
+    expect(longer.mismatchAt, stored.length);
+    final line = formatWatchWriterComparison(
+      requestMatchId: '',
+      bridgeMatchId: 'match-watch-001',
+      stageMatchId: 'match-watch-001',
+      requestInstallation: requested,
+      storedWriter: stored,
+      canonicalWriter: stored,
+      comparison: differ,
+      stageName: 'CONFIG_PREPARED',
+      requestId: '44444444-4444-4444-8444-444444444444',
+      bridgeId: 'ab',
+      namespace: 'enroll',
+      inspectChanged: 'writer-device',
+      observeInvoked: false,
+      disposition: 'refused',
+      reason: 'installation',
+    );
+    expect(line, contains('tx=writer-compare'));
+    expect(line, contains('equal=0'));
+    expect(line, contains('mismatch-at=35'));
+    expect(line, contains('mismatch-request-unit=33'));
+    expect(line, contains('mismatch-stored-unit=32'));
+    expect(line, contains('branch=other-installation'));
+    expect(line, contains('observe=0'));
+    expect(line, contains('inspect-changed=writer-device'));
+    expect(line, contains('reason=installation'));
+    expect(line.contains('{'), isFalse);
+    expect(line.contains('forref.watch-provision'), isFalse);
+    final prefix = formatWatchWriterComparison(
+      requestMatchId: '',
+      bridgeMatchId: 'match-watch-001',
+      stageMatchId: 'match-watch-001',
+      requestInstallation: '$stored ',
+      storedWriter: stored,
+      canonicalWriter: stored,
+      comparison: longer,
+      stageName: 'CONFIG_PREPARED',
+      requestId: '44444444-4444-4444-8444-444444444444',
+      bridgeId: 'ab',
+      namespace: 'enroll',
+      inspectChanged: 'writer-device',
+      observeInvoked: false,
+      disposition: 'refused',
+      reason: 'installation',
+    );
+    expect(prefix, contains('mismatch-stored-unit=end'));
+    expect(prefix, contains('mismatch-request-unit=20'));
+    final source = File('lib/officiate/watch_provision_debug_bridge.dart')
+        .readAsStringSync();
+    final compare = source.substring(
+      source.indexOf('WatchWriterComparison compareWatchWriters'),
+      source.indexOf('String _writerUnit'),
+    );
+    expect(compare, contains('stored == requested'));
+    expect(compare.contains('toLowerCase'), isFalse);
+    expect(compare.contains('trim('), isFalse);
+    expect(source, contains('if (!comparison.equal)'));
+    expect(source.contains('stage.writerDeviceId != installationId'), isFalse);
+  });
+
   test('correlation evidence names the stored identity and not the document',
       () {
     const canonical =
