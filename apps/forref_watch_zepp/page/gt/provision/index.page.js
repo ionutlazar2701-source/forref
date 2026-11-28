@@ -8,7 +8,8 @@ import { readStoredText } from "../../../utils/goal_journal";
 import { createFileProvisionStore } from "../../../utils/provision_transport";
 import { createWatchProvisionAdmission } from "../../../utils/watch_provision";
 import { attachDeviceMessaging, nextLinkVisit, retireLinkVisit } from "../../../utils/device_messaging";
-import { PROVISION_CORRELATION_FILE, PROVISION_PAGE_TIMEOUT_MS, readProvisionEvidence, runHandshake } from "../../../utils/provision_bridge";
+import { deviceBuildLine } from "../../../utils/build_stamp";
+import { PROVISION_CORRELATION_FILE, PROVISION_PAGE_TIMEOUT_MS, readProvisionEvidence, runSideDiagnostic } from "../../../utils/provision_bridge";
 import {
   installationLineSize,
   resolveInstallationCard,
@@ -86,6 +87,7 @@ Page({
   },
   build() {
     console.log("FORREF_PROVISION page=build");
+    console.log(deviceBuildLine());
     try {
       bindBack(false);
     } catch (err) {
@@ -202,13 +204,7 @@ Page({
       return;
     }
     console.log("FORREF_PROVISION messaging=ready visit=" + this._visit + " installation=" + kept);
-    const admission = createWatchProvisionAdmission(
-      createFileProvisionStore({ readFileSync: readFileSync, writeFileSync: writeFileSync }, PROVISION_ROOT_FILE, PROVISION_ADMISSION_FILE),
-    );
-    runHandshake({
-      loadInstallation: () => prepareInstallation(fileStore(INSTALLATION_FILE)),
-      requestStore: fileStore(PROVISION_CORRELATION_FILE),
-      admission: admission,
+    runSideDiagnostic({
       request: (message) => messaging.request(message, { timeout: PROVISION_PAGE_TIMEOUT_MS }),
     }).then((view) => {
       this.finishPrepare(kept, view);
@@ -249,7 +245,8 @@ Page({
         " canonical=" + (named ? "accepted" : "rejected") +
         " hop=" + ((view && view.hop) || "") +
         " category=" + ((view && view.category) || "") +
-        " reason=" + ((view && view.reason) || ""),
+        " reason=" + ((view && view.reason) || "") +
+        " detail=" + ((view && view.detail) || ""),
     );
     console.log("FORREF_D1 outcome=UNCERTIFIED reason=watch-storage-not-certified");
     try {

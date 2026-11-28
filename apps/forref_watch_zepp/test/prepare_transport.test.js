@@ -88,14 +88,20 @@ test("a canonical document that disagrees with the watch is refused", async () =
   assert.deepEqual(calls, ["GET_WATCH_PROVISION_V1"]);
 });
 
-test("the lock build reads stored evidence and then runs the handshake", () => {
-  assert.equal(blockedDuringPrepare("SUBMIT_WATCH_LOCK_V1"), false);
-  assert.equal(blockedDuringPrepare("REPORT_WATCH_ACTIVATED_V1"), false);
-  assert.equal(side.includes("blockedDuringPrepare"), false);
-  assert.equal(side.includes("prepare-only"), false);
-  assert.equal(side.indexOf("replyLink") < side.indexOf("dispatchSideRequest"), true);
+test("the diagnostic build reads stored evidence and does not run the handshake", () => {
+  assert.equal(blockedDuringPrepare("SUBMIT_WATCH_LOCK_V1"), true);
+  assert.equal(blockedDuringPrepare("REPORT_WATCH_ACTIVATED_V1"), true);
+  assert.equal(blockedDuringPrepare("GET_WATCH_PROVISION_V1"), false);
+  assert.equal(side.includes("blockedDuringPrepare"), true);
+  assert.equal(side.includes("prepare-only"), true);
+  assert.equal(side.indexOf("replyLink") < side.indexOf("GET_SIDE_BUILD_V1"), true);
+  assert.equal(side.indexOf("GET_SIDE_BUILD_V1") < side.indexOf("PROBE_BRIDGE_V1"), true);
+  assert.equal(side.indexOf("PROBE_BRIDGE_V1") < side.indexOf("blockedDuringPrepare"), true);
+  assert.equal(side.indexOf("blockedDuringPrepare") < side.indexOf("dispatchSideRequest"), true);
   assert.equal(page.includes("readProvisionEvidence"), true);
-  assert.equal(page.includes("runHandshake"), true);
+  assert.equal(page.includes("runSideDiagnostic"), true);
+  assert.equal(page.includes("runHandshake"), false);
+  assert.equal(page.includes("deviceBuildLine"), true);
   assert.equal(page.indexOf("readProvisionEvidence") < page.indexOf("start() {"), true);
   assert.equal(page.slice(page.indexOf("build() {"), page.indexOf("start() {")).includes("attachDeviceMessaging"), false);
   assert.equal(page.includes("SUBMIT_WATCH_LOCK_V1"), false);

@@ -1,3 +1,4 @@
+import { BUILD_CODE, BUILD_NAME, BUILD_REV, BUILD_VERSION } from "./build_stamp.js";
 import { parseWatchProvisionV1 } from "./watch_provision.js";
 
 export const PROVISION_BRIDGE_URL = "http://127.0.0.1:47221/watch-provision/v1";
@@ -6,6 +7,9 @@ export const PROVISION_CORRELATION_FILE = "forref_watch_provision_correlation_v1
 export const GET_WATCH_PROVISION_V1 = "GET_WATCH_PROVISION_V1";
 export const SUBMIT_WATCH_LOCK_V1 = "SUBMIT_WATCH_LOCK_V1";
 export const REPORT_WATCH_ACTIVATED_V1 = "REPORT_WATCH_ACTIVATED_V1";
+export const GET_SIDE_BUILD_V1 = "GET_SIDE_BUILD_V1";
+export const PROBE_BRIDGE_V1 = "PROBE_BRIDGE_V1";
+export const PROBE_BODY = "{\"operation\":\"probe\"}";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -15,10 +19,10 @@ export function isProvisionMethod(method) {
     method === REPORT_WATCH_ACTIVATED_V1;
 }
 
-// COM-004 sends lock and activation on the same fetch as the prepared
-// document. A caller that still asks is not blocked here.
-export function blockedDuringPrepare() {
-  return false;
+// COM-004R keeps lock and activation off while the side build is diagnosed.
+// A caller that still asks is refused before fetch.
+export function blockedDuringPrepare(method) {
+  return method === SUBMIT_WATCH_LOCK_V1 || method === REPORT_WATCH_ACTIVATED_V1;
 }
 
 function uuid() {
@@ -863,4 +867,209 @@ export function dispatchSideRequest(req, fetchImpl, url) {
     });
     return sideFailure(classified, classified.reason);
   });
+}
+
+function identityField(value) {
+  return value == null ? "" : String(value);
+}
+
+export function sideBuildRecord() {
+  return {
+    disposition: "side-build",
+    build: BUILD_NAME,
+    rev: BUILD_REV,
+    version: BUILD_VERSION,
+    code: BUILD_CODE,
+  };
+}
+
+export function sameBuild(record) {
+  if (!record || record.disposition !== "side-build") return false;
+  return identityField(record.build) === BUILD_NAME &&
+    identityField(record.rev) === BUILD_REV &&
+    identityField(record.version) === BUILD_VERSION &&
+    identityField(record.code) === String(BUILD_CODE);
+}
+
+export function describeFetchException(err) {
+  const name = err && typeof err === "object" && err.name ? String(err.name) : "";
+  const message = err && typeof err === "object" && err.message
+    ? String(err.message)
+    : (err == null ? "" : String(err));
+  const code = err && typeof err === "object" && (err.code || err.errno)
+    ? String(err.code || err.errno)
+    : "";
+  const reason = err && typeof err === "object" && err.reason ? String(err.reason) : "";
+  return {
+    name: name.slice(0, 40),
+    message: message.replace(/\s+/g, " ").slice(0, 180),
+    code: code.slice(0, 40),
+    reason: reason.slice(0, 40),
+  };
+}
+
+// Read-only connectivity check. The body is not a provision operation, so the
+// phone debug bridge refuses it before it reads or writes a match.
+export function probeBridge(fetchImpl, url) {
+  const endpoint = url || PROVISION_BRIDGE_URL;
+  const started = Date.now();
+  provisionLog(null, { tx: "probe", hop: "fetch", method: "POST" });
+  return fetchWithDeadline(() => fetchImpl({
+    url: endpoint,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: PROBE_BODY,
+  }), PROVISION_DEADLINE_MS).then((response) => {
+    const elapsed = Date.now() - started;
+    const status = response && typeof response.status === "number" ? response.status : "";
+    return readTransportPayload(response).then((normalized) => {
+      const reason = phoneReasonCode(response) || (normalized && normalized.reason) || "";
+      const answered = typeof status === "number" && status > 0;
+      provisionLog(null, {
+        tx: "probe",
+        hop: answered ? "bridge" : "fetch",
+        category: answered ? "answered" : "transport",
+        http: status,
+        reason: reason,
+        elapsed: elapsed,
+      });
+      return {
+        disposition: "probe",
+        hop: answered ? "bridge" : "fetch",
+        category: answered ? "answered" : "transport",
+        http: status,
+        reason: reason || (answered ? "http" : "transport"),
+        detail: "",
+        durable: false,
+      };
+    });
+  }).catch((err) => {
+    const elapsed = Date.now() - started;
+    const described = describeFetchException(err);
+    const category = classifyFetchFailure(err);
+    provisionLog(null, {
+      tx: "probe",
+      hop: "fetch",
+      category: category,
+      elapsed: elapsed,
+      name: described.name,
+      error: described.message,
+      code: described.code,
+      reason: described.reason || category,
+    });
+    return {
+      disposition: "probe",
+      hop: "fetch",
+      category: category,
+      reason: category,
+      detail: [described.name, described.code, described.message].filter(Boolean).join(" "),
+      http: "",
+      durable: false,
+    };
+  });
+}
+
+export async function runSideDiagnostic(deps) {
+  provisionLog(deps && deps.log, {
+    tx: "device-build",
+    build: BUILD_NAME,
+    rev: BUILD_REV,
+    version: BUILD_VERSION,
+    code: BUILD_CODE,
+  });
+  let raw;
+  try {
+    raw = await deps.request({ method: GET_SIDE_BUILD_V1, params: {} });
+  } catch (err) {
+    const described = describeFetchException(err);
+    provisionLog(deps && deps.log, {
+      tx: "parity",
+      match: 0,
+      reason: "request",
+      error: described.message,
+    });
+    return {
+      ok: false,
+      stage: "parity",
+      reason: "parity:request",
+      detail: described.message,
+      hop: "device",
+      category: "request",
+      durable: false,
+      transport: "parity",
+    };
+  }
+  const side = raw && typeof raw === "object" ? raw : {};
+  const match = sameBuild(side) ? 1 : 0;
+  provisionLog(deps && deps.log, {
+    tx: "parity",
+    match: match,
+    build: BUILD_NAME,
+    rev: BUILD_REV,
+    sideBuild: side.build || "",
+    sideRev: side.rev || "",
+    sideVersion: side.version || "",
+    sideCode: side.code == null ? "" : side.code,
+    reason: match ? "match" : (side.reason || side.disposition || "absent"),
+  });
+  if (!match) {
+    return {
+      ok: false,
+      stage: "parity",
+      reason: "parity:" + (side.reason || side.disposition || "absent"),
+      hop: "side",
+      category: "parity",
+      sideBuild: side.build || "",
+      sideRev: side.rev || "",
+      detail: "",
+      durable: false,
+      transport: "parity",
+    };
+  }
+  let probe;
+  try {
+    probe = await deps.request({
+      method: PROBE_BRIDGE_V1,
+      params: sideBuildRecord(),
+    });
+  } catch (err) {
+    const described = describeFetchException(err);
+    provisionLog(deps && deps.log, {
+      tx: "probe-result",
+      hop: "device",
+      category: "request",
+      reason: "request",
+      detail: described.message,
+    });
+    return {
+      ok: false,
+      stage: "probe",
+      reason: "probe:request",
+      detail: described.message,
+      hop: "device",
+      category: "request",
+      durable: false,
+      transport: "probe",
+    };
+  }
+  const body = probe && typeof probe === "object" ? probe : {};
+  provisionLog(deps && deps.log, {
+    tx: "probe-result",
+    hop: body.hop || "",
+    category: body.category || "",
+    http: body.http == null ? "" : body.http,
+    reason: body.reason || "",
+    detail: body.detail || "",
+  });
+  return {
+    ok: body.category === "answered",
+    stage: "probe",
+    reason: "probe:" + (body.reason || body.category || "absent"),
+    hop: body.hop || "",
+    category: body.category || "",
+    detail: body.detail || "",
+    http: body.http,
+    durable: false,
+    transport: "probe",
+  };
 }
