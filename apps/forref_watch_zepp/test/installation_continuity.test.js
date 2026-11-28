@@ -117,4 +117,5 @@ test("conflicting or unreadable identity is kept and a fresh store can create on
   assert.equal(source.includes("47221"), false);
   assert.equal(page.includes("runHandshake"), false);
   assert.equal(page.includes("resolveInstallation"), true);
+  assert.equal(page.indexOf("if (!kept)") < page.indexOf("runSideDiagnostic({"), true);
 });

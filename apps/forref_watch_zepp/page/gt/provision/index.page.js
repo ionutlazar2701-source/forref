@@ -187,7 +187,12 @@ Page({
   start() {
     if (this._busy || this._closed) return;
     this._busy = true;
-    const kept = this._view && this._view.id ? this._view.id : "";
+    const kept = this._view && this._view.ok && this._view.id ? this._view.id : "";
+    if (!kept) {
+      this._busy = false;
+      console.log("FORREF_PROVISION tx=recover reason=" + ((this._view && this._view.reason) || "recovery") + " installation=");
+      return;
+    }
     const app = runningApp();
     if (!app || !app.globalData) {
       this.finishPrepare(kept, { ok: false, reason: "app" });
