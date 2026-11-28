@@ -2,11 +2,13 @@
 
 State: **SOFTWARE PASS / HARDWARE GATE PENDING**. Not a Level 2 pass. The phone was not installed from this environment, and the QR was not scanned here.
 
-Boot-safe package: functional commit `0f835cd49e40648f9f441cbcd7f75b46021dc3b2`. Boot stamp `d1e84fb`. Boot name `com-001-boot-safe`. App `29566`, version `1.0.21` (code 21). `npm test`: 263 pass, 0 fail.
+Open package: functional commit `b89abb97e2c31162e145f6b62041ee2d6f3aed3d`. Boot stamp `afbb3ae`. Boot name `com-001-open`. App `29566`, version `1.0.22` (code 22). `npm test`: 260 pass, 0 fail.
 
-`1.0.20` opened through ZML `BaseApp` before `App()` was registered. `BaseApp()` reads `__$$app$$__.__globals__.__scopedGlobals__`. When that object is not ready, the call throws and `App()` never runs. The same module also constructs `TransferFile` and calls `ble.createConnect` during startup. On the Bip 6 the screen stayed black and the watch rebooted. A node probe of `@zeppos/zml` 0.0.38 `dist/zml-app.js` with `__$$app$$__` present and `__globals__` absent throws `Cannot read properties of undefined (reading '__scopedGlobals__')` and does not register the app. The device app entry no longer imports `@zeppos/zml`. The built `app.bin` for `1.0.21` contains `FORREF_APP` and `com-001-boot-safe` and does not contain `__scopedGlobals__`, `TransferFile`, or `createConnect`.
+`1.0.21` still rebooted the Bip 6 from a black screen. That package called `App()` through a helper, and the provision page still imported `@zeppos/zml/3.0/module/messaging/plugin/app`. `1.0.22` restores the direct `App({...})` registration used by `1.0.19`, which opened. No watch page, `app.js`, or app-service file imports `@zeppos/zml`. The built device package contains `FORREF_APP` and `com-001-open`. It does not contain `__scopedGlobals__`, `TransferFile`, `createConnect`, `BaseApp`, or `hmBle`. Those strings remain in the phone-side bundle only.
 
-Messaging is attached when Provision is tapped. The provision page bundle is the one that contains `createConnect`. The UUID is painted in `build()` before that call. A plugin throw leaves the clock epoch in place and logs `messaging=absent`. A node test sends the page request through `dispatchSideRequest` to a loopback HTTP server and finishes `transport=recorded` with the fixture content hash. That server stands in for the phone. It is not a Bip 6 result.
+This package does not send a provision request. There is no messaging object on the device. A node test still sends the page request through `dispatchSideRequest` to a loopback HTTP server and finishes `transport=recorded` with the fixture content hash. That server stands in for the phone. It is not a Bip 6 result.
+
+`1.0.20` opened through ZML `BaseApp` before `App()` was registered. `BaseApp()` reads `__$$app$$__.__globals__.__scopedGlobals__`. When that object is not ready, the call throws and `App()` never runs. The same module also constructs `TransferFile` and calls `ble.createConnect` during startup.
 
 Settings keeps `WatchProvisionDebugSection` behind `kDebugMode`, and the bridge refuses unless `kDebugMode` is true. The release manifest has no `INTERNET` permission. A debug widget test opens Settings and finds Watch provision, Watch installation UUID, No saved match selected, and Prepare and listen, then selects a saved match. The listening status line is `listening` plus the content hash, written after `bridge.start`. The bridge test posts the pending body to that server and receives `disposition=prepared`.
 
@@ -60,43 +62,43 @@ Logs are `FORREF_PROVISION` lines with `tx=request`, `tx=response`, `tx=transiti
 
 ## Suite
 
-`npm test` in `apps/forref_watch_zepp`: 263 pass, 0 fail.
+`npm test` in `apps/forref_watch_zepp`: 260 pass, 0 fail.
 
 `flutter test test/watch_provision_debug_settings_test.dart test/watch_provision_debug_bridge_test.dart` in `apps/referee_phone`: 10 pass, 0 fail.
 
-`./tool/verify_cloud.sh` on this tree: PASSED. The phone suite inside it reported `All tests passed!`.
+`./tool/verify_cloud.sh` on the 1.0.21 tree: PASSED. This 1.0.22 change does not touch the phone or Match Core packages. The watch suite above is the check for this package.
 
 ## Diagnostic package
 
-Install `1.0.21`. Do not install `1.0.20`. Opening FORREF must show Home and must not reboot the watch. Home → SETTINGS → PROVISION shows the installation UUID without a phone connection and without tapping Provision. The first console line on that page is `FORREF_PROVISION page=build`, then `device width=` `height=` `layout=` and `installation=` with the 36-character id. A storage failure logs `tx=recover` and draws `INSTALLATION UNAVAILABLE`. Tapping Provision logs `FORREF_PROVISION messaging=ready` or `messaging=absent`. That line is not part of app boot.
+Install `1.0.22`. Do not install `1.0.20` or `1.0.21`. Opening FORREF must show Home and must not reboot the watch. Home → SETTINGS → PROVISION shows the installation UUID without a phone connection. The first console line on that page is `FORREF_PROVISION page=build`, then `device width=` `height=` `layout=` and `installation=` with the 36-character id. A storage failure logs `tx=recover` and draws `INSTALLATION UNAVAILABLE`. Tapping Provision does not call Bluetooth in this package.
 
-Zeus CLI 1.10.3, target Amazfit Bip 6, device sources `9765120`, `9765121`, `10158337`. App id `29566`, version `1.0.21` (code 21), boot `build=com-001-boot-safe rev=0f835cd49e40648f9f441cbcd7f75b46021dc3b2`. The preview package is `dist/29566-FORREF-1.0.21-20261128073806.zab` (367557 bytes, sha256 `87e5359aeb774a47ed2a41f3695a7af8dc56083d4d6095c0724c72d84c2de835`). It is not committed. The QR expires `2026-12-05 07:38:10` on the machine clock (UTC), which is 09:38 Europe/Bucharest. The QR was not scanned here. This package does not certify the handshake.
+Zeus CLI 1.10.3, target Amazfit Bip 6, device sources `9765120`, `9765121`, `10158337`. App id `29566`, version `1.0.22` (code 22), boot `build=com-001-open rev=b89abb97e2c31162e145f6b62041ee2d6f3aed3d`. The preview package is `dist/29566-FORREF-1.0.22-20261128075209.zab` (358060 bytes, sha256 `1903cb8c226cca472b042237d3a3dff21ddab9f9d296a2b6e8dc3deda1e08aeb`). It is not committed. The QR expires `2026-12-05 07:52:12` on the machine clock (UTC), which is 09:52 Europe/Bucharest. The QR was not scanned here. This package does not certify the handshake and does not send a provision request.
 
-`1.0.20` (`dist/29566-FORREF-1.0.20-20261127215753.zab`, sha256 `5b0d9a44f47dc500883931b6644ada18fbdc1e9d4dff4631e26bdb3f868554bf`) is the build that stayed black and rebooted the watch. `1.0.19` (`dist/29566-FORREF-1.0.19-20261127101748.zab`, sha256 `84a4589771e69967cdc75a376d197434521c3a0e7cdbb1e7f008dc952ae02482`) paints the UUID and does not initialize `globalData.messaging`.
+`1.0.21` (`dist/29566-FORREF-1.0.21-20261128073806.zab`, sha256 `87e5359aeb774a47ed2a41f3695a7af8dc56083d4d6095c0724c72d84c2de835`) rebooted the watch. Its provision page bundle contained `createConnect`. `1.0.20` (`dist/29566-FORREF-1.0.20-20261127215753.zab`, sha256 `5b0d9a44f47dc500883931b6644ada18fbdc1e9d4dff4631e26bdb3f868554bf`) also stayed black and rebooted. `1.0.19` (`dist/29566-FORREF-1.0.19-20261127101748.zab`, sha256 `84a4589771e69967cdc75a376d197434521c3a0e7cdbb1e7f008dc952ae02482`) paints the UUID and does not initialize `globalData.messaging`.
 
 `1.0.18` (`dist/29566-FORREF-1.0.18-20261127100800.zab`, sha256 `38bae40d41a92d9c6aa426810adbc2406b263e69ae28ab604e13d9cf84108583`) is the build that opened a blank provision page. The `1.0.17` package is the earlier transport build.
 
 ```
-[FORREF - 1.0.21]
+[FORREF - 1.0.22]
 Supported device: Amazfit Bip 6
 ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-█ ▄▄▄▄▄ █▄▀ ▀ █ ▄▄▄██ ▄█ ▀█▄█ █ ▄▄▄▄▄ █
-█ █   █ █   █▀ ▀▄ ▀█▄▀█▀▀▀   ▄█ █   █ █
-█ █▄▄▄█ █▄█▀ ▄▀▀█▄▄  █▄██▄██▄▄█ █▄▄▄█ █
-█▄▄▄▄▄▄▄█▄█ █ █ █▄▀▄▀ █▄▀ █▄▀ █▄▄▄▄▄▄▄█
-█    ▀▀▄█ ▀ ▄   ▄▀▄▄█▀▄▄▀██ ▄▄▄█▀▄  ▀▄█
-█ ▄▄██▄▄▀  ▀▄▄▀▄█ ▄ ▀█▄▄▄ ▀██▄██▄ █  ██
-█    ▀ ▄█▀▄▀▀    ▀▄██▄█▄▄▄  ▀▀  █   █ █
-█▀ ▀▀█▀▄▀█▄▄ ██▀▀▀▄█ ▀▀██▀█ █▀ ▀ █ ██▀█
-█ ▀█▄▀▀▄ ▀  █▄▀█▄█▄ ▀     ▄█ █ ▀▄█▀▄█▀█
-█ █▀▄▀█▄▄▄ ▄▀██▄    █ █ ▀▄█▄ ▄▀ ▄█▀▄▄ █
-█▄█▀▄█▄▄ ▄▄▀██▄ █ █▄▀  ▀▀▄▀██ ██ ▄▀██▄█
-█▄▀▀█  ▄▄██ ▀▀▀█▀ █▀█▄▄▄▄▄ ▀▀██ ██ ▀███
-█▄ ▀▄█ ▄▄▀▀▄ █▀  ▀██▀▄▀▄█ ▄▄▀█▄ ▀ █▄█ █
-█▀▄ ▄ ▄▄█▄  █ █▀▀ █    █▀▄▄▄▀▄█▄█▀█▄▄██
-███▄▄▄▄▄▄▀█▄▄▀ █▀▄▄▄▄▄  ▀█▄█▀ ▄▄▄ █▄  █
-█ ▄▄▄▄▄ ██ ▀▄ ▄ ▄█ ███▄▄██▄▄▀ █▄█ ██  █
-█ █   █ █▀ ▀▄  ██▀█  ▀▄█▀▄▀▄▀▄  ▄ █▀  █
-█ █▄▄▄█ █  ▄▄▄▄██▄█▄▀█▄▄▄▀ ▀▀█ ▄▄▄ ▀███
-█▄▄▄▄▄▄▄█▄▄██▄█▄▄▄█████▄▄▄▄▄██▄▄▄▄▄▄▄▄█
+█ ▄▄▄▄▄ █ ▀▀▄ ████▄ ▄█▄▄█▀▄▀█▀█ ▄▄▄▄▄ █
+█ █   █ ███ ▄▄▄▀▄█▄▀█▀ ▀ ▄ ▀█▄█ █   █ █
+█ █▄▄▄█ █ ▄▄ █▄▄██ ████ ██ ██▀█ █▄▄▄█ █
+█▄▄▄▄▄▄▄█ █ ▀ █ █ █▄█ █▄█ █ ▀ █▄▄▄▄▄▄▄█
+█ ▄▄▀█ ▄▀▄  ██▀█▄▀ █▀ ▀▄  █▀▀▄▄  ▄█▀  █
+█▀▀ ▄█ ▄▀▀ █▄██▄  ▄▄ ▄█▀▄▀▄█▄▀█▄▀ ▄█ ▄█
+██▀ ▄ █▄█▀▄█▄ ▀██ █▀█▀██▀▄▀█▀ █ ▄█ ▀  █
+█▀█ ▀█▄▄▄█  ▀ █ ▄▄▄█  ▄█▄▄█▀ ▀▀▄ ▄██▄▄█
+█ ▄▀ ▀▄▄  ▄ ██▀█▀▀█▀ ▀▀█ ▀▀█▀   ▀█ ▀█ █
+███  ▄ ▄█▀  ▄██▀▄███ ██▀▄▄▄▀ █▄ █ ▀█▀ █
+█ ▀▀▄▀ ▄ ▄ ▄▄ ██ ▀▄█▄▀█▀ ▀▀▄  ▄  █▄█▄▀█
+██▄  ▀▄▄▀█▀█▀ ▄█ ▄▄  ██▀▄██▀  █▀ █▀▄█▄█
+█▄▄ ▄█▀▄ █▄█████▀▀▄█▄ ▀█  █▀▀▄▀  ███  █
+█▄▄▀█▄▀▄█ ▀▀▄█▄▀ █▄█ ▀██ ▀▄█▄▄▄▀█  ▄█ █
+█▄▄▄█▄█▄▄▀  ▄ ██▄ ▄▀▀▄▀█▀▄▀█  ▄▄▄ ▄▀ ▀█
+█ ▄▄▄▄▄ █▀██▀ █▄▄█▄█▄ ▄█ ██▀▀ █▄█ █▄█ █
+█ █   █ ██ ▄██ ▄█ ▄█  ▀█ ▀▀█▄▄ ▄▄  ▀▀██
+█ █▄▄▄█ █ ▀▀▄█▀█▄▄▄▀▄██▀▄ █▀   █▀▄▀▄█▄█
+█▄▄▄▄▄▄▄█▄██▄▄▄█▄███▄▄███▄███▄█▄██▄██▄█
 ```
