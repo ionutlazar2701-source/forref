@@ -8,6 +8,7 @@ import 'package:referee_phone/match_application/match_application_boundary.dart'
 import 'package:referee_phone/officiate/watch_enroll_session.dart';
 import 'package:referee_phone/officiate/watch_pairing_session.dart';
 import 'package:referee_phone/officiate/watch_provision_debug_bridge.dart';
+import 'package:referee_phone/officiate/watch_transfer_registry.dart';
 
 /// Phone correlation for a match sent to an already paired watch.
 const String transferWatchCorrelationName =
@@ -95,7 +96,7 @@ Future<WatchTransferOpen> sendMatchToWatch({
     return finish('transfer-correlation-corrupt', '');
   }
 
-  final paired = await _pairedInstallation(
+  final paired = await readPairedWatch(
     storageRoot: storageRoot,
     database: database,
     boundary: boundary,
@@ -122,16 +123,28 @@ Future<WatchTransferOpen> sendMatchToWatch({
     installationId: paired.installationId,
   );
   if (document == null) return finish('invalid', match.matchId);
-  if (transferBridge.boundRequestId != null &&
-      transferBridge.matchId != null &&
-      transferBridge.matchId != match.matchId) {
-    return finish('correlation-conflict', transferBridge.matchId!);
+  final registry = WatchTransferRegistry(
+    File('${storageRoot.path}/${WatchTransferRegistry.fileName}'),
+  );
+  if (registry.file.existsSync() && registry.read() == null) {
+    return finish('registry-corrupt', match.matchId);
+  }
+  final prior = registry.find(match.matchId);
+  if (prior != null &&
+      prior.contentHash.isNotEmpty &&
+      prior.contentHash != document.contentHash) {
+    return finish('conflict', match.matchId);
   }
   final storedHash = transferBridge.boundContentHash ?? '';
   if (transferBridge.matchId == match.matchId &&
       storedHash.isNotEmpty &&
       storedHash != document.contentHash) {
     return finish('conflict', match.matchId);
+  }
+  if (transferBridge.matchId != null &&
+      transferBridge.matchId != match.matchId) {
+    final released = await transferBridge.releaseForNextMatch();
+    if (!released) return finish('storage', match.matchId);
   }
 
   final existing =
@@ -188,13 +201,13 @@ bool _fixture(Match match) {
       (home == enrollHomeTeamId && away == enrollAwayTeamId);
 }
 
-class _PairedInstallation {
-  const _PairedInstallation(this.matchId, this.installationId);
+class PairedWatch {
+  const PairedWatch(this.matchId, this.installationId);
   final String matchId;
   final String installationId;
 }
 
-Future<_PairedInstallation?> _pairedInstallation({
+Future<PairedWatch?> readPairedWatch({
   required Directory storageRoot,
   required LocalMatchDatabase database,
   required MatchApplicationBoundary boundary,
@@ -226,7 +239,7 @@ Future<_PairedInstallation?> _pairedInstallation({
   final projection =
       await boundary.durableStore.readWatchIdentityProjection(matchId);
   if (projection.eligibleDigest == null) return null;
-  return _PairedInstallation(matchId, stage.writerDeviceId);
+  return PairedWatch(matchId, stage.writerDeviceId);
 }
 
 Future<String> _pairSnapshot(

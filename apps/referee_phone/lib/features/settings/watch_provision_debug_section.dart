@@ -11,6 +11,7 @@ import 'package:referee_phone/officiate/watch_enroll_session.dart';
 import 'package:referee_phone/officiate/watch_match_transfer.dart';
 import 'package:referee_phone/officiate/watch_pairing_session.dart';
 import 'package:referee_phone/officiate/watch_provision_debug_bridge.dart';
+import 'package:referee_phone/officiate/watch_sync_coordinator.dart';
 
 /// Debug-only control for the local watch provision bridge.
 class WatchProvisionDebugSection extends StatefulWidget {
@@ -26,8 +27,7 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
   final TextEditingController _installation = TextEditingController();
   WatchProvisionDebugBridge? _bridge;
   WatchProvisionDebugBridge? _enrollBridge;
-  WatchProvisionDebugBridge? _pairBridge;
-  WatchProvisionDebugBridge? _transferBridge;
+  WatchSyncCoordinator? _sync;
   String _transferStatus = '';
   List<Match> _matches = const [];
   String? _matchId;
@@ -45,16 +45,40 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
     _installation.dispose();
     _bridge?.stop();
     _enrollBridge?.stop();
-    _pairBridge?.stop();
-    _transferBridge?.stop();
+    _sync?.removeListener(_onSync);
+    _sync?.detachUi();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final sync = AppScope.of(context).sync;
+    if (!identical(sync, _sync)) {
+      _sync?.removeListener(_onSync);
+      _sync = sync;
+      _sync!.addListener(_onSync);
+    }
+    final scope = AppScope.of(context);
+    final boundary = scope.matchApplication;
+    final identity = scope.captureIdentity;
+    final root = scope.storageRoot;
+    if (boundary != null && identity != null && root != null) {
+      sync.bind(
+        storageRoot: root,
+        boundary: boundary,
+        database: scope.database,
+        phoneOriginDeviceId: identity.originDeviceId,
+        principalId: identity.authorityPrincipalId,
+      );
+    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _pairBridge?.resumePairing();
-      _transferBridge?.resumeTransfer();
+      _sync?.resumePairing();
+      _sync?.resumeTransfer();
     }
   }
 
@@ -163,8 +187,15 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
   }
 
   String _pairSubtitle(AppLocalizations l10n) {
-    final result = _pairBridge?.pairingResult;
-    if (result == null) return l10n.watchPairHint;
+    final link = _sync?.link ?? '';
+    if (link == 'offline') return l10n.watchLinkOffline;
+    if (link == 'reconnecting') return l10n.watchLinkReconnecting;
+    final result = _sync?.pairBridge?.pairingResult;
+    if (result == null) {
+      if (link == 'ready') return l10n.watchLinkReady;
+      if (link == 'paired') return l10n.watchLinkPaired;
+      return l10n.watchPairHint;
+    }
     final stored = watchInstallationPreview(result.storedWriter);
     final request = watchInstallationPreview(result.requestInstallation);
     return switch (result.code) {
@@ -177,16 +208,23 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
   }
 
   String _transferSubtitle(AppLocalizations l10n) {
-    final result = _transferBridge?.transferResult;
-    final code = result?.code ?? _transferStatus;
-    if (code.isEmpty) return l10n.watchTransferHint;
-    final minutes = (result?.halfDurationMs ?? 0) ~/ 60000;
-    final home = result?.homeName ?? '';
-    final away = result?.awayName ?? '';
+    final result = _sync?.transferBridge?.transferResult;
+    final stored = _sync?.entryFor(_matchId);
+    final live = result != null && result.matchId == _matchId;
+    final code =
+        live ? result.code : (stored != null ? stored.phase : _transferStatus);
+    if (_matchId == null) return l10n.watchTransferHint;
+    if (code.isEmpty) return l10n.watchSyncNotSynced;
+    final minutes =
+        ((live ? result.halfDurationMs : stored?.halfDurationMs) ?? 0) ~/ 60000;
+    final home = live ? result.homeName : (stored?.homeName ?? '');
+    final away = live ? result.awayName : (stored?.awayName ?? '');
     return switch (code) {
-      'waiting' => l10n.watchTransferWaiting,
-      'verified' => l10n.watchTransferVerified(home, away, minutes),
+      'waiting' => l10n.watchSyncWaiting,
+      'syncing' => l10n.watchSyncSyncing,
+      'verified' => l10n.watchSyncVerified(home, away, minutes),
       'replay' => l10n.watchTransferReplay(home, away, minutes),
+      'retry' => l10n.watchSyncRetry,
       'writer-kept' => l10n.watchTransferKept(result?.reason ?? ''),
       'unpaired' => l10n.watchTransferUnpaired,
       'fixture' => l10n.watchTransferFixture,
@@ -204,20 +242,26 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
     final root = scope.storageRoot;
     final database = scope.database;
     final match = _selectedMatch();
-    if (boundary == null || identity == null || root == null || match == null) {
+    final sync = _sync;
+    if (boundary == null ||
+        identity == null ||
+        root == null ||
+        match == null ||
+        sync == null) {
       setState(() => _status = 'missing');
       return;
     }
+    sync.bind(
+      storageRoot: root,
+      boundary: boundary,
+      database: database,
+      phoneOriginDeviceId: identity.originDeviceId,
+      principalId: identity.authorityPrincipalId,
+    );
+    sync.noteLink('reconnecting');
     await _bridge?.stop();
     await _enrollBridge?.stop();
-    await _pairBridge?.stop();
-    final bridge = _transferBridge ??
-        WatchProvisionDebugBridge(
-          boundary: boundary,
-          phoneOriginDeviceId: identity.originDeviceId,
-          correlationFile: File('${root.path}/$transferWatchCorrelationName'),
-        );
-    _transferBridge = bridge;
+    final bridge = sync.requireTransferBridge();
     bridge.removeListener(_onTransfer);
     bridge.addListener(_onTransfer);
     final opened = await sendMatchToWatch(
@@ -229,11 +273,27 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
       match: match,
       transferBridge: bridge,
       historicalBridge: _bridge,
-      pairBridge: _pairBridge,
+      pairBridge: sync.pairBridge,
       enrollBridge: _enrollBridge,
     );
+    final channel =
+        bridge.disposition == WatchProvisionBridgeDisposition.listening ||
+            sync.pairBridge?.disposition ==
+                WatchProvisionBridgeDisposition.listening;
+    if (opened.status == 'unpaired') {
+      sync.noteLink('unpaired');
+    } else if (channel) {
+      sync.noteLink('ready');
+    } else {
+      sync.noteLink('paired');
+    }
     if (!mounted) return;
     setState(() => _transferStatus = opened.status);
+  }
+
+  void _onSync() {
+    if (!mounted) return;
+    setState(() {});
   }
 
   void _onTransfer() {
@@ -247,20 +307,23 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
     final identity = scope.captureIdentity;
     final root = scope.storageRoot;
     final database = scope.database;
-    if (boundary == null || identity == null || root == null) {
+    final sync = _sync;
+    if (boundary == null || identity == null || root == null || sync == null) {
       setState(() => _status = 'missing');
       return;
     }
+    sync.bind(
+      storageRoot: root,
+      boundary: boundary,
+      database: database,
+      phoneOriginDeviceId: identity.originDeviceId,
+      principalId: identity.authorityPrincipalId,
+    );
+    sync.noteLink('reconnecting');
     await _bridge?.stop();
     await _enrollBridge?.stop();
-    await _transferBridge?.stop();
-    final bridge = _pairBridge ??
-        WatchProvisionDebugBridge(
-          boundary: boundary,
-          phoneOriginDeviceId: identity.originDeviceId,
-          correlationFile: File('${root.path}/$pairWatchCorrelationName'),
-        );
-    _pairBridge = bridge;
+    await sync.transferBridge?.stop();
+    final bridge = sync.requirePairBridge();
     bridge.removeListener(_onPairing);
     bridge.addListener(_onPairing);
     final opened = await openWatchPairing(
@@ -271,6 +334,11 @@ class _WatchProvisionDebugSectionState extends State<WatchProvisionDebugSection>
       principalId: identity.authorityPrincipalId,
       pairBridge: bridge,
       historicalBridge: _bridge,
+    );
+    sync.noteLink(
+      bridge.disposition == WatchProvisionBridgeDisposition.listening
+          ? 'ready'
+          : 'offline',
     );
     if (!mounted) return;
     setState(() => _status = opened.line);

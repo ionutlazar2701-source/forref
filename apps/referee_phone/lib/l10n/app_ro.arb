@@ -153,6 +153,15 @@
   "watchTransferStarted": "Acest meci a început deja.",
   "watchTransferConflict": "Configurația stocată a rămas.",
   "watchTransferFailed": "Transferul s-a oprit ({reason}). Scriitorul stocat nu a fost schimbat.",
+  "watchLinkPaired": "Asociat. Ceasul rămâne asociat când ieși din Setări.",
+  "watchLinkOffline": "Deconectat. Ceasul asociat a rămas.",
+  "watchLinkReconnecting": "Se reconectează.",
+  "watchLinkReady": "Gata de sincronizare.",
+  "watchSyncNotSynced": "Nesincronizat.",
+  "watchSyncWaiting": "Așteaptă ceasul.",
+  "watchSyncSyncing": "Se sincronizează.",
+  "watchSyncVerified": "Verificat pe ceas. {home} – {away}, {minutes} min. Neactivat.",
+  "watchSyncRetry": "Reîncearcă. Meciul stocat a rămas.",
   "watchPairFailed": "Asocierea s-a oprit ({reason}). Scriitorul stocat nu a fost schimbat.",
   "clockWithAdded": "{clock} +{minutes}"
 }

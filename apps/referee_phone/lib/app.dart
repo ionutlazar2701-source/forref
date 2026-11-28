@@ -8,6 +8,7 @@ import 'package:referee_phone/infrastructure/identity/phone_capture_identity.dar
 import 'package:referee_phone/infrastructure/temporal/phone_temporal_evidence_store.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
 import 'package:referee_phone/match_application/match_application_boundary.dart';
+import 'package:referee_phone/officiate/watch_sync_coordinator.dart';
 import 'package:referee_phone/routing/app_router.dart';
 
 class RefereeApp extends StatefulWidget {
@@ -38,11 +39,45 @@ class RefereeApp extends StatefulWidget {
   State<RefereeApp> createState() => _RefereeAppState();
 }
 
-class _RefereeAppState extends State<RefereeApp> {
+class _RefereeAppState extends State<RefereeApp> with WidgetsBindingObserver {
   final ValueNotifier<Locale?> locale = ValueNotifier<Locale?>(null);
+  final WatchSyncCoordinator sync = WatchSyncCoordinator();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _restoreSync();
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _restoreSync();
+    }
+  }
+
+  void _restoreSync() {
+    final boundary = widget.matchApplication;
+    final identity = widget.captureIdentity;
+    final root = widget.storageRoot;
+    if (boundary == null || identity == null || root == null) return;
+    sync.bind(
+      storageRoot: root,
+      boundary: boundary,
+      database: widget.database,
+      phoneOriginDeviceId: identity.originDeviceId,
+      principalId: identity.authorityPrincipalId,
+    );
+    sync.restore();
+  }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    sync.close();
     locale.dispose();
     super.dispose();
   }
@@ -57,6 +92,7 @@ class _RefereeAppState extends State<RefereeApp> {
       matchCaptureContext: widget.matchCaptureContext,
       temporalEvidence: widget.temporalEvidence,
       storageRoot: widget.storageRoot,
+      sync: sync,
       child: ValueListenableBuilder<Locale?>(
         valueListenable: locale,
         builder: (context, resolved, _) {

@@ -196,6 +196,22 @@
   "watchTransferStarted": "This match has already started.",
   "watchTransferConflict": "The stored match configuration was kept.",
   "watchTransferFailed": "Transfer stopped ({reason}). The stored writer was not changed.",
+  "watchLinkPaired": "Paired. This watch stays paired when you leave Settings.",
+  "watchLinkOffline": "Offline. The paired watch was kept.",
+  "watchLinkReconnecting": "Reconnecting.",
+  "watchLinkReady": "Ready to sync.",
+  "watchSyncNotSynced": "Not synced.",
+  "watchSyncWaiting": "Waiting for watch.",
+  "watchSyncSyncing": "Syncing.",
+  "watchSyncVerified": "Verified on watch. {home} v {away}, {minutes} min. Not activated.",
+  "@watchSyncVerified": {
+    "placeholders": {
+      "home": {"type": "String"},
+      "away": {"type": "String"},
+      "minutes": {"type": "int"}
+    }
+  },
+  "watchSyncRetry": "Retry required. The stored match was kept.",
   "@watchTransferFailed": {
     "placeholders": {
       "reason": {"type": "String"}

@@ -12,6 +12,8 @@ import 'package:referee_phone/officiate/watch_enroll_session.dart';
 import 'package:referee_phone/officiate/watch_match_transfer.dart';
 import 'package:referee_phone/officiate/watch_pairing_session.dart';
 import 'package:referee_phone/officiate/watch_provision_debug_bridge.dart';
+import 'package:referee_phone/officiate/watch_sync_coordinator.dart';
+import 'package:referee_phone/officiate/watch_transfer_registry.dart';
 
 const historicalInstallation = '11111111-1111-4111-8111-111111111111';
 const watchInstallation = '22222222-2222-4222-8222-222222222222';
@@ -80,7 +82,7 @@ void main() {
     expect(pending['matchId'], match.matchId);
     expect(pending['contentHash'], document.contentHash);
     expect(pending['canonical'], document.canonical);
-    expect(opened.bridge.transferResult?.code, 'waiting');
+    expect(opened.bridge.transferResult?.code, 'syncing');
 
     final verified = await _post(opened.bridge, {
       'operation': 'verified',
@@ -229,7 +231,177 @@ void main() {
     expect(send.contains('sendMatchToWatch'), isTrue);
     expect(section.contains('resumeTransfer()'), isTrue);
     expect(section.contains('SUBMIT_WATCH_LOCK_V1'), isFalse);
+    expect(section.contains('_pairBridge?.stop()'), isFalse);
+    expect(section.contains('_transferBridge?.stop()'), isFalse);
+    expect(section.contains('detachUi()'), isTrue);
   });
+
+  test('three saved matches stay verified and the listener survives navigation',
+      () async {
+    await _pair(temp, database, composition, identity);
+    final sync = WatchSyncCoordinator();
+    addTearDown(sync.close);
+    sync.bind(
+      storageRoot: temp,
+      boundary: composition.boundary,
+      database: database,
+      phoneOriginDeviceId: identity.originDeviceId,
+      principalId: identity.authorityPrincipalId,
+    );
+    final bridge = sync.requireTransferBridge();
+    final matches = [
+      _named(DateTime.utc(2026, 11, 28, 13), 'Alpha', 'Red'),
+      _named(DateTime.utc(2026, 11, 28, 14), 'Beta', 'Blue'),
+      _named(DateTime.utc(2026, 11, 28, 15), 'Gamma', 'Gold'),
+    ];
+    for (final match in matches) {
+      await database.upsertMatch(match);
+      final opened = await sendMatchToWatch(
+        storageRoot: temp,
+        database: database,
+        boundary: composition.boundary,
+        phoneOriginDeviceId: identity.originDeviceId,
+        principalId: identity.authorityPrincipalId,
+        match: match,
+        transferBridge: bridge,
+        pairBridge: sync.pairBridge,
+      );
+      expect(opened.status, 'waiting');
+      final document = documentForSavedMatch(
+        match: match,
+        principalId: identity.authorityPrincipalId,
+        installationId: watchInstallation,
+      )!;
+      final hinted = await _post(bridge, {
+        'operation': 'pending',
+        'installationId': watchInstallation,
+        'requestId': watchRequest,
+        'matchId': 'previous-match',
+        'generation': 1,
+        'witness': _witness(),
+      });
+      expect(hinted['successor'], isTrue);
+      expect(hinted['matchId'], match.matchId);
+      final pending = await _post(bridge, {
+        'operation': 'pending',
+        'installationId': watchInstallation,
+        'requestId': '55555555-5555-4555-8555-555555555555',
+        'generation': 1,
+        'witness': _witness(),
+      });
+      expect(pending['disposition'], 'prepared');
+      expect(pending['contentHash'], document.contentHash);
+      expect(bridge.transferResult?.code, 'syncing');
+      final verified = await _post(bridge, {
+        'operation': 'verified',
+        'type': 'WATCH_PROVISION_VERIFIED_V1',
+        'readBack': true,
+        'installationId': watchInstallation,
+        'writerDeviceId': watchInstallation,
+        'requestId': '55555555-5555-4555-8555-555555555555',
+        'matchId': match.matchId,
+        'contentHash': document.contentHash,
+        'generation': 1,
+      });
+      expect(verified['disposition'], 'verified');
+      expect(verified['homeName'], match.teams.home.name);
+      expect(verified['durable'], isFalse);
+      expect(
+        await composition.boundary.durableStore
+            .readGenerationOneAuthorityRoot(match.matchId),
+        isNull,
+      );
+    }
+    sync.detachUi();
+    final registry = WatchTransferRegistry(
+      File('${temp.path}/${WatchTransferRegistry.fileName}'),
+    ).read();
+    expect(registry, isNotNull);
+    expect(registry!.map((entry) => entry.homeName).toSet(), {
+      'Alpha',
+      'Beta',
+      'Gamma',
+    });
+    final again = await sendMatchToWatch(
+      storageRoot: temp,
+      database: database,
+      boundary: composition.boundary,
+      phoneOriginDeviceId: identity.originDeviceId,
+      principalId: identity.authorityPrincipalId,
+      match: matches.first,
+      transferBridge: bridge,
+      pairBridge: sync.pairBridge,
+    );
+    expect(again.status, 'replay');
+    final replay = await _post(bridge, {
+      'operation': 'verified',
+      'type': 'WATCH_PROVISION_VERIFIED_V1',
+      'readBack': true,
+      'installationId': watchInstallation,
+      'writerDeviceId': watchInstallation,
+      'requestId': '55555555-5555-4555-8555-555555555555',
+      'matchId': matches.first.matchId,
+      'contentHash': documentForSavedMatch(
+        match: matches.first,
+        principalId: identity.authorityPrincipalId,
+        installationId: watchInstallation,
+      )!
+          .contentHash,
+      'generation': 1,
+    });
+    expect(replay['reason'], 'replay');
+    expect(
+      WatchTransferRegistry(
+        File('${temp.path}/${WatchTransferRegistry.fileName}'),
+      ).read(),
+      hasLength(3),
+    );
+    final changed = matches.first.copyWith(
+      teams: const Teams(
+        home: Team(teamId: 'team-north-001', name: 'Alpha'),
+        away: Team(teamId: 'team-other-001', name: 'Other'),
+      ),
+    );
+    await database.upsertMatch(changed);
+    final conflicted = await sendMatchToWatch(
+      storageRoot: temp,
+      database: database,
+      boundary: composition.boundary,
+      phoneOriginDeviceId: identity.originDeviceId,
+      principalId: identity.authorityPrincipalId,
+      match: changed,
+      transferBridge: bridge,
+      pairBridge: sync.pairBridge,
+    );
+    expect(conflicted.status, 'conflict');
+    expect(
+      WatchTransferRegistry(
+        File('${temp.path}/${WatchTransferRegistry.fileName}'),
+      )
+          .read()!
+          .singleWhere((entry) => entry.matchId == changed.matchId)
+          .homeName,
+      'Alpha',
+    );
+    final still = await _post(bridge, {
+      'operation': 'pending',
+      'installationId': watchInstallation,
+      'requestId': '66666666-6666-4666-8666-666666666666',
+      'generation': 1,
+      'witness': _witness(),
+    });
+    expect(still['disposition'], 'prepared');
+    await sync.close();
+  });
+}
+
+Match _named(DateTime kickoff, String home, String away) {
+  return newLocalMatch(kickoff).copyWith(
+    teams: Teams(
+      home: Team(teamId: 'team-${home.toLowerCase()}', name: home),
+      away: Team(teamId: 'team-${away.toLowerCase()}', name: away),
+    ),
+  );
 }
 
 Match _officiating() {

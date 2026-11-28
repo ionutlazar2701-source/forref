@@ -8,6 +8,7 @@ import 'package:forref_match_persistence/sqlite_durable_match_store.dart';
 import 'package:forref_match_persistence/watch_identity.dart';
 import 'package:match_core/match_core.dart';
 import 'package:referee_phone/match_application/match_application_boundary.dart';
+import 'package:referee_phone/officiate/watch_transfer_registry.dart';
 
 /// Debug loopback for the watch provision handshake.
 ///
@@ -213,6 +214,30 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     return _bindLoopback();
   }
 
+  /// Archives the active transfer and clears it so the next match can start.
+  ///
+  /// The archived record stays in the registry. The stage row is not deleted.
+  Future<bool> releaseForNextMatch() async {
+    if (correlationNamespace != 'transfer') return false;
+    if (_matchId == null || _matchId!.isEmpty) return true;
+    final phase = _phase == 'verified' ? 'verified' : 'retry';
+    if (!await _saveRegistry(phase)) return false;
+    final file = correlationFile;
+    if (file != null && file.existsSync()) {
+      try {
+        file.deleteSync();
+      } on Object {
+        return false;
+      }
+    }
+    _requestId = null;
+    _installationId = null;
+    _contentHash = null;
+    _matchId = null;
+    _phase = '';
+    return true;
+  }
+
   /// Listens for a watch that already has a writer on [matchId].
   ///
   /// The document is returned on `pending`. Configuration Verified is recorded
@@ -221,13 +246,19 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     String matchId,
   ) async {
     _acceptTransferAck = true;
+    if (_matchId != null && _matchId!.isNotEmpty && _matchId != matchId) {
+      final released = await releaseForNextMatch();
+      if (!released) return _set(WatchProvisionBridgeDisposition.refused);
+    }
     final started = await start(matchId);
     if (started != WatchProvisionBridgeDisposition.listening) return started;
     final stage = await boundary.durableStore.readWatchProvisionStage(matchId);
     final document =
         stage == null ? null : parseWatchProvisionV1(stage.canonical).document;
+    _contentHash = stage?.contentHash ?? _contentHash;
+    final remembered = _rememberVerified(matchId, stage?.contentHash ?? '');
     _noteTransfer(
-      code: _phase == 'verified' ? 'replay' : 'waiting',
+      code: remembered || _phase == 'verified' ? 'replay' : 'waiting',
       reason: _phase == 'verified' ? 'stored' : '',
       matchId: matchId,
       homeName: document?.homeName ?? '',
@@ -235,6 +266,9 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
       halfDurationMs: document?.halfDurationMs ?? 0,
       contentHash: stage?.contentHash ?? '',
     );
+    if (_phase != 'verified' && !await _saveRegistry('waiting')) {
+      return _set(WatchProvisionBridgeDisposition.refused);
+    }
     return started;
   }
 
@@ -372,7 +406,13 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     }
     final matchId = _matchId;
     if (matchId == null) return _refused('missing');
-    if (body['matchId'] != null && body['matchId'] != matchId) {
+    final hintedMatch = body['matchId'];
+    final successorHint = _acceptTransferAck &&
+        operation == 'pending' &&
+        hintedMatch is String &&
+        hintedMatch.isNotEmpty &&
+        hintedMatch != matchId;
+    if (hintedMatch != null && hintedMatch != matchId && !successorHint) {
       return _refused('match');
     }
     var stage = await boundary.durableStore.readWatchProvisionStage(matchId);
@@ -483,7 +523,11 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     if (_installationId != null && _installationId != installationId) {
       return traced(_refused('correlation-conflict'), observe: false);
     }
-    if (_requestId != null && _requestId != requestId) {
+    final successor = successorHint;
+    if (_requestId != null &&
+        _requestId != requestId &&
+        !successor &&
+        !(_acceptTransferAck && _phase == 'verified')) {
       return traced(_refused('correlation'), observe: false);
     }
     debugPrint(
@@ -494,10 +538,35 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
       return traced(_refused('order'), observe: false);
     }
     if (operation == 'pending') {
+      if (successor) {
+        final document = parseWatchProvisionV1(stage.canonical).document;
+        if (document == null || document.contentHash != stage.contentHash) {
+          return traced(_refused('canonical'), observe: false);
+        }
+        return traced(
+          {
+            'disposition': 'prepared',
+            'successor': true,
+            'schema': 'forref.watch-provision.v1',
+            'matchId': stage.matchId,
+            'contentHash': stage.contentHash,
+            'installationId': installationId,
+            'requestId': requestId,
+            'generation': 1,
+            'canonical': stage.canonical,
+            'homeName': document.homeName,
+            'awayName': document.awayName,
+            'saved': false,
+            'd1Certified': false,
+          },
+          observe: false,
+        );
+      }
       final prepared = _pending(stage, installationId, requestId);
       var observe = false;
       var observeReason = '';
-      if (prepared['disposition'] == 'prepared') {
+      if (prepared['disposition'] == 'prepared' &&
+          !(_acceptTransferAck && _phase == 'verified')) {
         observe = true;
         observeReason =
             await _observeWitness(stage, body, installationId, requestId);
@@ -509,7 +578,7 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
         if (_acceptTransferAck && _phase != 'verified') {
           final document = parseWatchProvisionV1(stage.canonical).document;
           _noteTransfer(
-            code: 'waiting',
+            code: 'syncing',
             reason: observeReason,
             matchId: stage.matchId,
             homeName: document?.homeName ?? '',
@@ -517,6 +586,9 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
             halfDurationMs: document?.halfDurationMs ?? 0,
             contentHash: stage.contentHash,
           );
+          if (!await _saveRegistry('syncing')) {
+            return traced(_refused('registry-write'), observe: false);
+          }
         }
       }
       return traced(prepared, observe: observe, observeReason: observeReason);
@@ -526,7 +598,7 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
         return traced(_refused('operation'), observe: false);
       }
       return traced(
-        _acknowledgeVerified(stage, body, installationId, requestId),
+        await _acknowledgeVerified(stage, body, installationId, requestId),
         observe: false,
       );
     }
@@ -653,12 +725,12 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     notifyListeners();
   }
 
-  Map<String, Object?> _acknowledgeVerified(
+  Future<Map<String, Object?>> _acknowledgeVerified(
     WatchProvisionPhoneStage stage,
     Map<String, Object?> body,
     String installationId,
     String requestId,
-  ) {
+  ) async {
     if (stage.stage != 'CONFIG_PREPARED') return _refused('stage');
     if (body['readBack'] != true ||
         body['type'] != 'WATCH_PROVISION_VERIFIED_V1' ||
@@ -676,6 +748,9 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
     final replay = _phase == 'verified';
     if (!_persist(_forwardPhase('verified'))) {
       return _refused('correlation-write');
+    }
+    if (!await _saveRegistry('verified')) {
+      return _refused('registry-write');
     }
     _noteTransfer(
       code: replay ? 'replay' : 'verified',
@@ -702,6 +777,66 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
       'durable': false,
       'd1Certified': false,
     };
+  }
+
+  bool _rememberVerified(String matchId, String contentHash) {
+    if (correlationNamespace != 'transfer' || contentHash.isEmpty) return false;
+    final parent = correlationFile?.parent;
+    if (parent == null) return false;
+    final stored = WatchTransferRegistry(
+      File('${parent.path}/${WatchTransferRegistry.fileName}'),
+    ).find(matchId);
+    if (stored == null ||
+        stored.phase != 'verified' ||
+        stored.contentHash != contentHash) {
+      return false;
+    }
+    _phase = 'verified';
+    _contentHash = stored.contentHash;
+    if (stored.installationId.isNotEmpty) {
+      _installationId = stored.installationId;
+    }
+    if (stored.requestId.isNotEmpty) _requestId = stored.requestId;
+    return true;
+  }
+
+  Future<bool> _saveRegistry(String phase) async {
+    if (correlationNamespace != 'transfer') return true;
+    final matchId = _matchId;
+    final hash = _contentHash ?? '';
+    if (matchId == null || matchId.isEmpty || hash.length != 64) return false;
+    var home = _transferResult?.homeName ?? '';
+    var away = _transferResult?.awayName ?? '';
+    var half = _transferResult?.halfDurationMs ?? 0;
+    if (home.isEmpty || away.isEmpty || half <= 0) {
+      final stage =
+          await boundary.durableStore.readWatchProvisionStage(matchId);
+      final document = stage == null
+          ? null
+          : parseWatchProvisionV1(stage.canonical).document;
+      if (document != null) {
+        home = document.homeName;
+        away = document.awayName;
+        half = document.halfDurationMs;
+      }
+    }
+    if (home.isEmpty || away.isEmpty || half <= 0) return false;
+    final parent = correlationFile?.parent;
+    if (parent == null) return false;
+    return WatchTransferRegistry(
+      File('${parent.path}/${WatchTransferRegistry.fileName}'),
+    ).upsert(
+      WatchTransferEntry(
+        matchId: matchId,
+        phase: phase,
+        contentHash: hash,
+        installationId: _installationId ?? '',
+        requestId: _requestId ?? '',
+        homeName: home,
+        awayName: away,
+        halfDurationMs: half,
+      ),
+    );
   }
 
   void _noteTransfer({

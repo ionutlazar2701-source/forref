@@ -926,6 +926,60 @@ abstract class AppLocalizations {
   /// **'Transfer stopped ({reason}). The stored writer was not changed.'**
   String watchTransferFailed(String reason);
 
+  /// No description provided for @watchLinkPaired.
+  ///
+  /// In en, this message translates to:
+  /// **'Paired. This watch stays paired when you leave Settings.'**
+  String get watchLinkPaired;
+
+  /// No description provided for @watchLinkOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline. The paired watch was kept.'**
+  String get watchLinkOffline;
+
+  /// No description provided for @watchLinkReconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting.'**
+  String get watchLinkReconnecting;
+
+  /// No description provided for @watchLinkReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to sync.'**
+  String get watchLinkReady;
+
+  /// No description provided for @watchSyncNotSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Not synced.'**
+  String get watchSyncNotSynced;
+
+  /// No description provided for @watchSyncWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for watch.'**
+  String get watchSyncWaiting;
+
+  /// No description provided for @watchSyncSyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing.'**
+  String get watchSyncSyncing;
+
+  /// No description provided for @watchSyncVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified on watch. {home} v {away}, {minutes} min. Not activated.'**
+  String watchSyncVerified(String home, String away, int minutes);
+
+  /// No description provided for @watchSyncRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry required. The stored match was kept.'**
+  String get watchSyncRetry;
+
   /// No description provided for @watchPairFailed.
   ///
   /// In en, this message translates to:

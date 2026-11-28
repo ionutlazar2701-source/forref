@@ -457,6 +457,36 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get watchLinkPaired =>
+      'Paired. This watch stays paired when you leave Settings.';
+
+  @override
+  String get watchLinkOffline => 'Offline. The paired watch was kept.';
+
+  @override
+  String get watchLinkReconnecting => 'Reconnecting.';
+
+  @override
+  String get watchLinkReady => 'Ready to sync.';
+
+  @override
+  String get watchSyncNotSynced => 'Not synced.';
+
+  @override
+  String get watchSyncWaiting => 'Waiting for watch.';
+
+  @override
+  String get watchSyncSyncing => 'Syncing.';
+
+  @override
+  String watchSyncVerified(String home, String away, int minutes) {
+    return 'Verified on watch. $home v $away, $minutes min. Not activated.';
+  }
+
+  @override
+  String get watchSyncRetry => 'Retry required. The stored match was kept.';
+
+  @override
   String watchPairFailed(String reason) {
     return 'Pairing stopped ($reason). The stored writer was not changed.';
   }
