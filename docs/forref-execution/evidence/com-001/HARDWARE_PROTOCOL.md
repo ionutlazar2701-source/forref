@@ -2,7 +2,7 @@
 
 State: **NOT TESTED**. Fill every row on a physical Amazfit Bip 6 with the phone debug bridge. Unit tests do not certify the handshake. Do not mark Level 2 from this file until every row has a copied log.
 
-App id `29566`, version `1.0.20` (code 20), boot `build=com-001-debug-ready rev=870dab0e2f72532c7ee16f79464c473d443ce4d9`. Install `dist/29566-FORREF-1.0.20-20261127215753.zab`. The QR is in `TEST_RESULTS.md`. It expires 23:57 Europe/Bucharest on 4 December 2026. Open Home → SETTINGS → PROVISION. Copy both UUID lines. Leave and reopen the page, then restart FORREF, and confirm the same 36 characters. `page=build` must appear in the log. A blank page fails the trial. `FORREF_PROVISION messaging=ready` must appear in the app boot log before the provision request. `messaging=absent` means the request cannot leave the watch.
+App id `29566`, version `1.0.21` (code 21), boot `build=com-001-boot-safe rev=0f835cd49e40648f9f441cbcd7f75b46021dc3b2`. Install `dist/29566-FORREF-1.0.21-20261128073806.zab`. Do not install `1.0.20`. That package calls ZML `BaseApp` before `App()` is registered, the home page never paints, and the Bip 6 reboots. The QR is in `TEST_RESULTS.md`. It expires 09:38 Europe/Bucharest on 5 December 2026. Open FORREF and confirm Home is visible and the watch stays up. Then Home → SETTINGS → PROVISION. Copy both UUID lines. Leave and reopen the page, then restart FORREF, and confirm the same 36 characters. `page=build` must appear in the log. A blank page fails the trial. `FORREF_PROVISION messaging=ready` is logged when Provision is tapped, not at app boot. `messaging=absent` means the request cannot leave the watch.
 
 ## Phone debug install
 
@@ -42,8 +42,9 @@ A line with `disposition=prepared`, `locked`, or `recorded` while `http` is not 
 
 | Test | Steps | Pass | Result |
 | --- | --- | --- | --- |
-| UUID | From Home, open SETTINGS, then PROVISION. Do this before the phone bridge is running. | Both UUID lines are visible. Joined, they are 36 characters. Back returns to Settings, and Back again returns to Home. OFFICIATE and TRAINING are still on Home. | NOT TESTED |
-| PREPARE | On the phone, prepare one watch-operated match and start the debug bridge. Open the watch provision page. | One `tx=request` for pending, one `tx=response` `disposition=prepared`, one `tx=transition` `phase=verified`. No root yet. | NOT TESTED |
+| BOOT | Install `1.0.21` and open FORREF from the app list. Leave it on Home for a few seconds. | Home shows OFFICIATE, TRAINING, and SETTINGS. The watch does not reboot. The boot log contains `FORREF_APP onCreate` and `build=com-001-boot-safe`. | NOT TESTED |
+| UUID | From Home, open SETTINGS, then PROVISION. Do this before the phone bridge is running. Do not tap Provision yet. | Both UUID lines are visible. Joined, they are 36 characters. Back returns to Settings, and Back again returns to Home. OFFICIATE and TRAINING are still on Home. | NOT TESTED |
+| PREPARE | On the phone, prepare one watch-operated match and start the debug bridge. Open the watch provision page and tap Provision. | The tap logs `FORREF_PROVISION messaging=ready`, then one `tx=request` for pending, one `tx=response` `disposition=prepared`, one `tx=transition` `phase=verified`. No root yet. `messaging=absent` fails this row. | NOT TESTED |
 | LOCK | Leave the page on that match until the lock request returns. | `disposition=locked`, `durable` true, one phone root whose device id is the watch installation. Watch phase `activated`. Same request id as PREPARE. | NOT TESTED |
 | REPORT | Stay on the page until the activation report returns. | `disposition=recorded`. Watch phase `reported`. Same request id. Still one root. `saved` and `d1Certified` stay false. | NOT TESTED |
 | LOST-LOCK | After PREPARE, turn Bluetooth off before the lock response is visible, then turn it back on and open the provision page again. | The retry uses the same request id. One root. No second `phase` that goes backwards. | NOT TESTED |
