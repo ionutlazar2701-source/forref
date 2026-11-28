@@ -60,6 +60,14 @@ Logs are `FORREF_PROVISION` lines with `tx=request`, `tx=response`, `tx=transiti
 | HTTP 409, HTTP 500, malformed JSON, contradictory `prepared`/`locked` | No new root | No canonical stored | Request id kept, disposition not a success |
 | Lock before any pending | No root | n/a | Refused `order` |
 
+## COM-004R prepared match
+
+Current package: functional commit `29dee454fa5ebba73442387275abf45decfb7499`. Boot stamp `5764472`. Boot name `com-004r-share`. App `29566`, version `1.0.30` (code 30). `npm test`: 282 pass, 0 fail.
+
+No Bip 6 `FORREF_IDENTITY` line was attached for `1.0.29`, and no `tx=probe` line was attached either. Those two observations remain **LOCAL GATE REQUIRED**. This package does not invent them. `1.0.30` still logs `FORREF_IDENTITY` before a tap. A recovery reason sends no request and does not mint a writer. An intact id sends `GET_WATCH_PROVISION_V1` only. The side posts `operation=pending` and still refuses `SUBMIT_WATCH_LOCK_V1` and `REPORT_WATCH_ACTIVATED_V1` with `prepare-only` before fetch. The page does not call `runHandshake` or `runSideDiagnostic`. Correlation and the provision root are written under `data://` and read back. A legacy file is not deleted. The outcome line names `installation`, `request`, `match`, `hash`, and `canonical=accepted` or `canonical=rejected`. It does not include the canonical document or the team names. Comparing that line with the phone `listening` line is **LOCAL GATE REQUIRED**. The phone must show no new authority root.
+
+The built `app.bin` contains `FORREF_APP`, `com-004r-share`, and `29dee45`. It does not contain `__scopedGlobals__`, `TransferFile`, `createConnect`, `disConnect`, `BaseApp`, `hmBle`, or `GET_WATCH_PROVISION`. `page/gt/provision/index.page.bin` contains `data://`, `FORREF_IDENTITY`, `runPrepare`, and `GET_WATCH_PROVISION`. It does not contain `runHandshake`, `runSideDiagnostic`, or `SUBMIT_WATCH_LOCK`. `app-side.js` contains `tx=side-build` and the lock method names it refuses. It does not contain `tx=recover method=`. This scan is a package check. It is not a Bip 6 result.
+
 ## COM-004R installation identity
 
 Current package: functional commit `c2c9555832e899d1f5412a418d9f2b822ea2958c`. Boot stamp `6344d04`. Boot name `com-004r-identity`. App `29566`, version `1.0.29` (code 29). `npm test`: 282 pass, 0 fail.
@@ -144,19 +152,45 @@ This scan is a package check. It is not a Bip 6 result. Opening Home must stay u
 
 ## Suite
 
-`npm test` in `apps/forref_watch_zepp` on `1.0.29`: 282 pass, 0 fail. The `1.0.28` tree was 278 pass, 0 fail. The `1.0.27` tree was 274 pass, 0 fail. The `1.0.26` tree was 273 pass, 0 fail. The `1.0.25` tree was 271 pass, 0 fail. The `1.0.24` tree was 268 pass, 0 fail. The `1.0.23` tree was 263 pass, 0 fail.
+`npm test` in `apps/forref_watch_zepp` on `1.0.30`: 282 pass, 0 fail. The `1.0.29` tree was 282 pass, 0 fail. The `1.0.28` tree was 278 pass, 0 fail. The `1.0.27` tree was 274 pass, 0 fail. The `1.0.26` tree was 273 pass, 0 fail. The `1.0.25` tree was 271 pass, 0 fail. The `1.0.24` tree was 268 pass, 0 fail. The `1.0.23` tree was 263 pass, 0 fail.
 
 `flutter test test/watch_provision_debug_settings_test.dart test/watch_provision_debug_bridge_test.dart` in `apps/referee_phone`: 10 pass, 0 fail.
 
-`./tool/verify_cloud.sh` on the `1.0.29` tree: PASSED. The same script passed on the `1.0.28`, `1.0.27`, `1.0.26`, and `1.0.25` trees. The phone suite inside those runs reported `All tests passed!`.
+`./tool/verify_cloud.sh` on the `1.0.30` tree: PASSED. The `1.0.29` tree PASSED. The same script passed on the `1.0.28`, `1.0.27`, `1.0.26`, and `1.0.25` trees. The phone suite inside those runs reported `All tests passed!`.
 
 ## Diagnostic package
 
-Install `1.0.29`. Do not install `1.0.20` or `1.0.21`. Do not uninstall the Zepp app or either FORREF app. Force-stop Zepp, open it again, then open PROVISION. Copy `FORREF_IDENTITY` before any tap. `case=reused` keeps the UUID already on the watch. A recovery reason means this build refused to mint a writer. Copy `tx=device-build` and `tx=side-build` before judging a tap that is allowed. `1.0.28` remains the previous package. For that package, copy `tx=device-build` and `tx=side-build` before judging the tap. Tap once. `tx=parity match=1` must name the same build, rev, version, and code. Only then does `tx=probe` run. Copy `name`, `code`, `error`, `http`, and `reason`. The phone root, the correlation file, and the prepared match stay as they were. `1.0.27` showed `fetch:transport` while a log source still contained `tx=recover method=`. Those two observations were not shown to be one running bundle. `1.0.26` showed CONFIG PREGĂTIT, and CONFIG PREGĂTIT again after Back → PROVISION → Provision, while the phone showed `listening`. No console excerpt was attached, so that pair is not a certified correlation.
+Install `1.0.30`. Do not install `1.0.20` or `1.0.21`. Do not uninstall the Zepp app or either FORREF app. Force-stop Zepp, open it again, then open PROVISION. Copy `FORREF_IDENTITY` before any tap. `case=reused` keeps the UUID already on the watch. A recovery reason means this build refused to mint a writer and the tap sends nothing. On an intact id, Prepare and listen on the phone, then tap Provision once. Compare `installation`, `request`, `match`, and `hash`. `1.0.29` remains the previous package. Its identity line and its probe were not attached. For `1.0.28`, copy `tx=device-build` and `tx=side-build` before judging the tap. Tap once. `tx=parity match=1` must name the same build, rev, version, and code. Only then does `tx=probe` run. Copy `name`, `code`, `error`, `http`, and `reason`. The phone root, the correlation file, and the prepared match stay as they were. `1.0.27` showed `fetch:transport` while a log source still contained `tx=recover method=`. Those two observations were not shown to be one running bundle. `1.0.26` showed CONFIG PREGĂTIT, and CONFIG PREGĂTIT again after Back → PROVISION → Provision, while the phone showed `listening`. No console excerpt was attached, so that pair is not a certified correlation.
 
 Opening `1.0.26` must show Home and must not reboot the watch. Home → SETTINGS → PROVISION shows the installation UUID before any tap. On the phone, enter that UUID, choose one saved match, and tap Prepare and listen. If the status is `prepared-conflict`, tap Inspect provision and copy the `changed=` fields. Cancel prepared is available only for a `CONFIG_PREPARED` row whose stored hash matches and that has no generation-1 root and no sporting record. After that cancel, Prepare and listen can return `listening` for the same match. The Zepp app stays open on that phone. Tap Provision on the watch. A failure page shows the hop and category, for example `fetch:timeout` or `bridge:installation`. The watch log contains `tx=request hop=device method=GET_WATCH_PROVISION_V1`, then `tx=side`, `tx=fetch` with `elapsed`, and `outcome=PREPARED` with the same `installation`, `request`, `match`, and `hash` as the phone `listening` line, and `canonical=accepted`. The page shows CONFIG PREPARED. The log does not contain `SUBMIT_WATCH_LOCK_V1` or `REPORT_WATCH_ACTIVATED_V1`. The phone has no new authority root. Leave PROVISION and open it again, then tap Provision. The request id stays the same. A reboot, a lock request, or a hash that differs from the phone fails the trial. Do not lock, activate, or replicate a sporting event.
 
 Home → SETTINGS → PROVISION shows the installation UUID before the tap. The first console line on that page is `FORREF_PROVISION page=init`, then `page=build`, then `device width=` `height=` `layout=` and `installation=` with the 36-character id. A storage failure logs `tx=recover` and draws `INSTALLATION UNAVAILABLE`. Messaging opens on the Provision tap.
+
+Zeus CLI 1.10.3, target Amazfit Bip 6, device sources `9765120`, `9765121`, `10158337`. App id `29566`, version `1.0.30` (code 30), boot `build=com-004r-share rev=29dee454fa5ebba73442387275abf45decfb7499`. The preview package is `dist/29566-FORREF-1.0.30-20261128123821.zab` (407214 bytes, sha256 `bab14b7ab2591b10c3317bdc074d6e4d444ccc8658e7c7a1b71ca9fed5654b28`). It is not committed. The QR expires `2026-12-05 12:38:23` on the machine clock (UTC), which is 14:38 Europe/Bucharest. Decoding the ASCII QR yields `zpkd1://api-mifit-de2.zepp.com/custom/tools/app-dial/download/ZUXILazVKfsIjFMzWEMezJdVSTMbptBn`. That decode is a package check. This package does not certify installation continuity, the prepared-match exchange, the HTTP failure, lock, or activation on a Bip 6.
+
+```
+[FORREF - 1.0.30]
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+█ ▄▄▄▄▄ █▀█ █▄▀▄ ▄ ▀▄  █▄██ ▀ █ ▄▄▄▄▄ █
+█ █   █ █▀▀▀█ █ ▀ █▄██▄ ▀ ▀ ▀██ █   █ █
+█ █▄▄▄█ █▀ █▀▀█  ▄▀█▄▄▀▀▄▀▀▄▀ █ █▄▄▄█ █
+█▄▄▄▄▄▄▄█▄▀ ▀▄█▄▀ █ █ ▀▄█▄█ █ █▄▄▄▄▄▄▄█
+█    ▄█▄▄  ▀▄▀▀▄▄▀▀▀▄▀██▀▄▄ ██▄█ █ ▀ ██
+█▄█▄   ▄▄▀▄██▀█ ▄█▄▄█▄▀ ███▄  ▄  ▀ ▄▀ █
+█▄ ▀▄▀▄▄█▀ ▄█▄▄▄▀▀▄▀▄▀▀▄   ▄█▀▄▄█▄▄ ▀▄█
+█  ▀  ▄▄ ▀▀█ ▄▄█▄█▄▀██ ▄█ ▄ ▄   ▀█▀▄█ █
+█  ▀▀▄█▄▀▀▀█▄▀▄ █ ▄█▄ █▄▀█ ▄█▀▀▄ ▄▄ ▄▄█
+█▄▀▄█▄▀▄ █▀██▀██  ▄▄█ ▀ █ █ ▄▄█▄▄▀█▄ ▄█
+█  █ ▀ ▄▄  ▀█▄▄ ▄▀▀▀█ ▀ ▀█ █▄▀█▄▀▄ ▄███
+█▀▄▀▀▀▄▄█▄▄█ ▄█▄  █▄▀█▀ █▀▄ ▄▀▄█▀▄██▄ █
+█▀▄▄▄█▄▄▀▄▄ ▄▀█▄▀▀ ▀▄ █▄▀▄▄ ██ ▄▀▄▀▄▀▄█
+█ █ ▄█▀▄ ▄▄▄█▀▄█  ▄ ▀ ▀▄▀██▄ ███▄▀▄█▄▄█
+█▄█████▄▄  ▄█▄ ▄ ▀█▀ ██▄   ▄▄ ▄▄▄   ▀██
+█ ▄▄▄▄▄ █▄   ▄▄▄▄ ▄▀█▀ ▄▀▀▄ █ █▄█ ▀█▄▄█
+█ █   █ █   ▄▀▀█  ▀▀▀▀█▄▀█ ▄ ▄  ▄ ▄  ▀█
+█ █▄▄▄█ █ █▄█▀ ▄▄████▄▀ █▄▄ ▄▀▀▀ ███▄ █
+█▄▄▄▄▄▄▄█▄█▄█▄█▄█▄▄████▄▄▄▄▄██▄▄▄▄▄▄▄▄█
+```
 
 Zeus CLI 1.10.3, target Amazfit Bip 6, device sources `9765120`, `9765121`, `10158337`. App id `29566`, version `1.0.29` (code 29), boot `build=com-004r-identity rev=c2c9555832e899d1f5412a418d9f2b822ea2958c`. The preview package is `dist/29566-FORREF-1.0.29-20261128115804.zab` (405208 bytes, sha256 `84c0fa7d59387c8476bcb9d9d4b34038c62bf59df24522abe8b02e6da6ecd94a`). It is not committed. The QR expires `2026-12-05 11:58:07` on the machine clock (UTC), which is 13:58 Europe/Bucharest. Decoding the ASCII QR yields `zpkd1://api-mifit-de2.zepp.com/custom/tools/app-dial/download/AtcTuCOkIEWclJqJAGfMrCBiOahhHOaJ`. That decode is a package check. This package does not certify installation continuity, side parity, the HTTP failure, lock, or activation on a Bip 6.
 
