@@ -140,6 +140,8 @@
   "watchProvisionListen": "Listen",
   "watchProvisionInspect": "Inspect provision",
   "watchProvisionCancel": "Cancel prepared",
+  "watchProvisionEnroll": "Enroll witness",
+  "watchProvisionReadEnroll": "Read enroll",
   "watchProvisionNoMatch": "No saved match selected",
   "watchProvisionUnavailable": "Debug bridge unavailable",
   "clockWithAdded": "{clock} +{minutes}",

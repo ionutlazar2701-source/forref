@@ -1,6 +1,16 @@
 # COM-001 software results
 
-State: **SOFTWARE PASS / HARDWARE GATE PENDING**. Not a Level 2 pass. The phone was not installed from this environment. The `1.0.27` ASCII QR was decoded as a package check and was not scanned on a phone.
+State: **SOFTWARE PASS / HARDWARE GATE PENDING**. Not a Level 2 pass. The phone was not installed from this environment. Automated tests do not establish an enrollment hardware pass. H1–H11 and E1–E8 stay **LOCAL GATE REQUIRED**.
+
+## 1.0.33 isolated enrollment
+
+The historical correlation is persistent on both sides. The watch reuses `forref_watch_provision_correlation_v1.txt` for the current installation. The phone bridge loads `forref_watch_provision_correlation_v1.json` and will not listen for a different match while that request is bound. `stop` does not delete the file. A second match on those files is not an isolated session.
+
+Enrollment uses `forref_watch_enroll_correlation_v1.txt`, `forref_watch_enroll_v1.root`, `forref_watch_enroll_v1.admission`, and `forref_watch_enroll_correlation_v1.json`. The phone creates one match with team ids `forref-enroll-home` and `forref-enroll-away` only when that enroll file is absent. The next open reuses it. The historical file bytes, stage writer, content hash, principal, canonical text, identity events, generation-1 root, committed-record count, and Drift row are compared before and after. The session does not cancel, lock, activate, or write the historical correlation.
+
+`apps/forref_watch_zepp` `node --test test/enroll_isolation.test.js test/installation_continuity.test.js` passed. A prepare through the enroll store left the historical correlation text and admission bytes unchanged and reused the enroll request id on the second call. A missing installation uuid with only the enroll file returned `lost-identity-state` and wrote nothing. `flutter test test/watch_enroll_session_test.dart test/watch_provision_debug_settings_test.dart` passed. The phone test started the historical listener, opened the enroll listener on another match, and read `disposition=listening` with `writes=0`. A version-2 witness for the current installation stored one `watch_witness_observed`. The same request returned `reason=replay` and left that one row. Digest version 1 on that request returned `reason=replay-conflict` and left the version-2 row. Another installation returned `reason=recovery-required` and did not add a second eligible witness. The historical stage writer, hash, principal, canonical text, identity event, root, committed records, correlation bytes, and Drift timestamp were unchanged. A corrupt enroll file was left in place. These rows are not Bip 6 results.
+
+The diagnostic package is attached after the stamp commit. Founder steps are E1–E8 in `HARDWARE_PROTOCOL.md`.
 
 ## 1.0.32 byte-string identifier
 

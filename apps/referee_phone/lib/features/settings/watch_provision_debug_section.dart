@@ -7,6 +7,7 @@ import 'package:forref_match_persistence/forref_match_persistence.dart';
 import 'package:match_core/match_core.dart';
 import 'package:referee_phone/app_scope.dart';
 import 'package:referee_phone/l10n/app_localizations.dart';
+import 'package:referee_phone/officiate/watch_enroll_session.dart';
 import 'package:referee_phone/officiate/watch_provision_debug_bridge.dart';
 
 /// Debug-only control for the local watch provision bridge.
@@ -22,6 +23,7 @@ class _WatchProvisionDebugSectionState
     extends State<WatchProvisionDebugSection> {
   final TextEditingController _installation = TextEditingController();
   WatchProvisionDebugBridge? _bridge;
+  WatchProvisionDebugBridge? _enrollBridge;
   List<Match> _matches = const [];
   String? _matchId;
   String _status = '';
@@ -30,6 +32,7 @@ class _WatchProvisionDebugSectionState
   void dispose() {
     _installation.dispose();
     _bridge?.stop();
+    _enrollBridge?.stop();
     super.dispose();
   }
 
@@ -76,6 +79,14 @@ class _WatchProvisionDebugSectionState
           ListTile(
             title: Text(l10n.watchProvisionCancel),
             onTap: _cancelPrepared,
+          ),
+          ListTile(
+            title: Text(l10n.watchProvisionEnroll),
+            onTap: _enroll,
+          ),
+          ListTile(
+            title: Text(l10n.watchProvisionReadEnroll),
+            onTap: _readEnroll,
           ),
           if (_status.isNotEmpty) ListTile(title: Text(_status)),
           if (_bridge?.lastActivation != null)
@@ -130,6 +141,7 @@ class _WatchProvisionDebugSectionState
     }
     final root = scope.storageRoot;
     if (root == null || !mounted) return;
+    await _enrollBridge?.stop();
     final bridge = _bridge ??
         WatchProvisionDebugBridge(
           boundary: boundary,
@@ -174,6 +186,7 @@ class _WatchProvisionDebugSectionState
       setState(() => _status = 'missing');
       return;
     }
+    await _enrollBridge?.stop();
     final bridge = _bridge ??
         WatchProvisionDebugBridge(
           boundary: boundary,
@@ -224,6 +237,55 @@ class _WatchProvisionDebugSectionState
     );
     if (!mounted) return;
     setState(() => _status = outcome.reason);
+  }
+
+  Future<void> _enroll() async {
+    final scope = AppScope.of(context);
+    final boundary = scope.matchApplication;
+    final identity = scope.captureIdentity;
+    final root = scope.storageRoot;
+    final database = scope.database;
+    if (boundary == null || identity == null || root == null) {
+      setState(() => _status = 'missing');
+      return;
+    }
+    final enroll = _enrollBridge ??
+        WatchProvisionDebugBridge(
+          boundary: boundary,
+          phoneOriginDeviceId: identity.originDeviceId,
+          correlationFile: File('${root.path}/$enrollWatchCorrelationName'),
+        );
+    _enrollBridge = enroll;
+    final opened = await openWatchEnrollment(
+      storageRoot: root,
+      database: database,
+      boundary: boundary,
+      phoneOriginDeviceId: identity.originDeviceId,
+      principalId: identity.authorityPrincipalId,
+      installationId: _installation.text.trim(),
+      enrollBridge: enroll,
+      historicalBridge: _bridge,
+    );
+    if (!mounted) return;
+    setState(() => _status = opened.line);
+  }
+
+  Future<void> _readEnroll() async {
+    final scope = AppScope.of(context);
+    final boundary = scope.matchApplication;
+    final root = scope.storageRoot;
+    if (boundary == null || root == null) {
+      setState(() => _status = 'missing');
+      return;
+    }
+    final line = await describeWatchEnrollment(
+      storageRoot: root,
+      store: boundary.durableStore,
+      database: scope.database,
+      installationId: _installation.text.trim(),
+    );
+    if (!mounted) return;
+    setState(() => _status = line);
   }
 
   String? _correlationText() {

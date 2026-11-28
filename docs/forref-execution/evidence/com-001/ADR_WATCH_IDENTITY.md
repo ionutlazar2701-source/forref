@@ -68,6 +68,24 @@ sourceBuilds = diagnostic, at most 160 characters
 
 A `uuid` or `platformUuid` field makes the witness malformed. On the current writer, a malformed witness does not change the prepared response and stores no event. On another installation, it returns `identity-evidence-unavailable`.
 
+## Enrollment isolation
+
+A new match that still uses the historical correlation files is not a separate session. The watch reuses `forref_watch_provision_correlation_v1.txt` when that file names the current installation. The phone bridge loads `forref_watch_provision_correlation_v1.json` at construction and refuses `start` for a different match. `stop` closes the socket and leaves the file.
+
+The debug enrollment path uses different files and a second bridge:
+
+| Side | Historical, left in place | Enrollment |
+| --- | --- | --- |
+| Watch request | `forref_watch_provision_correlation_v1.txt` | `forref_watch_enroll_correlation_v1.txt` |
+| Watch admission | `forref_watch_provision_v1.root` and `.admission` | `forref_watch_enroll_v1.root` and `.admission` |
+| Phone request | `forref_watch_provision_correlation_v1.json` | `forref_watch_enroll_correlation_v1.json` |
+
+The Provision button still opens the historical files. ENROLL is a separate control on that page. On the phone, Enroll witness creates one match whose team ids are `forref-enroll-home` and `forref-enroll-away` only when the enroll file is absent and no such match exists. A later tap reuses the enroll file and does not allocate another match. The phone reads the historical correlation bytes, stage writer, content hash, principal, canonical text, identity events, generation-1 root, committed-record count, and Drift row before and after. A difference stops the enroll listener. The action does not cancel a stage, lock, activate, delete a correlation file, or write the historical file.
+
+An enroll file with no installation uuid is state. `resolveInstallation` returns `lost-identity-state` and does not mint a writer. It does not copy enroll files onto the historical names.
+
+The platform fingerprint remains an unauthenticated correlation signal. Enrollment stores `watch_witness_observed` for the current writer of the new match. It does not move the historical writer.
+
 ## Listen
 
 Settings in a debug build has Listen. It calls `start` for the selected match and does not call `prepareSavedMatch`. GET `http://127.0.0.1:47221/` returns `disposition=listening` and `writes=0`. That is a software check. A Zepp POST remains a hardware gate. Localhost is not a production transport.
@@ -94,3 +112,4 @@ Settings in a debug build has Listen. It calls `start` for the selected match an
 - `apps/referee_phone/lib/features/settings/watch_provision_debug_section.dart`
 - `apps/forref_watch_zepp/utils/identity_witness.js`
 - `apps/forref_watch_zepp/page/gt/provision/index.page.js`
+- `apps/referee_phone/lib/officiate/watch_enroll_session.dart`

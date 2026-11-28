@@ -378,6 +378,12 @@ class AppLocalizationsRo extends AppLocalizations {
   String get watchProvisionCancel => 'Anulează pregătirea';
 
   @override
+  String get watchProvisionEnroll => 'Înscrie martorul';
+
+  @override
+  String get watchProvisionReadEnroll => 'Citește înscrierea';
+
+  @override
   String get watchProvisionNoMatch => 'Niciun meci salvat selectat';
 
   @override

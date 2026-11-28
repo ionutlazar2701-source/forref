@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { PROVISION_ADMISSION_FILE, PROVISION_ROOT_FILE } from "../utils/goal_admission.js";
 import { INSTALLATION_FILE } from "../utils/installation_id.js";
 import { durablePath, resolveInstallation } from "../utils/installation_continuity.js";
-import { PROVISION_CORRELATION_FILE } from "../utils/provision_bridge.js";
+import { ENROLL_CORRELATION_FILE, PROVISION_CORRELATION_FILE } from "../utils/provision_bridge.js";
 import { stageMarker } from "../utils/watch_provision.js";
 
 const kept = "166e7c3b-1111-4222-8333-000000000e43";
@@ -118,4 +118,31 @@ test("conflicting or unreadable identity is kept and a fresh store can create on
   assert.equal(page.includes("runHandshake"), false);
   assert.equal(page.includes("resolveInstallation"), true);
   assert.equal(page.indexOf("if (!kept)") < page.indexOf("runPrepare({"), true);
+});
+
+test("an enroll file blocks a new installation uuid and is not copied onto the historical names", () => {
+  const enrollText = '{"installationId":"' + kept + '","requestId":"44444444-4444-4444-8444-444444444444","generation":1,"phase":"pending"}';
+  const enrolled = memoryFs({ [ENROLL_CORRELATION_FILE]: enrollText });
+  const blocked = resolveInstallation(enrolled);
+  assert.equal(blocked.ok, false);
+  assert.equal(blocked.reason, "lost-identity-state");
+  assert.equal(blocked.created, false);
+  assert.equal(blocked.line.includes("enroll=present"), true);
+  assert.equal(enrolled.writes.length, 0);
+  assert.equal(enrolled.files[ENROLL_CORRELATION_FILE], enrollText);
+  assert.equal(Object.prototype.hasOwnProperty.call(enrolled.files, durablePath(INSTALLATION_FILE)), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(enrolled.files, PROVISION_CORRELATION_FILE), false);
+  const known = memoryFs({
+    [durablePath(INSTALLATION_FILE)]: kept,
+    [ENROLL_CORRELATION_FILE]: enrollText,
+  });
+  const reused = resolveInstallation(known);
+  assert.equal(reused.ok, true);
+  assert.equal(reused.created, false);
+  assert.equal(reused.id, kept);
+  assert.equal(known.writes.length, 0);
+  assert.equal(known.files[ENROLL_CORRELATION_FILE], enrollText);
+  assert.equal(Object.prototype.hasOwnProperty.call(known.files, PROVISION_CORRELATION_FILE), false);
+  assert.equal(source.includes(ENROLL_CORRELATION_FILE), true);
+  assert.equal(source.includes("copyLegacy(fs, ENROLL_"), false);
 });

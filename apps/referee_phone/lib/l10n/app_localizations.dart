@@ -800,6 +800,18 @@ abstract class AppLocalizations {
   /// **'Cancel prepared'**
   String get watchProvisionCancel;
 
+  /// No description provided for @watchProvisionEnroll.
+  ///
+  /// In en, this message translates to:
+  /// **'Enroll witness'**
+  String get watchProvisionEnroll;
+
+  /// No description provided for @watchProvisionReadEnroll.
+  ///
+  /// In en, this message translates to:
+  /// **'Read enroll'**
+  String get watchProvisionReadEnroll;
+
   /// No description provided for @watchProvisionNoMatch.
   ///
   /// In en, this message translates to:

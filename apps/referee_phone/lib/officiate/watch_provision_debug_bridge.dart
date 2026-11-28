@@ -102,6 +102,10 @@ class WatchProvisionDebugBridge extends ChangeNotifier {
 
   String? get matchId => _matchId;
 
+  String? get boundRequestId => _requestId;
+
+  bool get correlationIntact => !_correlationBroken;
+
   Map<String, Object?>? get lastActivation => _activation;
 
   WatchProvisionBridgeDisposition get disposition => _disposition;

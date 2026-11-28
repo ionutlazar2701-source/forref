@@ -4,6 +4,9 @@ import { parseWatchProvisionV1 } from "./watch_provision.js";
 
 export const PROVISION_BRIDGE_URL = "http://127.0.0.1:47221/watch-provision/v1";
 export const PROVISION_CORRELATION_FILE = "forref_watch_provision_correlation_v1.txt";
+export const ENROLL_CORRELATION_FILE = "forref_watch_enroll_correlation_v1.txt";
+export const ENROLL_ROOT_FILE = "forref_watch_enroll_v1.root";
+export const ENROLL_ADMISSION_FILE = "forref_watch_enroll_v1.admission";
 
 export const GET_WATCH_PROVISION_V1 = "GET_WATCH_PROVISION_V1";
 export const SUBMIT_WATCH_LOCK_V1 = "SUBMIT_WATCH_LOCK_V1";

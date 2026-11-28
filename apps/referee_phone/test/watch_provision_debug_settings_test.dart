@@ -105,6 +105,8 @@ void main() {
     expect(find.text('Listen'), findsOneWidget);
     expect(find.text('Inspect provision'), findsOneWidget);
     expect(find.text('Cancel prepared'), findsOneWidget);
+    expect(find.text('Enroll witness'), findsOneWidget);
+    expect(find.text('Read enroll'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), installationId);
     await tester.tap(find.text('No saved match selected'));

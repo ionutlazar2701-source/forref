@@ -6,6 +6,9 @@ const PROVISION_CORRELATION_FILE = "forref_watch_provision_correlation_v1.txt";
 
 const PROVISION_ROOT_FILE = "forref_watch_provision_v1.root";
 const PROVISION_ADMISSION_FILE = "forref_watch_provision_v1.admission";
+const ENROLL_CORRELATION_FILE = "forref_watch_enroll_correlation_v1.txt";
+const ENROLL_ROOT_FILE = "forref_watch_enroll_v1.root";
+const ENROLL_ADMISSION_FILE = "forref_watch_enroll_v1.admission";
 
 export const DATA_PREFIX = "data://";
 
@@ -104,6 +107,14 @@ function admissionState(text) {
   return "";
 }
 
+function enrollPresence(correlation, root, admission) {
+  const parts = [pairPresence(correlation), pairPresence(root), pairPresence(admission)];
+  if (parts.indexOf("unreadable") >= 0) return "unreadable";
+  if (parts.indexOf("conflict") >= 0) return "conflict";
+  if (parts.indexOf("present") >= 0) return "present";
+  return "absent";
+}
+
 function journalListed(names) {
   for (let i = 0; i < names.length; i += 1) {
     if (/^forref_watch_goal_/.test(names[i])) return true;
@@ -119,6 +130,7 @@ function lineFor(result) {
     " evidence=" + (result.evidence || "") +
     " installation=" + (files.installation || "absent") +
     " correlation=" + (files.correlation || "absent") +
+    " enroll=" + (files.enroll || "absent") +
     " root=" + (files.root || "absent") +
     " admission=" + (files.admission || "absent") +
     " journal=" + (files.journal || "absent") +
@@ -191,6 +203,9 @@ export function resolveInstallation(fs) {
   const admission = filePair(fs, PROVISION_ADMISSION_FILE);
   const context = filePair(fs, GOAL_CONTEXT_FILE);
   const journal = filePair(fs, GOAL_JOURNAL_FILE);
+  const enrollCorrelation = filePair(fs, ENROLL_CORRELATION_FILE);
+  const enrollRoot = filePair(fs, ENROLL_ROOT_FILE);
+  const enrollAdmission = filePair(fs, ENROLL_ADMISSION_FILE);
   const journalPresent = pairPresence(journal) !== "absent" || journalListed(names);
   const files = {
     installation: installation.data.presence === "present" || installation.legacy.presence === "present"
@@ -205,13 +220,14 @@ export function resolveInstallation(fs) {
     admission: pairPresence(admission),
     journal: journalPresent ? (pairPresence(journal) === "unreadable" ? "unreadable" : "present") : "absent",
     context: pairPresence(context),
+    enroll: enrollPresence(enrollCorrelation, enrollRoot, enrollAdmission),
   };
   const admissionText = admission.data.text || admission.legacy.text;
   const correlationText = correlation.data.text || correlation.legacy.text;
   const phase = phaseOf(correlationText);
   const activated = admissionState(admissionText) === "activated" || phase === "activated" || phase === "reported";
   const prepared = files.root === "present" || files.correlation === "present" || admissionState(admissionText) === "prepared" || phase === "verified" || phase === "pending";
-  const statePresent = files.correlation !== "absent" || files.root !== "absent" || files.admission !== "absent" || files.journal !== "absent" || files.context !== "absent";
+  const statePresent = files.correlation !== "absent" || files.root !== "absent" || files.admission !== "absent" || files.journal !== "absent" || files.context !== "absent" || files.enroll !== "absent";
 
   if (installation.data.presence === "unreadable" || installation.legacy.presence === "unreadable") {
     return recovery("unreadable", files, phase, "");

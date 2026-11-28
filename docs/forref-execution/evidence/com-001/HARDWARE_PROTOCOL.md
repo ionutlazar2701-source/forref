@@ -1,5 +1,36 @@
 # COM-001 Bip 6 protocol
 
+State: **1.0.33 SOFTWARE PASS. ENROLLMENT HARDWARE GATE PENDING. LOCK DISABLED**. Watch source is `1.0.33` (`identity-enroll-033`). The diagnostic package is recorded in `TEST_RESULTS.md` after the stamp. Rows H1–H11 and the enrollment rows E1–E8 stay **LOCAL GATE REQUIRED**. This file does not certify the Bip 6.
+
+Do not uninstall FORREF Watch, the Zepp app, or FORREF Mobile. Do not reset the match, clear storage, cancel a prepared provision, delete a correlation file, or type the old writer over the current installation UUID. Do not tap Provision on the watch. Do not tap Prepare and listen for the old match. A fingerprint match is not authentication and does not move the stored writer.
+
+## 1.0.33 enrollment trial
+
+The historical watch file `forref_watch_provision_correlation_v1.txt` and the phone file `forref_watch_provision_correlation_v1.json` keep the previous request. A second match on those files is the same session. This trial uses other files: `forref_watch_enroll_correlation_v1.txt`, `forref_watch_enroll_v1.root`, `forref_watch_enroll_v1.admission`, and `forref_watch_enroll_correlation_v1.json`. The historical Provision button is unchanged.
+
+Install `1.0.33` in place. Force-stop Zepp from Android Settings, then open Zepp again. Open FORREF and stay on Home. A reboot on open fails the trial. On the phone debug build, from this branch, run `flutter run -d RZCY11BDMTX` without uninstalling. Open Settings. Type the installation UUID from the current watch `FORREF_IDENTITY` line. Do not select the saved match. Tap **Enroll witness**. Copy the `FORREF_ENROLL tx=open` line. `status=listening` and `same=1` are required. The `match=` value after `status` is a new match. `writer=` is the previously stored writer. `root=0`. Any other status stops the trial. Do not Cancel prepared.
+
+From the phone browser open `http://127.0.0.1:47221/`. The body is `disposition=listening`, `writes=0`, and the new match id. That browser line is not a Zepp POST.
+
+On the watch, open SETTINGS, then PROVISION. Do not tap PROVISION. Tap ENROLL once. Copy `FORREF_ENROLL tx=preflight`, `historical-same=1`, `FORREF_WITNESS`, and the phone `tx=identity` line. The witness line for this watch is expected to stay `class=hex32`, `v=2`, preview `c533...058d`. The phone line for the first tap is `reason=observed`. Tap ENROLL again. The phone line is `reason=replay`. On the phone tap **Read enroll**. `witnesses=1`, `eligible=1`, and the historical `fp=` matches the open line. `root=0`. Do not Cancel prepared.
+
+A conflicting digest version and a different installation are covered by `watch_enroll_session_test.dart`. They return `replay-conflict` and `recovery-required` without a second eligible witness and without changing the historical stage. This build does not offer a watch control that sends a forged digest. Do not treat that automated result as a Bip 6 pass.
+
+| Gate | What to record | Pass is not available until the founder attaches the log |
+| --- | --- | --- |
+| E1 | `FORREF_ENROLL tx=open` before the watch tap. | `status=listening`, `same=1`, a new match id, the old writer, `root=0`. |
+| E2 | Chrome GET `http://127.0.0.1:47221/`. | `disposition=listening`, `writes=0`, and the new match id. |
+| E3 | One ENROLL tap. `FORREF_WITNESS` and `historical-same`. | `class=hex32` or `bytes32`, `v=2`, preview `c533...058d`, `historical-same=1`. |
+| E4 | Phone `tx=identity` for that tap. | `reason=observed` for the new match and the current installation. |
+| E5 | The same ENROLL tap again. | `reason=replay`. Read enroll shows `witnesses=1` and `eligible=1`. |
+| E6 | Read enroll compared with the open line. | The same historical `fp`, writer, stage, `root=0`, and `records=count=0`. |
+| E7 | The old match is not cancelled and its UUID is not replaced. | No Cancel prepared. The stored writer is the one recorded before the trial. |
+| E8 | Conflicting version and conflicting installation. | Software rows in `TEST_RESULTS.md`. Not a hardware pass. |
+
+## 1.0.32 byte-string trial
+
+The 1.0.33 enrollment trial above is the current procedure. Do not tap Provision for that trial. This section records the 1.0.32 package.
+
 State: **1.0.32 BUILT. HARDWARE GATE PENDING. LOCK DISABLED**. Watch source is `1.0.32` (`identity-bytes32-032`, rev `12dfb9d197cbea419129f533ad865fbd613a71d6`). Package `dist/29566-FORREF-1.0.32-20261128142742.zab`, sha256 `b78584bdcf9175a5391f165c32fb8eee0191a7f63301dfc79a32054f7d89c922`. The QR is in `TEST_RESULTS.md` and expires 16:27 Europe/Bucharest on 5 December 2026. `1.0.31` was run on the Amazfit Bip 6. The witness line was `kind=absent class=unsupported-or-invalid len=32`. `FORREF_IDENTITY` was `case=fresh created=1`. `1.0.30` was uninstalled before `1.0.31`, so that fresh installation is not an in-place upgrade result. The software gate had required 64 hex characters. The Zepp OS 4.2 contract and this log both describe a 32-byte string. `1.0.32` accepts that shape as digest version 2. It does not reinterpret a version-1 digest. Rows H1–H11 stay **LOCAL GATE REQUIRED**. This file does not certify the Bip 6.
 
 Do not uninstall FORREF Watch, the Zepp app, or FORREF Mobile. Do not reset the match, clear storage, or cancel a prepared provision. Do not type a new installation UUID over the stored writer. A fingerprint match does not create a witness that was never stored, and it does not clear `prepared-conflict`.

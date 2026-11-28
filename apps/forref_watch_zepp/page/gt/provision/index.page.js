@@ -9,7 +9,7 @@ import { createFileProvisionStore } from "../../../utils/provision_transport";
 import { createWatchProvisionAdmission } from "../../../utils/watch_provision";
 import { attachDeviceMessaging, nextLinkVisit, retireLinkVisit } from "../../../utils/device_messaging";
 import { deviceBuildLine } from "../../../utils/build_stamp";
-import { PROVISION_CORRELATION_FILE, PROVISION_PAGE_TIMEOUT_MS, readProvisionEvidence, runPrepare } from "../../../utils/provision_bridge";
+import { ENROLL_ADMISSION_FILE, ENROLL_CORRELATION_FILE, ENROLL_ROOT_FILE, PROVISION_CORRELATION_FILE, PROVISION_PAGE_TIMEOUT_MS, readProvisionEvidence, runPrepare } from "../../../utils/provision_bridge";
 import {
   installationLineSize,
   resolveInstallationCard,
@@ -17,6 +17,7 @@ import {
 } from "../../../utils/installation_label";
 import { witnessFromInfo } from "../../../utils/identity_witness";
 import { durablePath, readDurableText, resolveInstallation } from "../../../utils/installation_continuity";
+import { place } from "../../../utils/geometry";
 import { t } from "../../../utils/text";
 import { ACCENT, TEXT_PRIMARY, TEXT_WARNING } from "../../../utils/theme";
 
@@ -82,6 +83,20 @@ function currentWitness() {
   } catch (err) {
     return witnessFromInfo(null);
   }
+}
+
+function historicalCorrelationSnapshot() {
+  const read = readDurableText({ readFileSync: readFileSync }, PROVISION_CORRELATION_FILE);
+  if (!read || read.status === "absent") return { status: "absent", text: "", bytes: 0 };
+  if (read.status !== "ok") return { status: "unreadable", text: "", bytes: 0 };
+  const text = String(read.text);
+  return { status: "present", text: text, bytes: text.length };
+}
+
+function logEnrollmentCompare(beforeText) {
+  const after = historicalCorrelationSnapshot();
+  const same = after.text === String(beforeText || "");
+  console.log("FORREF_ENROLL tx=compare historical-same=" + (same ? "1" : "0") + " bytes=" + after.bytes);
 }
 
 function outcomeStatus(view) {
@@ -209,6 +224,12 @@ Page({
     }
     button(card.action.x, card.action.y, card.action.w, card.action.h, t("provision"), () => this.start(), null, "provision-start", m);
     button(card.back.x, card.back.y, card.back.w, card.back.h, t("back"), () => back(), null, "provision-back", m);
+    const enroll = place(m, card.back.y + card.back.h + 6, 40, card.back.w);
+    if (enroll.ok) {
+      button(enroll.x, enroll.y, enroll.w, enroll.h, t("enrollWitness"), () => this.enrollWitness(), null, "provision-enroll", m);
+    } else {
+      console.log("FORREF_ENROLL tx=layout reason=hidden");
+    }
   },
   paintFallback() {
     try {
@@ -223,6 +244,15 @@ Page({
     }
   },
   start() {
+    this.begin("historical");
+  },
+  enrollWitness() {
+    const before = historicalCorrelationSnapshot();
+    this._historicalText = before.text;
+    console.log("FORREF_ENROLL tx=preflight historical=" + before.status + " bytes=" + before.bytes);
+    this.begin("enroll");
+  },
+  begin(kind) {
     if (this._busy || this._closed) return;
     this._busy = true;
     const kept = this._view && this._view.ok && this._view.id ? this._view.id : "";
@@ -231,6 +261,7 @@ Page({
       console.log("FORREF_PROVISION tx=recover reason=" + ((this._view && this._view.reason) || "recovery") + " installation=");
       return;
     }
+    const enroll = kind === "enroll";
     const app = runningApp();
     if (!app || !app.globalData) {
       this.finishPrepare(kept, { ok: false, reason: "app" });
@@ -246,12 +277,15 @@ Page({
       this.finishPrepare(kept, { ok: false, reason: "device:messaging", hop: "device", category: "messaging" });
       return;
     }
-    console.log("FORREF_PROVISION messaging=ready visit=" + this._visit + " installation=" + kept);
+    console.log("FORREF_PROVISION messaging=ready visit=" + this._visit + " installation=" + kept + " namespace=" + (enroll ? "enroll" : "historical"));
+    const requestStore = enroll ? fileStore(ENROLL_CORRELATION_FILE) : fileStore(PROVISION_CORRELATION_FILE);
+    const rootFile = enroll ? ENROLL_ROOT_FILE : PROVISION_ROOT_FILE;
+    const admissionFile = enroll ? ENROLL_ADMISSION_FILE : PROVISION_ADMISSION_FILE;
     runPrepare({
       loadInstallation: () => ({ ok: true, id: kept, reason: "" }),
-      requestStore: fileStore(PROVISION_CORRELATION_FILE),
+      requestStore: requestStore,
       admission: createWatchProvisionAdmission(
-        createFileProvisionStore(provisionFiles(), PROVISION_ROOT_FILE, PROVISION_ADMISSION_FILE),
+        createFileProvisionStore(provisionFiles(), rootFile, admissionFile),
       ),
       request: (message) => messaging.request(message, { timeout: PROVISION_PAGE_TIMEOUT_MS }),
       readWitness: () => {
@@ -260,6 +294,7 @@ Page({
         return read.witness;
       },
     }).then((view) => {
+      if (enroll) logEnrollmentCompare(this._historicalText);
       this.finishPrepare(kept, view);
     }).catch((err) => {
       const text = detail(err).toLowerCase();
@@ -269,6 +304,7 @@ Page({
           ? "permission"
           : "transport";
       console.log("FORREF_PROVISION tx=recover hop=device category=" + category + " reason=" + category + " installation=" + kept);
+      if (enroll) logEnrollmentCompare(this._historicalText);
       this.finishPrepare(kept, { ok: false, reason: "device:" + category, hop: "device", category: category });
     });
   },
