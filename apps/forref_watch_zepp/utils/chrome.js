@@ -115,6 +115,17 @@ export function textAt(x, y, w, h, value, size, color, digits) {
   return node;
 }
 
+export function updateText(node, value, color) {
+  if (!node || typeof node.setProperty !== "function") {
+    return false;
+  }
+  node.setProperty(hmUI.prop.TEXT, value);
+  if (color != null) {
+    node.setProperty(hmUI.prop.COLOR, color);
+  }
+  return true;
+}
+
 export function text(m, value, y, h, size, color) {
   return textAt(m.pad, y, m.contentW, h, value, size, color);
 }

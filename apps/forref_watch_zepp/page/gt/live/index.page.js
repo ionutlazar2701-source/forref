@@ -1,6 +1,7 @@
 import { push, back } from "@zos/router";
 import { createTimer, stopTimer } from "@zos/timer";
-import { logDevice, bindBack, clear, clearDigits, paintBase, textAt, button } from "../../../utils/chrome";
+import { logDevice, bindBack, clear, clearDigits, paintBase, textAt, updateText, button } from "../../../utils/chrome";
+import { digitHoldKey, nextPaintDelay } from "../../../utils/display_cadence";
 import { layoutLive, liveTelemetrySlot } from "../../../utils/geometry";
 import { localeChoice, t } from "../../../utils/text";
 import { formatTelemetryLine, gpsStatusKey, hrStatusKey, pulseTelemetry } from "../../../utils/telemetry";
@@ -17,6 +18,7 @@ let timerId = null;
 let metrics = null;
 let banner = "";
 let shell = null;
+let digitHold = null;
 let lastLogged = "";
 const arm = createAbandonArm();
 
@@ -134,16 +136,19 @@ function telemetryLabel() {
   });
 }
 
-function paintDigits(view, lay, current) {
-  clearDigits();
+function paintDigits(view, lay, current, rebuild) {
+  const digits = digitLabel(view);
   const timeH = current === "C" ? 36 : 48;
-  textAt(12, lay.phaseY, metrics.width - 24, 28, statusLabel(view), 20, view.unverified ? TEXT_WARNING : ACCENT, true);
-  textAt(12, lay.timeY, metrics.width - 24, timeH, digitLabel(view), view.added ? 28 : current === "C" ? 32 : 40, TEXT_PRIMARY, true);
+  let telemetry = "";
+  let telemetryY = 0;
+  let telemetryH = 0;
   let nextY = lay.timeY + timeH;
   try {
     const slot = liveTelemetrySlot(lay, current, timeH);
     if (slot) {
-      textAt(12, slot.y, metrics.width - 24, slot.h, telemetryLabel(), 14, TEXT_SECONDARY, true);
+      telemetry = telemetryLabel();
+      telemetryY = slot.y;
+      telemetryH = slot.h;
       nextY = slot.y + slot.h;
     }
   } catch (err) {
@@ -151,9 +156,55 @@ function paintDigits(view, lay, current) {
   }
   const detail = detailLabel(view);
   const detailLimit = current === "C" ? lay.away.y : lay.home.y;
-  if (detail && nextY + 14 <= detailLimit) {
-    textAt(12, nextY, metrics.width - 24, 14, detail, 12, TEXT_WARNING, true);
+  const showDetail = !!(detail && nextY + 14 <= detailLimit);
+  const spec = {
+    key: digitHoldKey({
+      mode: current,
+      unverified: view.unverified,
+      added: view.added,
+      telemetry: telemetry !== "",
+      detail: showDetail,
+      phaseY: lay.phaseY,
+      timeY: lay.timeY,
+    }),
+    timeH: timeH,
+    status: statusLabel(view),
+    statusColor: view.unverified ? TEXT_WARNING : ACCENT,
+    digits: digits,
+    digitSize: view.added ? 28 : current === "C" ? 32 : 40,
+    telemetry: telemetry,
+    telemetryY: telemetryY,
+    telemetryH: telemetryH,
+    detail: showDetail ? detail : "",
+    detailY: nextY,
+  };
+  if (!rebuild && digitHold && digitHold.key === spec.key) {
+    updateText(digitHold.status, spec.status, spec.statusColor);
+    updateText(digitHold.time, spec.digits, TEXT_PRIMARY);
+    if (digitHold.telemetry) {
+      updateText(digitHold.telemetry, spec.telemetry, TEXT_SECONDARY);
+    }
+    if (digitHold.detail) {
+      updateText(digitHold.detail, spec.detail, TEXT_WARNING);
+    }
+    return;
   }
+  clearDigits();
+  const statusNode = textAt(12, lay.phaseY, metrics.width - 24, 28, spec.status, 20, spec.statusColor, true);
+  const timeNode = textAt(12, lay.timeY, metrics.width - 24, spec.timeH, spec.digits, spec.digitSize, TEXT_PRIMARY, true);
+  const telemetryNode = spec.telemetry
+    ? textAt(12, spec.telemetryY, metrics.width - 24, spec.telemetryH, spec.telemetry, 14, TEXT_SECONDARY, true)
+    : null;
+  const detailNode = spec.detail
+    ? textAt(12, spec.detailY, metrics.width - 24, 14, spec.detail, 12, TEXT_WARNING, true)
+    : null;
+  digitHold = {
+    key: spec.key,
+    status: statusNode,
+    time: timeNode,
+    telemetry: telemetryNode,
+    detail: detailNode,
+  };
 }
 
 function logView(view, current) {
@@ -206,12 +257,13 @@ function paintAll() {
   const key = shellKey(view, current);
   if (!shell || shell.key !== key) {
     clear();
+    digitHold = null;
     paintBase(metrics);
-    paintDigits(view, lay, current);
+    paintDigits(view, lay, current, true);
     paintShell(view, lay);
     shell = { key: key };
   } else {
-    paintDigits(view, lay, current);
+    paintDigits(view, lay, current, false);
   }
   logView(view, current);
 }
@@ -244,10 +296,11 @@ function ensureTimer() {
   if (timerId != null) {
     return;
   }
-  timerId = createTimer(1000, 1000, () => {
+  const delay = nextPaintDelay(deviceNow());
+  timerId = createTimer(delay, 1000, () => {
     paintAll();
   });
-  console.log("FORREF_LIVE002 TIMER|paint!");
+  console.log("FORREF_LIVE002 TIMER|period=1000 delay=" + delay + "!");
 }
 
 function stopClockTimer() {
@@ -277,6 +330,7 @@ Page({
     stopClockTimer();
     persistLive();
     shell = null;
+    digitHold = null;
     clear();
     console.log("FORREF_PAGE live onDestroy");
   },
